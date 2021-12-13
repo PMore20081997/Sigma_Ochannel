@@ -1,0 +1,1616 @@
+codeunit 90005 "Process Web Order"
+{
+    TableNo = "Interim Sales Header";
+    Permissions = tabledata "Sales Shipment Header" = RIMD;
+
+    trigger OnRun()
+    begin
+        case CalllType of
+            CalllType::"Internal Pick":
+                begin
+                    CreateInternalPick(Rec);
+                end;
+
+            CalllType::"Single Order":
+                begin
+                    CreateSingleOrder(Rec);
+                    GenSetupChannels.Get();
+                    //if GenSetupChannels."Despatch Scan Enabled" = false then
+                    MovedToHandled(Rec, true);
+                end;
+
+            CalllType::"Consolidate Order":
+                begin
+                    CreateConsolidateOrder(Rec);
+                    GenSetupChannels.Get();
+                    //if GenSetupChannels."Despatch Scan Enabled" = false then
+                    MovedToHandled(Rec, true);
+                end;
+        end;
+
+    end;
+
+    var
+        NoSeriesManagement: Codeunit 396;
+        HeaderNo: Code[20];
+        LineNo: Integer;
+        FirstOrder: Boolean;
+        WarehouseSetup: Record "Warehouse Setup";
+        ItemUnitofMeasure: Record "Item Unit of Measure";
+        TempSalesHeader: Record "Sales Header" temporary;
+        CustRec: Record Customer;
+        ResCen: Record "Responsibility Center";
+        CalllType: Option "Internal Pick","Single Order","Consolidate Order";
+        GenSetupChannels: Record "General Setup - Channels";
+        TempOrderNoPick: Record 27 temporary;
+        G_BayNo: Code[20];
+        G_TotalQty: Decimal;
+
+    local procedure CreatePickHeader(var InterimSalesLine: Record "Interim Sales Line"; i: Integer): Code[20]
+    var
+        WhseInternalPickHeader: Record "Whse. Internal Pick Header";
+        Location: Record Location;
+        Bin: Record Bin;
+    begin
+        WarehouseSetup.GET;
+        WhseInternalPickHeader.INIT;
+        WhseInternalPickHeader."No." := NoSeriesManagement.GetNextNo(WarehouseSetup."Whse. Internal Pick Nos.", WORKDATE, TRUE);
+        InterimSalesLine.CALCFIELDS("Location Code");
+        IF Location.GET(InterimSalesLine."Location Code") THEN;
+        WhseInternalPickHeader.VALIDATE("Assignment Date", TODAY);
+        Bin.RESET;
+        Bin.SETRANGE("Location Code", Location.Code);
+        Bin.SETRANGE(Code, Location."Default DD Bin");
+        IF Bin.FINDFIRST THEN;
+
+        WhseInternalPickHeader.VALIDATE("Location Code", Location.Code);
+        WhseInternalPickHeader.VALIDATE("To Zone Code", Bin."Zone Code");
+        WhseInternalPickHeader.VALIDATE("To Bin Code", Bin.Code);
+        WhseInternalPickHeader.VALIDATE("Due Date", TODAY);
+        WhseInternalPickHeader.VALIDATE("Channel Code", InterimSalesLine."Trade Partner Code");
+        WhseInternalPickHeader."Order Line Type" := i;
+        WhseInternalPickHeader.INSERT;
+        EXIT(WhseInternalPickHeader."No.");
+
+    end;
+
+    local procedure CreatePickLines(HeaderNo: Code[20]; var InterimSalesLine: Record "Interim Sales Line"): Integer
+    var
+        WhseInternalPickLine: Record "Whse. Internal Pick Line";
+        line: Integer;
+        Item: Record Item;
+        totalWeight: Decimal;
+        WhseInternalPickHeader: Record "Whse. Internal Pick Header";
+        RecWhseIPL: Record "Whse. Internal Pick Line";
+        LineNo: Integer;
+        OchannelSetup: Record "General Setup - Channels";//Sofyan
+    begin
+        CLEAR(line);
+        CLEAR(WhseInternalPickLine);
+        CLEAR(totalWeight);
+
+        RecWhseIPL.RESET;
+        RecWhseIPL.SETRANGE("No.", HeaderNo);
+        IF RecWhseIPL.FINDLAST THEN
+            LineNo := RecWhseIPL."Line No." + 10000
+        ELSE
+            LineNo := 10000;
+
+        WhseInternalPickLine.INIT;
+        WhseInternalPickLine.VALIDATE("No.", HeaderNo);
+        WhseInternalPickLine.VALIDATE("Line No.", LineNo);
+        // WhseInternalPickLine.VALIDATE("Line No.",GetLastLineNo(HeaderNo));
+        WhseInternalPickLine.VALIDATE("Item No.", InterimSalesLine."No.");
+        WhseInternalPickLine.Validate("Variant Code", InterimSalesLine."NAV Variant code");
+
+        Item.RESET;  //Ranjit 04-04-2018
+        IF (InterimSalesLine.Type = InterimSalesLine.Type::Item) AND (Item.GET(InterimSalesLine."No.")) THEN BEGIN
+            totalWeight := Item."Net Weight" * InterimSalesLine.Quantity;
+        END;  //Ranjit 04-04-2018
+
+
+        ItemUnitofMeasure.RESET;
+        ItemUnitofMeasure.SETRANGE("Item No.", InterimSalesLine."No.");
+        ItemUnitofMeasure.SETRANGE(Code, InterimSalesLine."Unit of Measure Code");
+        IF ItemUnitofMeasure.FINDFIRST THEN
+            WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity * ItemUnitofMeasure."Qty. per Unit of Measure")
+        ELSE
+            WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity);
+
+        WhseInternalPickLine.VALIDATE(Weight, totalWeight);
+
+        // WhseInternalPickLine.VALIDATE("Unit of Measure Code",InterimSalesLine."Unit of Measure Code");
+
+        WhseInternalPickLine.VALIDATE("Channel Code", InterimSalesLine."Trade Partner Code");
+
+        OchannelSetup.Get();
+        if OchannelSetup."Consolidate Item on WIP" = false then
+            WhseInternalPickLine.Validate("Channel Order ID", InterimSalesLine."Channel Order ID")
+        else
+            WhseInternalPickLine.Validate("Channel Order ID", '');
+        //Sofyan
+        //   WhseInternalPickLine.Validate("Bay No.", InterimSalesLine."Bay No.");
+        WhseInternalPickLine.INSERT(TRUE);
+
+        EXIT(WhseInternalPickLine."Line No.");
+
+    end;
+
+    local procedure UpdatePickLines(L_SalesLine: Record "Whse. Internal Pick Line"; var L_InterimSalesLine: Record "Interim Sales Line"; var L_InterimSalesHeader: Record "Interim Sales Header")//NG_Variable_Check
+    var
+        RecSalesLine: Record "Whse. Internal Pick Line";//NG_Variable_Check
+        OldQty: Decimal;
+        CurrQty: Decimal;
+    begin
+        //Start_NIKHIL_29/01/2019
+        CLEAR(CurrQty);
+        RecSalesLine.RESET;
+        RecSalesLine.SETRANGE("No.", L_SalesLine."No.");
+        RecSalesLine.SETRANGE("Item No.", L_InterimSalesLine."No.");
+        RecSalesLine.SetRange("Variant Code", L_InterimSalesLine."NAV Variant code");
+        //Chandan++170519
+        //Chandan--170519
+        IF RecSalesLine.FINDFIRST THEN BEGIN
+            CLEAR(OldQty);
+            OldQty := RecSalesLine.Quantity;
+
+            ItemUnitofMeasure.RESET;
+            ItemUnitofMeasure.SETRANGE("Item No.", L_InterimSalesLine."No.");
+            ItemUnitofMeasure.SETRANGE(Code, L_InterimSalesLine."Unit of Measure Code");
+            IF ItemUnitofMeasure.FINDFIRST THEN
+                CurrQty := L_InterimSalesLine.Quantity * ItemUnitofMeasure."Qty. per Unit of Measure"
+            ELSE
+                CurrQty := L_InterimSalesLine.Quantity;
+
+            RecSalesLine.VALIDATE(Quantity, OldQty + CurrQty);
+
+            //RecSalesLine.VALIDATE(Quantity,OldQty+L_InterimSalesLine.Quantity);
+            RecSalesLine.MODIFY;
+            HeaderNo := RecSalesLine."No.";
+            LineNo := RecSalesLine."Line No.";
+        END;
+        //END_NIKHIL_29/01/2019
+    end;
+
+    local procedure UpdateOrderNo(var L_InterimSalesLine: Record "Interim Sales Line"; var RecInterimSalesHeader: Record "Interim Sales Header")
+    begin
+        //Update Interim Line
+        L_InterimSalesLine."Destination Doc Type" := L_InterimSalesLine."Destination Doc Type"::"Internal Pick";
+        L_InterimSalesLine."Destination Doc No." := HeaderNo;
+        L_InterimSalesLine."Destination Doc. Line No" := LineNo;
+        L_InterimSalesLine.MODIFY;
+
+        //Update Interim Header
+        RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::Processing);
+        RecInterimSalesHeader."Destination Doc Type" := RecInterimSalesHeader."Destination Doc Type"::"Internal Pick";
+        RecInterimSalesHeader."Destination Doc No." := HeaderNo;
+        RecInterimSalesHeader.MODIFY;
+
+        //Insert Temp Header
+        //InsertIntoTempHeader(HeaderNo);
+
+        //Update Shipment Tracking
+        //AmazonIntegration.UpdateSalesOrderNoInShippmentTrackingLine(L_InterimSalesLine);//NIKHIL_28/01/19
+    end;
+
+    local procedure ItemLineExists(L_InterimSalesLine: Record "Interim Sales Line"; OrderNo: Text): Boolean
+    var
+        L_SalesLine: Record "Whse. Internal Pick Line";//NG_Variable_Check
+    begin
+        L_SalesLine.RESET;
+        L_SalesLine.SETRANGE("No.", OrderNo);
+        L_SalesLine.SETRANGE("Item No.", L_InterimSalesLine."No.");
+        L_SalesLine.SetRange("Variant Code", L_InterimSalesLine."NAV Variant code");//ak to manage varient
+        IF L_SalesLine.FINDSET THEN
+            EXIT(TRUE);
+    end;
+
+    local procedure CheckOrderExists(var L_InterimSalesLine: Record "Interim Sales Line"; var L_InterimSalesHeader: Record "Interim Sales Header"; WIPNo: Code[20])
+    var
+        RecInterimSalesLine: Record "Interim Sales Line";
+        Item: Record Item;
+        WhseValidateSourceLine: Codeunit "Whse. Validate Source Line";
+        RecWhseInternalPickLine: Record "Whse. Internal Pick Line";
+        OchannelSetup: Record "General Setup - Channels";//Sofyan
+        NoofItemsFilter: Text;
+        L_qty: Decimal;
+        L_qty2: Decimal;
+        finalQty: Decimal;
+    begin
+        IF L_InterimSalesLine.Type = L_InterimSalesLine.Type::Item THEN BEGIN
+
+            RecWhseInternalPickLine.RESET;
+            RecWhseInternalPickLine.SETFILTER("Qty. Outstanding", '<>%1', 0);
+            RecWhseInternalPickLine.SETFILTER(Status, '%1', RecWhseInternalPickLine.Status::" ");
+            RecWhseInternalPickLine.SETRANGE("Existing Order", FALSE);
+            RecWhseInternalPickLine.SETRANGE("Channel Code", L_InterimSalesLine."Trade Partner Code");
+            if WIPNo <> '' then
+                RecWhseInternalPickLine.SETRANGE("No.", WIPNo);
+
+            IF RecWhseInternalPickLine.FINDFIRST THEN BEGIN
+                //Sofyan++
+                IF ItemLineExists(L_InterimSalesLine, RecWhseInternalPickLine."No.") THEN begin
+                    Clear(OchannelSetup);
+                    OchannelSetup.Get();
+                    if OchannelSetup."Consolidate Item on WIP" = false then begin
+                        LineNo := CreatePickLines(RecWhseInternalPickLine."No.", L_InterimSalesLine);
+                        HeaderNo := RecWhseInternalPickLine."No.";
+                        UpdateOrderNo(L_InterimSalesLine, L_InterimSalesHeader);
+                    end
+                    else begin
+                        UpdatePickLines(RecWhseInternalPickLine, L_InterimSalesLine, L_InterimSalesHeader);
+                        HeaderNo := RecWhseInternalPickLine."No.";
+                        UpdateOrderNo(L_InterimSalesLine, L_InterimSalesHeader);
+                    end;
+
+
+                end
+                ELSE BEGIN
+                    HeaderNo := RecWhseInternalPickLine."No.";
+                    LineNo := CreatePickLines(RecWhseInternalPickLine."No.", L_InterimSalesLine);
+                END;
+                UpdateOrderNo(L_InterimSalesLine, L_InterimSalesHeader);
+            END ELSE BEGIN
+                NoofItemsFilter := L_InterimSalesHeader.GetFilter("No. of Items");
+                NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
+                IF NoofItemsFilter = '1' then
+                    HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
+                Else
+                    HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
+                //HeaderNo := CreatePickHeader(L_InterimSalesLine);
+                LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+                UpdateOrderNo(L_InterimSalesLine, L_InterimSalesHeader);
+            END;
+            //end;
+        END;
+
+    end;
+
+    local procedure CheckSOExists(var L_InterimSalesLine: Record "Interim Sales Line"; var L_InterimSalesHeader: Record "Interim Sales Header")
+    var
+        RecInterimSalesLine: Record "Interim Sales Line";
+        Item: Record Item;
+        SalesHeader: Record "Sales Header";
+        WhseValidateSourceLine: Codeunit "Whse. Validate Source Line";
+        SalesLine: Record "Sales Line";
+        TradePartner: Record "Trade Partner";
+        L_Sales_H: Record "Sales Header";
+    begin
+        IF L_InterimSalesLine.Type = L_InterimSalesLine.Type::Item THEN BEGIN
+            SalesLine.RESET;
+            SalesLine.CALCFIELDS("Whse. Outstanding Qty.");
+            SalesLine.SetRange("Document No.", HeaderNo);
+            SalesLine.SETRANGE("Document Type", SalesLine."Document Type"::Order);
+            SalesLine.SETRANGE(Type, L_InterimSalesLine.Type);
+            SalesLine.SETRANGE("Sell-to Customer No.", L_InterimSalesLine."Sell-to Customer No.");
+            IF L_InterimSalesLine."Trade Partner Code" = 'B2B' THEN
+                SalesLine.SETRANGE("Shortcut Dimension 1 Code", GetDim(L_InterimSalesLine."Sell-to Customer No."));
+            /* ELSE
+               BEGIN
+                  IF L_Sales_H.GET(L_InterimSalesLine."Document Type",L_InterimSalesHeader."No.") THEN
+                   BEGIN
+                       SalesLine.SETRANGE("Shortcut Dimension 1 Code",L_Sales_H."Shortcut Dimension 1 Code");
+                   END;
+
+               //SalesLine.SETRANGE("Shortcut Dimension 1 Code",SalesHeader."Shortcut Dimension 1 Code");// L_InterimSalesLine."Trade Partner Code");
+               END;*/
+            SalesLine.SETFILTER("Whse. Outstanding Qty.", '%1', 0);
+            SalesLine.SETFILTER("Outstanding Quantity", '<>%1', 0);
+            //SalesLine.SETFILTER(Status,'%1',SalesLine.Status::);
+            /*IF L_InterimSalesHeader."Deal ID" <> '' THEN
+              SalesLine.SETFILTER("Campaign No.",L_InterimSalesHeader."Deal ID");*/
+            //SalesLine.SETRANGE("Order Created On",CREATEDATETIME(WORKDATE,000000T),CREATEDATETIME(WORKDATE,235900T));
+            IF SalesLine.FINDFIRST THEN BEGIN
+                IF WhseValidateSourceLine.WhseLinesExist(
+                   DATABASE::"Sales Line", SalesLine."Document Type".AsInteger(), SalesLine."Document No.",
+                   SalesLine."Line No.", 0, SalesLine.Quantity) THEN BEGIN
+                    HeaderNo := NewCreateSalesHeader(L_InterimSalesLine);
+                    LineNo := NewCreateSalesLine(HeaderNo, L_InterimSalesLine);
+                    UpdateSONo(L_InterimSalesLine, L_InterimSalesHeader);
+                END
+                ELSE BEGIN
+                    IF ItemLineExists(L_InterimSalesLine, SalesLine."Document No.", L_InterimSalesHeader) THEN
+                        UpdateSalesLine(SalesLine, L_InterimSalesLine, L_InterimSalesHeader)
+                    ELSE BEGIN
+                        HeaderNo := SalesLine."Document No.";
+                        LineNo := NewCreateSalesLine(SalesLine."Document No.", L_InterimSalesLine);
+                    END;
+                    UpdateSONo(L_InterimSalesLine, L_InterimSalesHeader);
+                END;
+            END
+            ELSE BEGIN
+                HeaderNo := NewCreateSalesHeader(L_InterimSalesLine);
+                LineNo := NewCreateSalesLine(HeaderNo, L_InterimSalesLine);
+                UpdateSONo(L_InterimSalesLine, L_InterimSalesHeader);
+            END;
+        END
+        ELSE BEGIN
+            IF L_InterimSalesLine.Type = L_InterimSalesLine.Type::"G/L Account" THEN BEGIN
+                IF HeaderNo <> '' THEN BEGIN
+                    SalesLine.RESET;
+                    SalesLine.SETRANGE("Document Type", SalesLine."Document Type"::Order);
+                    SalesLine.SETRANGE("Document No.", HeaderNo);
+                    SalesLine.SETRANGE(Type, SalesLine.Type::"G/L Account");
+                    SalesLine.SETRANGE("No.", L_InterimSalesLine."No.");
+                    SalesLine.SETRANGE("Unit Price", L_InterimSalesLine."Unit Price");
+                    IF SalesLine.FINDFIRST THEN BEGIN
+                        UpdateSalesLine(SalesLine, L_InterimSalesLine, L_InterimSalesHeader);
+                        UpdateSONo(L_InterimSalesLine, L_InterimSalesHeader);
+                    END
+                    ELSE BEGIN
+                        LineNo := NewCreateSalesLine(HeaderNo, L_InterimSalesLine);
+                        UpdateSONo(L_InterimSalesLine, L_InterimSalesHeader);
+                    END;
+                END;
+            END;
+        END;
+    end;
+
+    local procedure UpdateSalesLine(L_SalesLine: Record "Sales Line"; var L_InterimSalesLine: Record "Interim Sales Line"; var L_InterimSalesHeader: Record "Interim Sales Header")
+    var
+        RecSalesLine: Record "Sales Line";
+        OldQty: Decimal;
+    begin
+        //Start_NIKHIL_29/01/2019
+        RecSalesLine.RESET;
+        RecSalesLine.SETRANGE("Document Type", L_SalesLine."Document Type");
+        RecSalesLine.SETRANGE("Document No.", L_SalesLine."Document No.");
+        RecSalesLine.SETRANGE("No.", L_InterimSalesLine."No.");
+        RecSalesLine.SetRange("Variant Code", L_InterimSalesLine."NAV Variant code");
+        RecSalesLine.SETRANGE("Unit Price", L_InterimSalesLine."Unit Price");//Chandan++140519
+        IF RecSalesLine.FINDFIRST THEN BEGIN
+            CLEAR(OldQty);
+            OldQty := RecSalesLine.Quantity;
+            RecSalesLine.VALIDATE(Quantity, OldQty + L_InterimSalesLine.Quantity);
+            RecSalesLine.MODIFY;
+            HeaderNo := RecSalesLine."Document No.";
+            LineNo := RecSalesLine."Line No.";
+        END;
+        //END_NIKHIL_29/01/2019
+    end;
+
+    local procedure UpdateSONo(var L_InterimSalesLine: Record "Interim Sales Line"; var RecInterimSalesHeader: Record "Interim Sales Header")
+    begin
+        //Update Interim Line
+        L_InterimSalesLine."Destination Doc Type" := L_InterimSalesLine."Destination Doc Type"::"Sales Order";
+        L_InterimSalesLine."Destination Doc No." := HeaderNo;
+        L_InterimSalesLine."Destination Doc. Line No" := LineNo;
+        L_InterimSalesLine.MODIFY;
+
+        //Update Interim Header
+        RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::Processing);
+        RecInterimSalesHeader."Destination Doc Type" := RecInterimSalesHeader."Destination Doc Type"::"Sales Order";
+        RecInterimSalesHeader."Destination Doc No." := HeaderNo;
+        RecInterimSalesHeader.VALIDATE("Destination Doc No.", HeaderNo);
+        RecInterimSalesHeader.MODIFY;
+
+        //Insert Temp Header
+        InsertIntoTempHeader(HeaderNo);
+
+        //Update Shipment Tracking
+        //AmazonIntegration.UpdateSalesOrderNoInShippmentTrackingLine(L_InterimSalesLine);//NIKHIL_28/01/19Commented By pavan No need Amazon
+    end;
+
+    local procedure NewCreateSalesHeader(L_InterimSalesLine: Record "Interim Sales Line") SNo: Code[20]
+    var
+        L_SalesH: Record "Sales Header";
+        "S&R": Record "Sales & Receivables Setup";
+        Countryregion: Record "Country/Region";
+        Campaigns: Record Campaign;
+        NoSeriesManagement: Codeunit NoSeriesManagement;
+        Customer: Record Customer;
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        InterimSalesHeader: Record "Interim Sales Header";
+        TradePartner: Record "Trade Partner";
+    begin
+        "S&R".GET;
+        CLEAR(L_SalesH);
+        IF InterimSalesHeader.GET(L_InterimSalesLine."Document Type", L_InterimSalesLine."Document No") THEN;
+        L_SalesH.INIT;
+        L_SalesH.VALIDATE("Document Type", L_SalesH."Document Type"::Order);
+        L_SalesH."No." := NoSeriesManagement.GetNextNo("S&R"."Order Nos.", WORKDATE, TRUE);
+        L_SalesH.VALIDATE("No.");
+        L_SalesH.VALIDATE("Posting Date", WORKDATE);
+        L_SalesH.VALIDATE("Order Date", InterimSalesHeader."Document Date");
+        L_SalesH.VALIDATE("Document Date", InterimSalesHeader."Document Date");
+        L_SalesH.INSERT(TRUE);
+
+        //L_SalesH.VALIDATE("Order placed At",InterimSalesHeader."Order Placed At"); //commented by shailesh 040719
+        L_SalesH.VALIDATE("Sell-to Customer No.", InterimSalesHeader."Sell-to Customer No.");
+        L_SalesH.VALIDATE("External Document No.", InterimSalesHeader."Channel Order ID");//Block_Nikhil_30/01/19
+        IF InterimSalesHeader."Earliest Delivery date" <> 0D THEN BEGIN
+            IF InterimSalesHeader."Earliest Delivery date" < WORKDATE THEN
+                L_SalesH.VALIDATE("Shipment Date", WORKDATE)
+            ELSE
+                L_SalesH.VALIDATE("Promised Delivery Date", InterimSalesHeader."Earliest Delivery date");
+        END;
+        IF InterimSalesHeader."Earliest Ship Date" <> 0D THEN BEGIN
+            IF InterimSalesHeader."Earliest Ship Date" < WORKDATE THEN BEGIN
+                L_SalesH.VALIDATE("Shipment Date", WORKDATE);
+                //L_SalesH.VALIDATE("Pickup Date",WORKDATE);  //commented by shailesh 040719
+            END
+            ELSE BEGIN
+                L_SalesH.VALIDATE("Shipment Date", InterimSalesHeader."Earliest Ship Date");
+                //L_SalesH.VALIDATE("Pickup Date",InterimSalesHeader."Earliest Ship Date");  //commented by shailesh 040719
+            END;
+        END;
+
+        //L_SalesH.VALIDATE("Pickup Time",170000T); //commented by shailesh 040719
+        /*L_SalesH.VALIDATE("Delivery Status Request", 1);
+        /*L_SalesH."Ship-to Name"  := InterimSalesHeader."Ship-to Name";
+        L_SalesH."Ship-to Address" := InterimSalesHeader."Ship-to Address";
+        L_SalesH."Ship-to Address 2" := InterimSalesHeader."Ship-to Address 2";
+        L_SalesH."Ship-to City"  := InterimSalesHeader."Ship-to City";
+        L_SalesH."Ship-to Post Code" := InterimSalesHeader."Ship-to Post Code";
+        L_SalesH."Ship-to County" := InterimSalesHeader."Ship-to County";
+        L_SalesH."Ship-to Country/Region Code" := InterimSalesHeader."Ship-to Country";*///Block_Nikhil_30/01/19
+
+        //Added By Shubham 25052021
+        L_SalesH."Ship-to Name" := InterimSalesHeader."Ship-to Name";
+        L_SalesH."Ship-to Address" := InterimSalesHeader."Ship-to Address";
+        L_SalesH."Ship-to Address 2" := InterimSalesHeader."Ship-to Address 2";
+        L_SalesH."Ship-to City" := InterimSalesHeader."Ship-to City";
+        L_SalesH."Ship-to Post Code" := InterimSalesHeader."Ship-to Post Code";
+        L_SalesH."Ship-to County" := InterimSalesHeader."Ship-to County";
+        L_SalesH."Ship-to Country/Region Code" := InterimSalesHeader."Ship-to Country";
+        //Added By Shubham 25052021
+
+        /*Countryregion.RESET;
+        IF Countryregion.GET(InterimSalesHeader."Ship-to Country") THEN
+          L_SalesH."VAT Bus. Posting Group":=Countryregion."VAT. Bus. Posting Group";*/
+
+
+        /*L_SalesH."Bill-to Name 2":=InterimSalesHeader."Bill- to Name";
+        L_SalesH."Bill-to Address" := InterimSalesHeader.Address;
+        L_SalesH."Bill-to Address 2" := InterimSalesHeader."Address 2";
+        L_SalesH."Bill-to City"  := InterimSalesHeader.City;
+        L_SalesH."Bill-to Post Code" := InterimSalesHeader."Post Code";
+        L_SalesH."Bill-to County" := InterimSalesHeader."Bill-to County";
+        L_SalesH."Bill-to Country/Region Code" := InterimSalesHeader.Country;*/
+
+        IF Customer.GET(InterimSalesHeader."Sell-to Customer No.") THEN;
+        /*L_SalesH."Sell-to Customer Name" := Customer.Name;
+        L_SalesH."Sell-to Address" := InterimSalesHeader.Address;
+        L_SalesH."Sell-to Address 2" := InterimSalesHeader."Address 2";
+        L_SalesH."Sell-to City"  := InterimSalesHeader.City;
+        L_SalesH."Sell-to Post Code" := InterimSalesHeader."Post Code";
+        L_SalesH."Sell-to Country/Region Code" := InterimSalesHeader.Country;*///Block_Nikhil_30/01/19
+                                                                               //L_SalesH."Fullfillment Channel":=InterimSalesHeader."Fullfillment Channel"; //commented by shailesh 040719
+                                                                               //L_SalesH."Prime Order":=InterimSalesHeader."Prime Order"; //commented by shailesh 040719
+                                                                               //L_SalesH."Gift Message" :=InterimSalesHeader."Gift Message"; //commented by shailesh 040719
+                                                                               //L_SalesH."Web Shipment Method":=InterimSalesHeader."Web Shipment Method"; //commented by shailesh 040719
+                                                                               //L_SalesH."Web Shipping Agent":=InterimSalesHeader."Web Shipping Agent"; //commented by shailesh 040719
+                                                                               //L_SalesH."Ship-to Email" := InterimSalesHeader."Buyer Email"; //commented by shailesh 040719
+                                                                               //L_SalesH.VALIDATE("Ship-to Phone",InterimSalesHeader."Phone Number");//Block_Nikhil_30/01/19
+        L_SalesH.VALIDATE("Payment Method Code", GetPaymentMethodCode(InterimSalesHeader."Trade Partner Code", InterimSalesHeader."Channel Order ID", L_SalesH."No."));
+
+
+        IF InterimSalesHeader."Deal ID" <> '' THEN BEGIN
+            Campaigns.RESET;
+            Campaigns.SETRANGE("No.", InterimSalesHeader."Deal ID");
+            IF Campaigns.FINDFIRST THEN
+                L_SalesH.VALIDATE("Campaign No.", InterimSalesHeader."Deal ID")
+            ELSE
+                InsertErrorlog('Deal Id not found.', InterimSalesHeader);
+        END;
+        //L_SalesH."Shipment Day"  := FORMAT(L_SalesH."Shipment Date",0,'<Weekday Text>'); //commented by shailesh 040719
+        IF InterimSalesHeader."Trade Partner Code" = 'B2B' THEN
+            L_SalesH.VALIDATE("Shortcut Dimension 1 Code", GetDim(InterimSalesHeader."Sell-to Customer No."));
+
+
+        L_SalesH.VALIDATE("Ship-to Country/Region Code", InterimSalesHeader."Ship-to Country/Region Code");
+        L_SalesH."Shipping Agent Code" := InterimSalesHeader."Shipping Agent Code";
+        L_SalesH."Shipping Agent Service Code" := InterimSalesHeader."Shipping Agent Service Code";
+        L_SalesH."Shipment Method Code" := interimSalesHeader."Shipment Method Code";
+        //L_SalesH.INSERT(TRUE); //Ranjit 12082019 commented
+        L_SalesH.MODIFY;
+
+        EXIT(L_SalesH."No.");
+
+    end;
+
+    local procedure NewCreateSalesLine(HeaderNo: Code[20]; L_IntrimSalesLine: Record "Interim Sales Line"): Integer
+    var
+        L_SalesL: Record "Sales Line";
+        totalWeight: Decimal;
+        line: Integer;
+        ISL: Record "Interim Sales Line";
+        Qty: Decimal;
+        Amt: Decimal;
+        item: Record Item;
+        desc: Text;
+        desc2: Text;
+        ItemLineNo: Integer;
+        L_SalesH: Record "Sales Header";
+        InterimSalesHeader: Record "Interim Sales Header";
+    begin
+        CLEAR(line);
+        CLEAR(totalWeight);
+        CLEAR(Qty);
+        CLEAR(Amt);
+        CLEAR(ItemLineNo);
+        Qty := L_IntrimSalesLine.Quantity;
+        Amt := L_IntrimSalesLine.Amount;
+
+        CLEAR(L_SalesL);
+        L_SalesL.INIT;
+        L_SalesL.VALIDATE("Document Type", L_SalesL."Document Type"::Order);
+        L_SalesL.VALIDATE("Document No.", HeaderNo);
+        L_SalesL.VALIDATE("Line No.", GetLastLineNo(HeaderNo));
+        L_SalesL.VALIDATE(Type, L_IntrimSalesLine.Type);
+        L_SalesL.VALIDATE("No.", L_IntrimSalesLine."No.");
+        L_SalesL.VALIDATE("Unit of Measure Code", L_IntrimSalesLine."Unit of Measure Code");
+        L_SalesL.Validate("Variant Code", L_IntrimSalesLine."NAV Variant code");
+        item.RESET;
+        IF (L_IntrimSalesLine.Type = L_IntrimSalesLine.Type::Item) AND (item.GET(L_IntrimSalesLine."No.")) THEN BEGIN
+            totalWeight := item."Net Weight" * Qty;
+        END;
+
+
+        IF L_SalesL.Type <> L_SalesL.Type::" " THEN BEGIN
+            ItemLineNo := L_SalesL."Line No.";
+            L_SalesL.VALIDATE(Quantity, Qty);
+            L_SalesL.VALIDATE("Unit Price", L_IntrimSalesLine."Unit Price");
+            //L_SalesL.VALIDATE("Shortcut Dimension 1 Code",L_IntrimSalesLine."Trade Partner Code"); //Commented by Ranjit 16082019
+
+
+            // L_SalesL.VALIDATE(Amount,Amt);
+            //  L_SalesL.VALIDATE("Amount Including VAT",L_IntrimSalesLine."Amount Including VAT");
+        END;
+
+        IF (L_IntrimSalesLine.Discount > 0) THEN BEGIN
+            L_SalesL.VALIDATE("Line Discount Amount", L_IntrimSalesLine.Discount);
+        END;
+
+        L_SalesL.INSERT(TRUE);
+        // IF L_SalesL.Type=L_SalesL.Type::Item THEN  //Chandan
+        //     L_SalesL.AutoReserveFromActiveOffer(L_SalesL);
+
+        //  IF L_SalesL.Type <> L_SalesL.Type::" " THEN BEGIN
+        //    L_ChargeSetup.RESET;
+        //    L_ChargeSetup.SETRANGE(L_ChargeSetup."Column/Row Indentifier",L_IntrimSalesLine."Rebate Type");
+        //    IF L_ChargeSetup.FINDFIRST THEN;
+        //    CASE L_ChargeSetup."Apply Discount by" OF
+        //     L_ChargeSetup."Apply Discount by"::"Fixed Value":
+        //        L_SalesL.VALIDATE("Line Discount Amount",L_ChargeSetup."Discount value");
+        //     L_ChargeSetup."Apply Discount by"::Percentage:
+        //        L_SalesL.VALIDATE("Line Discount %",L_ChargeSetup."Discount value");
+        //    END;
+        //
+        //  END;
+
+        IF L_SalesH.GET(L_SalesL."Document Type", L_SalesL."Document No.") THEN BEGIN
+            L_SalesL.VALIDATE("Location Code", L_SalesH."Location Code");
+            L_SalesL.VALIDATE("Shortcut Dimension 1 Code", L_SalesH."Shortcut Dimension 1 Code"); //Ranjit 16082019
+            L_SalesL.MODIFY(TRUE);
+        END;
+
+        EXIT(L_SalesL."Line No.");
+
+    end;
+
+    local procedure InsertIntoTempHeader(DocNo: Code[20])
+    begin
+        TempSalesHeader.RESET;
+        TempSalesHeader.SETRANGE("Document Type", TempSalesHeader."Document Type"::Order);
+        TempSalesHeader.SETRANGE("No.", DocNo);
+        IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
+            TempSalesHeader.INIT;
+            TempSalesHeader."Document Type" := TempSalesHeader."Document Type"::Order;
+            TempSalesHeader."No." := DocNo;
+            TempSalesHeader.INSERT;
+        END;
+    end;
+
+    local procedure ItemLineExists(L_InterimSalesLine: Record "Interim Sales Line"; OrderNo: Text; L_InterimSalesHeader: Record "Interim Sales Header"): Boolean
+    var
+        L_SalesLine: Record "Sales Line";
+    begin
+        L_SalesLine.RESET;
+        L_SalesLine.SETRANGE("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SETRANGE("Document No.", OrderNo);
+        L_SalesLine.SETRANGE(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", L_InterimSalesLine."No.");
+        L_SalesLine.SetRange("Variant Code", L_InterimSalesLine."NAV Variant code");
+        L_SalesLine.SETRANGE("Unit Price", L_InterimSalesLine."Unit Price");//Chandan++120519
+        /*IF L_InterimSalesHeader."Deal ID" <> '' THEN
+              SalesLine.SETFILTER("Campaign No.",L_InterimSalesHeader."Deal ID");*/
+
+        IF L_SalesLine.FINDSET THEN
+            EXIT(TRUE);
+
+    end;
+
+    local procedure GetPaymentMethodCode(ChannelCode: Code[20]; ChannelOrderId: Code[50]; SalesOrderID: Code[20]): Code[20]
+    var
+        ChannelMedia: Record "Channel Media";
+    begin
+        // ChannelMedia.RESET;
+        // ChannelMedia.SETRANGE("Channel Code",ChannelCode);
+        // ChannelMedia.SETRANGE("Channel Order ID",ChannelOrderId);
+        // IF ChannelMedia.FINDSET THEN BEGIN
+        //  PaymentMethodRules.RESET;
+        //  PaymentMethodRules.SETRANGE("Channel Code",ChannelMedia."Channel Code");
+        //  PaymentMethodRules.SETRANGE("Web Payment Code",ChannelMedia."Payment Method");
+        //  IF PaymentMethodRules.FINDSET THEN BEGIN
+        //    ChannelMedia.VALIDATE(Status,ChannelMedia.Status::Created);
+        //    ChannelMedia.VALIDATE("Nav Order No.",SalesOrderID);
+        //    ChannelMedia.MODIFY;
+        //    EXIT(PaymentMethodRules."Nav Payment Code");
+        //  END;
+        // END;
+    end;
+
+    procedure InsertErrorlog(P_Text: Text[250]; var InterimSalesHeader: Record "Interim Sales Header")
+    var
+        L_PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_LineNo: Integer;
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+    begin
+        L_PartnerErrorLog.RESET;
+        IF L_PartnerErrorLog.FINDLAST THEN
+            L_LineNo := L_PartnerErrorLog."Line No." + 10000
+        ELSE
+            L_LineNo := 10000;
+
+        PartnerErrorLog.INIT;
+        PartnerErrorLog."Document No." := InterimSalesHeader."No.";
+        PartnerErrorLog.Date := WORKDATE;
+        PartnerErrorLog."Line No." := L_LineNo;
+
+        PartnerErrorLog."Error Text" := P_Text;
+        PartnerErrorLog.INSERT;
+        InterimSalesHeader.MODIFY;
+    end;
+
+    local procedure GetLastLineNo(HeaderNo: Code[20]): Integer
+    var
+        L_SalesLine: Record "Sales Line";
+    begin
+        L_SalesLine.RESET;
+        L_SalesLine.SETRANGE("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SETRANGE("Document No.", HeaderNo);
+        IF L_SalesLine.FINDLAST THEN
+            EXIT(L_SalesLine."Line No." + 10000)
+        ELSE
+            EXIT(10000);
+    end;
+
+    local procedure GetDim(P_Cust: Code[20]): Code[20]
+    var
+        DefaultDim: Record "Default Dimension";
+    begin
+        IF CustRec.GET(P_Cust) THEN BEGIN
+            IF ResCen.GET(CustRec."Responsibility Center") THEN BEGIN
+                DefaultDim.RESET;
+                DefaultDim.SETRANGE("Dimension Code", 'SALES CHANNEL');
+                DefaultDim.SETRANGE("No.", ResCen.Code);
+                DefaultDim.SETRANGE("Table ID", 5714);
+                IF DefaultDim.FINDFIRST THEN
+                    EXIT(DefaultDim."Dimension Value Code");
+            END;
+        END;
+    end;
+
+    local procedure CreateSingleOrder(var Rec: Record "Interim Sales Header")
+    var
+        ChanCode: Code[20];
+        ItemNo: Code[20];
+        CustomerNo: Code[20];
+        ISL: Record "Interim Sales Line";
+        InterimSalesHeader: Record "Interim Sales Header";
+        InterimSalesHeader1: Record "Interim Sales Header";
+        Customer: Record "Customer";
+        ShipmentTracking: Record "Shipment Tracking";
+    begin
+        CLEAR(HeaderNo);
+        ISL.RESET;
+        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+        ISL.SETRANGE("Document No", Rec."No.");
+        IF ISL.FINDSET THEN BEGIN
+            HeaderNo := NewCreateSalesHeader(ISL);
+            REPEAT
+                CLEAR(LineNo);
+                LineNo := NewCreateSalesLine(HeaderNo, ISL);
+                UpdateSONo(ISL, Rec);
+            UNTIL ISL.NEXT = 0;
+            Message('Web Order Processed Successfully'); //Sofyan
+            FirstOrder := FALSE;
+        END;
+    end;
+
+    local procedure CreateConsolidateOrder(var Rec: Record "Interim Sales Header")
+    var
+        ChanCode: Code[20];
+        ItemNo: Code[20];
+        CustomerNo: Code[20];
+        ISL: Record "Interim Sales Line";
+        InterimSalesHeader: Record "Interim Sales Header";
+        InterimSalesHeader1: Record "Interim Sales Header";
+        Customer: Record "Customer";
+        ShipmentTracking: Record "Shipment Tracking";
+    begin
+        IF FirstOrder = FALSE THEN BEGIN
+            //CLEAR(HeaderNo);
+            ISL.RESET;
+            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+            ISL.SETRANGE("Document No", Rec."No.");
+            IF ISL.FINDSET THEN
+                REPEAT
+                    CLEAR(LineNo);
+                    CheckSOExists(ISL, Rec);
+                UNTIL ISL.NEXT = 0;
+        END
+        ELSE BEGIN
+            CLEAR(HeaderNo);
+            ISL.RESET;
+            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+            ISL.SETRANGE("Document No", Rec."No.");
+            IF ISL.FINDSET THEN BEGIN
+                HeaderNo := NewCreateSalesHeader(ISL);
+                REPEAT
+                    CLEAR(LineNo);
+                    LineNo := NewCreateSalesLine(HeaderNo, ISL);
+                    UpdateSONo(ISL, Rec);
+                UNTIL ISL.NEXT = 0;
+                Message('Web Order Processed Successfully'); //Sofyan
+                FirstOrder := FALSE;
+            END;
+        END;
+    end;
+
+    local procedure CreateInternalPick(var Rec: Record "Interim Sales Header")
+    var
+        ItemNo: Code[20];
+        CustomerNo: Code[20];
+        ISL: Record "Interim Sales Line";
+        InterimSalesHeader: Record "Interim Sales Header";
+        Customer: Record Customer;
+        ShipmentTracking: Record "Shipment Tracking";
+        ChanCode: Code[20];
+        InterimSalesHeader1: Record "Interim Sales Header";
+        NoofItemsFilter: Text;
+        OchannelSetup: Record "General Setup - Channels";//Sofyan
+        L_qty: Decimal;
+        L_qty2: Decimal;
+        finalQty: Decimal;
+        L_InterimSalesLine: Record "Interim Sales Line";
+        LineNo2: Integer;
+        L_Count: Integer;
+        L_wIPH: Record "Whse. Internal Pick Header";
+        TotalOrderQty: Decimal;
+        FinalOrderQty: Decimal;
+        ReturnBayNo: Code[20];
+    begin
+        Clear(L_Count);
+        Clear(ReturnBayNo);
+        IF FirstOrder = FALSE THEN BEGIN
+            Clear(L_qty);
+            Clear(L_qty2);
+            Clear(finalQty);
+            Clear(LineNo2);
+            OchannelSetup.Get();
+            L_qty2 := CheckOrderQty(Rec);
+            L_qty := ReturnRestrictedQty(HeaderNo);
+            if L_wIPH.Get(HeaderNo) then;
+            if OchannelSetup."Quantity Restriction" <> 0 then begin
+                if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Single Line Orders" then
+                    finalQty := L_qty
+                else
+                    finalQty := L_qty2 + L_qty;
+
+                if finalQty >= OchannelSetup."Quantity Restriction" then begin
+                    L_InterimSalesLine.Reset();
+                    L_InterimSalesLine.RESET;
+                    L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
+                    L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
+                    L_InterimSalesLine.SETFILTER("Item Type", '<>%1', L_InterimSalesLine."Item Type"::Assembly);
+                    L_InterimSalesLine.SETRANGE("Destination Doc No.", '');
+                    L_InterimSalesLine.SetFilter("Line No.", '<>%1', LineNo2);
+                    IF L_InterimSalesLine.FINDSET THEN BEGIN
+                        NoofItemsFilter := Rec.GetFilter("No. of Items");
+                        NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
+                        IF NoofItemsFilter = '1' then
+                            HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
+                        Else begin
+                            HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
+                            Clear(TotalOrderQty);
+                            if G_TotalQty > 0 then
+                                TotalOrderQty := G_TotalQty / 2;
+                            Clear(FinalOrderQty);
+                            if TotalOrderQty > 0 then
+                                FinalOrderQty := Round(TotalOrderQty, 1, '>');
+                            if FinalOrderQty > 0 then begin
+                                repeat
+                                    G_BayNo := IncStr('0000');
+                                    FinalOrderQty := FinalOrderQty - 1;
+                                until FinalOrderQty = 0;
+                            end;
+                        end;
+
+
+                        LineNo2 := L_InterimSalesLine."Line No.";
+
+                        REPEAT
+                            CLEAR(LineNo);
+                            LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+
+                            IF NoofItemsFilter <> '1' then
+                                UpdateBayNoInWIP(HeaderNo, L_InterimSalesLine, LineNo, G_BayNo);
+                            UpdateOrderNo(L_InterimSalesLine, Rec);
+                        UNTIL L_InterimSalesLine.NEXT = 0;
+                    end;
+                end
+                else begin
+                    IF NoofItemsFilter <> '1' then begin
+                        ReturnBayNo := checkPreviousBayNo(HeaderNo, G_BayNo);
+                        G_BayNo := ReturnBayNo;
+                    end;
+                    ISL.RESET;
+                    ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                    ISL.SETRANGE("Document No", Rec."No.");
+                    ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                    ISL.SETRANGE("Destination Doc No.", '');
+                    IF ISL.FINDSET THEN
+                        REPEAT
+                            CheckOrderExists(ISL, Rec, HeaderNo);
+
+                            IF NoofItemsFilter <> '1' then
+                                UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+
+                        UNTIL ISL.NEXT = 0;
+                end;
+            end else begin
+                ISL.RESET;
+                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                ISL.SETRANGE("Document No", Rec."No.");
+                ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                ISL.SETRANGE("Destination Doc No.", '');
+                IF ISL.FINDSET THEN
+                    REPEAT
+                        CheckOrderExists(ISL, Rec, HeaderNo);
+                        IF NoofItemsFilter <> '1' then
+                            UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+                    UNTIL ISL.NEXT = 0;
+            end;
+        END
+        ELSE BEGIN
+            CLEAR(HeaderNo);
+            ISL.RESET;
+            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+            ISL.SETRANGE("Document No", Rec."No.");
+            ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+            ISL.SETRANGE(Type, ISL.Type::Item);
+            ISL.SETRANGE("Destination Doc No.", '');
+            IF ISL.FINDSET THEN BEGIN
+                NoofItemsFilter := rec.GetFilter("No. of Items");
+                NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');//DelStr(NoofItemsFilter);
+                IF NoofItemsFilter = '1' then
+                    HeaderNo := CreatePickHeader(ISL, 1)
+                Else begin
+                    HeaderNo := CreatePickHeader(ISL, 2);
+                    Clear(TotalOrderQty);
+                    if G_TotalQty > 0 then
+                        TotalOrderQty := G_TotalQty / 2;
+                    Clear(FinalOrderQty);
+                    if TotalOrderQty > 0 then
+                        FinalOrderQty := Round(TotalOrderQty, 1, '>');
+                    if FinalOrderQty > 0 then begin
+                        repeat
+                            G_BayNo := IncStr('0000');
+                            FinalOrderQty := FinalOrderQty - 1;
+                        until FinalOrderQty = 0;
+                    end;
+                end;
+
+                REPEAT
+                    L_Count += 1;
+                    CLEAR(LineNo);
+                    LineNo := CreatePickLines(HeaderNo, ISL);
+                    IF NoofItemsFilter <> '1' then
+                        UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+                    UpdateOrderNo(ISL, Rec);
+                UNTIL ISL.NEXT = 0;
+                Message('Web Order Processed Successfully'); //Sofyan
+                FirstOrder := FALSE;
+            END;
+        END;
+    end;
+
+    local procedure MovedToHandled(P_Rec: Record "Interim Sales Header"; skipfilter: boolean)
+    var
+        R80020: Report "Move Scanned Order to Handled";
+        ISH: Record "Interim Sales Header";
+    begin
+        ISH.Reset;
+        ISH.SetRange("Document Type", P_Rec."Document Type");
+        ISH.SetRange("No.", P_Rec."No.");
+        If ISH.FindFirst() then begin
+            CLEAR(R80020);
+            R80020.SETTABLEVIEW(ISH);
+            R80020.USEREQUESTPAGE(FALSE);
+            R80020.SetWebOrder(ISH, ISH."Trade Partner Code");
+            //R80020.Setskipfilter(skipfilter);
+            R80020.RunModal();
+        end;
+    end;
+
+    procedure SetParamters(FirstOrderFlag: Boolean; VarCalllType: Option "Internal Pick","Single Order","Consolidate Order")
+    begin
+        FirstOrder := FirstOrderFlag;
+        CalllType := VarCalllType;
+
+    end;
+
+    //Display SO No.++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine', '', false, false)]
+    procedure OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine(_WhseActLineTake: Record "Warehouse Activity Line"; var _BaseOrderLineElement: Record "MOB Ns BaseDataModel Element")
+    var
+        L_WareActLine: Record "Warehouse Activity Line";
+    begin
+        //   with _BaseOrderLineElement do begin
+
+        L_WareActLine.Reset();
+        L_WareActLine.SetRange("Activity Type", L_WareActLine."Activity Type"::Pick);
+        L_WareActLine.SetRange("No.", _WhseActLineTake."No.");
+        L_WareActLine.SetRange("Line No.", _WhseActLineTake."Line No.");
+        if L_WareActLine.FindFirst() then begin
+            if L_WareActLine."Source Document" = L_WareActLine."Source Document"::" " then
+                _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Channel Order ID"))
+            else
+                if L_WareActLine."Source Document" = L_WareActLine."Source Document"::"Sales Order" then
+                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Source No."))
+        end;
+
+    end;
+    //Display SO No. --
+
+    procedure "OndeleteW/HPick"(var WSH: Record 7333)
+    var
+        WSL: Record 7334;
+        WSL2: Record 7334;
+        ISL: Record "Interim Sales Header";
+        ISH: Record "Interim Sales Line";
+    begin
+        WSL.RESET;
+        WSL.SETRANGE("No.", WSH."No.");
+        //WSL.SETRANGE("Dispatch Status",WSL."Dispatch Status"::Partial);
+        //WSL.SETFILTER("Qty. Outstanding (Base)",'>%1',0);
+        //WSL.SETFILTER("Scanned Qty",'>%1',0);
+        IF WSL.FINDSET THEN BEGIN
+            // IF CONFIRM('There are related web orders which are not dispatched, \ Do you want to deallocate it?',TRUE) THEN
+            //  BEGIN
+            WSL2.RESET;
+            WSL2.SETRANGE("No.", WSH."No.");
+            IF WSL2.FINDSET THEN
+                REPEAT
+                    OnInternalPickLineDelete(WSL2);
+                /*ISL.RESET;
+                ISL.CALCFIELDS(Status);
+                ISL.SETRANGE("Document Type",ISL."Document Type"::Order);
+                ISL.SETRANGE("Destination Doc No.",WSL2."No.");
+                ISL.SETRANGE("Sales Order Line No",WSL2."Line No.");
+                ISL.SETFILTER(Status,'<>%1',ISL.Status::Dispatched);
+                ISL.SETFILTER("Scanned Date",'%1',0DT);
+                NoOfRecs:=ISL.COUNT;
+                IF ISL.FINDSET THEN
+                  UnAllocateWebOrderOnDelete(ISL);*/
+                UNTIL WSL2.NEXT = 0;
+            //  END;
+        END
+
+    end;
+
+    procedure OnInternalPickLineDelete(var P_WIPL: Record 7334)
+    var
+        ISL: Record "Interim Sales Line";
+    begin
+        ISL.RESET;
+        ISL.CALCFIELDS(Status);
+        ISL.SETRANGE("Document Type", ISL."Document Type"::Order);
+        ISL.SETRANGE("Destination Doc No.", P_WIPL."No.");
+        //  ISL.SETRANGE("Sales Order Line No", P_WIPL."Line No.");//Khan++
+        ISL.SETFILTER(Status, '<>%1&<>%2', ISL.Status::Dispatched, ISL.Status::"Ready To Dispatch");
+        //   ISL.SETFILTER("Scanned Date", '%1', 0DT);//khan++
+        //NoOfRecs:=ISL.COUNT;
+        IF ISL.FINDSET THEN BEGIN
+
+            UnAllocateWebOrderOnDeleteNew(ISL, FALSE)
+
+
+        END;
+    end;
+
+    procedure UnAllocateWebOrderOnDeleteNew(var RecInterimSalesLine: Record "Interim Sales Line"; NeedWIPValidation: Boolean)
+    var
+        RecSalesLine: Record 37;
+        ReleaseSalesDocument: Codeunit 414;
+        RecSalesHeader: Record 36;
+        L_SalesLine: Record 37;
+        RecInterimSalesHeader: Record "Interim Sales Header";
+        WSHList: Page 7339;
+        filterText: Text;
+        L_WIPL: Record 7334;
+        RecInterimSalesL: Record "Interim Sales Line";
+    begin
+        //IF RecSalesHeader.GET(RecSalesHeader."Document Type"::Order,RecInterimSalesLine."Sales Order No.") THEN
+        //BEGIN
+        //Repoen Sales order
+        IF RecInterimSalesLine.FINDSET THEN
+            REPEAT
+                IF NeedWIPValidation THEN BEGIN
+                    L_WIPL.RESET;
+                    L_WIPL.SETRANGE("No.", RecInterimSalesLine."Destination Doc No.");
+                    L_WIPL.SETRANGE("Item No.", RecInterimSalesLine."No.");
+                    IF L_WIPL.FINDFIRST THEN
+                        ERROR(STRSUBSTNO('You can not remove internal pick %1 from web order %2 because internal pick is exist in system.', L_WIPL."No.", RecInterimSalesLine."Document No"));
+
+                    IF RecInterimSalesLine."Trolley No." <> '' THEN
+                        CheckTrolleyIsClosed(RecInterimSalesLine);
+                END;
+                CLEAR(RecInterimSalesLine."Sales Order Line No");
+                //  CLEAR(RecInterimSalesLine."Sales Order No.");
+                CLEAR(RecInterimSalesLine."Destination Doc No.");
+                CLEAR(RecInterimSalesLine."Destination Doc Type");
+                // CLEAR(RecInterimSalesLine."SO Created");
+                CLEAR(RecInterimSalesLine."Trolley No.");//Chandan++220720
+                                                         //RecInterimSalesLine.Status:=RecInterimSalesLine.Status::"In Progress";blocked by alok as this field is flow field
+                RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
+                RecInterimSalesLine."Destination Doc No." := '';//Khan++
+                RecInterimSalesLine.Reserved := FALSE;
+                // RecInterimSalesLine."Ready To Go":=FALSE;
+                RecInterimSalesLine.MODIFY;
+                //WSHList.AddToFilterText2(filterText, '|', '', RecInterimSalesLine."Document No");code blocked by alok
+                if RecInterimSalesHeader.Get(RecInterimSalesLine."Document Type", RecInterimSalesLine."Document No") then
+                    RecInterimSalesHeader.Mark(true);
+            UNTIL RecInterimSalesLine.NEXT = 0;
+
+
+        /*RecInterimSalesHeader.RESET; code blocked by alok
+        RecInterimSalesHeader.SETRANGE("Document Type", RecInterimSalesLine."Document Type");
+        RecInterimSalesHeader.SETFILTER("No.", filterText);*/
+        RecInterimSalesHeader.MarkedOnly(true);
+        IF RecInterimSalesHeader.FINDSET THEN
+            REPEAT
+                IF NOT CheckIfLineExistsWithDocNo(RecInterimSalesHeader) THEN BEGIN
+                    // CLEAR(RecInterimSalesHeader."Sales Order No.");
+                    CLEAR(RecInterimSalesHeader."Destination Doc No.");
+                    CLEAR(RecInterimSalesHeader."Destination Doc Type");
+                    //IF RecInterimSalesHeader.Status<>RecInterimSalesHeader.Status::"No Stock" THEN //blokced by ak 11/12/20 and new code added below
+                    IF NOT (RecInterimSalesHeader.Status IN [RecInterimSalesHeader.Status::"No Stock", RecInterimSalesHeader.Status::Cancelled]) THEN
+                        RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
+                    RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
+                    RecInterimSalesLine."Destination Doc No." := '';
+                    RecInterimSalesHeader.ReservedFlag := FALSE;
+                    RecInterimSalesHeader."Order Ack. Exported" := false;//Sofyan++
+                    RecInterimSalesHeader.MODIFY;
+                END;
+            UNTIL RecInterimSalesHeader.NEXT = 0;
+        //END;
+    end;
+
+    local procedure CheckIfLineExistsWithDocNo(P_InterimSalesHeader: Record "Interim Sales Header"): Boolean
+    var
+        L_InterimSalesLine: Record "Interim Sales Line";
+    begin
+        L_InterimSalesLine.RESET;
+        L_InterimSalesLine.SETRANGE("Document Type", P_InterimSalesHeader."Document Type");
+        L_InterimSalesLine.SETRANGE("Document No", P_InterimSalesHeader."No.");
+        L_InterimSalesLine.SETFILTER("Destination Doc No.", '%1', P_InterimSalesHeader."Destination Doc No.");
+        L_InterimSalesLine.SETRANGE("Dispatch Scan", FALSE);//ak 081220
+        L_InterimSalesLine.SETRANGE("Scanned Date", 0DT);//'ak 081220
+        IF L_InterimSalesLine.FINDSET THEN
+            EXIT(TRUE);
+    end;
+
+    local procedure CheckTrolleyIsClosed(P_InterimSalesLine: Record "Interim Sales Line")
+    var
+        RegisteredWhseActivityHdr: Record 5772;
+        RegisteredWhseActivityLine: Record 5773;
+    begin
+        RegisteredWhseActivityLine.RESET;
+        RegisteredWhseActivityLine.SETRANGE("Activity Type", RegisteredWhseActivityLine."Activity Type"::Pick);
+        RegisteredWhseActivityLine.SETRANGE("Source Type", 7334);
+        RegisteredWhseActivityLine.SETRANGE("Source No.", P_InterimSalesLine."Destination Doc No.");
+        RegisteredWhseActivityLine.SETRANGE("Item No.", P_InterimSalesLine."No.");
+        RegisteredWhseActivityLine.SETRANGE("Trolley No.", P_InterimSalesLine."Trolley No.");
+        IF RegisteredWhseActivityLine.FINDFIRST THEN BEGIN
+            RegisteredWhseActivityHdr.RESET;
+            RegisteredWhseActivityHdr.SETRANGE(Type, RegisteredWhseActivityHdr.Type::Pick);
+            RegisteredWhseActivityHdr.SETRANGE("No.", RegisteredWhseActivityLine."No.");
+            IF RegisteredWhseActivityHdr.FINDFIRST THEN
+                IF NOT RegisteredWhseActivityHdr."Trolley Closed" THEN
+                    ERROR(STRSUBSTNO('You can not remove internal pick %1 from web order %2 because open trolley exists in system for Registered Pick %3.', P_InterimSalesLine."Destination Doc No.", P_InterimSalesLine."Document No", RegisteredWhseActivityHdr."No."))
+
+
+        END;
+    end;
+
+    procedure ShowWebOrderLines(WhseInternalPickHeader: Record "Whse. Internal Pick Header"; WhseInternalPickLine: Record "Whse. Internal Pick Line"; CalledFromLine: Boolean)
+    var
+        InterimSalesLine: record "Interim Sales Line";
+    begin
+        InterimSalesLine.RESET;
+        InterimSalesLine.SETRANGE("Destination Doc Type", InterimSalesLine."Destination Doc Type"::"Internal Pick");
+        InterimSalesLine.SETRANGE("Destination Doc No.", WhseInternalPickHeader."No.");
+        IF CalledFromLine THEN
+            InterimSalesLine.SETRANGE(InterimSalesLine."Destination Doc. Line No", WhseInternalPickLine."Line No.");
+        IF InterimSalesLine.FINDSET THEN BEGIN
+            PAGE.RUN(90018, InterimSalesLine);
+        END;
+    end;
+
+    //RegisterPick
+    /*  [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnBeforeCode', '', true, true)]
+      local procedure OnBeforeCode(var WarehouseActivityLine: Record "Warehouse Activity Line")
+      var
+          ISH: Record "Interim Sales Header";
+          ISL: Record "Interim Sales Line";
+          WAL: Record "Warehouse Activity Line";
+      begin
+          WAL.Reset();
+          WAL.SetRange("No.", WarehouseActivityLine."No.");
+          WAL.SetRange("Activity Type", WAL."Activity Type"::Pick);
+          if WAL.FindSet() then begin
+              repeat
+                  ISL.Reset();
+                  ISL.SetRange("Document Type", ISL."Document Type"::Order);
+                  ISL.SetRange("Destination Doc Type", ISL."Destination Doc Type"::"Internal Pick");
+                  ISL.SetRange("Destination Doc No.", WAL."Source No.");
+                  ISL.SetRange("Channel Order ID", WAL."Channel Order ID");
+                  if ISL.FindFirst() then begin
+                      ISL."Picking Status" := ISL."Picking Status"::Picked;
+                      ISL.Modify(true);
+                  end;
+                  ISH.Reset();
+                  ISH.SetRange("Document Type", ISH."Document Type"::Order);
+                  ISH.SetRange("Destination Doc Type", ISH."Destination Doc Type"::"Internal Pick");
+                  ISH.SetRange("Destination Doc No.", WAL."Source No.");
+                  ISH.SetRange("Channel Order ID", WAL."Channel Order ID");
+                  if ISH.FindFirst() then begin
+                      ISH.status := ISH.status::Picked;
+                      ISH.Modify(true);
+                  end;
+              until WAL.Next() = 0;
+          end;
+      end;*/
+
+    procedure TrolleyNoValidations(P_TrolleyNo: Text; InternalPickNo: Code[20])
+    var
+        L_ISL: Record "Interim Sales Line";
+    begin
+        //Chandan++190720
+        L_ISL.RESET;
+        L_ISL.SETRANGE("Destination Doc Type", L_ISL."Destination Doc Type"::"Internal Pick");
+        L_ISL.SETRANGE("Destination Doc No.", InternalPickNo);
+        L_ISL.SETRANGE("Dispatch Scan", FALSE);
+        L_ISL.SETRANGE("Scanned Date", 0DT);
+        L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
+        L_ISL.SETFILTER("Trolley No.", '<>%1', '');
+        IF L_ISL.FINDSET THEN
+            ERROR('You can not create Pick.\There is an open Trolley %1 assoiciated with this Whse. Internal Pick %2 ', L_ISL."Trolley No.", L_ISL."Destination Doc No.");
+        //Chandan--190720
+
+        L_ISL.RESET;
+        L_ISL.SETRANGE("Trolley No.", P_TrolleyNo);
+        L_ISL.SETRANGE("Dispatch Scan", FALSE);
+        L_ISL.SETRANGE("Scanned Date", 0DT);
+        L_ISL.CALCFIELDS(Status);
+        L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
+        IF L_ISL.FINDSET THEN
+            ERROR('This Trolley no is assoiciated with open web order from Whse. Internal Pick %1 ', L_ISL."Destination Doc No.");
+
+    end;
+
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnAfterCreateWhseDocLine', '', true, true)]
+    local procedure OnAfterCreateWhseDocLine(var WarehouseActivityLine: Record "Warehouse Activity Line")
+    var
+        WAL: Record "Warehouse Activity Line";
+        WIPH: Record "Whse. Internal Pick Header";
+        WAH: Record "Warehouse Activity Header";
+        ISH: Record "Interim Sales Header";
+        ISL: Record "Interim Sales Line";
+        L_InitValue: Code[20];
+        WIPL: Record "Whse. Internal Pick Line";
+        OrderNo: Code[20];
+        OrderCount: Integer;
+        L_Integer: Record Integer;
+        WAL2: Record "Warehouse Activity Line";
+        WIPL2: Record "Whse. Internal Pick Line";
+    begin
+        WAL.Reset();
+        WAL.SetRange("Activity Type", WarehouseActivityLine."Activity Type");
+        WAL.SetRange("No.", WarehouseActivityLine."No.");
+        if WAL.FindSet() then begin
+            repeat
+                WIPH.Reset();
+                WIPH.SetRange("No.", WAL."Source No.");
+                if WIPH.FindFirst() then begin
+                    WAL.Validate("Trolley No.", WIPH."Trolley No.");
+                    WAL.Modify();
+                end;
+            until WAL.Next() = 0;
+            WAH.Reset();
+            WAH.SetRange("No.", WAL."No.");
+            WAH.SetRange(Type, WAH.Type::Pick);
+            if WAH.FindFirst() then begin
+                WAH.Validate("Trolley No.", WAL."Trolley No.");
+                WAH.Modify();
+            end;
+            ISH.Reset();
+            ISH.SetRange("Document Type", ISH."Document Type"::Order);
+            ISH.SetRange("Destination Doc Type", ISH."Destination Doc Type"::"Internal Pick");
+            ISH.SetRange("Destination Doc No.", WAL."Source No.");
+            if ISH.FindSet() then begin
+                repeat
+                    ISH.Validate("Trolley No.", WAL."Trolley No.");
+                    ISH.Modify();
+                    ISL.Reset();
+                    ISL.SetRange("Document Type", ISH."Document Type");
+                    ISL.SetRange("Document No", ISH."No.");
+                    if ISL.FindSet() then begin
+                        repeat
+                            ISL.Validate("Trolley No.", ISH."Trolley No.");
+                            ISL.Modify();
+                        until ISL.Next() = 0;
+                    end;
+                until ISH.Next() = 0;
+            end;
+        end;
+    end;
+    //FlowBayNoToPick++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnAfterCreateWhseDocument', '', true, true)]
+    local procedure OnAfterCreateWhseDocument(var FirstWhseDocNo: Code[20]; var LastWhseDocNo: Code[20])
+    var
+        WAL: Record "Warehouse Activity Line";
+        WIPL: Record "Whse. Internal Pick Line";
+    begin
+        WAL.Reset();
+        WAL.SetRange("Activity Type", WAL."Activity Type"::Pick);
+        WAL.SetRange("No.", FirstWhseDocNo);
+        if WAL.FindSet() then begin
+            repeat
+                WIPL.Reset();
+                WIPL.SetRange("No.", WAL."Source No.");
+                WIPL.SetRange("Line No.", WAL."Source Line No.");
+                if WIPL.FindFirst() then begin
+                    WAL.Validate("Channel Order ID", WIPL."Channel Order ID");
+                    WAL.Validate("Bay No.", WIPL."Bay No.");
+                    WAL.Modify();
+                end;
+            until WAL.Next = 0;
+        end;
+    end;
+    //FlowBayNoToPick--
+    /* [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnAfterCreateWhseDocument', '', true, true)]
+     local procedure OnAfterCreateWhseDocument(var FirstWhseDocNo: Code[20]; var LastWhseDocNo: Code[20])
+     var
+         WIPL: Record "Whse. Internal Pick Line";
+         OrderNo: Code[20];
+         OrderCount: Integer;
+         L_Integer: Record Integer;
+         WAL2: Record "Warehouse Activity Line";
+         WIPL2: Record "Whse. Internal Pick Line";
+         WIPH: Record "Whse. Internal Pick Header";
+         ISH: Record "Interim Sales Header";
+         ISL: Record "Interim Sales Line";
+         WAL: Record "Warehouse Activity Line";
+         L_InitValue: Code[20];
+         WAL3: Record "Warehouse Activity Line";
+         L_ChannelOrderID: Code[20];
+     begin
+         //BayNo++
+         WAL3.Reset();
+         WAL3.SetRange("No.", FirstWhseDocNo);
+         if WAL3.FindFirst() then begin
+             WIPH.Reset();
+             WIPH.SetRange("No.", WAL3."Source No.");
+             if WIPH.FindFirst() then begin
+                 if WIPH."Order Line Type" = WIPH."Order Line Type"::"Multi Line Order" then begin
+                     Clear(OrderNo);
+                     Clear(OrderCount);
+                     WIPL.Reset();
+                     WIPL.SetRange("No.", WIPH."No.");
+                     if WIPL.FindSet() then begin
+                         repeat
+                             ISH.Reset();
+                             ISH.SetRange("Trade Partner Code", WIPL."Channel Code");
+                             ISH.SetRange("Channel Order ID", WIPL."Channel Order ID");
+                             if ISH.FindFirst() then begin
+                                 if OrderNo <> ISH."No." then begin
+                                     OrderCount += 1;
+                                     OrderNo := ISH."No.";
+                                 end;
+                             end;
+                         until WIPL.Next() = 0;
+                     end;
+                     L_Integer.Reset();
+                     L_Integer.SetRange(Number, OrderCount);
+                     if L_Integer.FindSet() then begin
+                         repeat
+                             Clear(L_ChannelOrderID);
+                             Clear(L_InitValue);
+                             WAL.Reset();
+                             WAL.SetRange("Activity Type", WAL."Activity Type"::Pick);
+                             WAL.SetRange("No.", FirstWhseDocNo);
+                             if WAL.FindSet() then begin
+                                 repeat
+                                     WIPL.Reset();
+                                     WIPL.SetRange("No.", WAL."Source No.");
+                                     WIPL.SetRange("Line No.", WAL."Source Line No.");
+                                     if WIPL.FindFirst() then begin
+                                         WAL.Validate("Channel Order ID", WIPL."Channel Order ID");
+                                         WAL.Modify();
+                                         if L_ChannelOrderID <> WIPL."Channel Order ID" then begin
+                                             if L_InitValue = '' then
+                                                 L_InitValue := IncStr('0000')
+                                             else
+                                                 L_InitValue := IncStr(L_InitValue);
+                                             WAL."Bay No." := L_InitValue;
+                                             L_ChannelOrderID := WIPL."Channel Order ID";
+                                             WAL.Modify();
+                                         end
+                                         else begin
+                                             WAL."Bay No." := L_InitValue;
+                                             WAL.Modify();
+                                         end;
+                                     end;
+                                 until WAL.Next() = 0;
+                             end;
+                         until L_Integer.Next() = 0;
+                     end;
+                     WAL2.Reset();
+                     WAL2.SetRange("Activity Type", WAL2."Activity Type"::Pick);
+                     WAL2.SetRange("No.", FirstWhseDocNo);
+                     if WAL2.FindSet() then begin
+                         repeat
+                             if ((WAL2."Source Document" <> WAL2."Source Document"::"Sales Order") AND (WAL2."Bay No." <> '')) then begin
+                                 WIPL2.Reset();
+                                 WIPL2.SetRange("No.", WAL2."Source No.");
+                                 WIPL2.SetRange("Line No.", WAL2."Source Line No.");
+                                 if WIPL2.FindFirst() then begin
+                                     ISH.Reset();
+                                     ISH.SetRange("Trade Partner Code", WIPL2."Channel Code");
+                                     ISH.SetRange("Channel Order ID", WIPL2."Channel Order ID");
+                                     if ISH.FindSet() then begin
+                                         repeat
+                                             ISH.Validate("Bay No.", WAL2."Bay No.");
+                                             ISH.Modify();
+                                             ISL.Reset();
+                                             ISL.SetRange("Document Type", ISH."Document Type");
+                                             ISL.SetRange("Document No", ISH."No.");
+                                             if ISL.FindSet() then begin
+                                                 repeat
+                                                     ISL.Validate("Bay No.", ISH."Bay No.");
+                                                     ISL.Modify();
+                                                 until ISL.Next() = 0;
+                                             end;
+                                         until ISH.Next() = 0;
+                                     end;
+                                 end;
+                             end;
+                         until WAL2.Next() = 0;
+                     end;
+                 end;
+             end;
+         end;
+         //BayNo--
+     end;*/
+
+
+    //ReturnOrder++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Put-away", 'OnAfterWhseActivLineInsert', '', false, false)]
+    local procedure OnAfterWhseActivLineInsert(var WarehouseActivityLine: Record "Warehouse Activity Line")
+    var
+        L_WAL: Record "Warehouse Activity Line";
+        SL: Record "Sales Line";
+    begin
+        if WarehouseActivityLine."Activity Type" = WarehouseActivityLine."Activity Type"::"Put-away" then
+            //if WarehouseActivityLine."Action Type" = WarehouseActivityLine."Action Type"::Place then begin
+                SL.Reset();
+                SL.SetRange("Document Type", SL."Document Type"::"Return Order");
+                SL.SetRange("Document No.", WarehouseActivityLine."Source No.");
+                SL.SetRange("Line No.", WarehouseActivityLine."Source Line No.");
+                if SL.FindFirst() then begin
+                    SetBins(SL."Item Reference Type No.", WarehouseActivityLine,sl."Shipping Agent Service Code",WarehouseActivityLine."Action Type");
+                end;
+            //end   
+ 
+
+    end;
+    //ReturnOrder--
+    local procedure SetBins(P_ReasonCode: Code[20]; P_WAL: Record "Warehouse Activity Line";P_bayno: Code[20];activitytype:Enum "Warehouse Action Type")
+    var
+        L_Zone: Record Zone;
+        L_Bin: Record Bin;
+        L_ReasonCode: Record "Reason Code";
+    begin
+      if activitytype  = activitytype::Place  then begin
+        L_ReasonCode.Reset();
+        L_ReasonCode.SetRange(Code, P_ReasonCode);
+        if L_ReasonCode.FindFirst() then begin
+            L_Zone.Reset();
+            L_Zone.SetRange("Location Code", P_WAL."Location Code");
+            L_Zone.SetRange(Code, L_ReasonCode."Zone Code");
+            if L_Zone.FindFirst() then begin
+                P_WAL.Validate("Zone Code", L_Zone.Code);
+                L_Bin.Reset();
+                L_Bin.SetRange("Location Code", P_WAL."Location Code");
+                L_Bin.SetRange("Zone Code", L_Zone.Code);
+                if L_Bin.FindFirst() then begin
+                  P_WAL.Validate("Bin Code", L_Bin.Code);
+                  P_WAL.Modify();
+                 end; 
+            end;
+        end;
+       end else begin
+         P_WAL. "Bay No." := P_bayno;
+         P_WAL.Modify();
+       end;
+        /* if P_ReasonCode = 'FAULTY' then begin
+             L_Zone.Reset();
+             L_Zone.SetRange("Location Code", P_WAL."Location Code");
+             L_Zone.SetRange(Code, 'QC');
+             if L_Zone.FindFirst() then begin
+                 P_WAL.Validate("Zone Code", L_Zone.Code);
+                 L_Bin.Reset();
+                 L_Bin.SetRange("Location Code", P_WAL."Location Code");
+                 L_Bin.SetRange("Zone Code", L_Zone.Code);
+                 if L_Bin.FindFirst() then
+                     P_WAL.Validate("Bin Code", L_Bin.Code);
+                 P_WAL.Modify(true);
+             end;
+         end else
+             if P_ReasonCode = 'GOOD' then begin
+                 L_Zone.Reset();
+                 L_Zone.SetRange("Location Code", P_WAL."Location Code");
+                 L_Zone.SetRange(Code, 'PICK');
+                 if L_Zone.FindFirst() then begin
+                     P_WAL.Validate("Zone Code", L_Zone.Code);
+                     L_Bin.Reset();
+                     L_Bin.SetRange("Location Code", P_WAL."Location Code");
+                     L_Bin.SetRange("Zone Code", L_Zone.Code);
+                     if L_Bin.FindFirst() then
+                         P_WAL.Validate("Bin Code", L_Bin.Code);
+                     P_WAL.Modify(true);
+                 end;
+             end;*/
+    end;
+    //TrackingNumber++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Sales-Post", 'OnAfterSalesShptHeaderInsert', '', false, false)]
+    local procedure OnAfterSalesShptHeaderInsert(var SalesShipmentHeader: Record "Sales Shipment Header"; SalesHeader: Record "Sales Header"; SuppressCommit: Boolean; WhseShip: Boolean; WhseReceive: Boolean; var TempWhseShptHeader: Record "Warehouse Shipment Header"; var TempWhseRcptHeader: Record "Warehouse Receipt Header")
+    begin
+        if TempWhseShptHeader."Tracking Number" <> '' then begin
+            SalesShipmentHeader."Tracking Number" := TempWhseShptHeader."Tracking Number";
+            SalesShipmentHeader.Modify();
+        end;
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Post Shipment", 'OnAfterCreatePostedShptHeader', '', false, false)]
+    local procedure OnAfterCreatePostedShptHeader(var PostedWhseShptHeader: Record "Posted Whse. Shipment Header"; var WarehouseShipmentHeader: Record "Warehouse Shipment Header");
+    begin
+        if WarehouseShipmentHeader."Tracking Number" <> '' then begin
+            PostedWhseShptHeader."Tracking Number" := WarehouseShipmentHeader."Tracking Number";
+            PostedWhseShptHeader.Modify();
+        end;
+    end;
+
+    //TrackingNumber--
+    local procedure ReturnRestrictedQty(P_WIPNO: Code[20]): Decimal
+    var
+        WIPL: Record "Whse. Internal Pick Line";
+        L_Qty: Decimal;
+    begin
+        Clear(L_Qty);
+        WIPL.Reset();
+        WIPL.SetRange("No.", P_WIPNO);
+        if WIPL.FindSet() then begin
+            repeat
+                L_Qty := L_Qty + WIPL.Quantity
+            until WIPL.Next() = 0;
+            exit(L_Qty);
+        end;
+    end;
+
+    local procedure CheckOrderQty(P_InterSalesHeader: Record "Interim Sales Header"): Decimal
+    var
+        L_ISL: Record "Interim Sales Line";
+        ReturnQty: Decimal;
+    begin
+        Clear(ReturnQty);
+        L_ISL.Reset();
+        L_ISL.SetRange("Document Type", P_InterSalesHeader."Document Type");
+        L_ISL.SetRange("Document No", P_InterSalesHeader."No.");
+        L_ISL.SetRange(Type, L_ISL.Type::Item);
+        L_ISL.SetFilter("Item Type", '<>%1', L_ISL."Item Type"::Component);
+        if L_ISL.FindSet() then begin
+            repeat
+                ReturnQty := ReturnQty + L_ISL.Quantity;
+            until L_ISL.Next() = 0;
+            exit(ReturnQty);
+        end;
+    end;
+
+    local procedure UpdateBayNoInWIP(HeaderNo: Code[20]; var InterimSalesLine: Record "Interim Sales Line"; P_LineNo: Integer; P_BayNo: Code[20])
+    var
+        L_WIPL: Record "Whse. Internal Pick Line";
+    begin
+        L_WIPL.Reset();
+        L_WIPL.SetRange("No.", HeaderNo);
+        L_WIPL.SetRange("Line No.", P_LineNo);
+        if L_WIPL.FindFirst() then begin
+            if L_WIPL."Bay No." = '' then begin
+                L_WIPL.Validate("Bay No.", P_BayNo);
+                L_WIPL.Modify();
+            end;
+        end;
+    end;
+
+    procedure SetTotalQty(P_Qty: Decimal)
+    begin
+        Clear(G_TotalQty);
+        G_TotalQty := P_Qty;
+    end;
+
+    local procedure checkPreviousBayNo(P_InternalPickNo: Code[20]; P_BayNo: Code[20]): Code[20]
+    var
+        L_WIPL: Record "Whse. Internal Pick Line";
+        FinalBay: Code[20];
+        L_Qty: Decimal;
+        L_Count: Integer;
+    begin
+        Clear(FinalBay);
+        Clear(L_Qty);
+        Clear(L_Count);
+        L_WIPL.Reset();
+        L_WIPL.SetRange("No.", HeaderNo);
+        L_WIPL.SetRange("Bay No.", P_BayNo);
+        if L_WIPL.FindSet() then begin
+            repeat
+                L_Qty := L_Qty + L_WIPL.Quantity;
+            until L_WIPL.Next() = 0;
+            L_Count := Round(L_Qty / 2, 1, '>');
+            FinalBay := GetBayNo(L_Count);
+            exit(FinalBay);
+        end;
+    end;
+
+    local procedure GetBayNo(P_Qty: Decimal): Code[20]
+    var
+        Counter: Integer;
+        NewBayNo: Code[20];
+    begin
+        Clear(Counter);
+        Clear(NewBayNo);
+        Counter := P_Qty;
+        repeat
+            if NewBayNo = '' then
+                NewBayNo := IncStr(G_BayNo)
+            else
+                NewBayNo := IncStr(NewBayNo);
+            Counter := Counter - 1;
+        until Counter = 0;
+        exit(NewBayNo);
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Gen. Jnl.-Post", 'OnBeforeCode', '', false, false)]
+    local procedure OnBeforeCode(var GenJournalLine: Record "Gen. Journal Line"; var HideDialog: Boolean)
+    var
+        ChannelSetup: Record "General Setup - Channels";
+    begin
+        ChannelSetup.Get();
+        ChannelSetup.TestField("Payment Journal Template");
+        ChannelSetup.TestField("Payment Jounal Batch");
+        if ((GenJournalLine."Journal Template Name" = ChannelSetup."Payment Journal Template") AND (GenJournalLine."Journal Batch Name" = ChannelSetup."Payment Jounal Batch") AND (GenJournalLine."Creditor No." <> '')) then
+            HideDialog := true;
+    end;
+    
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Create Source Document", 'OnSalesLine2ReceiptLineOnAfterInitNewLine', '', false, false)]
+    local procedure OnSalesLine2ReceiptLineOnAfterInitNewLine(var WhseReceiptLine: Record "Warehouse Receipt Line"; WhseReceiptHeader: Record "Warehouse Receipt Header"; SalesLine: Record "Sales Line");
+    begin
+      WhseReceiptLine."Bay No." :=  SalesLine."Shipping Agent Service Code";
+    end;
+    
+
+}

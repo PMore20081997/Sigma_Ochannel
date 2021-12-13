@@ -1,0 +1,33 @@
+{
+  "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
+  "name": "Robosol-Ochannel",
+  "publisher": "Robosol",
+  "version": "19.0.0.0",
+  "brief": "",
+  "description": "",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [
+    {
+      "id": "a5727ce6-368c-49e2-84cb-1a6052f0551c",
+      "publisher": "Tasklet Factory",
+      "name": "Mobile WMS",
+      "version": "5.29.190.209"
+    }
+  ],
+  "screenshots": [],
+  "platform": "19.0.0.0",
+  "application": "19.0.0.0",
+  "idRanges": [
+    {
+      "from": 90000,
+      "to": 90100
+    }
+  ],
+  "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",
+  "runtime": "8.0"
+  
+}

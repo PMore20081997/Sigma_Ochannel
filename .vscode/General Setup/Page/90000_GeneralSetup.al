@@ -1,0 +1,132 @@
+page 90000 "General Setup - Channels"
+{
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    PageType = Card;
+    SourceTable = "General Setup - Channels";
+    InsertAllowed = false;
+    DeleteAllowed = false;
+    ModifyAllowed = true;
+    layout
+    {
+        area(Content)
+        {
+            group(General)
+            {
+                field("Sales Channel Order Id"; Rec."Web Order Nos")
+                {
+                    ApplicationArea = All;
+                }
+                field("Shipping G/L No."; Rec."Shipping G/L No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("GiftWrap G/L No."; Rec."GiftWrap G/L No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Invoice G/L No."; Rec."Invoice G/L No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Manifest Nos"; Rec."Manifest Nos")
+                {
+                    ApplicationArea = All;
+                }
+                field("Despatch Scan Enabled"; rec."Despatch Scan Enabled")
+                {
+                    ApplicationArea = All;
+                }
+                //Sofyan++
+                field("Consolidate Item on WIP"; Rec."Consolidate Item on WIP")
+                {
+                    ApplicationArea = All;
+                }
+                //Sofyan--
+                //Pranali++
+                field("Print Return Note"; Rec."Print Return Note")
+                {
+                    ApplicationArea = All;
+                }
+                field("Print Order Label"; Rec."Print Order Label")
+                {
+                    ApplicationArea = All;
+                }
+                field("Print Return Label"; Rec."Print Return Label")
+                {
+                    ApplicationArea = All;
+                }
+                //Pranali--
+                field("Web Sales Invoice No.s"; Rec."Web Sales Invoice No.s")
+                {
+                    ApplicationArea = All;
+                    Description = 'CAS-26633-Z8W1Y1.MH';
+                }
+                field("Item Journal Template"; Rec."Item Journal Template")
+                {
+                    ApplicationArea = All;
+                    Description = 'CAS-26633-Z8W1Y1.MH';
+                }
+                field("Item Journal Batch"; Rec."Item Journal Batch")
+                {
+                    ApplicationArea = All;
+                    Description = 'CAS-26633-Z8W1Y1.MH';
+                }
+                field("Cash Rct Template Name"; Rec."Cash Rct Template Name")
+                {
+                    ApplicationArea = All;
+                    Description = 'CAS-27945-M1R5J2';
+                }
+                field("Cash Rct Batch Name"; Rec."Cash Rct Batch Name")
+                {
+                    ApplicationArea = All;
+                    Description = 'CAS-27945-M1R5J2';
+                }
+                field("Quantity Restriction"; Rec."Quantity Restriction")
+                {
+                    ApplicationArea = All;
+                    DecimalPlaces = 0 : 0;
+                }
+                field("Bank Account No."; Rec."Bank Account No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Threshold Value"; Rec."Threshold Value")
+                {
+                    ApplicationArea = All;
+                    DecimalPlaces = 0 : 2;
+                }
+                field("Delete Shipment Tracking"; Rec."Delete Shipment Tracking")
+                {
+                    ApplicationArea = All;
+                }
+                field("Payment Journal Template"; Rec."Payment Journal Template")
+                {
+                    ApplicationArea = All;
+                }
+                field("Payment Jounal Batch"; Rec."Payment Jounal Batch")
+                {
+                    ApplicationArea = All;
+                }
+                field("G/L Account No."; Rec."G/L Account No.")
+                {
+                    ApplicationArea = All;
+                    Caption = 'G/L Account for Fee Posting';
+                }
+            }
+        }
+
+    }
+
+
+    trigger OnOpenPage()
+    var
+    begin
+        Rec.RESET;
+        IF NOT Rec.GET THEN BEGIN
+            Rec.INIT;
+            Rec.INSERT;
+        END;
+    end;
+
+}
