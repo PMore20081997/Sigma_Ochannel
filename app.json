@@ -16,6 +16,12 @@
       "publisher": "Tasklet Factory",
       "name": "Mobile WMS",
       "version": "5.29.190.209"
+    },
+    {
+      "id": "11c9a84b-ce93-4139-ad69-0e7d8545e7e3",
+      "name": "ItemAttributes",
+      "publisher": "Robosol",
+      "version": "19.0.0.0"
     }
   ],
   "screenshots": [],
