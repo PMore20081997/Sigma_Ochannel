@@ -40,7 +40,7 @@ page 90011 "Channel Item Listing"
                 field("Channel Variant"; Rec."Channel Variant")
                 {
                     ApplicationArea = All;
-                    Visible = true;
+                    Visible = false;
                     Caption = 'Variant Id';
                 }
 
@@ -54,13 +54,13 @@ page 90011 "Channel Item Listing"
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
-                    Visible = true;
+                    Visible = false;
 
                 }
                 field("NAV Variant"; Rec."NAV Variant")
                 {
                     ApplicationArea = All;
-                    //Visible = false;
+                    Visible = false;
                 }
                 field("Channel Title"; Rec."Channel Title")
                 {
@@ -108,6 +108,7 @@ page 90011 "Channel Item Listing"
                 field("Image Url 1"; Rec."Image Url 1")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Special Price"; Rec."Special Price")
                 {
@@ -249,6 +250,7 @@ page 90011 "Channel Item Listing"
                 Promoted = true;
                 Image = CoupledItem;
                 PromotedCategory = Process;
+                Visible = false;
 
                 trigger OnAction()
                 VAR
@@ -290,6 +292,7 @@ page 90011 "Channel Item Listing"
                 //RunObject = Page "Channel  Listing";
                 RunPageOnRec = false;
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 trigger OnAction()
                 VAR
@@ -313,6 +316,7 @@ page 90011 "Channel Item Listing"
             {
                 ApplicationArea = All;
                 CaptionML = ENU = '&Update Price Routine';
+                Visible = false;
                 //RunObject=Report 80001;
                 Image = PriceAdjustment;
                 trigger OnAction()
@@ -347,7 +351,7 @@ page 90011 "Channel Item Listing"
             {
                 ApplicationArea = All;
                 CaptionML = ENU = 'Sync Single Item';
-
+                Visible = false;
                 trigger OnAction()
                 var
                     TradePartnerCodeList: Record "Trade Partner";
@@ -391,6 +395,7 @@ page 90011 "Channel Item Listing"
                 RunPageOnRec = false;
                 Promoted = true;
                 PromotedCategory = Process;
+                Visible = false;
                 trigger OnAction()
                 var
                     Rec_ChannelItemListing: Record "Channel Item Listing";
