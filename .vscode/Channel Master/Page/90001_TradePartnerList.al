@@ -185,6 +185,7 @@ page 90001 "Trade Partner List"
                     CUEbay: Codeunit "Ebay Integration";
                     CUWooCommerce: Codeunit "Woo Commerce";
                     CUB2B: Codeunit "B2B";
+                    ILoveWallpaper: Codeunit IloveWallpaper;
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -199,26 +200,26 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
 
-                            /*  If TradePartnerList.Code = 'AMAZON' then
-                                CUAmazon.ListOrders(TradePartnerList.Code, '')
-                            Else
-                                If TradePartnerList.Code = 'SHOPIFY' then
-                                    CUSopify.GetShopifyOrder(TradePartnerList.Code)
-                                else
-                                    if TradePartnerList.Code = 'ONBUY' then
-                                        CUOnBuy.GetOnBuyOrders(TradePartnerList.Code)
-                                    else
-                                        if TradePartnerList.Code = 'MAGENTO' then
-                                            CUMagento.GetMagentoOrders(TradePartnerList.Code)
-                                        else
-                                            if TradePartnerList.Code = 'EBAY' then
-                                                CUEbay.GetEbayOrders(TradePartnerList.Code)
-                                            else
-                                                if TradePartnerList.Code = 'WOOCOMMERC' then
-                                                    CUWooCommerce.ListOrders(TradePartnerList.Code)
-                                                else
-                                                    if TradePartnerList.Code = 'B2B' then
-                                                        CUB2B.GetOrders(TradePartnerList.Code);*/
+                            If TradePartnerList.Code = 'VISUALSOFT' then
+                                ILoveWallpaper.GetCredentials(TradePartnerList.Code)
+                            /*  Else
+                                 If TradePartnerList.Code = 'SHOPIFY' then
+                                     CUSopify.GetShopifyOrder(TradePartnerList.Code)
+                                 else
+                                     if TradePartnerList.Code = 'ONBUY' then
+                                         CUOnBuy.GetOnBuyOrders(TradePartnerList.Code)
+                                     else
+                                         if TradePartnerList.Code = 'MAGENTO' then
+                                             CUMagento.GetMagentoOrders(TradePartnerList.Code)
+                                         else
+                                             if TradePartnerList.Code = 'EBAY' then
+                                                 CUEbay.GetEbayOrders(TradePartnerList.Code)
+                                             else
+                                                 if TradePartnerList.Code = 'WOOCOMMERC' then
+                                                     CUWooCommerce.ListOrders(TradePartnerList.Code)
+                                                 else
+                                                     if TradePartnerList.Code = 'B2B' then
+                                                         CUB2B.GetOrders(TradePartnerList.Code);*/
                             // TradePartnerList."Last Order Sync" := CREATEDATETIME(WORKDATE, TIME);
                             // TradePartnerList.MODIFY;
                         end else
