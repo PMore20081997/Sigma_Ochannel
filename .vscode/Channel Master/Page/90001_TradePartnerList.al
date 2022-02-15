@@ -200,9 +200,9 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
 
-                            If TradePartnerList.Code = 'VISUALSOFT' then
+                            /*  If TradePartnerList.Code = 'VISUALSOFT' then
                                 ILoveWallpaper.GetCredentials(TradePartnerList.Code)
-                            /*  Else
+                            Else
                                  If TradePartnerList.Code = 'SHOPIFY' then
                                      CUSopify.GetShopifyOrder(TradePartnerList.Code)
                                  else
@@ -228,6 +228,7 @@ page 90001 "Trade Partner List"
                 end;
 
             }
+
 
             action("Update Inventory")
             {
