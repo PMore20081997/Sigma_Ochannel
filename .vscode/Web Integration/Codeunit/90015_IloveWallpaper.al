@@ -33,13 +33,16 @@ codeunit 90015 IloveWallpaper
         URL: Text;
         j: Integer;
     begin
+
+        GetCredentials(ChannelCode);
         //Live Request Body++
-        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="https://demo.visualsoft.co.uk/api/soap/service"><soapenv:Header><VSAuth><ClientID>DemoSite</ClientID><Username>DemoSiteUser</Username><Password>zeC9xPemee3h</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetProducts><product_references SOAP-ENC:arrayType="xsd:string[2]" xsi:type="SOAP-ENC:Array"><item xsi:type="xsd:string">REF1</item></product_references><get_data xsi:nil="true"/><limit xsi:type="xsd:int">10</limit><offset xsi:type="xsd:int">10</offset><file_type xsi:type="xsd:string">xml</file_type></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
+        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="https://demo.visualsoft.co.uk/api/soap/service"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetProducts><product_references SOAP-ENC:arrayType="xsd:string[2]" xsi:type="SOAP-ENC:Array"><item xsi:type="xsd:string">REF1</item></product_references><get_data xsi:nil="true"/><limit xsi:type="xsd:int">10</limit><offset xsi:type="xsd:int">10</offset><file_type xsi:type="xsd:string">xml</file_type></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
         //Live Request Body--
 
         //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
         //URL := ServiceURL;
-        URL := 'https://demo.visualsoft.co.uk/api/soap/service/5';
+        // URL := 'https://demo.visualsoft.co.uk/api/soap/service/5';
+        URL := ServiceURL;
 
 
         RequestMessage.SetRequestUri(URL);
@@ -64,11 +67,14 @@ codeunit 90015 IloveWallpaper
     begin
         TradePartner.Reset();
         if TradePartner.Get(ChannelCode) then begin
-            TokenId := TradePartner.AccessKeyId;
-            SiteId := TradePartner.MarketplaceId;
+            MarketplaceId := TradePartner.MarketplaceId;
+            AccessKeyId := TradePartner.AccessKeyId;
+            SecretAccessKey := TradePartner.SecretAccessKey;
             ServiceURL := TradePartner."Sevice/API URL";
+            StartDate := Format(Today, 0, '20<Year>-<Month,2>-<Day,2>');
+            EndDate := Format(TradePartner."Last Order Sync", 0, '20<Year>-<Month,2>-<Day,2>');
         end;
-        GetOrders(ChannelCode);
+
 
     end;
 
@@ -84,13 +90,14 @@ codeunit 90015 IloveWallpaper
         URL: Text;
         j: Integer;
     begin
+        GetCredentials(ChannelCode);
         //Live Request Body++
-        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="https://demo.visualsoft.co.uk/api/soap/service/5"><soapenv:Header><VSAuth><ClientID>DemoSite</ClientID><Username>DemoSiteUser</Username><Password>zeC9xPemee3h</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetOrdersByDateRange><from_date xsi:type="xsd:date">2022-01-01</from_date><to_date xsi:type="xsd:date">2022-02-04</to_date><successful_only xsi:nil="true"/></ns1:GetOrdersByDateRange></soapenv:Body></soapenv:Envelope>';
+        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="https://demo.visualsoft.co.uk/api/soap/service/5"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetOrdersByDateRange><from_date xsi:type="xsd:date">' + EndDate + '</from_date><to_date xsi:type="xsd:date">' + StartDate + '</to_date><successful_only xsi:nil="true"/></ns1:GetOrdersByDateRange></soapenv:Body></soapenv:Envelope>';
         //Live Request Body--
 
         //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
         //URL := ServiceURL;
-        URL := 'https://demo.visualsoft.co.uk/api/soap/service/5';
+        URL := ServiceURL;
 
 
         RequestMessage.SetRequestUri(URL);
@@ -299,18 +306,22 @@ codeunit 90015 IloveWallpaper
                     WebOrderXLMList3 := WebOrderXLMElement3.GetChildNodes();
 
 
+                Clear(Generictext);
+                if WebOrderXLMList3.Get(1, WebOrderXLMNode4) then begin
+                    WebOrderXLMElement4 := WebOrderXLMNode4.AsXmlElement();
+                    Generictext := WebOrderXLMElement4.InnerText;
+                end;
                 //ItemsInsertCode
 
-                // ChannelItemListing.RESET;
-                // ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
-                // ChannelItemListing.SetRange("ASIN No", GetJsonvalue(variantJsonobject, 'product_id').AsCode());
-                // ChannelItemListing.SETRANGE("Channel SKU", GetJsonvalue(variantJsonobject, 'sku').AsCode());
-                // IF ChannelItemListing.FINDFIRST THEN BEGIN
-                //     UpdateProduct(FALSE, ChannelItemListing);
-                // END
-                // ELSE BEGIN
-                //     CreateProduct(true, ChannelCode);
-                // END;
+                ChannelItemListing.RESET;
+                ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
+                ChannelItemListing.SETRANGE("Channel SKU", Generictext);
+                IF ChannelItemListing.FINDFIRST THEN BEGIN
+                    UpdateProduct(WebOrderXLMList3, FALSE, ChannelItemListing, ChannelCode);
+                END
+                ELSE BEGIN
+                    CreateProduct(WebOrderXLMList3, true, ChannelCode);
+                END;
                 //ItemsInsertCode
 
                 //  InsertIntrimSalesHeader(WebOrderXLMList3, ChannelCode, InterimSalesHeader);
@@ -319,20 +330,20 @@ codeunit 90015 IloveWallpaper
 
                 // CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
 
-                if WebOrderXLMList3.Get(2, WebOrderXLMNode4) then
-                    WebOrderXLMElement4 := WebOrderXLMNode4.AsXmlElement();
-                WebOrderXLMList4 := WebOrderXLMElement4.GetChildNodes();
-                Clear(GenericElement);
-                Clear(GenericNode);
-                if WebOrderXLMList4.get(1, GenericNode) then begin
-                    GenericElement := GenericNode.AsXmlElement();
-                    Generictext := GenericElement.InnerText;
-                end;
+                // if WebOrderXLMList3.Get(2, WebOrderXLMNode4) then
+                //     WebOrderXLMElement4 := WebOrderXLMNode4.AsXmlElement();
+                // WebOrderXLMList4 := WebOrderXLMElement4.GetChildNodes();
+                // Clear(GenericElement);
+                // Clear(GenericNode);
+                // if WebOrderXLMList4.get(1, GenericNode) then begin/
+                //     GenericElement := GenericNode.AsXmlElement();
+                //     Generictext := GenericElement.InnerText;
+                // end;
             end;
         end;
     end;
 
-    local procedure UpdateProduct(bool: Boolean; ChannelItemListing: Record "Channel Item Listing")
+    local procedure UpdateProduct(P_ItemDataNodeList: XmlNodeList; bool: Boolean; ChannelItemListing: Record "Channel Item Listing"; ChannelCode: Code[10])
     var
         ItemName: Text;
         ItemDescription: Text;
@@ -346,11 +357,28 @@ codeunit 90015 IloveWallpaper
         ItemSKU: Text;
     begin
 
-        //CLEAR(ChannelItemListing);
-        ChannelItemListing.VALIDATE("Channel Code", 'SHOPIFY');
-        /* if GetJsonvalue(variantJsonobject, 'sku').IsNull = false then begin
-             ChannelItemListing."Channel SKU" := GetJsonToken(variantJsonobject, 'sku').AsValue().AsCode();
-         end;*/
+        CLEAR(ChannelItemListing);
+        ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
+        //
+        // need to added fields
+        //
+        ChannelItemListing.VALIDATE("Price Synced", TRUE);
+        ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if P_ItemDataNodeList.Get(1, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            ChannelItemListing."Channel SKU" := GenericElement.InnerText;
+
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if P_ItemDataNodeList.Get(2, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            ChannelItemListing."Channel Title" := GenericElement.InnerText;
+        end;
 
 
         ChannelItemListing.VALIDATE("Price Synced", TRUE);
@@ -363,7 +391,7 @@ codeunit 90015 IloveWallpaper
 
     end;
 
-    local procedure CreateProduct(bool: Boolean; ChannelCode: Code[20])
+    local procedure CreateProduct(P_ItemDataNodeList: XmlNodeList; bool: Boolean; ChannelCode: Code[20])
     var
         ItemName: Text;
         ItemDescription: Text;
@@ -384,6 +412,21 @@ codeunit 90015 IloveWallpaper
         //
         ChannelItemListing.VALIDATE("Price Synced", TRUE);
         ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if P_ItemDataNodeList.Get(1, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            ChannelItemListing."Channel SKU" := GenericElement.InnerText;
+
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if P_ItemDataNodeList.Get(2, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            ChannelItemListing."Channel Title" := GenericElement.InnerText;
+        end;
 
 
         ChannelItemListing.INSERT(TRUE);
@@ -624,6 +667,9 @@ codeunit 90015 IloveWallpaper
         SiteId: Text;
         OrderStatus: Text;
         StartDate: Text;
+        AccessKeyId: Text;
+        MarketplaceId: Text;
+        SecretAccessKey: Text;
         StartDateTime: DateTime;
         EndDate: Text;
         ServiceURL: Text;
