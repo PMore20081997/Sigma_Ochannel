@@ -11,7 +11,8 @@ codeunit 90002 "Shopify Integration"
         CASE RunType OF
             SyncOrderLabel:
                 BEGIN
-                    GetShopifyOrder(StartParameter);
+                    GetShopifyOrder(StartParameter, '');
+                    MESSAGE('Order Sync Completed...');
                 End;
             SyncItemLabel:
                 Begin
@@ -48,7 +49,7 @@ codeunit 90002 "Shopify Integration"
             aJsonValue := aJsonToken.AsValue();
     end;
 
-    procedure GetShopifyOrder(ChannelCode: Code[20])
+    procedure GetShopifyOrder(ChannelCode: Code[20]; NextURL: Text)
     var
         HttpContent: HttpContent;
         HttpHeaders: HttpHeaders;
@@ -78,20 +79,40 @@ codeunit 90002 "Shopify Integration"
         custBoolean: Boolean;
         checkChar: Text;
         testid: Code[50];
+        index: Integer;
+        LinkHeaderBool: Boolean;
+        LinkHeaderValue: array[2] of Text;
+        LinkHeaderTextValue: Text;
     begin
-
-        GetCreadentils(ChannelCode);
+        GetCredentials(ChannelCode);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
         HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
         HttpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
         HttpHeaders.Add('Content-Type', 'application/x-www-form-urlencoded');
+
         Datefrom := FORMAT(LastOrderSync, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
         DateTo := format(CurrentDateTime, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
+
         //TradePartner1."Sevice/API URL":='https://winter-in-venice-store.myshopify.com/admin/api';
-        URL := StrSubstNo('%1/orders.json?status=any&limit=250&created_at_min="%2"&created_at_max="%3"', ServiceURL, Datefrom, DateTo);
+        if NextURL = '' then begin
+            URL := StrSubstNo('%1/orders.json?status=any&limit=250&created_at_min="%2"&created_at_max="%3"', ServiceURL, Datefrom, DateTo);
+        end;
         //URL := 'https://milroys.myshopify.com/admin/api/2020-07/orders.json';
+
+        if NextURL <> '' then begin
+            URL := NextURL;
+        end;
+
         if HttpClient.Get(URL, HttpResponse) then begin
+            //Getting Next API Call URL From Response Header ++
+            LinkHeaderBool := HttpResponse.Headers.GetValues('Link', LinkHeaderValue);
+            if LinkHeaderBool = true then begin
+                Clear(LinkHeaderTextValue);
+                LinkHeaderTextValue := LinkHeaderValue[1];
+            end;
+            //Getting Next API Call URL From Response Header--
+
             HttpResponse.Content.ReadAs(responseText);
             OrderObject.ReadFrom(responseText);
             JsonObjectInArray := GetJsonToken(OrderObject, 'orders').AsArray();
@@ -130,7 +151,6 @@ codeunit 90002 "Shopify Integration"
                     CustomerDetails := GetJsonToken(OrderHeader, 'customer').AsObject();
                 end;
 
-
                 GetShippingPrice();
 
                 if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
@@ -143,17 +163,34 @@ codeunit 90002 "Shopify Integration"
             End;
         end;
 
+        //Code to Get Next URL From Response Header++
+        if LinkHeaderTextValue.Contains('"next"') then begin
+            if LinkHeaderTextValue.Contains('>; rel="next"') and LinkHeaderTextValue.Contains('<') then begin
+                LinkHeaderTextValue := LinkHeaderTextValue.Replace('>; rel="next"', '');
+                LinkHeaderTextValue := LinkHeaderTextValue.Replace('<', '');
+            end;
+            if LinkHeaderTextValue.Contains('>; rel="previous", ') then begin
+                index := LinkHeaderTextValue.IndexOf('", ');
+                if (index > 0) then begin
+                    LinkHeaderTextValue := LinkHeaderTextValue.Substring(index);
+                end;
+                LinkHeaderTextValue := LinkHeaderTextValue.Replace('", ', '');
+            end;
+            Clear(NextURL);
+            NextURL := LinkHeaderTextValue;
+            GetShopifyOrder(ChannelCode, NextURL);
+        end;
+        //Code to Get Next URL From Response Header--
+
         TradePartner.Reset();
         TradePartner.SetRange(Code, ChannelCode);
         if TradePartner.FindFirst() then begin
             TradePartner."Last Order Sync" := CurrentDateTime;
             TradePartner.Modify();
         end;
-
-        MESSAGE('Order Sync Completed...');
     End;
 
-    procedure GetCreadentils("ChannelCode": Code[20])
+    procedure GetCredentials("ChannelCode": Code[20])
     var
         TradePartner: Record "Trade Partner";
     begin
@@ -164,7 +201,6 @@ codeunit 90002 "Shopify Integration"
             ServiceURL := TradePartner."Sevice/API URL";
             LastOrderSync := TradePartner."Last Order Sync";
         End;
-
     End;
 
     procedure CreateBasicAuth(UserName: Text; Password: Text): Text
@@ -185,7 +221,6 @@ codeunit 90002 "Shopify Integration"
 
     local procedure InsertIntSalesHeader(ChannelOrderId: Text; HeaderObject: JsonObject; ChannelCode: Code[20]; var InterimSalesHeader: Record "Interim Sales Header" temporary; ShippingAddr: Boolean; BillingAddr: Boolean; custBoolean: Boolean)
     var
-
         AddressLenght: Integer;
         BigAddress: Text[100];
         TotalWeight: Decimal;
@@ -261,7 +296,6 @@ codeunit 90002 "Shopify Integration"
                 CountryCode := GetJsonvalue(BillingAddress, 'country').AsText();
             end;
         end;
-
 
         CountyRegionCode.Reset();
         CountyRegionCode.SetRange(Name, CountryCode);
@@ -341,7 +375,6 @@ codeunit 90002 "Shopify Integration"
             InterimSalesHeader.Validate("Order Amount", GetJsonvalue(OrderHeader, 'total_price').AsDecimal());
         end;
 
-
         // InterimSalesHeader.VALIDATE("Pickup Date", TODAY + 1);
         // InterimSalesHeader.VALIDATE("Pickup Time", 170000T);
         InterimSalesHeader.VALIDATE("No. Of Parcels", 1);
@@ -365,7 +398,6 @@ codeunit 90002 "Shopify Integration"
         WebLineToken: JsonToken;
         DiscontCount: Integer;
         TotalItemQty: Integer;
-
     begin
         TotalItemQty := 0;
         ItemArray := GetJsonToken(jsonMainReq, 'line_items').AsArray();
@@ -419,8 +451,6 @@ codeunit 90002 "Shopify Integration"
         end;
         InterimSalesHeader."No. of Items" := TotalItemQty;
         InterimSalesHeader.Modify();
-
-
     end;
 
     procedure GetItems(ChannelCode: Code[20]; NextURL: Text)
@@ -461,7 +491,7 @@ codeunit 90002 "Shopify Integration"
         portalSku: Code[20];
     begin
         if TradePartner.Get(ChannelCode) then;
-        GetCreadentils(ChannelCode); //For Credentials
+        GetCredentials(ChannelCode); //For Credentials
         HttpHeaders := HttpClient.DefaultRequestHeaders();
         HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
         HttpContent.GetHeaders(HttpHeaders);
@@ -575,7 +605,6 @@ codeunit 90002 "Shopify Integration"
         ItemSKU: Text;
         imagesArray: JsonArray;
     begin
-
         //CLEAR(ChannelItemListing);
         ChannelItemListing.VALIDATE("Channel Code", 'SHOPIFY');
         /* if GetJsonvalue(variantJsonobject, 'sku').IsNull = false then begin
@@ -703,7 +732,7 @@ codeunit 90002 "Shopify Integration"
         TradePartner: Record "Trade Partner";
     begin
         setInventory(ChannelCode);
-        GetCreadentils(ChannelCode);
+        GetCredentials(ChannelCode);
         ChannelItemListing.RESET;
         ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
         ChannelItemListing.SETFILTER("Inventory Synced", '%1', FALSE);
@@ -933,7 +962,7 @@ codeunit 90002 "Shopify Integration"
         ProductObject: JsonObject;
     begin
 
-        GetCreadentils(RecChannelItemListing."Channel Code");
+        GetCredentials(RecChannelItemListing."Channel Code");
         Clear(Title);
         Clear(BodyHtml);
         Clear(Vendor);
@@ -1013,7 +1042,7 @@ codeunit 90002 "Shopify Integration"
 
     begin
         if TradePartner.Get(ChannelCode) then;
-        GetCreadentils(ChannelCode);
+        GetCredentials(ChannelCode);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
         HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
         HttpContent.GetHeaders(HttpHeaders);
@@ -1155,7 +1184,7 @@ codeunit 90002 "Shopify Integration"
         TradePartner: Record "Trade Partner";
         Text007: Label 'Updating Price in NAV...';
     begin
-        GetCreadentils(ChannelCode);
+        GetCredentials(ChannelCode);
 
         l := 0;
         ChannelItemListing.RESET;
