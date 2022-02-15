@@ -511,10 +511,22 @@ codeunit 90015 IloveWallpaper
 
         Clear(GenericNode);
         Clear(GenericElement);
+        Clear(FirstName);
         if CustomerNodeList.Get(4, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Bill- to Name" := Copystr(GenericElement.InnerText(), 1, 50);
+            FirstName := Copystr(GenericElement.InnerText(), 1, 50);
         end;
+        Clear(LastName);
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(5, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            LastName := Copystr(GenericElement.InnerText(), 1, 50);
+        end;
+
+        Clear(FullName);
+        FullName := FirstName + ' ' + LastName;
+        InterimSalesHeader."Bill- to Name" := CopyStr(FullName, 1, 50);
 
         Clear(GenericNode);
         Clear(GenericElement);
@@ -543,6 +555,70 @@ codeunit 90015 IloveWallpaper
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Post Code" := Copystr(GenericElement.InnerText(), 1, 30);
         end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        Clear(FirstName);
+        if CustomerNodeList.Get(19, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            FirstName := Copystr(GenericElement.InnerText(), 1, 30);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        Clear(LastName);
+        if CustomerNodeList.Get(20, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            LastName := Copystr(GenericElement.InnerText(), 1, 30);
+        end;
+
+        Clear(FullName);
+        FullName := FirstName + ' ' + LastName;
+        InterimSalesHeader."Ship-to Name" := CopyStr(FullName, 1, 50);
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(21, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Address" := Copystr(GenericElement.InnerText(), 1, 50);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(22, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Address 2" := Copystr(GenericElement.InnerText(), 1, 50);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(23, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to City" := Copystr(GenericElement.InnerText(), 1, 30);
+        end;
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(27, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Country/Region Code" := Copystr(GenericElement.InnerText(), 1, 10);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(28, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Post Code" := Copystr(GenericElement.InnerText(), 1, 20);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(29, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Phone" := Copystr(GenericElement.InnerText(), 1, 20);
+        end;
+
+
+
 
 
         //Customer Node List
