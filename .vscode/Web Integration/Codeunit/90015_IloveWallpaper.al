@@ -12,10 +12,12 @@ codeunit 90015 IloveWallpaper
             SyncOrderLabel:
                 BEGIN
                     GetOrders(StartParameter);
+                    MESSAGE('Order Sync Completed...');
                 End;
             SyncItemLabel:
                 Begin
                     Getitems(StartParameter);
+                    MESSAGE('items Sync Completed...');
                 End;
 
         end;
@@ -32,6 +34,7 @@ codeunit 90015 IloveWallpaper
         Response: Text;
         URL: Text;
         j: Integer;
+        TradePartner: Record "Trade Partner";
     begin
 
         GetCredentials(ChannelCode);
@@ -39,8 +42,7 @@ codeunit 90015 IloveWallpaper
         RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="https://demo.visualsoft.co.uk/api/soap/service"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetProducts><product_references SOAP-ENC:arrayType="xsd:string[2]" xsi:type="SOAP-ENC:Array"><item xsi:type="xsd:string">REF1</item></product_references><get_data xsi:nil="true"/><limit xsi:type="xsd:int">10</limit><offset xsi:type="xsd:int">10</offset><file_type xsi:type="xsd:string">xml</file_type></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
         //Live Request Body--
 
-        //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
-        //URL := ServiceURL;
+
         // URL := 'https://demo.visualsoft.co.uk/api/soap/service/5';
         URL := ServiceURL;
 
@@ -57,6 +59,14 @@ codeunit 90015 IloveWallpaper
         ResponseMessage.Content().ReadAs(Response);
         if ResponseMessage.HttpStatusCode = 200 then begin
             InsertProductXMLResponse(Response, ChannelCode);
+
+
+            TradePartner.Reset();
+            TradePartner.SetRange(Code, ChannelCode);
+            if TradePartner.FindFirst() then begin
+                TradePartner."Last Product Sync" := CurrentDateTime;
+                TradePartner.Modify();
+            end;
         end;
     end;
 
@@ -89,6 +99,7 @@ codeunit 90015 IloveWallpaper
         Response: Text;
         URL: Text;
         j: Integer;
+        TradePartner: Record "Trade Partner";
     begin
         GetCredentials(ChannelCode);
         //Live Request Body++
@@ -112,7 +123,16 @@ codeunit 90015 IloveWallpaper
         ResponseMessage.Content().ReadAs(Response);
         if ResponseMessage.HttpStatusCode = 200 then begin
             InsertXMLResponse(Response, ChannelCode);
+
+
+            TradePartner.Reset();
+            TradePartner.SetRange(Code, ChannelCode);
+            if TradePartner.FindFirst() then begin
+                TradePartner."Last Order Sync" := CurrentDateTime;
+                TradePartner.Modify();
+            end;
         end;
+
     end;
 
     local procedure InsertXMLResponse(P_Response: Text; ChannelCode: Code[10])
@@ -192,6 +212,9 @@ codeunit 90015 IloveWallpaper
         if WebOrderXLMList2.Count > 0 then begin
             for j := 1 to WebOrderXLMList2.Count do begin
                 //  Clear(WebOrderXLMElement1);
+                InterimSalesHeader.DeleteAll();
+                InterimSalesLine.DeleteAll();
+
                 if WebOrderXLMList.get(j, WebOrderXLMNode2) then
                     WebOrderXLMElement1 := WebOrderXLMNode2.AsXmlElement();
                 L_OrderNodeList := WebOrderXLMElement1.GetChildNodes();
@@ -322,23 +345,6 @@ codeunit 90015 IloveWallpaper
                 ELSE BEGIN
                     CreateProduct(WebOrderXLMList3, true, ChannelCode);
                 END;
-                //ItemsInsertCode
-
-                //  InsertIntrimSalesHeader(WebOrderXLMList3, ChannelCode, InterimSalesHeader);
-
-                //  InsertInInterimSalesLine(WebOrderXLMList3, ChannelCode, InterimSalesHeader, InterimSalesLine);
-
-                // CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
-
-                // if WebOrderXLMList3.Get(2, WebOrderXLMNode4) then
-                //     WebOrderXLMElement4 := WebOrderXLMNode4.AsXmlElement();
-                // WebOrderXLMList4 := WebOrderXLMElement4.GetChildNodes();
-                // Clear(GenericElement);
-                // Clear(GenericNode);
-                // if WebOrderXLMList4.get(1, GenericNode) then begin/
-                //     GenericElement := GenericNode.AsXmlElement();
-                //     Generictext := GenericElement.InnerText;
-                // end;
             end;
         end;
     end;
@@ -600,7 +606,7 @@ codeunit 90015 IloveWallpaper
         Clear(GenericElement);
         if CustomerNodeList.Get(27, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Country/Region Code" := Copystr(GenericElement.InnerText(), 1, 10);
+            // InterimSalesHeader."Ship-to Country/Region Code" := Copystr(GenericElement.InnerText(), 1, 10);
         end;
 
         Clear(GenericNode);
@@ -676,6 +682,7 @@ codeunit 90015 IloveWallpaper
                     if ItemlistXLMlist.Get(2, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
                         InterimSalesLine."No." := GenericElement.InnerText;
+                        InterimSalesLine."Channel SKU" := GenericElement.InnerText;
                     end;
 
                     // Clear(GenericNode);
@@ -703,9 +710,9 @@ codeunit 90015 IloveWallpaper
 
                     Clear(GenericNode);
                     Clear(GenericElement);
-                    if ItemlistXLMlist.Get(7, GenericNode) then begin
+                    if ItemlistXLMlist.Get(10, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
-                        InterimSalesLine.Description := GenericElement.InnerText;
+                        InterimSalesLine.Description := CopyStr(GenericElement.InnerText(), 1, 100);
                     end;
 
                 End;

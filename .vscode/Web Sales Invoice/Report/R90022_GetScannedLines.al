@@ -151,7 +151,8 @@ report 90022 "Get Scanned Lines"
             WSIL."Trade Partner Code" := PChannelCode;
             WSIL.Type := WSIL.Type::Item;
             WSIL.validate("No.", PItemNo);
-            WSIL.validate("NAV Variant code", PNavvariant);
+            if PNavvariant <> '' then
+                WSIL.validate("NAV Variant code", PNavvariant);
             WSIL.Description := L_ArchivedScannedEntry."Item Desciption";
             WSIL."Unit of Measure Code" := L_UoM;
             WSIL.Quantity := Qty;
