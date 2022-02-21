@@ -184,8 +184,8 @@
                                       <TablixCell>
                                         <CellContents>
                                           <Image Name="Image4">
-                                            <Source>Embedded</Source>
-                                            <Value>MicrosoftTeamsimage</Value>
+                                            <Source>Database</Source>
+                                            <Value>=Fields!CompanyLogo.Value</Value>
                                             <MIMEType>image/bmp</MIMEType>
                                             <Sizing>FitProportional</Sizing>
                                             <ZIndex>6</ZIndex>
@@ -1545,7 +1545,6 @@
                                             </Style>
                                           </Textbox>
                                           <ColSpan>6</ColSpan>
-                                          <rd:Selected>true</rd:Selected>
                                         </CellContents>
                                       </TablixCell>
                                       <TablixCell />
