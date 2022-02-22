@@ -1236,12 +1236,11 @@
                                           </TablixCell>
                                           <TablixCell>
                                             <CellContents>
-                                              <Image Name="Image4">
+                                              <Image Name="Image2">
                                                 <Source>Database</Source>
                                                 <Value>=Fields!CompanyLogo.Value</Value>
                                                 <MIMEType>image/bmp</MIMEType>
                                                 <Sizing>FitProportional</Sizing>
-                                                <ZIndex>6</ZIndex>
                                                 <Style>
                                                   <Border>
                                                     <Style>None</Style>
