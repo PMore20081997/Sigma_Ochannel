@@ -419,18 +419,12 @@ page 90003 "Web Order List"
         InterimSalesHeader: Record "Interim Sales Header";
         //OrderRead: Codeunit "Process Order File-Innox";
         //AmazonIntegration: Codeunit "Amazon Integration"; //Commented By Pavan 20072020
-        HeaderNo: Code[20];
-        ShipmentTracking: Record "Shipment Tracking";
-        LineNo: Integer;
         Temp_SalesHeader: Record "Sales Header" temporary;
-        SalesLine: Record "Sales Line";
         EnableEliminateSelectedError: Boolean;
         EnableReject: Boolean;
-        EnableAccept: Boolean;
         WebOrdMngt: Codeunit "Web Order Mgt";
         SalesHeader: Record "Sales Header";
         WhseInternalPickHeader: Record "Whse. Internal Pick Header";
-
 
 
     procedure GetStatus(L_Status: Option Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled; L_InterimSalesHeader: Record "Interim Sales Header")
@@ -516,14 +510,14 @@ page 90003 "Web Order List"
                 Temp_SalesHeader."External Document No." := P_InterimSalesHeader."External Document No.";
                 Temp_SalesHeader."Applies-to ID" := P_InterimSalesHeader."Channel Order ID";
 
-                Temp_SalesHeader."Shipping Agent Code" := P_InterimSalesHeader."Shipping Agent Code";
+                Temp_SalesHeader."Shipping Agent Code" := CopyStr(P_InterimSalesHeader."Shipping Agent Code", 1, 10);
                 Temp_SalesHeader."Shipping Agent Service Code" := CopyStr(P_InterimSalesHeader."Shipping Agent Service Code", 1, 10);
 
                 Temp_SalesHeader."Ship-to Name" := P_InterimSalesHeader."Ship-to Name";
                 Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address";
                 Temp_SalesHeader."Ship-to Address 2" := P_InterimSalesHeader."Ship-to Address 2";
                 Temp_SalesHeader."Ship-to City" := P_InterimSalesHeader."Ship-to City";
-                Temp_SalesHeader."Ship-to Country/Region Code" := P_InterimSalesHeader."Ship-to Country/Region Code";
+                Temp_SalesHeader."Ship-to Country/Region Code" := CopyStr(P_InterimSalesHeader."Ship-to Country/Region Code", 1, 10);
                 Temp_SalesHeader."Ship-to Post Code" := P_InterimSalesHeader."Ship-to Post Code";
 
                 Temp_SalesHeader."VAT Base Discount %" := P_InterimSalesHeader."Order Amount";
