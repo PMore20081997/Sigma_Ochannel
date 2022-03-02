@@ -12,7 +12,7 @@
             "startupObjectType":"Page",
             "startupObjectId": 22,
             "environmentType": "Sandbox",
-            "schemaUpdateMode":"Synchronize",
+            "schemaUpdateMode":"ForceSync",
             "environmentName": "ILoveWallpaper_Sandbox",
             "tenant": "7bac1391-1bbb-46cf-ae0d-ad536338587c"
         }

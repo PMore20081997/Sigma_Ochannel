@@ -88,6 +88,7 @@ codeunit 90089 "DPD Courier"
         NoofRecs: Integer;
         orderToken: JsonToken;
         orderHeaderObject: JsonObject;
+        ShipmentID: Text;
     begin
         ClearAll();
         GetCredentials(Temp_SalesHeader."Shipping Agent Code");
@@ -147,6 +148,7 @@ codeunit 90089 "DPD Courier"
                             ErrorArray.Get(i, orderToken);
                             orderHeaderObject := orderToken.AsObject();
                             Error := GetJsonvalue(orderHeaderObject, 'errorMessage').AsText();
+                            if Temp_SalesHeader.FindFirst() then;
                             L_Interimsalesheader.Reset();
                             L_Interimsalesheader.SetRange("No.", Temp_SalesHeader."No.");
                             if L_Interimsalesheader.FindFirst() then begin
@@ -156,11 +158,12 @@ codeunit 90089 "DPD Courier"
                         end;
                     end
                     else begin
-                        UpdateShipmentHeader(jObject, Temp_SalesHeader);
+                        ShipmentID := UpdateShipmentHeader(jObject, Temp_SalesHeader);
+                        if Temp_SalesHeader.FindFirst() then;
                         L_Interimsalesheader.Reset();
                         L_Interimsalesheader.SetRange("No.", Temp_SalesHeader."No.");
                         if L_Interimsalesheader.FindFirst() then;
-                        GetDPDLables(L_Interimsalesheader, GeoSession, ServiceURL, DPDAccountNo);
+                        GetDPDLables(ShipmentID, L_Interimsalesheader, GeoSession, ServiceURL, DPDAccountNo);
                     end;
 
                 end
@@ -173,7 +176,7 @@ codeunit 90089 "DPD Courier"
     end;
 
 
-    procedure UpdateShipmentHeader(responseObject: JsonObject; var Temp_SalesHeader: Record "Sales Header" temporary)
+    procedure UpdateShipmentHeader(responseObject: JsonObject; var Temp_SalesHeader: Record "Sales Header" temporary): Text
     var
         responseData: JsonObject;
         consignmentData: JsonObject;
@@ -193,16 +196,18 @@ codeunit 90089 "DPD Courier"
                 packageobj := PackageToken.AsObject();
                 trackingNo := Format(packageobj.AsToken());// CopyStr(GetJsonvalue(packageobj, '').AsText(), 1, 30);
         */
+        if Temp_SalesHeader.FindFirst() then;
         L_InterimSalesHeader.Reset();
-        L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."No.");
+        L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."Applies-to Doc. No.");
         if L_InterimSalesHeader.FindFirst() then begin
             L_InterimSalesHeader.Validate("Package Tracking No.", trackingNo);
             L_InterimSalesHeader.Remarks := '';
             L_InterimSalesHeader.Modify();
         end;
+        exit(trackingNo);
     end;
 
-    procedure GetDPDLables(var Temp_salesheader: Record "Interim Sales Header" temporary; GeoSession: text; SURL: Text; DPDAcctno: Text)
+    procedure GetDPDLables(TrackingNo: Text; var Temp_salesheader: Record "Interim Sales Header" temporary; GeoSession: text; SURL: Text; DPDAcctno: Text)
     var
         L_httpclient: HttpClient;
         L_httpheaders: HttpHeaders;
@@ -223,7 +228,7 @@ codeunit 90089 "DPD Courier"
 
         L_httpheaders := L_httpclient.DefaultRequestHeaders;
         // ServiceURL := 'https://api.dpd.co.uk/shipping/shipment/' + Format(Temp_salesheader."Package Tracking No.") + '/label';
-        ServiceURL := LabelServiceURL + '?shipmentid=' + Format(Temp_salesheader."Package Tracking No.") + '&url=' + SURL + '&dpdaccountno=' + DPDAcctno + '&geosession=' + GeoSession;
+        ServiceURL := LabelServiceURL + '?shipmentid=' + TrackingNo + '&url=' + SURL + '&dpdaccountno=' + DPDAcctno + '&geosession=' + GeoSession;
         //ServiceURL := 'http://dpdlabelapi.azurewebsites.net/api/DPD/GetLabels?shipmentid=745602544&url=' + SURL + '&dpdaccountno=' + DPDAcctno + '&geosession=' + GeoSession;
         L_httpheaders.Add('Accept', 'application/json');
         L_httpcontent.GetHeaders(L_httpheaders);

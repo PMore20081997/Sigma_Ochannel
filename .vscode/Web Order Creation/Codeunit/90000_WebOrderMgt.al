@@ -643,10 +643,10 @@ codeunit 90000 "Web Order Mgt"
         L_TradePartner: Record "Trade Partner";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
-            
-           if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
-             exit;
-             
+
+            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
+                exit;
+
             PartnerErrorLog.RESET;
             PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
             IF PartnerErrorLog.FindSet() THEN
@@ -771,7 +771,7 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    Procedure GetNavShippingAgentFromWebShipping(P_ChannelCode: Code[20]; P_WebShippingAgent: Text[50]; P_WebSipmentMethod: Code[20]; VAR P_ShippingRule: Record "Shipping Rule")
+    Procedure GetNavShippingAgentFromWebShipping(P_ChannelCode: Code[20]; P_WebShippingAgent: Text[50]; P_WebSipmentMethod: Code[50]; VAR P_ShippingRule: Record "Shipping Rule")
     begin
         P_ShippingRule.RESET;
         P_ShippingRule.SETCURRENTKEY("Channel Code", "Web Shipping Agent", "Web Shipment Method", Preference);

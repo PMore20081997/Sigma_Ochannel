@@ -236,7 +236,7 @@ codeunit 90002 "Shopify Integration"
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
         InterimSalesHeader."No." := ChannelOrderId;
         InterimSalesHeader."External Document No." := ChannelOrderId;
-        InterimSalesHeader."Package Tracking No." := ChannelOrderId;
+        //InterimSalesHeader."Package Tracking No." := ChannelOrderId;
 
         if BillingAddr = true then begin
             if GetJsonvalue(BillingAddress, 'name').IsNull = false then begin
@@ -337,38 +337,33 @@ codeunit 90002 "Shopify Integration"
             if GetJsonvalue(ShippingAddress, 'address1').IsNull = false then begin
                 InterimSalesHeader."Ship-to Address" := CopyStr(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText(), 1, 50);
             end;
-        end;
 
-        if ShippingAddr = true then begin
             if GetJsonvalue(ShippingAddress, 'address2').IsNull = false then begin
                 InterimSalesHeader."Ship-to Address 2" := CopyStr(GetJsonToken(ShippingAddress, 'address2').AsValue().AsText(), 1, 50);
             end;
-        end;
 
-        if ShippingAddr = true then begin
             if GetJsonvalue(ShippingAddress, 'city').IsNull = false then begin
                 InterimSalesHeader."Ship-to City" := Copystr(GetJsonToken(ShippingAddress, 'city').AsValue().AsText(), 1, 30);
             end;
-        end;
 
-        if ShippingAddr = true then begin
             if GetJsonvalue(ShippingAddress, 'zip').IsNull = false then begin
                 InterimSalesHeader."Ship-to Post Code" := GetJsonToken(ShippingAddress, 'zip').AsValue().AsText();
             end;
-        end;
-        if ShippingAddr = true then begin
+
             if GetJsonvalue(ShippingAddress, 'name').IsNull = false then begin
                 InterimSalesHeader."Ship-to Name" := GetJsonToken(ShippingAddress, 'name').AsValue().AsText();
             end;
-        end;
-        if ShippingAddr = true then begin
+
             if GetJsonvalue(ShippingAddress, 'phone').IsNull = false then begin
                 InterimSalesHeader."Ship-to Phone" := GetJsonToken(ShippingAddress, 'phone').AsValue().AsText();
             end;
-        end;
-        if ShippingAddr = true then begin
+
             if GetJsonvalue(ShippingAddress, 'country').IsNull = false then begin
                 InterimSalesHeader."Ship-to County" := GetJsonToken(ShippingAddress, 'country').AsValue().AsText();
+            end;
+
+            if GetJsonvalue(ShippingAddress, 'country_code').IsNull = false then begin
+                InterimSalesHeader."Ship-to Country/Region Code" := GetJsonToken(ShippingAddress, 'country_code').AsValue().AsCode();
             end;
         end;
         if GetJsonvalue(OrderHeader, 'total_price').IsNull = false then begin

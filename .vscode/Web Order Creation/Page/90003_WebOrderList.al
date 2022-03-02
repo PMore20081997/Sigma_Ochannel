@@ -486,6 +486,7 @@ page 90003 "Web Order List"
                 end
                 else begin
                     Temp_SalesHeader."No." := P_InterimSalesHeader."No.";
+                    Temp_SalesHeader."Applies-to Doc. No." := P_InterimSalesHeader."No.";
                 end;
 
                 if P_InterimSalesHeader."Shipment Date" <> 0D then begin
