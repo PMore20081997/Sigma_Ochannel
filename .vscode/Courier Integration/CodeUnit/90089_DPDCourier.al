@@ -267,7 +267,7 @@ codeunit 90089 "DPD Courier"
                 Message(L_response);
             end;
         end;
-        Temp_salesheader.DeleteAll();
+        //Temp_salesheader.DeleteAll();
     end;
 
 
