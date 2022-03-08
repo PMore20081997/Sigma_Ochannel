@@ -8,13 +8,13 @@ page 90003 "Web Order List"
     CardPageID = "Web Order Header";
     DeleteAllowed = true;
     UsageCategory = Lists;
-    Editable = false;
+    Editable = true;
     PageType = List;
     RefreshOnActivate = true;
     ShowFilter = true;
     SourceTable = "Interim Sales Header";
     SourceTableView = WHERE("Document Type" = CONST(Order));
-    InsertAllowed = false;
+    InsertAllowed = true;
     layout
     {
         area(content)

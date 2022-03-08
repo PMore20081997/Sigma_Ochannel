@@ -235,6 +235,18 @@ page 90016 "Trade Partner card"
 
                     end;
                 }
+                field(ProductCount; Rec."API Attribute")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Product Count';
+                }
+                field(ProductPageCount; Rec."API Endpoint")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Product Page Count';
+                }
+
+
             }
 
             group("Feature Setup")

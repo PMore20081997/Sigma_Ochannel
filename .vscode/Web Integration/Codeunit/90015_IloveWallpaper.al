@@ -19,6 +19,11 @@ codeunit 90015 IloveWallpaper
                     Getitems(StartParameter);
                     MESSAGE('items Sync Completed...');
                 End;
+            UpdateInventoryLabel:
+                begin
+                    UpdateProductStok(StartParameter);
+                    MESSAGE('Update Inventory  Sucessfully...');
+                end;
 
         end;
     End;
@@ -35,25 +40,28 @@ codeunit 90015 IloveWallpaper
         URL: Text;
         j: Integer;
         TradePartner: Record "Trade Partner";
+        SoapAction: text;
+
     begin
 
         GetCredentials(ChannelCode);
         //Live Request Body++
-        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="https://demo.visualsoft.co.uk/api/soap/service"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetProducts><product_references SOAP-ENC:arrayType="xsd:string[2]" xsi:type="SOAP-ENC:Array"><item xsi:type="xsd:string">REF1</item></product_references><get_data xsi:nil="true"/><limit xsi:type="xsd:int">10</limit><offset xsi:type="xsd:int">10</offset><file_type xsi:type="xsd:string">xml</file_type></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
+        //RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="' + SoapActionUrl + '"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetProducts><product_references SOAP-ENC:arrayType="xsd:string[2]" xsi:type="SOAP-ENC:Array"><item xsi:type="xsd:string">REF1</item></product_references><get_data xsi:nil="true"/><limit xsi:type="xsd:int">' + ProductCount + '</limit><offset xsi:type="xsd:int">' + ProductPageCount + '</offset><file_type xsi:type="xsd:string">xml</file_type></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
         //Live Request Body--
-
+        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="' + SoapActionUrl + '"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body> <ns1:GetProducts><product_references xsi:nil="true"/><get_data xsi:nil="true"/><file_type xsi:type="xsd:string">xml</file_type><limit xsi:type="xsd:int">' + ProductCount + '</limit><offset xsi:type="xsd:int">' + ProductPageCount + '</offset></ns1:GetProducts></soapenv:Body></soapenv:Envelope>';
 
         // URL := 'https://demo.visualsoft.co.uk/api/soap/service/5';
         URL := ServiceURL;
 
-
+        SoapAction := SoapActionUrl + '#GetProducts';
         RequestMessage.SetRequestUri(URL);
         RequestMessage.Method('POST');
         Content.WriteFrom(RequestBody);
         Content.GetHeaders(Headers);
         Headers.Remove('Content-Type');
         Headers.Add('Content-Type', 'text/xml;charset=utf-8');
-        Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service#GetProducts');
+        //Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service#GetProducts');
+        Headers.Add('soapAction', SoapAction);
         RequestMessage.Content := Content;
         Client.Send(RequestMessage, ResponseMessage);
         ResponseMessage.Content().ReadAs(Response);
@@ -81,8 +89,13 @@ codeunit 90015 IloveWallpaper
             AccessKeyId := TradePartner.AccessKeyId;
             SecretAccessKey := TradePartner.SecretAccessKey;
             ServiceURL := TradePartner."Sevice/API URL";
-            StartDate := Format(Today, 0, '20<Year>-<Month,2>-<Day,2>');
-            EndDate := Format(TradePartner."Last Order Sync", 0, '20<Year>-<Month,2>-<Day,2>');
+            //EndDate := Format(Today, 0, '20<Year>-<Month,2>-<Day,2>');
+            EndDate := Format(CurrentDateTime, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
+            StartDate := Format(TradePartner."Last Order Sync", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
+            // StartDate := Format(TradePartner."Last Order Sync", 0, '20<Year>-<Month,2>-<Day,2>');
+            ProductCount := TradePartner."API Attribute";
+            ProductPageCount := TradePartner."API Endpoint";
+            SoapActionUrl := TradePartner.MerchantId;
         end;
 
 
@@ -103,21 +116,22 @@ codeunit 90015 IloveWallpaper
     begin
         GetCredentials(ChannelCode);
         //Live Request Body++
-        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="https://demo.visualsoft.co.uk/api/soap/service/5"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetOrdersByDateRange><from_date xsi:type="xsd:date">' + EndDate + '</from_date><to_date xsi:type="xsd:date">' + StartDate + '</to_date><successful_only xsi:nil="true"/></ns1:GetOrdersByDateRange></soapenv:Body></soapenv:Envelope>';
+        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="' + ServiceURL + '"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetOrdersByDateRange><from_date xsi:type="xsd:date">' + StartDate + '</from_date><to_date xsi:type="xsd:date">' + EndDate + '</to_date><successful_only xsi:nil="true"/></ns1:GetOrdersByDateRange></soapenv:Body></soapenv:Envelope>';
         //Live Request Body--
 
         //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
         //URL := ServiceURL;
         URL := ServiceURL;
 
-
+        SoapAction := SoapActionUrl + '/6#GetOrdersByDateRange';
         RequestMessage.SetRequestUri(URL);
         RequestMessage.Method('POST');
         Content.WriteFrom(RequestBody);
         Content.GetHeaders(Headers);
         Headers.Remove('Content-Type');
         Headers.Add('Content-Type', 'text/xml;charset=utf-8');
-        Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service/5#GetOrdersByDateRange');
+        // Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service/5#GetOrdersByDateRange');
+        Headers.Add('soapAction', SoapAction);
         RequestMessage.Content := Content;
         Client.Send(RequestMessage, ResponseMessage);
         ResponseMessage.Content().ReadAs(Response);
@@ -246,6 +260,13 @@ codeunit 90015 IloveWallpaper
     var
         ChannelItemListing: Record "Channel Item Listing";
         L_XmlDocument: XmlDocument;
+
+        ASINNOXMLlist: XmlNodeList;
+        ASINNOXMLlistNode: Xmlnode;
+        ASINNOXMLlistNodeElement: XmlElement;
+        ASINNOXMLlist1: XmlNodeList;
+        ASINNOXMLlistNode1: Xmlnode;
+        ASINNOXMLlistNodeElement1: XmlElement;
         CU_XMLDOMMgmt: Codeunit "XML DOM Management";
         L_NavOrderResultList: XmlNodeList;
         L_StatusNodeList: XmlNodeList;
@@ -288,6 +309,7 @@ codeunit 90015 IloveWallpaper
         GenericNode: XmlNode;
         GenericElement: XmlElement;
         Generictext: text;
+        NmberAsin: Text;
     begin
         P_Response := CU_XMLDOMMgmt.RemoveNamespaces(P_Response);
         XmlDocument.ReadFrom(P_Response, L_XmlDocument);
@@ -334,11 +356,37 @@ codeunit 90015 IloveWallpaper
                     WebOrderXLMElement4 := WebOrderXLMNode4.AsXmlElement();
                     Generictext := WebOrderXLMElement4.InnerText;
                 end;
+
+
+                if WebOrderXLMList3.Get(18, ASINNOXMLlistNode) then
+                    ASINNOXMLlistNodeElement := ASINNOXMLlistNode.AsXmlElement();
+                if not ASINNOXMLlistNodeElement.IsEmpty() and ASINNOXMLlistNodeElement.HasElements() then
+                    ASINNOXMLlist := ASINNOXMLlistNodeElement.GetChildNodes();
+
+
+                Clear(ASINNOXMLlistNodeElement1);
+                if ASINNOXMLlist.get(1, ASINNOXMLlistNode1) then
+                    ASINNOXMLlistNodeElement1 := ASINNOXMLlistNode1.AsXmlElement();
+                ASINNOXMLlist1 := ASINNOXMLlistNodeElement1.GetChildNodes();
+
+
+                Clear(NmberAsin);
+                if ASINNOXMLlist1.Get(8, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    NmberAsin := GenericElement.InnerText;
+
+                end;
                 //ItemsInsertCode
 
                 ChannelItemListing.RESET;
+                // if Generictext = 'Voucher' then begin
+                //     Message('Voucher');
+                // end;
+                if NmberAsin <> '' then
+                    ChannelItemListing.SetRange("ASIN No", NmberAsin);
                 ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
                 ChannelItemListing.SETRANGE("Channel SKU", Generictext);
+
                 IF ChannelItemListing.FINDFIRST THEN BEGIN
                     UpdateProduct(WebOrderXLMList3, FALSE, ChannelItemListing, ChannelCode);
                 END
@@ -355,46 +403,222 @@ codeunit 90015 IloveWallpaper
         ItemDescription: Text;
         //ChannelItemListing: Record "Channel Item Listing";
         unitPrice: Decimal;
+        UnitPriceText: text;
         ChannelInvquantity: Decimal;
         ChannelInvOldquantity: Decimal;
         InvItemId: BigInteger;
         ITEM: Record 27;
         NetWeight: Decimal;
         ItemSKU: Text;
+        SubProductCount: Integer;
+        K: Integer;
+        ChannelSKUCheck: Text;
+        ChannelSKU: Code[20];
+        InventoryVisualsoft: Decimal;
     begin
-
-        CLEAR(ChannelItemListing);
-        ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
-        //
-        // need to added fields
-        //
-        ChannelItemListing.VALIDATE("Price Synced", TRUE);
-        ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
 
         Clear(GenericNode);
         Clear(GenericElement);
         if P_ItemDataNodeList.Get(1, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            ChannelItemListing."Channel SKU" := GenericElement.InnerText;
-
+            ChannelSKUCheck := GenericElement.InnerText;
         end;
+
+        if ChannelSKUCheck <> '' then begin
+
+            ChannelItemListing.Validate("Channel SKU", ChannelItemListing."Channel SKU");
+            ChannelItemListing.Validate("ASIN No", ChannelItemListing."ASIN No");
+            ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
+            ChannelItemListing.VALIDATE("Price Synced", TRUE);
+            ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if P_ItemDataNodeList.Get(2, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing."Channel Title" := GenericElement.InnerText;
+            end;
+
+            // Clear(GenericNode);
+            // Clear(GenericElement);
+            // if P_ItemDataNodeList.Get(5, GenericNode) then begin
+            //     GenericElement := GenericNode.AsXmlElement();
+            //     ChannelItemListing."ASIN No" := GenericElement.InnerText;
+            // end;
+
+            // if P_ItemDataNodeList.Get(1, GenericNode) then begin
+            //     GenericElement := GenericNode.AsXmlElement();
+            //     ChannelItemListing."Channel SKU" := GenericElement.InnerText;
+
+            // end;
+
+            if P_ItemDataNodeList.Get(18, SubProductXMLNode) then
+                SubProductXMLElement := SubProductXMLNode.AsXmlElement();
+            if not SubProductXMLElement.IsEmpty() and SubProductXMLElement.HasElements() then
+                SubProductXMLNodeList := SubProductXMLElement.GetChildNodes();
+
+            SubProductCount := SubProductXMLNodeList.Count;
+
+            if SubProductXMLNodeList.Count > 0 then begin
+                for k := 1 to SubProductXMLNodeList.Count do begin
+
+                    if SubProductXMLNodeList.get(K, SubProductXMLNode1) then
+                        SubProductXMLElement1 := SubProductXMLNode1.AsXmlElement();
+                    SubProductXMLNodeList1 := SubProductXMLElement1.GetChildNodes();
+                    if SubProductXMLNodeList1.Get(K, SubProductXMLNode2) then
+                        SubProductXMLElement2 := SubProductXMLNode2.AsXmlElement();
+                    // if not SubProductXMLElement2.IsEmpty() and SubProductXMLElement2.HasElements() then
+                    //  WebOrderXLMList3 := WebOrderXLMElement3.GetChildNodes();
+                    // UpdateSubproduct(SubProductXMLNodeList1, ChannelItemListing, ChannelCode, AsinNo);
+
+                    Clear(GenericNode);
+                    Clear(GenericElement);
+                    if SubProductXMLNodeList1.Get(1, GenericNode) then begin
+                        GenericElement := GenericNode.AsXmlElement();
+                        ChannelSKU := GenericElement.InnerText;
+                    end;
+                    //  if ChannelSKU = ASINNO then begin
+
+                    Clear(GenericNode);
+                    Clear(GenericElement);
+                    if SubProductXMLNodeList1.Get(14, GenericNode) then begin
+                        GenericElement := GenericNode.AsXmlElement();
+                        UnitPriceText := GenericElement.InnerText;
+                        if UnitPriceText <> '' then
+                            Evaluate(UnitPrice, GenericElement.InnerText);
+                        ChannelItemListing."Unit Price" := UnitPrice;
+                    end;
+
+                    // if SubProductXMLNodeList1.Get(8, GenericNode) then begin
+                    //     GenericElement := GenericNode.AsXmlElement();
+                    //     ChannelItemListing."ASIN No" := GenericElement.InnerText;
+
+                    // end;
+
+                    if SubProductXMLNodeList1.Get(5, GenericNode) then begin
+                        GenericElement := GenericNode.AsXmlElement();
+                        Evaluate(InventoryVisualsoft, GenericElement.InnerText);
+                        ChannelItemListing."Channel Inventory" := InventoryVisualsoft;
+                    end;
+                    //  end;
+                end;
+            end;
+        end;
+        ChannelItemListing.MODIFY();
+    end;
+
+    procedure CreateSubproduct(SubproductNoeList: XmlNodeList; ChannelItemListing: Record "Channel Item Listing"; ChannelCode: Code[10]; ASINNO: Text)
+    var
+        ChannelSKU: Text;
+        UnitPrice: Decimal;
+
+    begin
+
+
+
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if P_ItemDataNodeList.Get(2, GenericNode) then begin
+        if SubproductNoeList.Get(1, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            ChannelItemListing."Channel Title" := GenericElement.InnerText;
+            ChannelSKU := GenericElement.InnerText;
         end;
+        if ChannelSKU <> ASINNO then begin
+
+            ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
+            ChannelItemListing.VALIDATE("Price Synced", TRUE);
+            ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
+            //  ChannelItemListing."ASIN No" := ASINNO;
 
 
-        ChannelItemListing.VALIDATE("Price Synced", TRUE);
-        ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
-        //
-        //need to added fields here 
-        //
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(1, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing."Channel SKU" := GenericElement.InnerText;
+            end;
 
-        ChannelItemListing.MODIFY(TRUE);
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(3, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing."Channel Title" := GenericElement.InnerText;
 
+            end;
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(28, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing.Description := GenericElement.InnerText;
+
+            end;
+
+            ChannelItemListing.Insert();
+
+        end else begin
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(18, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                Evaluate(UnitPrice, GenericElement.InnerText);
+                ChannelItemListing."Unit Price" := UnitPrice;
+
+            end;
+            ChannelItemListing.Modify();
+        End;
+    end;
+
+    procedure UpdateSubproduct(SubproductNoeList: XmlNodeList; ChannelItemListing: Record "Channel Item Listing"; ChannelCode: Code[10]; ASINNO: Text)
+    var
+        ChannelSKU: Text;
+    begin
+
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if SubproductNoeList.Get(1, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            ChannelSKU := GenericElement.InnerText;
+        end;
+        if ChannelSKU <> ASINNO then begin
+
+
+            ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
+            ChannelItemListing.VALIDATE("Price Synced", TRUE);
+            ChannelItemListing.VALIDATE("Inventory Synced", TRUE);
+            ChannelItemListing."ASIN No" := ASINNO;
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(1, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing."Channel SKU" := GenericElement.InnerText;
+
+            end;
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(3, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing."Channel Title" := GenericElement.InnerText;
+
+            end;
+
+            Clear(GenericNode);
+            Clear(GenericElement);
+            if SubproductNoeList.Get(28, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                ChannelItemListing.Description := GenericElement.InnerText;
+
+            end;
+
+            ChannelItemListing.Modify();
+
+        end;
     end;
 
     local procedure CreateProduct(P_ItemDataNodeList: XmlNodeList; bool: Boolean; ChannelCode: Code[20])
@@ -409,6 +633,12 @@ codeunit 90015 IloveWallpaper
         ITEM: Record Item;
         NetWeight: Decimal;
         ItemSKU: Text;
+        k: Integer;
+        SubProductCount: Integer;
+        ChannelSKU: Code[20];
+        InventoryVisualsoft: Integer;
+        UnitPricetext: text;
+
     begin
 
         CLEAR(ChannelItemListing);
@@ -427,6 +657,13 @@ codeunit 90015 IloveWallpaper
 
         end;
 
+        // Clear(GenericNode);
+        // Clear(GenericElement);
+        // if P_ItemDataNodeList.Get(5, GenericNode) then begin
+        //     GenericElement := GenericNode.AsXmlElement();
+        //     ChannelItemListing."ASIN No" := GenericElement.InnerText;
+        // end;
+
         Clear(GenericNode);
         Clear(GenericElement);
         if P_ItemDataNodeList.Get(2, GenericNode) then begin
@@ -434,6 +671,59 @@ codeunit 90015 IloveWallpaper
             ChannelItemListing."Channel Title" := GenericElement.InnerText;
         end;
 
+        if P_ItemDataNodeList.Get(18, SubProductXMLNode) then
+            SubProductXMLElement := SubProductXMLNode.AsXmlElement();
+        if not SubProductXMLElement.IsEmpty() and SubProductXMLElement.HasElements() then
+            SubProductXMLNodeList := SubProductXMLElement.GetChildNodes();
+
+        SubProductCount := SubProductXMLNodeList.Count;
+
+        if SubProductXMLNodeList.Count > 0 then begin
+            for k := 1 to SubProductXMLNodeList.Count do begin
+
+                if SubProductXMLNodeList.get(K, SubProductXMLNode1) then
+                    SubProductXMLElement1 := SubProductXMLNode1.AsXmlElement();
+                SubProductXMLNodeList1 := SubProductXMLElement1.GetChildNodes();
+                if SubProductXMLNodeList1.Get(K, SubProductXMLNode2) then
+                    SubProductXMLElement2 := SubProductXMLNode2.AsXmlElement();
+
+
+                //  CreateSubproduct(SubProductXMLNodeList1, ChannelItemListing, ChannelCode, ASINNO);
+
+
+                Clear(GenericNode);
+                Clear(GenericElement);
+                if SubProductXMLNodeList1.Get(1, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    ChannelSKU := GenericElement.InnerText;
+                end;
+                //if ChannelSKU = ASINNO then begin
+
+                Clear(GenericNode);
+                Clear(GenericElement);
+                if SubProductXMLNodeList1.Get(14, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    UnitPricetext := GenericElement.InnerText;
+                    if UnitPricetext <> '' then
+                        Evaluate(UnitPrice, GenericElement.InnerText);
+                    ChannelItemListing."Unit Price" := UnitPrice;
+                end;
+
+                if SubProductXMLNodeList1.Get(8, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    ChannelItemListing."ASIN No" := GenericElement.InnerText;
+
+                end;
+
+                if SubProductXMLNodeList1.Get(5, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    Evaluate(InventoryVisualsoft, GenericElement.InnerText);
+                    ChannelItemListing."Channel Inventory" := InventoryVisualsoft;
+                end;
+                // end;
+
+            end;
+        end;
 
         ChannelItemListing.INSERT(TRUE);
 
@@ -441,6 +731,7 @@ codeunit 90015 IloveWallpaper
 
     procedure InsertIntrimSalesHeader(P_OrderDataNodeList: XmlNodeList; ChannelCode: Code[10]; var InterimSalesHeader: Record "Interim Sales Header" temporary)
     var
+        TradePartner1: Record "Trade Partner";
         CustomerNodeList: XmlNodeList;
         BillingAddressNodeList: XmlNodeList;
         ShippingAddressNodeList: XmlNodeList;
@@ -462,6 +753,7 @@ codeunit 90015 IloveWallpaper
         CountryCode: Text[50];
         L_ShippingPrice: Decimal;
         FullShipToAddress: Text;
+        LeghtString: Text;
 
     begin
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
@@ -501,6 +793,25 @@ codeunit 90015 IloveWallpaper
             InterimSalesHeader."Document Date" := DT2Date(OrderDate);
         end;
 
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if OrderNodeList.Get(11, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            OrderDate := GenerateDateTime(GenericElement.InnerText());
+            //InterimSalesHeader."Requested Delivery Date" := OrderDate;
+            InterimSalesHeader."Requested Delivery Date" := DT2Date(OrderDate);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        Clear(LeghtString);
+        if OrderNodeList.Get(33, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            LeghtString := Copystr(GenericElement.InnerText(), 1, 50);
+            InterimSalesHeader."Web Shipment Method" := LeghtString;
+        end;
+
+
 
         //for HeaderNodeLsit 
 
@@ -539,6 +850,7 @@ codeunit 90015 IloveWallpaper
         if CustomerNodeList.Get(6, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader.Address := Copystr(GenericElement.InnerText(), 1, 50);
+
         end;
 
         Clear(GenericNode);
@@ -559,13 +871,20 @@ codeunit 90015 IloveWallpaper
         Clear(GenericElement);
         if CustomerNodeList.Get(13, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Post Code" := Copystr(GenericElement.InnerText(), 1, 30);
+            InterimSalesHeader."Post Code" := Copystr(GenericElement.InnerText(), 1, 50);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if OrderNodeList.Get(17, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            Evaluate(G_ShippingPrice, GenericElement.InnerText());
         end;
 
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(FirstName);
-        if CustomerNodeList.Get(19, GenericNode) then begin
+        if CustomerNodeList.Get(18, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             FirstName := Copystr(GenericElement.InnerText(), 1, 30);
         end;
@@ -573,7 +892,7 @@ codeunit 90015 IloveWallpaper
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(LastName);
-        if CustomerNodeList.Get(20, GenericNode) then begin
+        if CustomerNodeList.Get(19, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             LastName := Copystr(GenericElement.InnerText(), 1, 30);
         end;
@@ -584,41 +903,47 @@ codeunit 90015 IloveWallpaper
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(21, GenericNode) then begin
+        if CustomerNodeList.Get(20, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Ship-to Address" := Copystr(GenericElement.InnerText(), 1, 50);
         end;
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(22, GenericNode) then begin
+        if CustomerNodeList.Get(21, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Ship-to Address 2" := Copystr(GenericElement.InnerText(), 1, 50);
         end;
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(23, GenericNode) then begin
+        if CustomerNodeList.Get(22, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Ship-to City" := Copystr(GenericElement.InnerText(), 1, 30);
-        end;
-        Clear(GenericNode);
-        Clear(GenericElement);
-        if CustomerNodeList.Get(27, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            // InterimSalesHeader."Ship-to Country/Region Code" := Copystr(GenericElement.InnerText(), 1, 10);
         end;
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(28, GenericNode) then begin
+        if CustomerNodeList.Get(26, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to Country/Region Code" := Copystr(GenericElement.InnerText(), 1, 10);
+        end;
+
+        if CustomerNodeList.Get(23, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            InterimSalesHeader."Ship-to County" := Copystr(GenericElement.InnerText(), 1, 30);
+        end;
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if CustomerNodeList.Get(27, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Ship-to Post Code" := Copystr(GenericElement.InnerText(), 1, 20);
         end;
 
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(29, GenericNode) then begin
+        if CustomerNodeList.Get(28, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
             InterimSalesHeader."Ship-to Phone" := Copystr(GenericElement.InnerText(), 1, 20);
         end;
@@ -626,6 +951,11 @@ codeunit 90015 IloveWallpaper
 
 
 
+        TradePartner1.Reset();
+        if TradePartner1.Get(ChannelCode) then begin
+            if TradePartner1."Customer Mapping" = TradePartner1."Customer Mapping"::"Default Customer" then
+                InterimSalesHeader."Sell-to Customer No." := TradePartner1."Customer No.";
+        end;
 
         //Customer Node List
 
@@ -648,6 +978,12 @@ codeunit 90015 IloveWallpaper
         LineCount: Integer;
         Qty: Decimal;
         Unitprices: Decimal;
+        GLAccount: Code[20];
+        TradePartner1: Record "Trade Partner";
+        DiscountExtext: Text;
+        DiscountEx: Decimal;
+        DiscountExFinal: Text;
+        InterimSalesLine1: Record "Interim Sales Line";
     begin
 
         //OrderItem
@@ -679,7 +1015,7 @@ codeunit 90015 IloveWallpaper
 
                     Clear(GenericNode);
                     Clear(GenericElement);
-                    if ItemlistXLMlist.Get(2, GenericNode) then begin
+                    if ItemlistXLMlist.Get(5, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
                         InterimSalesLine."No." := GenericElement.InnerText;
                         InterimSalesLine."Channel SKU" := GenericElement.InnerText;
@@ -694,7 +1030,7 @@ codeunit 90015 IloveWallpaper
 
                     Clear(GenericNode);
                     Clear(GenericElement);
-                    if ItemlistXLMlist.Get(13, GenericNode) then begin
+                    if ItemlistXLMlist.Get(14, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
                         Evaluate(QTY, GenericElement.InnerText);
                         InterimSalesLine.Quantity := Qty;
@@ -702,7 +1038,7 @@ codeunit 90015 IloveWallpaper
 
                     Clear(GenericNode);
                     Clear(GenericElement);
-                    if ItemlistXLMlist.Get(14, GenericNode) then begin
+                    if ItemlistXLMlist.Get(15, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
                         Evaluate(UnitPrice, GenericElement.InnerText);
                         InterimSalesLine."Unit Price" := UnitPrice;
@@ -710,16 +1046,82 @@ codeunit 90015 IloveWallpaper
 
                     Clear(GenericNode);
                     Clear(GenericElement);
-                    if ItemlistXLMlist.Get(10, GenericNode) then begin
+                    if ItemlistXLMlist.Get(11, GenericNode) then begin
                         GenericElement := GenericNode.AsXmlElement();
-                        InterimSalesLine.Description := CopyStr(GenericElement.InnerText(), 1, 100);
+                        InterimSalesLine.Description := GenericElement.InnerText();
                     end;
 
-                End;
-                InterimSalesLine.Insert();
-            End;
-        end;
+                    Clear(GenericNode);
+                    Clear(GenericElement);
+                    if ItemlistXLMlist.Get(19, GenericNode) then begin
+                        GenericElement := GenericNode.AsXmlElement();
+                        DiscountExtext := GenericElement.InnerText;
+                        if (DiscountExtext <> '') and (DiscountExtext <> '0') then begin
+                            DiscountExFinal := DiscountExtext.Remove(1, 1);
+                            Evaluate(DiscountEx, DiscountExFinal);
+                            InterimSalesLine.Discount := DiscountEx;
+                        end else begin
+                            Evaluate(DiscountEx, DiscountExtext);
+                            InterimSalesLine.Discount := DiscountEx;
+                        end;
+                    end;
+
+
+
+                end;
+            end;
+
+            //Shipping Price
+
+            if G_ShippingPrice > 0 then
+                InterimSalesLine."Shipping Price" := G_ShippingPrice;
+
+            //Shipping Price
+
+            InterimSalesLine.Insert();
+        End;
     end;
+    // IF G_ShippingPrice > 0 THEN BEGIN
+    //     LineNo := 1000;
+    //     InterimSalesLine1.RESET;
+    //     InterimSalesLine1.INIT;
+    //     InterimSalesLine1.Type := InterimSalesLine1.Type::"G/L Account";
+
+    //     InterimSalesLine1."Document No" := InterimSalesHeader."No.";
+    //     InterimSalesLine.SETRANGE("Document No", InterimSalesHeader."No."); //Pass NAV Created DocumentNo
+
+    //     IF InterimSalesLine.FINDLAST THEN
+    //         LineNo := LineNo + InterimSalesLine."Line No.";
+    //     InterimSalesLine1."Line No." := LineNo;
+    //     InterimSalesLine1."Document Type" := InterimSalesLine1."Document Type"::Order;
+    //     InterimSalesLine1.Amount := G_ShippingPrice;
+    //     InterimSalesLine1."Unit Price" := G_ShippingPrice;
+    //     InterimSalesLine1."Shipping Price" := G_ShippingPrice;
+
+    //     InterimSalesLine1.Quantity := 1;
+
+    //     If TradePartner1.FindFirst then begin
+    //         GLAccount := TradePartner1."Shipping G/L No.";
+
+    //     end;
+    //     InterimSalesLine1.VALIDATE("No.", GLAccount);
+
+
+
+
+
+    //     InterimSalesLine1.VALIDATE("Trade Partner Code", InterimSalesHeader."Trade Partner Code");
+    //     InterimSalesLine1.VALIDATE("Sell-to Customer No.", InterimSalesHeader."Sell-to Customer No.");
+
+
+
+
+
+    //     InterimSalesLine1.Description := 'Shipping Charge';
+    //     InterimSalesLine1.INSERT(TRUE);
+
+    // END; //For Shiping Charge Line: End
+    // end;
 
     local procedure GenerateDateTime(createDate: Text): DateTime
     var
@@ -729,7 +1131,7 @@ codeunit 90015 IloveWallpaper
         TimeType: Time;
         Convertdate: DateTime;
     begin
-        if createDate <> '' then begin
+        if (createDate <> '') And (createDate <> '0000-00-00 00:00:00') then begin
             evaluate(Day, copystr(createDate, 9, 2));
             evaluate(Month, copystr(createDate, 6, 2));
             evaluate(Year, copystr(createDate, 1, 4));
@@ -740,12 +1142,195 @@ codeunit 90015 IloveWallpaper
     end;
 
 
+    procedure UpdateProductStok(ChannelCode: code[20])
     var
+        RequestBody: Text;
+        Client: HttpClient;
+        RequestMessage: HttpRequestMessage;
+        ResponseMessage: HttpResponseMessage;
+        Headers: HttpHeaders;
+        Content: HttpContent;
+        Response: Text;
+        URL: Text;
+        j: Integer;
+        TradePartner: Record "Trade Partner";
+
+        ChannelItemListing: Record "Channel Item Listing";
+        Stock: Text;
+        ChannelSKU: Text;
+    begin
+
+        setInventory(ChannelCode);
+        ChannelItemListing.RESET;
+        ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
+        ChannelItemListing.SETFILTER("Inventory Synced", '%1', FALSE);
+
+        if ChannelItemListing.FindFirst() then begin
+
+            repeat
+                Clear(Stock);
+                Clear(ChannelSKU);
+                Stock := format(ChannelItemListing."Channel Inventory");
+                ChannelSKU := ChannelItemListing."Channel SKU";
+
+
+                GetCredentials(ChannelCode);
+                //Live Request Body++
+                Clear(RequestBody);
+                RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="' + SoapActionUrl + '"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username> <Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ser:SetStock><product_reference>' + ChannelSKU + '</product_reference><stock_level>' + Stock + '</stock_level></ser:SetStock></soapenv:Body></soapenv:Envelope>';
+                //Live Request Body--
+
+                //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
+                //URL := ServiceURL;
+
+                SoapAction := SoapActionUrl + '#SetStock';
+
+                URL := ServiceURL;
+                Clear(RequestMessage);
+                RequestMessage.SetRequestUri(URL);
+                RequestMessage.Method('POST');
+                Content.WriteFrom(RequestBody);
+                Content.GetHeaders(Headers);
+                Headers.Remove('Content-Type');
+                Headers.Clear();
+                Headers.Add('Content-Type', 'text/xml;charset=utf-8');
+                //Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service/5#GetOrdersByDateRange');
+                Headers.Add('soapAction', SoapAction);
+                RequestMessage.Content := Content;
+                Client.Send(RequestMessage, ResponseMessage);
+                ResponseMessage.Content().ReadAs(Response);
+                if ResponseMessage.HttpStatusCode = 200 then begin
+                    ChannelItemListing."Inventory Synced" := TRUE;
+                    ChannelItemListing.Action := ChannelItemListing.Action::Updated;
+                    ChannelItemListing."Modified On" := CREATEDATETIME(WORKDATE, TIME);
+                    ChannelItemListing.Remarks := 'Inventory updated successfully';
+
+                end;
+                ChannelItemListing.Modify();
+            UNTIL ChannelItemListing.NEXT = 0;
+        end;
+
+    End;
+
+    local procedure setInventory(ChannelCode: Code[20])
+    var
+        CIL: Record "Channel Item Listing";
+        Items: Record Item;
+        ChannelInventory: Integer;
+    begin
+        CIL.RESET;
+        CIL.SETRANGE("Channel Code", ChannelCode);
+        IF CIL.FINDSET THEN BEGIN
+            REPEAT
+                if CIL."Item No." = '' then begin
+                    CIL."Channel Inventory" := 0;
+                    CIL.Modify();
+                end
+                else begin
+                    Clear(ChannelInventory);
+                    Items.Reset();
+                    Items.SetRange("No.", CIL."Item No.");
+                    if Items.FindFirst() then begin
+                        ChannelInventory := CIL."Channel Inventory";
+                        Items.CalcFields(Inventory, "Qty. on Sales Order");
+                        CIL."Channel Inventory" := Items.Inventory - Items."Qty. on Sales Order";
+                        if CIL."Channel Inventory" < 0 then
+                            CIL.Validate("Channel Inventory", 0);
+                        CIL.Modify();
+                        IF ChannelInventory <> CIL."Channel Inventory" THEN begin
+                            CIL."Inventory Synced" := false;
+                            CIL.Modify();
+                        end;
+                    end;
+                end;
+
+            UNTIL CIL.NEXT = 0;
+        END;
+    end;
+
+    procedure UpdateOrderStatus(Channelcode: Code[20])
+    var
+    begin
+
+    end;
+
+    procedure UpdateProductPrice(ChannelCode: code[20])
+    var
+        RequestBody: Text;
+        Client: HttpClient;
+        RequestMessage: HttpRequestMessage;
+        ResponseMessage: HttpResponseMessage;
+        Headers: HttpHeaders;
+        Content: HttpContent;
+        Response: Text;
+        URL: Text;
+        j: Integer;
+        TradePartner: Record "Trade Partner";
+        responseText: Text;
+        ChannelItemListing: Record "Channel Item Listing";
+        Stock: Text;
+        ChannelSKU: Text;
+    begin
+
+
+        ChannelItemListing.RESET;
+        ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
+        ChannelItemListing.SETFILTER("Price Synced", '%1', FALSE);
+        if ChannelItemListing.FindFirst() then begin
+
+            repeat
+                Clear(Stock);
+                Clear(ChannelSKU);
+                Stock := format(ChannelItemListing."Unit Price");
+                ChannelSKU := ChannelItemListing."Channel SKU";
+
+
+                GetCredentials(ChannelCode);
+                //Live Request Body++
+                Clear(RequestBody);
+                RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="https://demo.visualsoft.co.uk/api/soap/service"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username> <Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ser:SetStock><product_reference>' + ChannelSKU + '</product_reference><stock_level>' + Stock + '</stock_level></ser:SetStock></soapenv:Body></soapenv:Envelope>';
+                //Live Request Body--
+
+                //URL := 'https://eufy1.cloudfyuat.com/navisionservices/Services/Navision.svc';
+                //URL := ServiceURL;
+                URL := ServiceURL;
+                Clear(RequestMessage);
+                RequestMessage.SetRequestUri(URL);
+                RequestMessage.Method('POST');
+                Content.WriteFrom(RequestBody);
+                Content.GetHeaders(Headers);
+                Headers.Remove('Content-Type');
+                Headers.Clear();
+                Headers.Add('Content-Type', 'text/xml;charset=utf-8');
+                Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service/5#GetOrdersByDateRange');
+                RequestMessage.Content := Content;
+                Client.Send(RequestMessage, ResponseMessage);
+                ResponseMessage.Content().ReadAs(Response);
+                ResponseMessage.Content.ReadAs(responseText);
+                if ResponseMessage.HttpStatusCode = 200 then begin
+                    //if (HttpResponse.HttpStatusCode = 200) then begin
+                    ChannelItemListing."Price Synced" := TRUE;
+                    ChannelItemListing.Action := ChannelItemListing.Action::Updated;
+                    ChannelItemListing."Modified On" := CREATEDATETIME(WORKDATE, TIME);
+                end
+                else begin
+                    ChannelItemListing.Remarks := copystr(responseText, 1, 100);
+                end;
+                ChannelItemListing.MODIFY;
+            UNTIL ChannelItemListing.NEXT = 0;
+        END;
+        Message('Price Updated Sucessfully');
+    end;
+
+    var
+        LineNo: Integer;
         StartParameter: Text;
+        SoapAction: text;
         RunType: Text;
         SyncOrderLabel: Label 'SyncOrder';
         SyncShipmentLabel: Label 'SyncShipment';
         SyncItemLabel: Label 'SyncItem';
+        UpdateInventoryLabel: label 'UpdateInventory';
         TokenId: Text;
         SiteId: Text;
         OrderStatus: Text;
@@ -756,8 +1341,23 @@ codeunit 90015 IloveWallpaper
         StartDateTime: DateTime;
         EndDate: Text;
         ServiceURL: Text;
+        ProductCount: text;
+        ProductPageCount: text;
+
+        SoapActionUrl: text;
+
+        G_ShippingPrice: Decimal;
 
         GenericNode: XmlNode;
         GenericElement: XmlElement;
         CUWebOrderMgt: Codeunit "Web Order Mgt";
+        SubProductXMLNodeList: XmlNodeList;
+        SubProductXMLNode: XmlNode;
+        SubProductXMLElement: XmlElement;
+        SubProductXMLNodeList1: XmlNodeList;
+        SubProductXMLNode1: XmlNode;
+        SubProductXMLElement1: XmlElement;
+        SubProductXMLNodeList2: XmlNodeList;
+        SubProductXMLNode2: XmlNode;
+        SubProductXMLElement2: XmlElement;
 }
