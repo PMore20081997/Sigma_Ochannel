@@ -99,11 +99,13 @@ page 90017 "Web Order Header"
                 field("Deal ID"; rec."Deal ID")
                 {
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("Fullfillment Channel"; rec."Fullfillment Channel")
                 {
                     Editable = false;
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("Order Type"; rec."Order Type")
                 {

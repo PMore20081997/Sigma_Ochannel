@@ -754,6 +754,8 @@ codeunit 90015 IloveWallpaper
         L_ShippingPrice: Decimal;
         FullShipToAddress: Text;
         LeghtString: Text;
+        TotalDiscountIn: Decimal;
+
 
     begin
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
@@ -881,6 +883,14 @@ codeunit 90015 IloveWallpaper
             Evaluate(G_ShippingPrice, GenericElement.InnerText());
         end;
 
+
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if OrderNodeList.Get(20, GenericNode) then begin
+            GenericElement := GenericNode.AsXmlElement();
+            Evaluate(TotalDiscountIn, GenericElement.InnerText());
+            InterimSalesHeader."Order Discount Amount" := TotalDiscountIn;
+        end;
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(FirstName);
@@ -984,6 +994,8 @@ codeunit 90015 IloveWallpaper
         DiscountEx: Decimal;
         DiscountExFinal: Text;
         InterimSalesLine1: Record "Interim Sales Line";
+        CountLine: Integer;
+        G_CountLine: Integer;
     begin
 
         //OrderItem
@@ -996,14 +1008,12 @@ codeunit 90015 IloveWallpaper
             OrderItemNodeList := GenericElement.GetChildNodes();
 
 
-            if OrderItemNodeList.get(1, itemlistNode) then
-                itemlistelement := itemlistNode.AsXmlElement();
-            if not itemlistelement.IsEmpty() and itemlistelement.HasElements() then
-                ItemlistXLMlist := itemlistelement.GetChildNodes();
 
 
-            if ItemlistXLMlist.Count > 0 then begin
-                for j := 1 to ItemlistXLMlist.Count do begin
+            CountLine := OrderItemNodeList.Count;
+            if CountLine > 0 then begin
+                for j := 1 to CountLine do begin
+
                     InterimSalesLine.Init;
                     InterimSalesLine."Line No." := j;
                     InterimSalesLine."Document Type" := InterimSalesLine."Document Type"::Order;
@@ -1011,7 +1021,14 @@ codeunit 90015 IloveWallpaper
                     InterimSalesLine."Document No" := InterimSalesHeader."No.";
                     InterimSalesLine.Weight := 1;
                     InterimSalesLine."Channel Order ID" := InterimSalesHeader."Channel Order ID";
+                    Clear(G_CountLine);
+                    if CountLine > 1 then
+                        G_CountLine := j;
 
+                    if OrderItemNodeList.get(j, itemlistNode) then
+                        itemlistelement := itemlistNode.AsXmlElement();
+                    if not itemlistelement.IsEmpty() and itemlistelement.HasElements() then
+                        ItemlistXLMlist := itemlistelement.GetChildNodes();
 
                     Clear(GenericNode);
                     Clear(GenericElement);
@@ -1065,20 +1082,19 @@ codeunit 90015 IloveWallpaper
                             InterimSalesLine.Discount := DiscountEx;
                         end;
                     end;
+                    if j = 1 then begin
+                        if G_ShippingPrice > 0 then
+                            InterimSalesLine."Shipping Price" := G_ShippingPrice;
+                    end;
+                    //Shipping Price
 
-
-
+                    InterimSalesLine.Insert();
                 end;
             end;
 
             //Shipping Price
 
-            if G_ShippingPrice > 0 then
-                InterimSalesLine."Shipping Price" := G_ShippingPrice;
 
-            //Shipping Price
-
-            InterimSalesLine.Insert();
         End;
     end;
     // IF G_ShippingPrice > 0 THEN BEGIN

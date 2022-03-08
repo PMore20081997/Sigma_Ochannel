@@ -8,7 +8,7 @@ page 90003 "Web Order List"
     CardPageID = "Web Order Header";
     DeleteAllowed = true;
     UsageCategory = Lists;
-    Editable = true;
+    Editable = false;
     PageType = List;
     RefreshOnActivate = true;
     ShowFilter = true;
