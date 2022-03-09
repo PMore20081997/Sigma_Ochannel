@@ -138,6 +138,7 @@ page 90017 "Web Order Header"
                 {
                     Editable = false;
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("Destination Doc Type"; Rec."Destination Doc Type")
                 {
