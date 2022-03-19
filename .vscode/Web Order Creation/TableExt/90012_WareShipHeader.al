@@ -10,5 +10,9 @@ tableextension 90012 "Warehouse Ship Header Ext" extends "Warehouse Shipment Hea
         {
 
         }
+        field(90002; Remarks; Text[250])
+        {
+
+        }
     }
 }

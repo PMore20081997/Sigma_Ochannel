@@ -34,6 +34,13 @@ pageextension 90048 ExtendNavigationArea extends "Order Processor Role Center"
                     Caption = 'B2C Dispatch Scan';
                     //Visible = ShowDespatchScanButton;
                 }
+                action("B2B Dispatch Scan")
+                {
+                    RunObject = page "B2B Dispatch Scan Screen";
+                    ApplicationArea = all;
+                    Caption = 'B2B Dispatch Scan';
+                    //Visible = ShowDespatchScanButton;
+                }
                 action("Download Return Label")
                 {
                     Caption = 'Download Return Label';

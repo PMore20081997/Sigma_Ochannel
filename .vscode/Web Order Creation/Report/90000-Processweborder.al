@@ -15,7 +15,7 @@ report 90000 "Process Web Orders"
                 DataItemTableView = SORTING("Document Type", "No.")
                                     WHERE("Document Type" = FILTER(Order),
                                           "Destination Doc No." = filter(''),
-                                           Status = FILTER("In Progress"),
+                                           Status = FILTER("Label Generated"),
                                           "No of Error" = CONST(0)
                 // "Tracking No." = FILTER(<> '')
                 );//Sofyan
@@ -272,7 +272,7 @@ report 90000 "Process Web Orders"
         NoOfOrders: Integer;
         i: Integer;
         CurrRec: Integer;
-        NoOfItems: Option Single,Multiple;
+        NoOfItems: Option Single,Multiple,Everything;
         tcount: Integer;
         PCount: Integer;
         RecItem: Record Item;

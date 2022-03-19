@@ -34,6 +34,13 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                     Caption = 'B2C Dispatch Scan';
                     //Visible = ShowDespatchScanButton;
                 }
+                action("B2B Dispatch Scan")
+                {
+                    RunObject = page "B2B Dispatch Scan Screen";
+                    ApplicationArea = all;
+                    Caption = 'B2B Dispatch Scan';
+                    //Visible = ShowDespatchScanButton;
+                }
                 action("Ochannel Return Order")
                 {
                     RunObject = page "Return Order Screen";

@@ -105,6 +105,14 @@ table 90008 "Archive Scanned Entries"
         {
             DataClassification = ToBeClassified;
         }
+        field(25; "Source No."; Code[20])
+        {
+
+        }
+        field(26; "Source Line No."; Integer)
+        {
+
+        }
     }
 
     keys

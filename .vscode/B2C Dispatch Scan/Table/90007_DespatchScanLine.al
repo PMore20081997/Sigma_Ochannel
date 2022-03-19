@@ -87,6 +87,14 @@ table 90007 "Despatch Scan Line"
         {
             DataClassification = ToBeClassified;
         }
+        field(25; "Source No."; Code[20])
+        {
+
+        }
+        field(26; "Source Line No."; Integer)
+        {
+
+        }
     }
 
     keys

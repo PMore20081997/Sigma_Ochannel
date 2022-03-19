@@ -2,6 +2,19 @@ pageextension 90085 "Posted Whse. Rcpt Card" extends "Registered Pick"
 {
     layout
     {
+        addafter("No. Printed")
+        {
+            field("Trolley No."; Rec."Trolley No.")
+            {
+                ApplicationArea = All;
+                Editable = false;
+            }
+            field("Trolley Closed"; Rec."Trolley Closed")
+            {
+                ApplicationArea = All;
+                Editable = false;
+            }
+        }
         addafter("Registering Date")
         {
             field("No. of Boxes"; Rec."No. of Boxes")
