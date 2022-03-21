@@ -52,7 +52,7 @@ table 90003 "Interim Sales Header"
         }
         field(10; status; Option)
         {
-            OptionMembers = Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled,Cancelled,"Ready To Dispatch","No Stock","Partially Scanned","Label Generated";
+            OptionMembers = Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled,Cancelled,"Ready To Dispatch","No Stock","Partially Scanned";
             // OptionMembers = Confirmed,"In Progress",Processing,Dispatched,Rejected,Throttled,Cancelled,"Ready To Dispatch","No Stock","Partially Scanned";//Sofyan
             //OptionCaptionML = ENU = 'Confirmed,"In Progress",Processing,Dispatched,Rejected,Throttled,Cancelled,Ready To Dispatch,No Stock,Partially Scanned',
             //                  ENG = 'Confirmed,"In Progress",Processing,Dispatched,Rejected,Throttled,Cancelled,Ready To Dispatch,No Stock,Partially Scanned';

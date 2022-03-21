@@ -201,7 +201,6 @@ codeunit 90089 "DPD Courier"
         L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."Applies-to Doc. No.");
         if L_InterimSalesHeader.FindFirst() then begin
             L_InterimSalesHeader.Validate("Package Tracking No.", trackingNo);
-            L_InterimSalesHeader.Validate(status, L_InterimSalesHeader.status::"Label Generated");//khan++
             L_InterimSalesHeader.Remarks := '';
             L_InterimSalesHeader.Modify();
         end;

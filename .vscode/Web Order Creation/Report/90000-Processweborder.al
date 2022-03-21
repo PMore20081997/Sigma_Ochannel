@@ -15,9 +15,9 @@ report 90000 "Process Web Orders"
                 DataItemTableView = SORTING("Document Type", "No.")
                                     WHERE("Document Type" = FILTER(Order),
                                           "Destination Doc No." = filter(''),
-                                           Status = FILTER("Label Generated"),
-                                          "No of Error" = CONST(0)
-                // "Tracking No." = FILTER(<> '')
+                                           Status = FILTER("In Progress"),
+                                          "No of Error" = CONST(0),
+                 "Tracking No." = FILTER(<> '')
                 );//Sofyan
                 RequestFilterFields = "No.", "Document Date", "Shipping Agent Code", "Shipping Agent Service Code";//"Sell-to Customer No.", "Ship-to Country/Region Code", ; //, "Prime Order", "Premium Order"
 
