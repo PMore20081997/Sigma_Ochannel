@@ -1,6 +1,6 @@
 page 90008 "Despatch Scan Screen"
 {
-    Caption = 'B2C Dispatch Scan';
+    Caption = 'B2C Dispatch Scan (WIP)';
     DeleteAllowed = true;
     PageType = Card;
     SourceTable = "Despatch Scan Header";
@@ -211,12 +211,12 @@ page 90008 "Despatch Scan Screen"
         if L_Despatch.FindFirst() then
             L_Despatch.Delete();
 
-        L_Despatch.Reset();  
+        L_Despatch.Reset();
         L_Despatch.CalcFields("Line exist");
-        L_Despatch.SetRange("Line exist",false);
+        L_Despatch.SetRange("Line exist", false);
         L_Despatch.SETRANGE("User ID", USERID);
         if L_Despatch.FindSet() then
-          L_Despatch.DeleteAll();
+            L_Despatch.DeleteAll();
 
         Clear(G_Count);
         G_TrolleyScanned := false;
@@ -227,7 +227,7 @@ page 90008 "Despatch Scan Screen"
         L_Despatch.Ascending(false);
         L_Despatch.SETRANGE("User ID", USERID);
         //L_Despatch.SETRANGE(Scanned, FALSE); code bloked by ak
-        IF L_Despatch.FINDFIRST THEN BEGIN            
+        IF L_Despatch.FINDFIRST THEN BEGIN
             L_Despatch2.RESET;
             L_Despatch2.SETRANGE("User ID", USERID);
             //L_Despatch2.SETRANGE("Order No", L_Despatch."Order No");
@@ -244,7 +244,7 @@ page 90008 "Despatch Scan Screen"
                 FindtotalWeborders(V_TrolleyNo);
                 FillPickedItemsForTrolley(V_TrolleyNo, G_BayNo);
                 CurrPage."Despatch Scan Subform".Page.Setfilter(V_TrolleyNo, UserId);
-                rec.SetRange("Trolley No",V_TrolleyNo);
+                rec.SetRange("Trolley No", V_TrolleyNo);
             end;
         END
         ELSE BEGIN
@@ -403,27 +403,27 @@ page 90008 "Despatch Scan Screen"
                 L_Despatch."Bay No." := L_InterimSalesLine."Bay No."; //G_BayNo;
                 L_Despatch."Channel Parter Code" := L_InterimSalesLine."Trade Partner Code";
                 L_Despatch.INSERT;
-                Clear(G_EntryNo);                
+                Clear(G_EntryNo);
                 L_DespatchH.Reset();
-                L_DespatchH.SetRange("Trolley No",V_TrolleyNo);
+                L_DespatchH.SetRange("Trolley No", V_TrolleyNo);
                 if L_DespatchH.IsEmpty then begin
-                  Rec.Reset();
-                  if Rec.FindLast() then
-                    G_EntryNo := Rec."Entry No." + 1
-                  else 
-                    G_EntryNo := 1;  
-                  Rec.Init();
-                  Rec."Entry No." := G_EntryNo;
-                  Rec."Trolley No" := V_TrolleyNo;
-                  Rec."Bay No." := G_BayNo;
-                  Rec."Item No." := L_Despatch."Item No.";
-                  Rec."User ID" := UserId;
-                  IF L_Despatch.Quantity = (L_Despatch."Scanned Quantity" + L_Despatch."Trolley closed Quantity") THEN
-                    Rec.Scanned := TRUE
-                  ELSE
-                    Rec.Scanned := FALSE;
-                  Rec."Order No" := L_InterimSalesLine."Document No";
-                  Rec.Insert();
+                    Rec.Reset();
+                    if Rec.FindLast() then
+                        G_EntryNo := Rec."Entry No." + 1
+                    else
+                        G_EntryNo := 1;
+                    Rec.Init();
+                    Rec."Entry No." := G_EntryNo;
+                    Rec."Trolley No" := V_TrolleyNo;
+                    Rec."Bay No." := G_BayNo;
+                    Rec."Item No." := L_Despatch."Item No.";
+                    Rec."User ID" := UserId;
+                    IF L_Despatch.Quantity = (L_Despatch."Scanned Quantity" + L_Despatch."Trolley closed Quantity") THEN
+                        Rec.Scanned := TRUE
+                    ELSE
+                        Rec.Scanned := FALSE;
+                    Rec."Order No" := L_InterimSalesLine."Document No";
+                    Rec.Insert();
                 end;
                 Commit();
                 PrintDispatchReport(V_TrolleyNo, L_Despatch."Order No");//Start_(CAS-20546-N9C8Y6)_Nikhil_24/06/2020

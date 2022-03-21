@@ -1,6 +1,6 @@
-page 90085 "B2B Dispatch Line"
+page 90085 "Dispatch Line (WHS)"
 {
-    Caption = 'B2B Dispatch Line';
+    Caption = 'B2C Dispatch Line (WHS)';
     DelayedInsert = true;
     DeleteAllowed = false;
     PageType = ListPart;

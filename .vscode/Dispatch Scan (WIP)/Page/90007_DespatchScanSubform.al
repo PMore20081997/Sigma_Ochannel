@@ -1,6 +1,6 @@
 page 90007 "Despatch Scan Subform"
 {
-    Caption = 'B2C Dispatch Line';
+    Caption = 'B2C Dispatch Line (WIP)';
     DelayedInsert = true;
     DeleteAllowed = false;
     PageType = ListPart;
@@ -127,7 +127,7 @@ page 90007 "Despatch Scan Subform"
     var
         L_ISH: Record "Interim Sales Header";
     begin
-        Rec.SetRange("Trolley No",G_TrolleyNo);
+        Rec.SetRange("Trolley No", G_TrolleyNo);
         IF (rec."Trolley No" <> '') AND (rec.Scanned = TRUE) THEN BEGIN
             Styletext := ChangeStyle(Rec."Trolley No", Rec."Order No")
         END
@@ -176,6 +176,7 @@ page 90007 "Despatch Scan Subform"
         ChannelOrderId: Text;
         UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";
         G_TrolleyNo: Code[20];
+
     trigger OnOpenPage()
     begin
         Rec.RESET;
@@ -184,14 +185,14 @@ page 90007 "Despatch Scan Subform"
 
     procedure Setfilter(P_TrolleyNo: Code[20]; P_UserID: Code[50])
     var
-    
+
     begin
         Rec.RESET;
         Rec.ASCENDING(FALSE);
         Rec.SETRANGE("User ID", P_UserID);
         Rec.SetRange("Trolley No", P_TrolleyNo);
         Rec.SetRange(Scanned, true);
-       // Rec.FindLast();
+        // Rec.FindLast();
         G_TrolleyNo := P_TrolleyNo;
     end;
 }

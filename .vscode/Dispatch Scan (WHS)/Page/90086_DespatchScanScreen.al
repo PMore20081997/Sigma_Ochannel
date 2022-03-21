@@ -1,6 +1,6 @@
-page 90086 "B2B Dispatch Scan Screen"
+page 90086 "Dispatch Scan (WHS)"
 {
-    Caption = 'B2B Dispatch Scan';
+    Caption = 'B2C Dispatch Scan (WHS)';
     DeleteAllowed = true;
     PageType = Card;
     SourceTable = "Despatch Scan Header";
@@ -89,7 +89,7 @@ page 90086 "B2B Dispatch Scan Screen"
                             G_DespatchScanLine.SetRange("Trolley No", V_TrolleyNo);
                             // G_DespatchScanLine.SetRange(Scanned, true);
                             if G_DespatchScanLine.FindSet() then
-                                CurrPage."B2B Dispatch Line".Page.Setfilter(V_TrolleyNo, UserId);
+                                CurrPage."Dispatch Line (WHS)".Page.Setfilter(V_TrolleyNo, UserId);
                             SLEEP(2000);
                             CheckTrolleyScanCompleted(V_TrolleyNo, G_BayNo);
                             CurrPage.UPDATE(false);
@@ -177,7 +177,7 @@ page 90086 "B2B Dispatch Scan Screen"
                         G_DespatchScanLine.SetRange("Trolley No", V_TrolleyNo);
                         G_DespatchScanLine.SetRange(Scanned, true);
                         if G_DespatchScanLine.FindSet() then
-                            CurrPage."B2B Dispatch Line".Page.Setfilter(V_TrolleyNo, UserId);
+                            CurrPage."Dispatch Line (WHS)".Page.Setfilter(V_TrolleyNo, UserId);
                         SLEEP(1000);
                         CheckTrolleyScanCompleted(V_TrolleyNo, G_BayNo);
                         CurrPage.UPDATE(FALSE);
@@ -193,7 +193,7 @@ page 90086 "B2B Dispatch Scan Screen"
                 }
 
             }
-            part("B2B Dispatch Line"; "B2B Dispatch Line")
+            part("Dispatch Line (WHS)"; "Dispatch Line (WHS)")
             {
                 ApplicationArea = All;
                 SubPageLink = "Trolley No" = field("Trolley No");
@@ -245,7 +245,7 @@ page 90086 "B2B Dispatch Scan Screen"
             if V_TrolleyNo <> '' then begin
                 FindtotalWeborders(V_TrolleyNo);
                 FillPickedItemsForTrolley(V_TrolleyNo, G_BayNo);
-                CurrPage."B2B Dispatch Line".Page.Setfilter(V_TrolleyNo, UserId);
+                CurrPage."Dispatch Line (WHS)".Page.Setfilter(V_TrolleyNo, UserId);
                 rec.SetRange("Trolley No", V_TrolleyNo);
             end;
         END
