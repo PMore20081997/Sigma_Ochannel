@@ -172,6 +172,10 @@ codeunit 90089 "DPD Courier"
                     Message(L_response);
                 end;
             end;
+        end
+        else begin
+            if Temp_SalesHeader.FindFirst() then;
+            Message('Please Check if Ship-to Address, Ship-to Country/Region, Ship-to Post Code, Ship-to City, and Shipping Agent Service Code is Populated or Not on Order ' + Temp_SalesHeader."No.");
         end;
     end;
 
