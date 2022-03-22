@@ -150,6 +150,10 @@ table 90000 "General Setup - Channels"
         {
             TableRelation = "G/L Account"."No.";
         }
+        field(50000; "Production Item Inventory"; Integer)
+        {
+
+        }
 
     }
 

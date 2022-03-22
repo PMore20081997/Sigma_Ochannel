@@ -74,6 +74,11 @@ page 90003 "Web Order List"
                     CaptionML = ENU = 'Document Date', ENG = 'Document Date';
                     ApplicationArea = All;
                 }
+                field("Order Discount Amount"; Rec."Order Discount Amount")
+                {
+                    CaptionML = ENU = 'Order Discount Amount', ENG = 'Order Discount Amount';
+                    ApplicationArea = all;
+                }
                 field("Order Created On"; rec."Order Created On")
                 {
                     ApplicationArea = All;

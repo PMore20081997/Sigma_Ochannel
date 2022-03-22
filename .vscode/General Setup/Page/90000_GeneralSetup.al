@@ -87,6 +87,11 @@ page 90000 "General Setup - Channels"
                     ApplicationArea = All;
                     DecimalPlaces = 0 : 0;
                 }
+                field("Production Item Inventory"; Rec."Production Item Inventory")
+                {
+                    ApplicationArea = all;
+                    CaptionML = ENG = 'Production Item Inventory', ENU = 'Production Item Inventory';
+                }
                 field("Bank Account No."; Rec."Bank Account No.")
                 {
                     ApplicationArea = All;
