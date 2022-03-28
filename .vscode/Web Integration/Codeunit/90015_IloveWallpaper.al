@@ -1174,6 +1174,8 @@ codeunit 90015 IloveWallpaper
         ChannelItemListing: Record "Channel Item Listing";
         Stock: Text;
         ChannelSKU: Text;
+        ItemRec: Record Item;
+        GeneralSetup: Record "General Setup - Channels";
     begin
 
         setInventory(ChannelCode);
@@ -1184,10 +1186,24 @@ codeunit 90015 IloveWallpaper
         if ChannelItemListing.FindFirst() then begin
 
             repeat
+
                 Clear(Stock);
                 Clear(ChannelSKU);
-                Stock := format(ChannelItemListing."Channel Inventory");
-                ChannelSKU := ChannelItemListing."Channel SKU";
+                ItemRec.Reset();
+                ItemRec.SetRange("Production Item", true);
+                if ItemRec.FindFirst() then begin
+                    Clear(Stock);
+                    Clear(ChannelSKU);
+                    GeneralSetup.Get();
+                    Stock := format(GeneralSetup."Production Item Inventory");
+                    ChannelSKU := ItemRec."No.";
+                end
+                else begin
+                    Clear(Stock);
+                    Clear(ChannelSKU);
+                    Stock := format(ChannelItemListing."Channel Inventory");
+                    ChannelSKU := ChannelItemListing."Channel SKU";
+                end;
 
 
                 GetCredentials(ChannelCode);

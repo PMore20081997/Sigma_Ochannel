@@ -404,6 +404,7 @@ codeunit 90002 "Shopify Integration"
                 LineObject := WebLineToken.AsObject;
                 InterimSalesLine."Document Type" := InterimSalesLine."Document Type"::Order;
                 InterimSalesLine."Document No" := InterimSalesHeader."No.";
+                InterimSalesLine."Channel Order ID" := InterimSalesHeader."Channel Order ID";
                 InterimSalesLine."Line No." := k;
                 InterimSalesLine.Type := InterimSalesLine.type::Item;
 
