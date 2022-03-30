@@ -83,6 +83,11 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                         RunObject = page "Scanned Entries";
                         ApplicationArea = all;
                     }
+                    action("Scanned Header Entries")
+                    {
+                        RunObject = page "Scanned Header Entries";
+                        ApplicationArea = all;
+                    }
                     action("Archieved Scanned Entries")
                     {
                         RunObject = page "Archieved Scanned Entries";

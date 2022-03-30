@@ -2,7 +2,7 @@ page 90009 "Scanned Entries"
 {
 
     ApplicationArea = All;
-    Caption = 'Scanned Entries';
+    Caption = 'Scanned Line Entries';
     PageType = List;
     SourceTable = "Despatch Scan Line";
     UsageCategory = Lists;

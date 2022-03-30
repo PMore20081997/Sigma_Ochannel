@@ -88,6 +88,11 @@ pageextension 90048 ExtendNavigationArea extends "Order Processor Role Center"
                         RunObject = page "Scanned Entries";
                         ApplicationArea = all;
                     }
+                    action("Scanned Header Entries")
+                    {
+                        RunObject = page "Scanned Header Entries";
+                        ApplicationArea = all;
+                    }
                     action("Archieved Scanned Entries")
                     {
                         RunObject = page "Archieved Scanned Entries";

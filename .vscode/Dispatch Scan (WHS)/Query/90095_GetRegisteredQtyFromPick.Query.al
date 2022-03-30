@@ -12,9 +12,9 @@ query 90095 "B2B Get Registd. Qty From Pick"
             column(Type; Type)
             {
             }
-            column(No; "No.")
+            /*column(No; "No.")
             {
-            }
+            }*/
             dataitem(Registered_Whse_Activity_Line; "Registered Whse. Activity Line")
             {
                 DataItemLink = "Activity Type" = Registered_Whse_Activity_Hdr.Type, "No." = Registered_Whse_Activity_Hdr."No.";

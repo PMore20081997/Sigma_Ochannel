@@ -313,7 +313,7 @@ page 90086 "Dispatch Scan (WHS)"
         G_TotalWebOrders: Text;
         ChannelOrderId: Text;
         TempPickedStock: Record "Lot Bin Buffer" temporary;
-        Query50016: Query "Get Registered Qty From Pick";
+        Query50016: Query "B2B Get Registd. Qty From Pick";
         Text001: Label 'Some of the items in Trolley %1 are already scanned by %2. Do you want to load scanned line with your id?';
         G_BayNo: Code[10];
         IsBayNoEditable: Boolean;
@@ -336,7 +336,8 @@ page 90086 "Dispatch Scan (WHS)"
         L_WarehouseShipmentLine.RESET;
         L_WarehouseShipmentLine.SETRANGE("No.", V_TrolleyNo);
         L_WarehouseShipmentLine.SetFilter("Item No.", '%1|%2', G_ItemNo, FindItem(G_ItemNo, 1));
-        L_WarehouseShipmentLine.SETRANGE("Variant code", FindItem(G_ItemNo, 2));
+        if L_WarehouseShipmentLine."Variant Code" <> '' then
+            L_WarehouseShipmentLine.SETRANGE("Variant code", FindItem(G_ItemNo, 2));
         //L_WarehouseShipmentLine.SETRANGE("Dispatch Scan", FALSE);
         IF L_WarehouseShipmentLine.FINDFIRST THEN BEGIN
             L_Despatch.RESET;
@@ -754,18 +755,19 @@ page 90086 "Dispatch Scan (WHS)"
     begin
         CLEAR(Query50016);
         Query50016.SETRANGE(Query50016.Trolley_No, P_TrolleyNo);
+        Query50016.SetRange(Query50016.Type, Query50016.Type::Pick);
         //Query50016.SETRANGE(Query50016.Bay_No, P_BayNo); blocked to stop bay no feature
         Query50016.OPEN;
         WHILE Query50016.READ DO BEGIN
             TempPickedStock.RESET;
             TempPickedStock.SETRANGE("Item No.", Query50016.Item_No);
-            TempPickedStock.SetRange("Variant Code", Query50016.Variant_Code);
+            //  TempPickedStock.SetRange("Variant Code", Query50016.Variant_Code);//Need to discuss
             //TempPickedStock.SETRANGE("Bin Code", Query50016.No);
             IF NOT TempPickedStock.FINDFIRST THEN BEGIN
                 TempPickedStock.INIT;
                 TempPickedStock."Item No." := Query50016.Item_No;
-                TempPickedStock."Variant Code" := Query50016.Variant_Code;
-                TempPickedStock."Bin Code" := Query50016.No;
+                //  TempPickedStock."Variant Code" := Query50016.Variant_Code;//Need to discuss
+                TempPickedStock."Bin Code" := Query50016.Item_No;
                 TempPickedStock."Qty. (Base)" := Query50016.Sum_Qty_Base;
                 TempPickedStock."Lot No." := Query50016.Trolley_No;
                 /*if Query50016.Bay_No <> '' then
@@ -793,7 +795,8 @@ page 90086 "Dispatch Scan (WHS)"
 
         TempPickedStock.RESET;
         TempPickedStock.SETRANGE("Item No.", L_ItemNo);
-        TempPickedStock.SetRange("Variant Code", L_VariantCode);
+        if L_VariantCode <> '' then
+            TempPickedStock.SetRange("Variant Code", L_VariantCode);
         IF P_BayNo = '' then
             TempPickedStock.SETRANGE("Lot No.", P_TrolleyNo)
         else
@@ -805,7 +808,8 @@ page 90086 "Dispatch Scan (WHS)"
         if P_BayNo <> '' then
             L_DispatchedCount.SetRange("Bay No.", P_BayNo);
         L_DispatchedCount.SETRANGE("Item No.", L_ItemNo);
-        L_DispatchedCount.SetRange("Variant Code", L_VariantCode);
+        if L_VariantCode <> '' then
+            L_DispatchedCount.SetRange("Variant Code", L_VariantCode);
 
         //L_DispatchedCount.SETRANGE(Scanned,TRUE);code blocked by alok on 201120
         L_DispatchedCount.CALCSUMS("Scanned Quantity", "Trolley closed Quantity");
