@@ -222,12 +222,18 @@ report 90000 "Process Web Orders"
                 {
                     Visible = false;
                 }
+
             }
+
         }
 
         actions
         {
         }
+        trigger OnOpenPage()
+        begin
+            NoOfItems := NoOfItems::Everything;
+        end;
     }
 
     labels

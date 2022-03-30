@@ -16,7 +16,7 @@ page 90075 "Return Order Screen"
         {
             group("Option")
             {
-                
+
                 field(G_ReasonCode; G_ReasonCode)
                 {
                     Caption = 'Condition';
@@ -58,7 +58,7 @@ page 90075 "Return Order Screen"
                             Clear(G_Barcode2);
                             G_OrderNo2 := G_OrderNo;
                             G_Barcode2 := G_Barcode;
-                            G_ItemNo := G_DespatchScanPage.FindItem(G_Barcode, 1);                            
+                            G_ItemNo := G_DespatchScanPage.FindItem(G_Barcode, 1);
                             FillReturnOrdersForScan(G_OrderNo, G_ItemNo, G_Barcode);
                             FindHandledOrder(G_OrderNo, G_Barcode);
                             ValidateScannedQty(G_OrderNo2, G_ItemNo, G_Barcode2);
@@ -283,33 +283,36 @@ page 90075 "Return Order Screen"
                             DiagProgress.UPDATE(1, L_Return."Web Order No.");
 
                         until L_Return.Next() = 0;
-                        if TempSH.FindFirst() then repeat
-                          if SH.get(TempSh."Document Type", TempSh."No.") then begin                                
-                            if SH.Status =SH.Status::Open then 
-                              ReleaseSalesDoc.PerformManualRelease(SH);
-                            SH.Mark(true);  
-                          end;
-                        until TempSH.Next() = 0;
+                        if TempSH.FindFirst() then
+                            repeat
+                                if SH.get(TempSh."Document Type", TempSh."No.") then begin
+                                    if SH.Status = SH.Status::Open then
+                                        ReleaseSalesDoc.PerformManualRelease(SH);
+                                    SH.Mark(true);
+                                end;
+                            until TempSH.Next() = 0;
                         whseRecpt.Init();
-                        whseRecpt.Validate("Posting Date",WorkDate());
+                        whseRecpt.Validate("Posting Date", WorkDate());
                         whseRecpt.Insert(true);
-                        whseRecpt.Validate("Location Code",sh."Location Code");
+                        whseRecpt.Validate("Location Code", sh."Location Code");
                         whseRecpt.Modify(true);
                         SH.MarkedOnly(true);
-                        if SH.FindFirst() then repeat
-                          SL.Reset();
-                          sl.SetRange("Document Type",SH."Document Type");
-                          SL.SetRange("Document No.",SH."No.");
-                          SL.SetRange(Type,SL.Type::Item);
-                          if SL.FindFirst() then repeat
-                            Createsourcedoc.SalesLine2ReceiptLine(whseRecpt,SL)
-                          until SL.Next() =0;
-                        until SH.Next() =0;
+                        if SH.FindFirst() then
+                            repeat
+                                SL.Reset();
+                                sl.SetRange("Document Type", SH."Document Type");
+                                SL.SetRange("Document No.", SH."No.");
+                                SL.SetRange(Type, SL.Type::Item);
+                                if SL.FindFirst() then
+                                    repeat
+                                        Createsourcedoc.SalesLine2ReceiptLine(whseRecpt, SL)
+             until SL.Next() = 0;
+                            until SH.Next() = 0;
                         Clear(salesreturnlist);
-                        Clear(salesreturncard);                        
+                        Clear(salesreturncard);
                         DiagProgress.CLOSE;
                         Commit();
-                        whseRecpt.SetRange("No.",whseRecpt."No.");
+                        whseRecpt.SetRange("No.", whseRecpt."No.");
                         whserecptpage.SetTableView(whseRecpt);
                         whserecptpage.RunModal();
                         /*if SH.Count = 1 then begin
@@ -319,7 +322,7 @@ page 90075 "Return Order Screen"
                             salesreturnlist.SetTableView(SH);
                             salesreturnlist.RunModal();
                         end;*/
-                        
+
 
                     end;
                 end;
@@ -333,7 +336,8 @@ page 90075 "Return Order Screen"
     var
         L_Return: Record "Interim Sales Return";
     begin
-        CLEAR(G_Barcode);Clear(scancount);
+        CLEAR(G_Barcode);
+        Clear(scancount);
         BayNo := '000';
         L_Return.RESET;
         L_Return.SETRANGE("User ID", USERID);
@@ -345,16 +349,16 @@ page 90075 "Return Order Screen"
             Clear(G_ItemNo);
             //G_ItemNo := G_DespatchScanPage.FindItem(G_Barcode, 1);
             FillReturnOrdersForScan(G_OrderNo, G_ItemNo, G_Barcode);
-            L_Return.SetCurrentKey("Trolley No.","Bay No.");
+            L_Return.SetCurrentKey("Trolley No.", "Bay No.");
             L_Return.CalcSums("Quantity to Return");
-            scancount :=  L_Return."Quantity to Return";
+            scancount := L_Return."Quantity to Return";
             if L_Return.FindLast() then
-              BayNo := L_Return."Bay No.";
+                BayNo := L_Return."Bay No.";
             if scancount > 16 then
-            repeat
-              scancount := scancount - 16
-            until scancount <= 16;
-            
+                repeat
+                    scancount := scancount - 16
+                until scancount <= 16;
+
 
         END
         ELSE BEGIN
@@ -378,11 +382,12 @@ page 90075 "Return Order Screen"
         G_DespatchScanPage: Page "Despatch Scan Screen";
         G_OrderNo2: Code[20];
         G_Barcode2: Code[250];
-        G_Trolley: Code[20] ; 
+        G_Trolley: Code[20];
         scancount: Integer;
         BayNo: Code[20];
-        local procedure GetLineno(P_DocumentNo: Code[20]): Integer
-        var
+
+    local procedure GetLineno(P_DocumentNo: Code[20]): Integer
+    var
         L_SL: Record "Sales Line";
         L_LineNo: Integer;
     begin
@@ -407,7 +412,8 @@ page 90075 "Return Order Screen"
         L_HandledInterimSalesLine.SETRANGE("Document Type", L_HandledInterimSalesLine."Document Type"::Order);
         L_HandledInterimSalesLine.SETRANGE(Type, L_HandledInterimSalesLine.Type::Item);
         L_HandledInterimSalesLine.SETRANGE("No.", L_DespatchScanPage.FindItem(G_Barcode, 1));
-        L_HandledInterimSalesLine.SETRANGE(L_HandledInterimSalesLine."NAV Variant code", L_DespatchScanPage.FindItem(G_Barcode, 2));
+        if L_HandledInterimSalesLine."NAV Variant code" <> '' then
+            L_HandledInterimSalesLine.SETRANGE(L_HandledInterimSalesLine."NAV Variant code", L_DespatchScanPage.FindItem(G_Barcode, 2));
         L_HandledInterimSalesLine.SETFILTER("Item Type", '<>%1', L_HandledInterimSalesLine."Item Type"::Assembly);
         L_HandledInterimSalesLine.SetRange("Channel Order id", P_OrderNo);
         IF L_HandledInterimSalesLine.FINDFIRST THEN BEGIN
@@ -432,8 +438,8 @@ page 90075 "Return Order Screen"
     local procedure InsertLineIntoDespatchTable(P_HandledInterimSalesLine: Record "Handled Interim Sales Line")
     var
         L_Return: Record "Interim Sales Return";
-        i: Integer;       
-        
+        i: Integer;
+
     begin
         CLEAR(i);
         /*L_HandledInterimSalesLine.RESET;
@@ -442,20 +448,21 @@ page 90075 "Return Order Screen"
         L_HandledInterimSalesLine.SETFILTER("Item Type", '<>%1', L_HandledInterimSalesLine."Item Type"::Assembly);
         IF L_HandledInterimSalesLine.FINDSET THEN
           REPEAT*/
-          
-        scancount+=1;
+
+        scancount += 1;
         if scancount = 16 then
-          scancount := 1;
+            scancount := 1;
 
         if scancount = 1 then
-          BayNo := IncStr(BayNo);
+            BayNo := IncStr(BayNo);
 
         L_Return.RESET;
         L_Return.SETRANGE("Web Order No.", P_HandledInterimSalesLine."Document No");
         L_Return.SetRange("Item No.", P_HandledInterimSalesLine."No.");
-        L_Return.SetRange("Variant Code", P_HandledInterimSalesLine."NAV Variant code");
+        if L_Return."Variant Code" <> '' then
+            L_Return.SetRange("Variant Code", P_HandledInterimSalesLine."NAV Variant code");
         if NOT L_Return.FindFirst() then begin
-            
+
             L_Return.INIT;
             L_Return."Entry No." := FindLastEntryNo;
             L_Return."Web Order No." := P_HandledInterimSalesLine."Document No";
@@ -473,8 +480,8 @@ page 90075 "Return Order Screen"
             L_Return.Condition := G_ReasonCode;
             L_Return."Return Reason" := G_ReturnReasonCode;
             L_Return."Source Line No." := P_HandledInterimSalesLine."Line No.";
-            L_Return."Unit Price" := P_HandledInterimSalesLine."Unit Price";    
-            L_Return."Bay No."  :=  BayNo;   
+            L_Return."Unit Price" := P_HandledInterimSalesLine."Unit Price";
+            L_Return."Bay No." := BayNo;
             L_Return.Insert();
         end else begin
             L_Return."Quantity to Return" += 1;
@@ -503,8 +510,9 @@ page 90075 "Return Order Screen"
 
     local procedure FindLastBayNo(): Decimal
     begin
-        
+
     end;
+
     local procedure FindLastEntryNo(): Integer
     var
         L_Return: Record "Interim Sales Return";
@@ -571,12 +579,14 @@ page 90075 "Return Order Screen"
         L_CrossReference.SetRange("Reference Type", L_CrossReference."Reference Type"::"Bar Code");
         L_CrossReference.SetRange("Reference No.", P_Barcode);
         if L_CrossReference.FindFirst() then
-            Q_ValidateReturnOrder.SETRANGE(Q_ValidateReturnOrder.NAV_Variant_code, L_CrossReference."Variant Code");
+            if L_CrossReference."Variant Code" <> '' then
+                Q_ValidateReturnOrder.SETRANGE(Q_ValidateReturnOrder.NAV_Variant_code, L_CrossReference."Variant Code");
         Q_ValidateReturnOrder.OPEN;
         WHILE Q_ValidateReturnOrder.READ DO BEGIN
             TempReturnedStock.RESET;
             TempReturnedStock.SETRANGE("Item No.", Q_ValidateReturnOrder.No_);
-            TempReturnedStock.SetRange("Variant Code", Q_ValidateReturnOrder.NAV_Variant_code);
+            if Q_ValidateReturnOrder.NAV_Variant_code <> '' then
+                TempReturnedStock.SetRange("Variant Code", Q_ValidateReturnOrder.NAV_Variant_code);
             TempReturnedStock.SETRANGE("Bin Code", Q_ValidateReturnOrder.Channel_Order_ID);
             IF NOT TempReturnedStock.FINDFIRST THEN BEGIN
                 TempReturnedStock.INIT;
@@ -618,10 +628,10 @@ page 90075 "Return Order Screen"
         L_ReturnedCount.SetRange("Variant Code", L_VariantCode);
 
         L_ReturnedCount.CALCSUMS("Order Quantity");
-        
+
         if (L_ReturnedCount."Order Quantity" = 0) and (TempReturnedStock."Qty. (Base)" = 0) THEN
-          exit;
-          
+            exit;
+
         IF L_ReturnedCount."Order Quantity" <= TempReturnedStock."Qty. (Base)" THEN
             ERROR('Order is already scanned');
 
