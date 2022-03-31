@@ -8,6 +8,18 @@ pageextension 90091 ItemCardExt extends "Item Card"
             {
                 ApplicationArea = all;
                 CaptionML = ENU = 'Production Item', ENG = 'Production Item';
+                trigger OnValidate()
+                var
+                    CIL: Record "Channel Item Listing";
+                begin
+                    CIL.Reset();
+                    CIL.SetFilter("Item No.", '<>%1', '');
+                    CIL.SetRange("Item No.", Rec."No.");
+                    if CIL.FindFirst() then begin
+                        CIL."Inventory Synced" := false;
+                        CIL.Modify();
+                    end;
+                end;
             }
         }
     }

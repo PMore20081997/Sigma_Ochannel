@@ -1182,7 +1182,6 @@ codeunit 90015 IloveWallpaper
         ChannelItemListing.RESET;
         ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
         ChannelItemListing.SETFILTER("Inventory Synced", '%1', FALSE);
-
         if ChannelItemListing.FindFirst() then begin
 
             repeat
@@ -1190,6 +1189,7 @@ codeunit 90015 IloveWallpaper
                 Clear(Stock);
                 Clear(ChannelSKU);
                 ItemRec.Reset();
+                ItemRec.SetRange("No.", ChannelItemListing."Item No.");
                 ItemRec.SetRange("Production Item", true);
                 if ItemRec.FindFirst() then begin
                     Clear(Stock);
@@ -1201,7 +1201,8 @@ codeunit 90015 IloveWallpaper
                 else begin
                     Clear(Stock);
                     Clear(ChannelSKU);
-                    Stock := format(ChannelItemListing."Channel Inventory");
+                    ItemRec.CalcFields(Inventory);
+                    Stock := format(ItemRec.Inventory);
                     ChannelSKU := ChannelItemListing."Channel SKU";
                 end;
 
@@ -1265,7 +1266,7 @@ codeunit 90015 IloveWallpaper
                     if Items.FindFirst() then begin
                         ChannelInventory := CIL."Channel Inventory";
                         Items.CalcFields(Inventory, "Qty. on Sales Order");
-                        CIL."Channel Inventory" := Items.Inventory - Items."Qty. on Sales Order";
+                        CIL."Channel Inventory" := Items.Inventory;
                         if CIL."Channel Inventory" < 0 then
                             CIL.Validate("Channel Inventory", 0);
                         CIL.Modify();

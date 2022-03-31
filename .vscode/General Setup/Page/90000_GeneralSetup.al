@@ -91,6 +91,28 @@ page 90000 "General Setup - Channels"
                 {
                     ApplicationArea = all;
                     CaptionML = ENG = 'Production Item Inventory', ENU = 'Production Item Inventory';
+                    trigger OnValidate()
+                    var
+                        CIL: Record "Channel Item Listing";
+                        ItemRec: Record Item;
+                    begin
+                        If xRec."Production Item Inventory" <> Rec."Production Item Inventory" then begin
+                            ItemRec.Reset();
+                            ItemRec.SetRange("Production Item", true);
+                            if ItemRec.FindFirst() then begin
+                                repeat
+                                    CIL.Reset();
+                                    CIL.SetFilter("Item No.", '<>%1', '');
+                                    CIL.SetRange("Item No.", ItemRec."No.");
+                                    if CIL.FindFirst() then begin
+                                        CIL."Inventory Synced" := false;
+                                        CIL.Modify();
+                                    end;
+                                until ItemRec.Next() = 0;
+                            end;
+                        end;
+
+                    end;
                 }
                 field("Bank Account No."; Rec."Bank Account No.")
                 {
