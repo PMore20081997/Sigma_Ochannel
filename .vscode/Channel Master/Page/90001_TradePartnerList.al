@@ -185,7 +185,7 @@ page 90001 "Trade Partner List"
                     CUEbay: Codeunit "Ebay Integration";
                     CUWooCommerce: Codeunit "Woo Commerce";
                     CUB2B: Codeunit "B2B";
-                    ILoveWallpaper: Codeunit IloveWallpaper;
+                    ILoveWallpaper: Codeunit VisualSoft;
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
