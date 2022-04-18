@@ -317,7 +317,7 @@ report 90000 "Process Web Orders"
         NoOfOrders: Integer;
         i: Integer;
         CurrRec: Integer;
-        NoOfItems: Option Single,Multiple;
+        NoOfItems: Option Single,Multiple,Everything;
         tcount: Integer;
         PCount: Integer;
         RecItem: Record Item;

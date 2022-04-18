@@ -30,7 +30,7 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(6; "Address 2"; Text[50])
+        field(6; "Address 2"; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -76,7 +76,7 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(16; "Ship-to Address 2"; Text[50])
+        field(16; "Ship-to Address 2"; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -307,7 +307,7 @@ table 90003 "Interim Sales Header"
         field(73; "Location Code"; Code[20])
         {
         }
-        field(74; "Ship to Address 3"; Text[50])
+        field(74; "Ship to Address 3"; Text[100])
         {
             DataClassification = ToBeClassified;
         }
@@ -320,7 +320,7 @@ table 90003 "Interim Sales Header"
             Description = 'Channel Integration';
 
         }
-        field(50012; "Pickup Address 2"; Text[50])
+        field(50012; "Pickup Address 2"; Text[100])
         {
             Description = 'Channel Integration';
         }

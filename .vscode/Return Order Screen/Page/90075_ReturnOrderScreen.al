@@ -83,7 +83,7 @@ page 90075 "Return Order Screen"
                 {
                     ApplicationArea = All;
                 }
-                field(Type;Rec.Type)
+                field(Type; Rec.Type)
                 {
                     ApplicationArea = All;
                 }
@@ -185,17 +185,17 @@ page 90075 "Return Order Screen"
                     GeneralSetup.Get();
                     L_Return.Reset();
                     L_Return.SetRange("User ID", UserId);
-                    L_Return.SetCurrentKey("Channel Code","Web Order No.","Entry No.");
+                    L_Return.SetCurrentKey("Channel Code", "Web Order No.", "Entry No.");
                     L_Return.SetAscending("Channel Code", true);
                     if L_Return.FindSet() then begin
                         DiagProgress.OPEN('@1@@@@@@@@@@@@@@@@@@');
                         repeat
                             //if L_ChannelCode <> L_Return."Channel Code" then begin
-                                HISH.Reset();
-                                HISH.SetRange("Document Type", HISH."Document Type"::Order);
-                                HISH.SetRange("No.", L_Return."Web Order No.");
-                                if HISH.FindFirst() then begin
-                                  if L_ChannelCode <> L_Return."Channel Code" then begin  
+                            HISH.Reset();
+                            HISH.SetRange("Document Type", HISH."Document Type"::Order);
+                            HISH.SetRange("No.", L_Return."Web Order No.");
+                            if HISH.FindFirst() then begin
+                                if L_ChannelCode <> L_Return."Channel Code" then begin
                                     //code to create sales return header per channel
                                     SH.Reset();
                                     SH.Init();
@@ -211,11 +211,11 @@ page 90075 "Return Order Screen"
                                     TempSH."No." := SH."No.";
                                     TempSH."Location Code" := SH."Location Code";
                                     TempSH.Insert();
-                                  END;    
-                                  L_OrderNo := SH."No.";
-                                  L_ChannelCode := L_Return."Channel Code";
-                                  // code to create web return order per channel order id
-                                  IF L_OrignalOrderid <> L_Return."Web Order No." then begin
+                                END;
+                                L_OrderNo := SH."No.";
+                                L_ChannelCode := L_Return."Channel Code";
+                                // code to create web return order per channel order id
+                                IF L_OrignalOrderid <> L_Return."Web Order No." then begin
                                     Return_HISH.Init();
                                     Return_HISH.Validate("Document Type", Return_HISH."Document Type"::"Return Order");
                                     Return_HISH.Validate("Sell-to Customer No.", HISH."Sell-to Customer No.");
@@ -224,11 +224,11 @@ page 90075 "Return Order Screen"
                                     Return_HISH.Validate("Trade Partner Code", HISH."Trade Partner Code");
                                     Return_HISH.Validate("Location Code", HISH."Location Code");
                                     Return_HISH."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
-                                    Return_HISH.Insert(true); 
-                                    L_ReturnOrderNo := Return_HISH."No.";                                  
-                                  end;                                  
-                                 L_OrignalOrderid := L_Return."Web Order No."
-                               end;
+                                    Return_HISH.Insert(true);
+                                    L_ReturnOrderNo := Return_HISH."No.";
+                                end;
+                                L_OrignalOrderid := L_Return."Web Order No."
+                            end;
                             /*HISH.Reset();
                             HISH.SetRange("Document Type", HISH."Document Type"::Order);
                             HISH.SetRange("No.", L_Return."Web Order No.");
@@ -277,33 +277,33 @@ page 90075 "Return Order Screen"
                                 else
                                     HandledLineNo := 10000;
                                 CreateHandledReturnOrder(Return_HISH, HISL, L_ReturnOrderNo, L_Return, HandledLineNo);
-                            //end;
+                                //end;
 
-                            //CreateReturnHISL--
+                                //CreateReturnHISL--
 
-                            /*HISL.Reset();
-                            HISL.SetRange("Document Type", HISL."Document Type"::Order);
-                            HISL.SetRange("Document No", L_Return."Web Order No.");
-                            // HISL.SetRange("Line No.");
-                            HISL.SetRange("Line No.", L_Return."Source Line No.");
-                            if HISL.FindFirst() then begin
+                                /*HISL.Reset();
+                                HISL.SetRange("Document Type", HISL."Document Type"::Order);
+                                HISL.SetRange("Document No", L_Return."Web Order No.");
+                                // HISL.SetRange("Line No.");
+                                HISL.SetRange("Line No.", L_Return."Source Line No.");
+                                if HISL.FindFirst() then begin
 
-                                //Notes++
-                                if HISL.Type = HISL.Type::" " then begin
-                                    SL.Init();
-                                    SL.Validate("Document Type", SL."Document Type"::"Return Order");
-                                    SL.Validate("Document No.", L_OrderNo);
-                                    SL.Type := SL.Type::" ";
-                                    SL.Description := L_Return.Description;
-                                    SL."Line No." := GetLineno(L_OrderNo);
-                                    SL.Insert(true);
-                                    L_Return.Delete();
-                                end;
+                                    //Notes++
+                                    if HISL.Type = HISL.Type::" " then begin
+                                        SL.Init();
+                                        SL.Validate("Document Type", SL."Document Type"::"Return Order");
+                                        SL.Validate("Document No.", L_OrderNo);
+                                        SL.Type := SL.Type::" ";
+                                        SL.Description := L_Return.Description;
+                                        SL."Line No." := GetLineno(L_OrderNo);
+                                        SL.Insert(true);
+                                        L_Return.Delete();
+                                    end;
 
-                                //Notes--
+                                    //Notes--
 
-                                if HISL.Type = HISL.Type::Item then begin*/
-                                  IF L_OrignalOrderidLineWise <> L_Return."Web Order No." then begin
+                                    if HISL.Type = HISL.Type::Item then begin*/
+                                IF L_OrignalOrderidLineWise <> L_Return."Web Order No." then begin
                                     SL.Init();
                                     SL.Validate("Document Type", SL."Document Type"::"Return Order");
                                     SL.Validate("Document No.", L_OrderNo);
@@ -311,28 +311,28 @@ page 90075 "Return Order Screen"
                                     SL.Description := 'Web Order No ' + HISL."Document No" + ',' + 'Channel Order Id' + HISL."Channel Order ID";
                                     SL."Line No." := GetLineno(L_OrderNo);
                                     SL.Insert(true);
-                                  end;
-                                    L_OrignalOrderidLineWise :=  L_Return."Web Order No."; 
-                                    SL.Init();
-                                    SL.Validate("Document Type", SL."Document Type"::"Return Order");
-                                    SL.Validate("Document No.", L_OrderNo);
-                                    SL.Validate("Line No.", GetLineno(L_OrderNo));
-                                    SL.Validate(Type, L_Return.Type);
-                                    SL.Validate("No.", L_Return."Item No.");
-                                    SL.Validate("Variant Code", L_Return."Variant Code");
-                                    if L_Return.Type = L_Return.Type::" " then
-                                      SL.Description := L_Return.Description;
-                                    SL.Validate(Quantity, L_Return."Quantity to Return");
-                                    SL.Validate("Unit of Measure Code", HISL."Unit of Measure Code");
-                                    SL.Validate("Unit Price", L_Return."Unit Price");
-                                    //HISL."Unit Price");bloked by ak
-                                    sl.Validate("Line Discount %", L_Return."Discount %");
-                                    SL.Validate("Return Reason Code", L_Return."Return Reason");
-                                    SL.Validate("Item Reference Type No.", L_Return.Condition);
-                                    SL."Shipping Agent Service Code" := L_Return."Bay No.";
-                                    SL.Insert(true);
-                                    L_Return.Delete();
                                 end;
+                                L_OrignalOrderidLineWise := L_Return."Web Order No.";
+                                SL.Init();
+                                SL.Validate("Document Type", SL."Document Type"::"Return Order");
+                                SL.Validate("Document No.", L_OrderNo);
+                                SL.Validate("Line No.", GetLineno(L_OrderNo));
+                                SL.Validate(Type, L_Return.Type);
+                                SL.Validate("No.", L_Return."Item No.");
+                                SL.Validate("Variant Code", L_Return."Variant Code");
+                                if L_Return.Type = L_Return.Type::" " then
+                                    SL.Description := L_Return.Description;
+                                SL.Validate(Quantity, L_Return."Quantity to Return");
+                                SL.Validate("Unit of Measure Code", HISL."Unit of Measure Code");
+                                SL.Validate("Unit Price", L_Return."Unit Price");
+                                //HISL."Unit Price");bloked by ak
+                                sl.Validate("Line Discount %", L_Return."Discount %");
+                                SL.Validate("Return Reason Code", L_Return."Return Reason");
+                                SL.Validate("Item Reference Type No.", L_Return.Condition);
+                                SL."Shipping Agent Service Code" := L_Return."Bay No.";
+                                SL.Insert(true);
+                                L_Return.Delete();
+                            end;
                             //end;
                             //LINE--
                             SLEEP(1000);
@@ -469,7 +469,8 @@ page 90075 "Return Order Screen"
         L_HandledInterimSalesLine.SETRANGE("Document Type", L_HandledInterimSalesLine."Document Type"::Order);
         L_HandledInterimSalesLine.SETRANGE(Type, L_HandledInterimSalesLine.Type::Item);
         L_HandledInterimSalesLine.SETRANGE("No.", L_DespatchScanPage.FindItem(G_Barcode, 1));
-        L_HandledInterimSalesLine.SETRANGE(L_HandledInterimSalesLine."NAV Variant code", L_DespatchScanPage.FindItem(G_Barcode, 2));
+        if L_HandledInterimSalesLine."NAV Variant code" <> '' then
+            L_HandledInterimSalesLine.SETRANGE(L_HandledInterimSalesLine."NAV Variant code", L_DespatchScanPage.FindItem(G_Barcode, 2));
         L_HandledInterimSalesLine.SETFILTER("Item Type", '<>%1', L_HandledInterimSalesLine."Item Type"::Assembly);
         L_HandledInterimSalesLine.SetRange("Channel Order id", P_OrderNo);
         IF L_HandledInterimSalesLine.FINDFIRST THEN BEGIN
@@ -504,7 +505,7 @@ page 90075 "Return Order Screen"
         L_HandledInterimSalesLine.SETFILTER("Item Type", '<>%1', L_HandledInterimSalesLine."Item Type"::Assembly);
         IF L_HandledInterimSalesLine.FINDSET THEN
           REPEAT*/
-        
+
         scancount += 1;
         if scancount = 16 then
             scancount := 1;
@@ -515,7 +516,8 @@ page 90075 "Return Order Screen"
         L_Return.RESET;
         L_Return.SETRANGE("Web Order No.", P_HandledInterimSalesLine."Document No");
         L_Return.SetRange("Item No.", P_HandledInterimSalesLine."No.");
-        L_Return.SetRange("Variant Code", P_HandledInterimSalesLine."NAV Variant code");
+        if L_Return."Variant Code" <> '' then
+            L_Return.SetRange("Variant Code", P_HandledInterimSalesLine."NAV Variant code");
         if NOT L_Return.FindFirst() then begin
 
             L_Return.INIT;
@@ -550,9 +552,9 @@ page 90075 "Return Order Screen"
                 L_Return.Modify();
         end;
         if GeneralSetgup."Enable Carriage credit" then
-          if checkifallorderitemlinesreturned(P_HandledInterimSalesLine) then
-            CreateShippingChargeLine(P_HandledInterimSalesLine,L_Return."Entry No.");// code to pull shipping GL line
-        FindNotesInHandledOrder(P_HandledInterimSalesLine."Channel Order ID",L_Return."Entry No.");//code to show notes on return screen
+            if checkifallorderitemlinesreturned(P_HandledInterimSalesLine) then
+                CreateShippingChargeLine(P_HandledInterimSalesLine, L_Return."Entry No.");// code to pull shipping GL line
+        FindNotesInHandledOrder(P_HandledInterimSalesLine."Channel Order ID", L_Return."Entry No.");//code to show notes on return screen
         rec.RESET;
         rec.SETCURRENTKEY("Entry No.");
         rec.ASCENDING(FALSE);
@@ -564,81 +566,83 @@ page 90075 "Return Order Screen"
         CurrPage.UPDATE(FALSE);
     end;
 
-    local procedure checkifallorderitemlinesreturned(P_HandledInterimSalesLine: Record "Handled Interim Sales Line") : Boolean
+    local procedure checkifallorderitemlinesreturned(P_HandledInterimSalesLine: Record "Handled Interim Sales Line"): Boolean
     var
-    L_OrderHandledInterimSalesLine: record "Handled Interim Sales Line";    
-    Query_ValidateReturnOrder: Query "Validate Return Order Screen";
-    Query_ValidateInterimreturn: Query "Validate Interim Sales Return";
-    TotalItemReturnQty: Decimal;
+        L_OrderHandledInterimSalesLine: record "Handled Interim Sales Line";
+        Query_ValidateReturnOrder: Query "Validate Return Order Screen";
+        Query_ValidateInterimreturn: Query "Validate Interim Sales Return";
+        TotalItemReturnQty: Decimal;
     begin
-     L_OrderHandledInterimSalesLine.Reset();
-     L_OrderHandledInterimSalesLine.SetRange("Document Type",P_HandledInterimSalesLine."Document Type");
-     L_OrderHandledInterimSalesLine.SetRange("Document No",P_HandledInterimSalesLine."Document No");
-     L_OrderHandledInterimSalesLine.SetRange(Type, L_OrderHandledInterimSalesLine.Type::Item);
-     IF L_OrderHandledInterimSalesLine.FindSet() then repeat
-       Clear(TotalItemReturnQty);
-       Query_ValidateInterimreturn.SetRange(web_order_no,L_OrderHandledInterimSalesLine."Document No" );
-       Query_ValidateInterimreturn.SetRange(Item_No,L_OrderHandledInterimSalesLine."No.");
-       Query_ValidateInterimreturn.SetRange(Variant_Code,L_OrderHandledInterimSalesLine."NAV Variant code");
-       Query_ValidateInterimreturn.Open();
-       while Query_ValidateInterimreturn.Read() do begin
-        TotalItemReturnQty := Query_ValidateInterimreturn.Quantity_to_Return;
-       end;
-       Query_ValidateReturnOrder.SetRange(Channel_Order_ID,L_OrderHandledInterimSalesLine."Channel Order ID");
-       Query_ValidateReturnOrder.SetRange(No_,L_OrderHandledInterimSalesLine."No.");
-       Query_ValidateReturnOrder.SetRange(NAV_Variant_code,L_OrderHandledInterimSalesLine."NAV Variant code");
-       Query_ValidateReturnOrder.Open();
-       while Query_ValidateReturnOrder.Read() do begin
-        TotalItemReturnQty+=Query_ValidateReturnOrder.Quantity;
-       end;
-       if L_OrderHandledInterimSalesLine.Quantity <> TotalItemReturnQty then
-         exit(false)
-     until L_OrderHandledInterimSalesLine.Next() = 0;
-     exit(true); 
+        L_OrderHandledInterimSalesLine.Reset();
+        L_OrderHandledInterimSalesLine.SetRange("Document Type", P_HandledInterimSalesLine."Document Type");
+        L_OrderHandledInterimSalesLine.SetRange("Document No", P_HandledInterimSalesLine."Document No");
+        L_OrderHandledInterimSalesLine.SetRange(Type, L_OrderHandledInterimSalesLine.Type::Item);
+        IF L_OrderHandledInterimSalesLine.FindSet() then
+            repeat
+                Clear(TotalItemReturnQty);
+                Query_ValidateInterimreturn.SetRange(web_order_no, L_OrderHandledInterimSalesLine."Document No");
+                Query_ValidateInterimreturn.SetRange(Item_No, L_OrderHandledInterimSalesLine."No.");
+                Query_ValidateInterimreturn.SetRange(Variant_Code, L_OrderHandledInterimSalesLine."NAV Variant code");
+                Query_ValidateInterimreturn.Open();
+                while Query_ValidateInterimreturn.Read() do begin
+                    TotalItemReturnQty := Query_ValidateInterimreturn.Quantity_to_Return;
+                end;
+                Query_ValidateReturnOrder.SetRange(Channel_Order_ID, L_OrderHandledInterimSalesLine."Channel Order ID");
+                Query_ValidateReturnOrder.SetRange(No_, L_OrderHandledInterimSalesLine."No.");
+                Query_ValidateReturnOrder.SetRange(NAV_Variant_code, L_OrderHandledInterimSalesLine."NAV Variant code");
+                Query_ValidateReturnOrder.Open();
+                while Query_ValidateReturnOrder.Read() do begin
+                    TotalItemReturnQty += Query_ValidateReturnOrder.Quantity;
+                end;
+                if L_OrderHandledInterimSalesLine.Quantity <> TotalItemReturnQty then
+                    exit(false)
+until L_OrderHandledInterimSalesLine.Next() = 0;
+        exit(true);
     end;
-    local procedure CreateShippingChargeLine(P_HandledInterimSalesLine: Record "Handled Interim Sales Line";P_EntryNo:Integer)
+
+    local procedure CreateShippingChargeLine(P_HandledInterimSalesLine: Record "Handled Interim Sales Line"; P_EntryNo: Integer)
     var
-    L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
-    L_Return: Record "Interim Sales Return";
-    L_GeneralSetupOchannel: record "General Setup - Channels";
-    L_Return1: Record "Interim Sales Return";
+        L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
+        L_Return: Record "Interim Sales Return";
+        L_GeneralSetupOchannel: record "General Setup - Channels";
+        L_Return1: Record "Interim Sales Return";
     begin
-      L_HandledInterimSalesLine.Reset();
-      L_HandledInterimSalesLine.SetRange("Document Type",P_HandledInterimSalesLine."Document Type");
-      L_HandledInterimSalesLine.SetRange("Document No",P_HandledInterimSalesLine."Document No");
-      L_HandledInterimSalesLine.SetRange(Type,L_HandledInterimSalesLine.Type::"G/L Account");
-      if L_HandledInterimSalesLine.FindFirst() then begin
-        L_GeneralSetupOchannel.Get();  
-        L_Return.Reset();       
-        L_Return.SetRange("Channel Order id",L_HandledInterimSalesLine."Channel Order ID"); 
-        L_Return.SetRange(Type,L_Return.Type::"G/L Account");
-        L_Return.SetRange("Item No.",L_GeneralSetupOchannel."Shipping G/L No.");
-        if NOT L_Return.FindFirst() then begin
-            L_Return.INIT;
-            L_Return1.ASCENDING(FALSE);
-            L_Return1.SetCurrentKey("Web Order No.");
-            L_Return1.SetRange("Web Order No.",L_HandledInterimSalesLine."Document No");
-            if L_Return1.FindLast() then;   
-            L_Return."Entry No." := L_Return1."Entry No."-1;
-            L_Return."Web Order No." := L_HandledInterimSalesLine."Document No";
-            L_Return.Type := L_HandledInterimSalesLine.Type;
-            L_Return."Item No." := L_HandledInterimSalesLine."No.";
-            L_Return.Description := L_HandledInterimSalesLine.Description;
-            L_Return."User ID" := UserId;
-            L_Return."Channel Code" := L_HandledInterimSalesLine."Trade Partner Code";
-            L_Return."Channel Order id" := L_HandledInterimSalesLine."Channel Order ID";
-            L_Return."Order Quantity" := L_HandledInterimSalesLine.Quantity;
-            L_Return."Quantity to Return" := 1;
-            L_Return.Condition := G_ReasonCode;
-            L_Return."Return Reason" := G_ReturnReasonCode;
-            L_Return."Source Line No." := L_HandledInterimSalesLine."Line No.";
-            L_Return."Unit Price" := L_HandledInterimSalesLine."Unit Price";
-            L_Return."Discount %" := L_HandledInterimSalesLine."Discount %";
-            L_Return.Insert(); 
-        end;     
-      end;
+        L_HandledInterimSalesLine.Reset();
+        L_HandledInterimSalesLine.SetRange("Document Type", P_HandledInterimSalesLine."Document Type");
+        L_HandledInterimSalesLine.SetRange("Document No", P_HandledInterimSalesLine."Document No");
+        L_HandledInterimSalesLine.SetRange(Type, L_HandledInterimSalesLine.Type::"G/L Account");
+        if L_HandledInterimSalesLine.FindFirst() then begin
+            L_GeneralSetupOchannel.Get();
+            L_Return.Reset();
+            L_Return.SetRange("Channel Order id", L_HandledInterimSalesLine."Channel Order ID");
+            L_Return.SetRange(Type, L_Return.Type::"G/L Account");
+            L_Return.SetRange("Item No.", L_GeneralSetupOchannel."Shipping G/L No.");
+            if NOT L_Return.FindFirst() then begin
+                L_Return.INIT;
+                L_Return1.ASCENDING(FALSE);
+                L_Return1.SetCurrentKey("Web Order No.");
+                L_Return1.SetRange("Web Order No.", L_HandledInterimSalesLine."Document No");
+                if L_Return1.FindLast() then;
+                L_Return."Entry No." := L_Return1."Entry No." - 1;
+                L_Return."Web Order No." := L_HandledInterimSalesLine."Document No";
+                L_Return.Type := L_HandledInterimSalesLine.Type;
+                L_Return."Item No." := L_HandledInterimSalesLine."No.";
+                L_Return.Description := L_HandledInterimSalesLine.Description;
+                L_Return."User ID" := UserId;
+                L_Return."Channel Code" := L_HandledInterimSalesLine."Trade Partner Code";
+                L_Return."Channel Order id" := L_HandledInterimSalesLine."Channel Order ID";
+                L_Return."Order Quantity" := L_HandledInterimSalesLine.Quantity;
+                L_Return."Quantity to Return" := 1;
+                L_Return.Condition := G_ReasonCode;
+                L_Return."Return Reason" := G_ReturnReasonCode;
+                L_Return."Source Line No." := L_HandledInterimSalesLine."Line No.";
+                L_Return."Unit Price" := L_HandledInterimSalesLine."Unit Price";
+                L_Return."Discount %" := L_HandledInterimSalesLine."Discount %";
+                L_Return.Insert();
+            end;
+        end;
     end;
-    
+
     local procedure FindLastEntryNo(): Integer
     var
         L_Return: Record "Interim Sales Return";
@@ -762,7 +766,7 @@ page 90075 "Return Order Screen"
 
     end;
 
-    local procedure FindNotesInHandledOrder(P_OrderNo: Code[20];P_EntryNo:Integer)
+    local procedure FindNotesInHandledOrder(P_OrderNo: Code[20]; P_EntryNo: Integer)
     var
         L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
         L_Return: Record "Interim Sales Return";
@@ -774,13 +778,13 @@ page 90075 "Return Order Screen"
         L_HandledInterimSalesLine.SETFILTER("Item Type", '<>%1', L_HandledInterimSalesLine."Item Type"::Assembly);
         L_HandledInterimSalesLine.SetRange("Channel Order id", P_OrderNo);
         IF L_HandledInterimSalesLine.FINDFIRST THEN BEGIN
-            InsertNotesLineIntoDespatchTable(L_HandledInterimSalesLine,P_EntryNo);
+            InsertNotesLineIntoDespatchTable(L_HandledInterimSalesLine, P_EntryNo);
             Clear(G_Barcode);
             Clear(G_OrderNo);
         END;
     end;
 
-    local procedure InsertNotesLineIntoDespatchTable(P_HandledInterimSalesLine: Record "Handled Interim Sales Line";P_EntryNo:Integer)
+    local procedure InsertNotesLineIntoDespatchTable(P_HandledInterimSalesLine: Record "Handled Interim Sales Line"; P_EntryNo: Integer)
     var
         L_Return: Record "Interim Sales Return";
     begin
@@ -792,7 +796,7 @@ page 90075 "Return Order Screen"
         if NOT L_Return.FindFirst() then begin
 
             L_Return.INIT;
-            L_Return."Entry No." := P_EntryNo-2;
+            L_Return."Entry No." := P_EntryNo - 2;
             L_Return."Channel Code" := P_HandledInterimSalesLine."Trade Partner Code";
             L_Return."Web Order No." := P_HandledInterimSalesLine."Document No";
             L_Return."Source Line No." := P_HandledInterimSalesLine."Line No.";
