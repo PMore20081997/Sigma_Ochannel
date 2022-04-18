@@ -131,18 +131,34 @@
                                       </TablixCell>
                                       <TablixCell>
                                         <CellContents>
-                                          <Image Name="Header_Barcode2">
-                                            <Source>Database</Source>
-                                            <Value>=First(Fields!recTmpBlob2.Value, "DataSet_Result")</Value>
-                                            <MIMEType>image/bmp</MIMEType>
-                                            <Sizing>FitProportional</Sizing>
-                                            <ZIndex>5</ZIndex>
+                                          <Textbox Name="Textbox8">
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Fields!BarcodeText1.Value</Value>
+                                                    <Style>
+                                                      <FontFamily>IDAutomationC128S</FontFamily>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style />
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox8</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Style>None</Style>
                                               </Border>
+                                              <VerticalAlign>Middle</VerticalAlign>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
                                             </Style>
-                                          </Image>
+                                          </Textbox>
+                                          <rd:Selected>true</rd:Selected>
                                         </CellContents>
                                       </TablixCell>
                                       <TablixCell>
@@ -1545,7 +1561,6 @@
                                             </Style>
                                           </Textbox>
                                           <ColSpan>6</ColSpan>
-                                          <rd:Selected>true</rd:Selected>
                                         </CellContents>
                                       </TablixCell>
                                       <TablixCell />
@@ -2038,7 +2053,6 @@
                               </TablixRowHierarchy>
                               <KeepTogether>true</KeepTogether>
                               <DataSetName>DataSet_Result</DataSetName>
-                              <Top>0in</Top>
                               <Left>0.01586cm</Left>
                               <Height>7.03124in</Height>
                               <Width>7.7175in</Width>
@@ -3305,7 +3319,6 @@
         <LeftMargin>0.15in</LeftMargin>
         <RightMargin>0.15in</RightMargin>
         <TopMargin>0.2in</TopMargin>
-        <BottomMargin>0in</BottomMargin>
         <Style />
       </Page>
     </ReportSection>
@@ -3456,6 +3469,9 @@ p5l1CJ1LK04AAAAASUVORK5CYII=</ImageData>
         </Field>
         <Field Name="Flag">
           <DataField>Flag</DataField>
+        </Field>
+        <Field Name="BarcodeText1">
+          <DataField>BarcodeText1</DataField>
         </Field>
         <Field Name="DocumentNo_InterimSalesLine">
           <DataField>DocumentNo_InterimSalesLine</DataField>
