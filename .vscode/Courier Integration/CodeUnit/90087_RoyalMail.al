@@ -195,7 +195,7 @@ codeunit 90087 "Royal Mail"
                         end;
 
                         //Calling Generic Shipment Tracking Insert Method
-                        CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64ReturnLabel, '', Temp_SalesHeader);
+                        CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64ReturnLabel, '', '', Temp_SalesHeader);
                     end;
                 end;
 

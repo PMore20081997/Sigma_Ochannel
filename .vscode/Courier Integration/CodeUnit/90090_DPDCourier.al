@@ -246,7 +246,7 @@ codeunit 90090 "DPD Courier"
                 Base64StringLabel := GetJsonvalue(jObject, 'LabelImageBase64').AsText();
                 if Base64StringLabel <> 'null' then begin
 
-                    CU_ShipmentTrackingInsertion.InsertShipmentTracking('', Base64StringLabel, '', '', Temp_salesheader);
+                    CU_ShipmentTrackingInsertion.InsertShipmentTracking('', Base64StringLabel, '', '', '', Temp_salesheader);
 
                     // ShipmentTrack.INIT;
                     // ShipmentTrack.VALIDATE("Document Type", ShipmentTrack."Document Type"::Order);
