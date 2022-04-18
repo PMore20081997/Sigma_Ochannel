@@ -158,8 +158,26 @@ page 90016 "Trade Partner card"
                     ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
+                field("Outgoing Container 2 Name"; rec."Outgoing Container 2 Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Outgoing Container 2 Token"; rec."Outgoing Container 2 Token")
+                {
+                    ApplicationArea = All;
+                    ExtendedDatatype = Masked;
+                }
+                field("Outgoing Container 3 Name"; rec."Outgoing Container 3 Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Outgoing Container 3 Token"; rec."Outgoing Container 3 Token")
+                {
+                    ApplicationArea = All;
+                    ExtendedDatatype = Masked;
+                }
             }
-            //Sofyan--
+
             group(Authentication)
             {
                 Editable = InboxTypeAPI;
@@ -301,6 +319,10 @@ page 90016 "Trade Partner card"
                     ApplicationArea = All;
                 }
                 field("Send Email To Customer"; Rec."Send Email To Customer")
+                {
+                    ApplicationArea = All;
+                }
+                field("Price Pick From"; Rec."Price Pick From")
                 {
                     ApplicationArea = All;
                 }

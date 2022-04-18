@@ -82,6 +82,10 @@ table 90099 "Payment Detail"
                     Rec."NAV Payment Method Code" := WebPayment."NAV Payment Method 2";
             end;
         }
+        field(90015; "Payment Type"; Option)
+        {
+            OptionMembers = Payment,Refund;
+        }
     }
     keys
     {

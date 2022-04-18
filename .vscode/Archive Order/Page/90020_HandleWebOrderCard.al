@@ -1,9 +1,9 @@
 page 90019 "Handle Web Order"
 {
     DeleteAllowed = false;
-    Editable = false;
+    Editable = true;
     InsertAllowed = false;
-    //  ModifyAllowed = false;
+    ModifyAllowed = true;
     PageType = Card;
     SourceTable = "Handled Interim Sales Header";
 
@@ -13,6 +13,7 @@ page 90019 "Handle Web Order"
         {
             group(General)
             {
+                Editable = false;
                 field("Document No."; Rec."No.")
                 {
                     ApplicationArea = All;
@@ -111,6 +112,7 @@ page 90019 "Handle Web Order"
             }
             group(Shipping)
             {
+                Editable = false;
                 Caption = 'Shipping';
                 field("Ship-to Name"; Rec."Ship-to Name")
                 {
@@ -164,7 +166,7 @@ page 90019 "Handle Web Order"
             part("HanHandle Web Order Subform"; "Handled Web Order Subpage")
             {
                 ApplicationArea = All;
-                Enabled = false;
+                Enabled = true;
                 SubPageLink = "Document Type" = FIELD("Document Type"),
                               "Document No" = FIELD("No.");
             }
@@ -240,7 +242,7 @@ page 90019 "Handle Web Order"
                     RecInterimSalesHeader."Order Date" := TODAY;
                     RecInterimSalesHeader."Document Date" := TODAY;
                     RecInterimSalesHeader."Channel Order ID" := rec."Channel Order ID" + 'R';
-                    RecInterimSalesHeader."External Document No." := rec."External Document No." + 'R';
+                    RecInterimSalesHeader."External Document No." := CopyStr(rec."External Document No." + 'R', 1, 20);
                     RecInterimSalesHeader.Comments := 'Reorder';
                     CLEAR(RecInterimSalesHeader."Scanned By");
                     CLEAR(RecInterimSalesHeader."Package Tracking No.");
@@ -264,7 +266,7 @@ page 90019 "Handle Web Order"
                                 InterimSalesLine.TRANSFERFIELDS(L_HandledInterimSalesHeader);
                                 InterimSalesLine."Document Type" := L_InterimSalesHeader."Document Type";
                                 InterimSalesLine."Document No" := L_InterimSalesHeader."No.";
-                                InterimSalesLine."Sales Order Line No" := 0;
+                                Clear(InterimSalesLine."Destination Doc. Line No");
                                 CLEAR(InterimSalesLine."Destination Doc No.");
                                 CLEAR(InterimSalesLine."Destination Doc Type");
                                 CLEAR(InterimSalesLine."Scanned Date");

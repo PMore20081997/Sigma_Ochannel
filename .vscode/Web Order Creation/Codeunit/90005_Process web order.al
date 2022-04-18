@@ -45,6 +45,9 @@ codeunit 90005 "Process Web Order"
         TempOrderNoPick: Record 27 temporary;
         G_BayNo: Code[20];
         G_TotalQty: Decimal;
+        Window: Dialog;
+        CurrRec: Integer;
+        NoOfRecs: Integer;
 
     local procedure CreatePickHeader(var InterimSalesLine: Record "Interim Sales Line"; i: Integer): Code[20]
     var
@@ -85,55 +88,56 @@ codeunit 90005 "Process Web Order"
         LineNo: Integer;
         OchannelSetup: Record "General Setup - Channels";//Sofyan
     begin
-        CLEAR(line);
-        CLEAR(WhseInternalPickLine);
-        CLEAR(totalWeight);
+        if InterimSalesLine.Type = InterimSalesLine.Type::Item then begin
+            CLEAR(line);
+            CLEAR(WhseInternalPickLine);
+            CLEAR(totalWeight);
 
-        RecWhseIPL.RESET;
-        RecWhseIPL.SETRANGE("No.", HeaderNo);
-        IF RecWhseIPL.FINDLAST THEN
-            LineNo := RecWhseIPL."Line No." + 10000
-        ELSE
-            LineNo := 10000;
+            RecWhseIPL.RESET;
+            RecWhseIPL.SETRANGE("No.", HeaderNo);
+            IF RecWhseIPL.FINDLAST THEN
+                LineNo := RecWhseIPL."Line No." + 10000
+            ELSE
+                LineNo := 10000;
 
-        WhseInternalPickLine.INIT;
-        WhseInternalPickLine.VALIDATE("No.", HeaderNo);
-        WhseInternalPickLine.VALIDATE("Line No.", LineNo);
-        // WhseInternalPickLine.VALIDATE("Line No.",GetLastLineNo(HeaderNo));
-        WhseInternalPickLine.VALIDATE("Item No.", InterimSalesLine."No.");
-        WhseInternalPickLine.Validate("Variant Code", InterimSalesLine."NAV Variant code");
+            WhseInternalPickLine.INIT;
+            WhseInternalPickLine.VALIDATE("No.", HeaderNo);
+            WhseInternalPickLine.VALIDATE("Line No.", LineNo);
+            // WhseInternalPickLine.VALIDATE("Line No.",GetLastLineNo(HeaderNo));
+            WhseInternalPickLine.VALIDATE("Item No.", InterimSalesLine."No.");
+            WhseInternalPickLine.Validate("Variant Code", InterimSalesLine."NAV Variant code");
 
-        Item.RESET;  //Ranjit 04-04-2018
-        IF (InterimSalesLine.Type = InterimSalesLine.Type::Item) AND (Item.GET(InterimSalesLine."No.")) THEN BEGIN
-            totalWeight := Item."Net Weight" * InterimSalesLine.Quantity;
-        END;  //Ranjit 04-04-2018
+            Item.RESET;  //Ranjit 04-04-2018
+            IF (InterimSalesLine.Type = InterimSalesLine.Type::Item) AND (Item.GET(InterimSalesLine."No.")) THEN BEGIN
+                totalWeight := Item."Net Weight" * InterimSalesLine.Quantity;
+            END;  //Ranjit 04-04-2018
 
 
-        ItemUnitofMeasure.RESET;
-        ItemUnitofMeasure.SETRANGE("Item No.", InterimSalesLine."No.");
-        ItemUnitofMeasure.SETRANGE(Code, InterimSalesLine."Unit of Measure Code");
-        IF ItemUnitofMeasure.FINDFIRST THEN
-            WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity * ItemUnitofMeasure."Qty. per Unit of Measure")
-        ELSE
-            WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity);
+            ItemUnitofMeasure.RESET;
+            ItemUnitofMeasure.SETRANGE("Item No.", InterimSalesLine."No.");
+            ItemUnitofMeasure.SETRANGE(Code, InterimSalesLine."Unit of Measure Code");
+            IF ItemUnitofMeasure.FINDFIRST THEN
+                WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity * ItemUnitofMeasure."Qty. per Unit of Measure")
+            ELSE
+                WhseInternalPickLine.VALIDATE(Quantity, InterimSalesLine.Quantity);
 
-        WhseInternalPickLine.VALIDATE(Weight, totalWeight);
+            WhseInternalPickLine.VALIDATE(Weight, totalWeight);
 
-        // WhseInternalPickLine.VALIDATE("Unit of Measure Code",InterimSalesLine."Unit of Measure Code");
+            // WhseInternalPickLine.VALIDATE("Unit of Measure Code",InterimSalesLine."Unit of Measure Code");
 
-        WhseInternalPickLine.VALIDATE("Channel Code", InterimSalesLine."Trade Partner Code");
+            WhseInternalPickLine.VALIDATE("Channel Code", InterimSalesLine."Trade Partner Code");
 
-        OchannelSetup.Get();
-        if OchannelSetup."Consolidate Item on WIP" = false then
-            WhseInternalPickLine.Validate("Channel Order ID", InterimSalesLine."Channel Order ID")
-        else
-            WhseInternalPickLine.Validate("Channel Order ID", '');
-        //Sofyan
-        //   WhseInternalPickLine.Validate("Bay No.", InterimSalesLine."Bay No.");
-        WhseInternalPickLine.INSERT(TRUE);
+            OchannelSetup.Get();
+            if OchannelSetup."Consolidate Item on WIP" = false then
+                WhseInternalPickLine.Validate("Channel Order ID", InterimSalesLine."Channel Order ID")
+            else
+                WhseInternalPickLine.Validate("Channel Order ID", '');
+            //Sofyan
+            //   WhseInternalPickLine.Validate("Bay No.", InterimSalesLine."Bay No.");
+            WhseInternalPickLine.INSERT(TRUE);
 
-        EXIT(WhseInternalPickLine."Line No.");
-
+            EXIT(WhseInternalPickLine."Line No.");
+        end;
     end;
 
     local procedure UpdatePickLines(L_SalesLine: Record "Whse. Internal Pick Line"; var L_InterimSalesLine: Record "Interim Sales Line"; var L_InterimSalesHeader: Record "Interim Sales Header")//NG_Variable_Check
@@ -702,7 +706,9 @@ codeunit 90005 "Process Web Order"
         InterimSalesHeader1: Record "Interim Sales Header";
         Customer: Record "Customer";
         ShipmentTracking: Record "Shipment Tracking";
+        GeneralSetup: Record "General Setup - Channels";
     begin
+        GeneralSetup.Get();
         CLEAR(HeaderNo);
         ISL.RESET;
         ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
@@ -714,6 +720,8 @@ codeunit 90005 "Process Web Order"
                 LineNo := NewCreateSalesLine(HeaderNo, ISL);
                 UpdateSONo(ISL, Rec);
             UNTIL ISL.NEXT = 0;
+            if GeneralSetup."Auto Release Sales Orders" = true then
+                UpdateStatusOnSalesOrder(HeaderNo);//Sofyan
             Message('Web Order Processed Successfully'); //Sofyan
             FirstOrder := FALSE;
         END;
@@ -781,6 +789,9 @@ codeunit 90005 "Process Web Order"
         TotalOrderQty: Decimal;
         FinalOrderQty: Decimal;
         ReturnBayNo: Code[20];
+        i2: Integer;
+        L_Quant: Decimal;
+        i3: Integer;
     begin
         Clear(L_Count);
         Clear(ReturnBayNo);
@@ -793,59 +804,127 @@ codeunit 90005 "Process Web Order"
             L_qty2 := CheckOrderQty(Rec);
             L_qty := ReturnRestrictedQty(HeaderNo);
             if L_wIPH.Get(HeaderNo) then;
-            if OchannelSetup."Quantity Restriction" <> 0 then begin
-                if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Single Line Orders" then
-                    finalQty := L_qty
-                else
-                    finalQty := L_qty2 + L_qty;
+            if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Single Line Orders" then begin
+                if OchannelSetup."Quantity Restriction (SINGLE)" <> 0 then begin
+                    if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Single Line Orders" then
+                        finalQty := L_qty
+                    else
+                        finalQty := L_qty2 + L_qty;
 
-                if finalQty >= OchannelSetup."Quantity Restriction" then begin
-                    L_InterimSalesLine.Reset();
-                    L_InterimSalesLine.RESET;
-                    L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
-                    L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
-                    L_InterimSalesLine.SETFILTER("Item Type", '<>%1', L_InterimSalesLine."Item Type"::Assembly);
-                    L_InterimSalesLine.SETRANGE("Destination Doc No.", '');
-                    L_InterimSalesLine.SetFilter("Line No.", '<>%1', LineNo2);
-                    IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        NoofItemsFilter := Rec.GetFilter("No. of Items");
-                        NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
-                        IF NoofItemsFilter = '1' then
-                            HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
-                        Else begin
-                            HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
-                            Clear(TotalOrderQty);
-                            if G_TotalQty > 0 then
-                                TotalOrderQty := G_TotalQty / 2;
-                            Clear(FinalOrderQty);
-                            if TotalOrderQty > 0 then
-                                FinalOrderQty := Round(TotalOrderQty, 1, '>');
-                            if FinalOrderQty > 0 then begin
-                                repeat
-                                    G_BayNo := IncStr('0000');
-                                    FinalOrderQty := FinalOrderQty - 1;
-                                until FinalOrderQty = 0;
-                            end;
+                    if finalQty > OchannelSetup."Quantity Restriction (SINGLE)" then begin
+
+                        Clear(L_Quant);
+                        ISL.RESET;
+                        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                        ISL.SETRANGE("Document No", Rec."No.");
+                        ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                        ISL.SETRANGE("Destination Doc No.", '');
+                        ISL.SetRange(Type, ISL.Type::Item);
+                        IF ISL.FINDSET THEN begin
+                            REPEAT
+                                L_Quant := L_Quant + ISL.Quantity;
+                            until ISL.Next() = 0;
                         end;
 
+                        Clear(i2);
+                        Clear(i3);
+                        L_InterimSalesLine.RESET;
+                        L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
+                        L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
+                        L_InterimSalesLine.SETFILTER("Item Type", '<>%1', L_InterimSalesLine."Item Type"::Assembly);
+                        L_InterimSalesLine.SETRANGE("Destination Doc No.", '');
+                        L_InterimSalesLine.SetFilter("Line No.", '<>%1', LineNo2);
+                        IF L_InterimSalesLine.FINDSET THEN BEGIN
+                            NoofItemsFilter := Rec.GetFilter("No. of Items");
+                            NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
+                            IF NoofItemsFilter = '1' then
+                                HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
+                            Else begin
+                                HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
+                                Clear(TotalOrderQty);
+                                if G_TotalQty > 0 then
+                                    TotalOrderQty := G_TotalQty / 2;
+                                Clear(FinalOrderQty);
+                                if TotalOrderQty > 0 then
+                                    FinalOrderQty := Round(TotalOrderQty, 1, '>');
+                                if FinalOrderQty > 0 then begin
+                                    repeat
+                                        G_BayNo := IncStr('0000');
+                                        FinalOrderQty := FinalOrderQty - 1;
+                                    until FinalOrderQty = 0;
+                                end;
+                            end;
 
-                        LineNo2 := L_InterimSalesLine."Line No.";
 
-                        REPEAT
-                            CLEAR(LineNo);
-                            LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+                            LineNo2 := L_InterimSalesLine."Line No.";
 
-                            IF NoofItemsFilter <> '1' then
-                                UpdateBayNoInWIP(HeaderNo, L_InterimSalesLine, LineNo, G_BayNo);
-                            UpdateOrderNo(L_InterimSalesLine, Rec);
-                        UNTIL L_InterimSalesLine.NEXT = 0;
+                            REPEAT
+                                i2 += 1;
+                                i3 += 1;
+                                CLEAR(LineNo);
+                                LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+
+                                if L_Quant > 3 then begin
+                                    if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                                        G_BayNo := IncStr(G_BayNo);
+                                        i2 := 1;
+                                    end;
+                                end;
+
+                                IF NoofItemsFilter <> '1' then
+                                    UpdateBayNoInWIP(HeaderNo, L_InterimSalesLine, LineNo, G_BayNo);
+                                UpdateOrderNo(L_InterimSalesLine, Rec);
+                            UNTIL L_InterimSalesLine.NEXT = 0;
+                        end;
+                    end
+                    else begin
+                        IF NoofItemsFilter <> '1' then begin
+                            ReturnBayNo := checkPreviousBayNo(HeaderNo, G_BayNo);
+                            G_BayNo := ReturnBayNo;
+                        end;
+
+                        Clear(L_Quant);
+                        ISL.RESET;
+                        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                        ISL.SETRANGE("Document No", Rec."No.");
+                        ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                        ISL.SETRANGE("Destination Doc No.", '');
+                        ISL.SetRange(Type, ISL.Type::Item);
+                        IF ISL.FINDSET THEN begin
+                            REPEAT
+                                L_Quant := L_Quant + ISL.Quantity;
+                            until ISL.Next() = 0;
+                        end;
+
+                        Clear(i2);
+                        Clear(i3);
+                        ISL.RESET;
+                        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                        ISL.SETRANGE("Document No", Rec."No.");
+                        ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                        ISL.SETRANGE("Destination Doc No.", '');
+                        ISL.SetRange(Type, ISL.Type::Item);
+                        IF ISL.FINDSET THEN
+                            REPEAT
+                                i2 += 1;
+                                i3 += 1;
+                                CheckOrderExists(ISL, Rec, HeaderNo);
+
+                                if L_Quant > 3 then begin
+                                    if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                                        G_BayNo := IncStr(G_BayNo);
+                                        i2 := 1;
+                                    end;
+                                end;
+
+
+                                IF NoofItemsFilter <> '1' then
+                                    UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+
+
+                            UNTIL ISL.NEXT = 0;
                     end;
-                end
-                else begin
-                    IF NoofItemsFilter <> '1' then begin
-                        ReturnBayNo := checkPreviousBayNo(HeaderNo, G_BayNo);
-                        G_BayNo := ReturnBayNo;
-                    end;
+                end else begin
                     ISL.RESET;
                     ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
                     ISL.SETRANGE("Document No", Rec."No.");
@@ -854,28 +933,234 @@ codeunit 90005 "Process Web Order"
                     IF ISL.FINDSET THEN
                         REPEAT
                             CheckOrderExists(ISL, Rec, HeaderNo);
-
                             IF NoofItemsFilter <> '1' then
                                 UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
-
                         UNTIL ISL.NEXT = 0;
                 end;
             end else begin
-                ISL.RESET;
-                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
-                ISL.SETRANGE("Document No", Rec."No.");
-                ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
-                ISL.SETRANGE("Destination Doc No.", '');
-                IF ISL.FINDSET THEN
-                    REPEAT
-                        CheckOrderExists(ISL, Rec, HeaderNo);
-                        IF NoofItemsFilter <> '1' then
-                            UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
-                    UNTIL ISL.NEXT = 0;
+                if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Multi Line Order" then begin
+                    if OchannelSetup."Quantity Restriction" <> 0 then begin
+                        if L_wIPH."Order Line Type" = L_wIPH."Order Line Type"::"Single Line Orders" then
+                            finalQty := L_qty
+                        else
+                            finalQty := L_qty2 + L_qty;
+
+                        if finalQty > OchannelSetup."Quantity Restriction" then begin
+
+                            Clear(L_Quant);
+                            ISL.RESET;
+                            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                            ISL.SETRANGE("Document No", Rec."No.");
+                            ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                            ISL.SETRANGE("Destination Doc No.", '');
+                            ISL.SetRange(Type, ISL.Type::Item);
+                            IF ISL.FINDSET THEN begin
+                                REPEAT
+                                    L_Quant := L_Quant + ISL.Quantity;
+                                until ISL.Next() = 0;
+                            end;
+
+                            Clear(i2);
+                            Clear(i3);
+                            L_InterimSalesLine.RESET;
+                            L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
+                            L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
+                            L_InterimSalesLine.SETFILTER("Item Type", '<>%1', L_InterimSalesLine."Item Type"::Assembly);
+                            L_InterimSalesLine.SETRANGE("Destination Doc No.", '');
+                            L_InterimSalesLine.SetFilter("Line No.", '<>%1', LineNo2);
+                            IF L_InterimSalesLine.FINDSET THEN BEGIN
+                                NoofItemsFilter := Rec.GetFilter("No. of Items");
+                                NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
+                                IF NoofItemsFilter = '1' then
+                                    HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
+                                Else begin
+                                    HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
+                                    Clear(TotalOrderQty);
+                                    if G_TotalQty > 0 then
+                                        TotalOrderQty := G_TotalQty / 2;
+                                    Clear(FinalOrderQty);
+                                    if TotalOrderQty > 0 then
+                                        FinalOrderQty := Round(TotalOrderQty, 1, '>');
+                                    if FinalOrderQty > 0 then begin
+                                        repeat
+                                            G_BayNo := IncStr('0000');
+                                            FinalOrderQty := FinalOrderQty - 1;
+                                        until FinalOrderQty = 0;
+                                    end;
+                                end;
+
+
+                                LineNo2 := L_InterimSalesLine."Line No.";
+
+                                REPEAT
+                                    i2 += 1;
+                                    i3 += 1;
+                                    CLEAR(LineNo);
+                                    LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+
+                                    if L_Quant > 3 then begin
+                                        if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                                            G_BayNo := IncStr(G_BayNo);
+                                            i2 := 1;
+                                        end;
+                                    end;
+
+                                    IF NoofItemsFilter <> '1' then
+                                        UpdateBayNoInWIP(HeaderNo, L_InterimSalesLine, LineNo, G_BayNo);
+                                    UpdateOrderNo(L_InterimSalesLine, Rec);
+                                UNTIL L_InterimSalesLine.NEXT = 0;
+                            end;
+                        end
+                        else begin
+                            IF NoofItemsFilter <> '1' then begin
+                                ReturnBayNo := checkPreviousBayNo(HeaderNo, G_BayNo);
+                                G_BayNo := ReturnBayNo;
+                            end;
+
+                            //Check Bay No++
+                            if ((G_BayNo = '30') or (G_BayNo = '29')) then begin
+                                Clear(L_Quant);
+                                ISL.RESET;
+                                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                                ISL.SETRANGE("Document No", Rec."No.");
+                                ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                                ISL.SETRANGE("Destination Doc No.", '');
+                                ISL.SetRange(Type, ISL.Type::Item);
+                                IF ISL.FINDSET THEN begin
+                                    REPEAT
+                                        L_Quant := L_Quant + ISL.Quantity;
+                                    until ISL.Next() = 0;
+                                end;
+
+                                Clear(i2);
+                                Clear(i3);
+                                L_InterimSalesLine.RESET;
+                                L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
+                                L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
+                                L_InterimSalesLine.SETFILTER("Item Type", '<>%1', L_InterimSalesLine."Item Type"::Assembly);
+                                L_InterimSalesLine.SETRANGE("Destination Doc No.", '');
+                                L_InterimSalesLine.SetFilter("Line No.", '<>%1', LineNo2);
+                                IF L_InterimSalesLine.FINDSET THEN BEGIN
+                                    NoofItemsFilter := Rec.GetFilter("No. of Items");
+                                    NoofItemsFilter := DelChr(NoofItemsFilter, '=', 'No. of Items: ');
+                                    IF NoofItemsFilter = '1' then
+                                        HeaderNo := CreatePickHeader(L_InterimSalesLine, 1)
+                                    Else begin
+                                        HeaderNo := CreatePickHeader(L_InterimSalesLine, 2);
+                                        Clear(TotalOrderQty);
+                                        if G_TotalQty > 0 then
+                                            TotalOrderQty := G_TotalQty / 2;
+                                        Clear(FinalOrderQty);
+                                        if TotalOrderQty > 0 then
+                                            FinalOrderQty := Round(TotalOrderQty, 1, '>');
+                                        if FinalOrderQty > 0 then begin
+                                            repeat
+                                                G_BayNo := IncStr('0000');
+                                                FinalOrderQty := FinalOrderQty - 1;
+                                            until FinalOrderQty = 0;
+                                        end;
+                                    end;
+
+
+                                    LineNo2 := L_InterimSalesLine."Line No.";
+
+                                    REPEAT
+                                        i2 += 1;
+                                        i3 += 1;
+                                        CLEAR(LineNo);
+                                        LineNo := CreatePickLines(HeaderNo, L_InterimSalesLine);
+
+                                        if L_Quant > 3 then begin
+                                            if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                                                G_BayNo := IncStr(G_BayNo);
+                                                i2 := 1;
+                                            end;
+                                        end;
+
+                                        IF NoofItemsFilter <> '1' then
+                                            UpdateBayNoInWIP(HeaderNo, L_InterimSalesLine, LineNo, G_BayNo);
+                                        UpdateOrderNo(L_InterimSalesLine, Rec);
+                                    UNTIL L_InterimSalesLine.NEXT = 0;
+                                end;
+                            end
+                            //Check Bay No--
+                            else begin
+                                Clear(L_Quant);
+                                ISL.RESET;
+                                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                                ISL.SETRANGE("Document No", Rec."No.");
+                                ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                                ISL.SETRANGE("Destination Doc No.", '');
+                                ISL.SetRange(Type, ISL.Type::Item);
+                                IF ISL.FINDSET THEN begin
+                                    REPEAT
+                                        L_Quant := L_Quant + ISL.Quantity;
+                                    until ISL.Next() = 0;
+                                end;
+
+                                Clear(i2);
+                                Clear(i3);
+                                ISL.RESET;
+                                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                                ISL.SETRANGE("Document No", Rec."No.");
+                                ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                                ISL.SETRANGE("Destination Doc No.", '');
+                                ISL.SetRange(Type, ISL.Type::Item);
+                                IF ISL.FINDSET THEN
+                                    REPEAT
+                                        i2 += 1;
+                                        i3 += 1;
+                                        CheckOrderExists(ISL, Rec, HeaderNo);
+
+                                        if L_Quant > 3 then begin
+                                            if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                                                G_BayNo := IncStr(G_BayNo);
+                                                i2 := 1;
+                                            end;
+                                        end;
+
+
+                                        IF NoofItemsFilter <> '1' then
+                                            UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+
+
+                                    UNTIL ISL.NEXT = 0;
+                            end;
+
+                        end;
+                    end else begin
+                        ISL.RESET;
+                        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                        ISL.SETRANGE("Document No", Rec."No.");
+                        ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+                        ISL.SETRANGE("Destination Doc No.", '');
+                        IF ISL.FINDSET THEN
+                            REPEAT
+                                CheckOrderExists(ISL, Rec, HeaderNo);
+                                IF NoofItemsFilter <> '1' then
+                                    UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
+                            UNTIL ISL.NEXT = 0;
+                    end;
+                end;
             end;
         END
         ELSE BEGIN
+            Clear(L_Quant);
+            ISL.RESET;
+            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+            ISL.SETRANGE("Document No", Rec."No.");
+            ISL.SETFILTER("Item Type", '<>%1', ISL."Item Type"::Assembly);
+            ISL.SETRANGE("Destination Doc No.", '');
+            ISL.SetRange(Type, ISL.Type::Item);
+            IF ISL.FINDSET THEN begin
+                REPEAT
+                    L_Quant := L_Quant + ISL.Quantity;
+                until ISL.Next() = 0;
+            end;
+
             CLEAR(HeaderNo);
+            Clear(i2);
+            Clear(i3);
             ISL.RESET;
             ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
             ISL.SETRANGE("Document No", Rec."No.");
@@ -905,8 +1190,17 @@ codeunit 90005 "Process Web Order"
 
                 REPEAT
                     L_Count += 1;
+                    i2 += 1;
+                    i3 += 1;
                     CLEAR(LineNo);
                     LineNo := CreatePickLines(HeaderNo, ISL);
+
+                    if L_Quant > 3 then begin
+                        if ((i2 > 2) AND (i3 <> L_Quant)) then begin
+                            G_BayNo := IncStr(G_BayNo);
+                            i2 := 1;
+                        end;
+                    end;
                     IF NoofItemsFilter <> '1' then
                         UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
                     UpdateOrderNo(ISL, Rec);
@@ -974,12 +1268,7 @@ codeunit 90005 "Process Web Order"
     begin
         WSL.RESET;
         WSL.SETRANGE("No.", WSH."No.");
-        //WSL.SETRANGE("Dispatch Status",WSL."Dispatch Status"::Partial);
-        //WSL.SETFILTER("Qty. Outstanding (Base)",'>%1',0);
-        //WSL.SETFILTER("Scanned Qty",'>%1',0);
         IF WSL.FINDSET THEN BEGIN
-            // IF CONFIRM('There are related web orders which are not dispatched, \ Do you want to deallocate it?',TRUE) THEN
-            //  BEGIN
             WSL2.RESET;
             WSL2.SETRANGE("No.", WSH."No.");
             IF WSL2.FINDSET THEN
@@ -996,7 +1285,6 @@ codeunit 90005 "Process Web Order"
                 IF ISL.FINDSET THEN
                   UnAllocateWebOrderOnDelete(ISL);*/
                 UNTIL WSL2.NEXT = 0;
-            //  END;
         END
 
     end;
@@ -1009,10 +1297,9 @@ codeunit 90005 "Process Web Order"
         ISL.CALCFIELDS(Status);
         ISL.SETRANGE("Document Type", ISL."Document Type"::Order);
         ISL.SETRANGE("Destination Doc No.", P_WIPL."No.");
-        //  ISL.SETRANGE("Sales Order Line No", P_WIPL."Line No.");//Khan++
+        ISL.SETRANGE("Destination Doc. Line No", P_WIPL."Line No.");
         ISL.SETFILTER(Status, '<>%1&<>%2', ISL.Status::Dispatched, ISL.Status::"Ready To Dispatch");
-        //   ISL.SETFILTER("Scanned Date", '%1', 0DT);//khan++
-        //NoOfRecs:=ISL.COUNT;
+        ISL.SETFILTER("Scanned Date", '%1', 0DT);
         IF ISL.FINDSET THEN BEGIN
 
             UnAllocateWebOrderOnDeleteNew(ISL, FALSE)
@@ -1033,9 +1320,6 @@ codeunit 90005 "Process Web Order"
         L_WIPL: Record 7334;
         RecInterimSalesL: Record "Interim Sales Line";
     begin
-        //IF RecSalesHeader.GET(RecSalesHeader."Document Type"::Order,RecInterimSalesLine."Sales Order No.") THEN
-        //BEGIN
-        //Repoen Sales order
         IF RecInterimSalesLine.FINDSET THEN
             REPEAT
                 IF NeedWIPValidation THEN BEGIN
@@ -1048,45 +1332,35 @@ codeunit 90005 "Process Web Order"
                     IF RecInterimSalesLine."Trolley No." <> '' THEN
                         CheckTrolleyIsClosed(RecInterimSalesLine);
                 END;
-                CLEAR(RecInterimSalesLine."Sales Order Line No");
-                //  CLEAR(RecInterimSalesLine."Sales Order No.");
+                CLEAR(RecInterimSalesLine."Destination Doc. Line No");
                 CLEAR(RecInterimSalesLine."Destination Doc No.");
                 CLEAR(RecInterimSalesLine."Destination Doc Type");
-                // CLEAR(RecInterimSalesLine."SO Created");
-                CLEAR(RecInterimSalesLine."Trolley No.");//Chandan++220720
-                                                         //RecInterimSalesLine.Status:=RecInterimSalesLine.Status::"In Progress";blocked by alok as this field is flow field
+                CLEAR(RecInterimSalesLine."Trolley No.");
                 RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
-                RecInterimSalesLine."Destination Doc No." := '';//Khan++
+                RecInterimSalesLine."Destination Doc No." := '';
                 RecInterimSalesLine.Reserved := FALSE;
-                // RecInterimSalesLine."Ready To Go":=FALSE;
                 RecInterimSalesLine.MODIFY;
-                //WSHList.AddToFilterText2(filterText, '|', '', RecInterimSalesLine."Document No");code blocked by alok
                 if RecInterimSalesHeader.Get(RecInterimSalesLine."Document Type", RecInterimSalesLine."Document No") then
                     RecInterimSalesHeader.Mark(true);
             UNTIL RecInterimSalesLine.NEXT = 0;
 
 
-        /*RecInterimSalesHeader.RESET; code blocked by alok
-        RecInterimSalesHeader.SETRANGE("Document Type", RecInterimSalesLine."Document Type");
-        RecInterimSalesHeader.SETFILTER("No.", filterText);*/
+
         RecInterimSalesHeader.MarkedOnly(true);
         IF RecInterimSalesHeader.FINDSET THEN
             REPEAT
                 IF NOT CheckIfLineExistsWithDocNo(RecInterimSalesHeader) THEN BEGIN
-                    // CLEAR(RecInterimSalesHeader."Sales Order No.");
                     CLEAR(RecInterimSalesHeader."Destination Doc No.");
                     CLEAR(RecInterimSalesHeader."Destination Doc Type");
-                    //IF RecInterimSalesHeader.Status<>RecInterimSalesHeader.Status::"No Stock" THEN //blokced by ak 11/12/20 and new code added below
                     IF NOT (RecInterimSalesHeader.Status IN [RecInterimSalesHeader.Status::"No Stock", RecInterimSalesHeader.Status::Cancelled]) THEN
                         RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
                     RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
                     RecInterimSalesLine."Destination Doc No." := '';
                     RecInterimSalesHeader.ReservedFlag := FALSE;
-                    RecInterimSalesHeader."Order Ack. Exported" := false;//Sofyan++
+                    RecInterimSalesHeader."Order Ack. Exported" := false;
                     RecInterimSalesHeader.MODIFY;
                 END;
             UNTIL RecInterimSalesHeader.NEXT = 0;
-        //END;
     end;
 
     local procedure CheckIfLineExistsWithDocNo(P_InterimSalesHeader: Record "Interim Sales Header"): Boolean
@@ -1409,45 +1683,47 @@ codeunit 90005 "Process Web Order"
         if WarehouseActivityLine."Activity Type" = WarehouseActivityLine."Activity Type"::"Put-away" then
             //if WarehouseActivityLine."Action Type" = WarehouseActivityLine."Action Type"::Place then begin
                 SL.Reset();
-                SL.SetRange("Document Type", SL."Document Type"::"Return Order");
-                SL.SetRange("Document No.", WarehouseActivityLine."Source No.");
-                SL.SetRange("Line No.", WarehouseActivityLine."Source Line No.");
-                if SL.FindFirst() then begin
-                    SetBins(SL."Item Reference Type No.", WarehouseActivityLine,sl."Shipping Agent Service Code",WarehouseActivityLine."Action Type");
-                end;
-            //end   
- 
+        SL.SetRange("Document Type", SL."Document Type"::"Return Order");
+        SL.SetRange("Document No.", WarehouseActivityLine."Source No.");
+        SL.SetRange("Line No.", WarehouseActivityLine."Source Line No.");
+        if SL.FindFirst() then begin
+            SetBins(SL."Item Reference Type No.", WarehouseActivityLine, sl."Shipping Agent Service Code", WarehouseActivityLine."Action Type");
+        end;
+        //end   
+
 
     end;
     //ReturnOrder--
-    local procedure SetBins(P_ReasonCode: Code[20]; P_WAL: Record "Warehouse Activity Line";P_bayno: Code[20];activitytype:Enum "Warehouse Action Type")
+    local procedure SetBins(P_ReasonCode: Code[20]; P_WAL: Record "Warehouse Activity Line"; P_bayno: Code[20]; activitytype: Enum "Warehouse Action Type")
     var
         L_Zone: Record Zone;
         L_Bin: Record Bin;
         L_ReasonCode: Record "Reason Code";
     begin
-      if activitytype  = activitytype::Place  then begin
-        L_ReasonCode.Reset();
-        L_ReasonCode.SetRange(Code, P_ReasonCode);
-        if L_ReasonCode.FindFirst() then begin
-            L_Zone.Reset();
-            L_Zone.SetRange("Location Code", P_WAL."Location Code");
-            L_Zone.SetRange(Code, L_ReasonCode."Zone Code");
-            if L_Zone.FindFirst() then begin
-                P_WAL.Validate("Zone Code", L_Zone.Code);
-                L_Bin.Reset();
-                L_Bin.SetRange("Location Code", P_WAL."Location Code");
-                L_Bin.SetRange("Zone Code", L_Zone.Code);
-                if L_Bin.FindFirst() then begin
-                  P_WAL.Validate("Bin Code", L_Bin.Code);
-                  P_WAL.Modify();
-                 end; 
+        if activitytype = activitytype::Place then begin
+            L_ReasonCode.Reset();
+            L_ReasonCode.SetRange(Code, P_ReasonCode);
+            if L_ReasonCode.FindFirst() then begin
+                L_Zone.Reset();
+                L_Zone.SetRange("Location Code", P_WAL."Location Code");
+                L_Zone.SetRange(Code, L_ReasonCode."Zone Code");
+                if L_Zone.FindFirst() then begin
+                    P_WAL.Validate("Zone Code", L_Zone.Code);
+                    L_Bin.Reset();
+                    L_Bin.SetRange("Location Code", P_WAL."Location Code");
+                    L_Bin.SetRange("Zone Code", L_Zone.Code);
+                    if L_Bin.FindFirst() then begin
+                        P_WAL.Validate("Bin Code", L_Bin.Code);
+                        P_WAL.Modify();
+                    end;
+                end;
             end;
+            P_WAL."Bay No." := P_bayno;
+            P_WAL.Modify();
+        end else begin
+            P_WAL."Bay No." := P_bayno;
+            P_WAL.Modify();
         end;
-       end else begin
-         P_WAL. "Bay No." := P_bayno;
-         P_WAL.Modify();
-       end;
         /* if P_ReasonCode = 'FAULTY' then begin
              L_Zone.Reset();
              L_Zone.SetRange("Location Code", P_WAL."Location Code");
@@ -1605,12 +1881,259 @@ codeunit 90005 "Process Web Order"
         if ((GenJournalLine."Journal Template Name" = ChannelSetup."Payment Journal Template") AND (GenJournalLine."Journal Batch Name" = ChannelSetup."Payment Jounal Batch") AND (GenJournalLine."Creditor No." <> '')) then
             HideDialog := true;
     end;
-    
+
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Create Source Document", 'OnSalesLine2ReceiptLineOnAfterInitNewLine', '', false, false)]
     local procedure OnSalesLine2ReceiptLineOnAfterInitNewLine(var WhseReceiptLine: Record "Warehouse Receipt Line"; WhseReceiptHeader: Record "Warehouse Receipt Header"; SalesLine: Record "Sales Line");
     begin
-      WhseReceiptLine."Bay No." :=  SalesLine."Shipping Agent Service Code";
+        WhseReceiptLine."Bay No." := SalesLine."Shipping Agent Service Code";
     end;
-    
 
+    //AllocateWebOrder++
+    procedure AllocateWebOrderWithAvailableQty2(VAR CS_ISH: Record "Interim Sales Header"; MaxOrder: Integer)
+    var
+        CS_InterimSalesLine: Record "Interim Sales Line";
+        filterText: Text;
+        CS_ISH2: Record "Interim Sales Header";
+        LineModified: Boolean;
+        OrderFilter: Text;
+        OrderFilter2: Text;
+        OrderFilter3: Text;
+        OrderFilter4: Text;
+        OrderFilter5: Text;
+    begin
+        Window.OPEN('Checking web orders...');
+        // GetOrderNoFilter(CS_ISH, filterText, MaxOrder);
+        Clear(OrderFilter);
+        Clear(OrderFilter2);
+        Clear(OrderFilter3);
+        Clear(OrderFilter4);
+        Clear(OrderFilter5);
+        if CS_ISH.FindFirst() then begin
+            repeat
+                if StrLen(OrderFilter) < 250 then begin
+                    if OrderFilter <> '' then
+                        OrderFilter := OrderFilter + '|' + CS_ISH."No."
+                    else
+                        OrderFilter := CS_ISH."No.";
+                end else
+                    if StrLen(OrderFilter2) < 250 then begin
+                        if OrderFilter <> '' then
+                            OrderFilter2 := OrderFilter2 + '|' + CS_ISH."No."
+                        else
+                            OrderFilter2 := CS_ISH."No.";
+                    end else
+                        if StrLen(OrderFilter3) < 250 then begin
+                            if OrderFilter3 <> '' then
+                                OrderFilter3 := OrderFilter3 + '|' + CS_ISH."No."
+                            else
+                                OrderFilter3 := CS_ISH."No.";
+                        end else
+                            if StrLen(OrderFilter4) < 250 then begin
+                                if OrderFilter4 <> '' then
+                                    OrderFilter4 := OrderFilter4 + '|' + CS_ISH."No."
+                                else
+                                    OrderFilter4 := CS_ISH."No.";
+                            end else
+                                if StrLen(OrderFilter5) < 250 then begin
+                                    if OrderFilter5 <> '' then
+                                        OrderFilter5 := OrderFilter5 + '|' + CS_ISH."No."
+                                    else
+                                        OrderFilter5 := CS_ISH."No.";
+                                end;
+            until CS_ISH.Next() = 0;
+        end;
+        Window.CLOSE;
+
+
+        CS_InterimSalesLine.RESET;
+        CS_InterimSalesLine.SETFILTER("Document No", OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
+        CS_InterimSalesLine.SETRANGE("Document Type", CS_ISH."Document Type");
+        CS_InterimSalesLine.SETRANGE(Type, CS_InterimSalesLine.Type::Item);
+        CS_InterimSalesLine.ASCENDING := TRUE;
+        IF CS_InterimSalesLine.FINDSET THEN
+            AllocateWebOrdersNew(CS_InterimSalesLine, LineModified, CS_InterimSalesLine.COUNT);
+
+        CLEAR(CurrRec);
+        IF GUIALLOWED THEN
+            Window.OPEN('Updating web headers... @1@@@@@@@@@@');
+        CS_ISH2.RESET;
+        CS_ISH2.SETRANGE("Document Type", CS_ISH2."Document Type"::Order);
+        CS_ISH2.SETFILTER("No.", OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
+        Clear(NoOfRecs);
+        NoOfRecs := CS_ISH2.COUNT;
+        IF CS_ISH2.FINDFIRST THEN
+            REPEAT
+                UpdateResFlagOnISH(CS_ISH2);
+                IF GUIALLOWED THEN BEGIN
+                    CurrRec += 1;
+                    IF NoOfRecs <= 100 THEN
+                        Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1)
+                    ELSE
+                        IF CurrRec MOD (NoOfRecs DIV 100) = 0 THEN
+                            Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
+                END;
+            UNTIL CS_ISH2.NEXT = 0;
+        IF GUIALLOWED THEN
+            Window.CLOSE;
+
+        //Un-Allocate Partially Reserved Order
+        UnAllocatePartiallyReservedOrder(OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
+        COMMIT;
+    end;
+
+    LOCAL procedure GetOrderNoFilter(VAR CS_ISH: Record "Interim Sales Header"; VAR filterText: Text; MaxOrder: Integer)
+    var
+        WSHList: Page "Warehouse Shipment List";
+        Counter: Integer;
+    begin
+        IF CS_ISH.FINDFIRST THEN
+            REPEAT
+                IF Counter <= MaxOrder THEN
+                    WSHList.AddToFilterText2(filterText, '|', '', CS_ISH."No.")
+                ELSE
+                    EXIT;
+                Counter += 1
+            UNTIL CS_ISH.NEXT = 0;
+    end;
+
+    LOCAL procedure AllocateWebOrdersNew(VAR InterimSalesLine: Record "Interim Sales Line"; VAR LineModified: Boolean; OrderCount: Decimal)
+    var
+        AvailableQuantity: Decimal;
+        ItemCode: Code[20];
+        ReservedQty: Decimal;
+        LastQty: Decimal;
+        QuantityForReservedKit: Decimal;
+        ItemQuery1: Query ItemQuery;
+    begin
+        IF GUIALLOWED THEN
+            Window.OPEN('Allocating web orders... @1@@@@@@@@@@');
+        NoOfRecs := OrderCount;
+        IF InterimSalesLine.FINDSET THEN
+            REPEAT
+
+                IF ItemCode <> InterimSalesLine."No." THEN BEGIN
+                    CLEAR(AvailableQuantity);
+                    InterimSalesLine.CALCFIELDS("Location Code");
+                    CLEAR(ItemQuery1);
+                    ItemQuery1.SETRANGE(ItemQuery1.No, InterimSalesLine."No.");
+                    ItemQuery1.SETRANGE(ItemQuery1.Location_Filter, InterimSalesLine."Location Code");
+                    ItemQuery1.SETRANGE(ItemQuery1.Variant_Filter, InterimSalesLine."NAV Variant code");
+                    ItemQuery1.SETFILTER(ItemQuery1.Bin_Filter, '<>DDSHIP&<>SHIP');
+                    ItemQuery1.OPEN;
+                    IF ItemQuery1.READ THEN BEGIN
+                        CLEAR(QuantityForReservedKit);
+
+                        AvailableQuantity := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order);
+                    END;
+                    ItemQuery1.CLOSE;
+
+                    ItemCode := InterimSalesLine."No.";
+                END;
+
+
+                ReservedQty := AvailableQuantity;
+                IF AvailableQuantity > 0 THEN BEGIN
+                    LastQty := AvailableQuantity;
+                    ReservedQty := ReservedQty - InterimSalesLine.Quantity;
+                    IF ReservedQty >= 0 THEN BEGIN
+                        InterimSalesLine.Reserved := TRUE;
+                        InterimSalesLine."Reserved Qty" := InterimSalesLine.Quantity;
+                        InterimSalesLine.MODIFY(true);
+                        LineModified := TRUE;
+                        AvailableQuantity := ReservedQty;
+                    END;
+                END;
+
+                IF GUIALLOWED THEN BEGIN
+                    CurrRec += 1;
+                    IF NoOfRecs <= 100 THEN
+                        Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1)
+                    ELSE
+                        IF CurrRec MOD (NoOfRecs DIV 100) = 0 THEN
+                            Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
+                END;
+            UNTIL InterimSalesLine.NEXT = 0;
+        IF GUIALLOWED THEN
+            Window.CLOSE;
+    end;
+
+    procedure UpdateResFlagOnISH(VAR InterimSalesHeader: Record "Interim Sales Header")
+    var
+        Res_InterimSalesLine: Record "Interim Sales Line";
+        ReservedLines: Integer;
+        TotalLines: Integer;
+        Count_InterimSalesLine: Record "Interim Sales Line";
+    begin
+        CLEAR(TotalLines);
+        CLEAR(ReservedLines);
+
+        Res_InterimSalesLine.RESET;
+        Res_InterimSalesLine.SETRANGE("Document Type", Res_InterimSalesLine."Document Type"::Order);
+        Res_InterimSalesLine.SETRANGE("Document No", InterimSalesHeader."No.");
+        Res_InterimSalesLine.SETRANGE(Type, Res_InterimSalesLine.Type::Item);
+        Res_InterimSalesLine.SETRANGE(Reserved, TRUE);
+        ReservedLines := Res_InterimSalesLine.COUNT;
+
+        Count_InterimSalesLine.RESET;
+        Count_InterimSalesLine.SETRANGE("Document Type", Count_InterimSalesLine."Document Type"::Order);
+        Count_InterimSalesLine.SETRANGE("Document No", InterimSalesHeader."No.");
+        Count_InterimSalesLine.SETRANGE(Type, Count_InterimSalesLine.Type::Item);
+        TotalLines := Count_InterimSalesLine.COUNT;
+
+        IF TotalLines = ReservedLines THEN
+            InterimSalesHeader.ReservedFlag := TRUE
+        ELSE
+            InterimSalesHeader.ReservedFlag := FALSE;
+
+        InterimSalesHeader."Last Process Attempt 2" := CURRENTDATETIME;
+        InterimSalesHeader.MODIFY;
+    end;
+
+    procedure UnAllocatePartiallyReservedOrder(OrderNoFilter: Text)
+    var
+        Rec_ISH: Record "Interim Sales Header";
+        Rec_ISL: Record "Interim Sales Line";
+        WHList: Page "Warehouse Shipment List";
+        OrderFilterText: Text;
+    begin
+        Window.OPEN('Removing Allocation for Partially Reserved orders...');
+        Rec_ISH.RESET;
+        Rec_ISH.SETFILTER("No.", OrderNoFilter);
+        Rec_ISH.SETRANGE(ReservedFlag, FALSE);
+        IF Rec_ISH.FINDSET THEN
+            REPEAT
+                WHList.AddToFilterText2(OrderFilterText, '|', '', Rec_ISH."No.");
+            UNTIL Rec_ISH.NEXT = 0;
+
+
+        Rec_ISL.RESET;
+        Rec_ISL.SETRANGE("Document Type", Rec_ISH."Document Type");
+        Rec_ISL.SETFILTER("Document No", OrderFilterText);
+        Rec_ISL.SETRANGE(Type, Rec_ISL.Type::Item);
+        Rec_ISL.SETRANGE(Reserved, TRUE);
+        IF Rec_ISL.FINDSET THEN
+            REPEAT
+                CLEAR(Rec_ISL."Reserved Qty");
+                Rec_ISL.Reserved := FALSE;
+                Rec_ISL.MODIFY;
+            UNTIL Rec_ISL.NEXT = 0;
+        Window.CLOSE;
+    end;
+
+
+    //AllocateWebOrder--
+
+    local procedure UpdateStatusOnSalesOrder(P_HeaderNo: Code[20])
+    var
+        SH: Record "Sales Header";
+        RealeaseSalesDoc: Codeunit "Release Sales Document";
+    begin
+        SH.Reset();
+        SH.SetRange("Document Type", SH."Document Type"::Order);
+        SH.SetRange("No.", P_HeaderNo);
+        if SH.FindFirst() then begin
+            if SH.Status = SH.Status::Open then
+                RealeaseSalesDoc.PerformManualRelease(SH);
+        end;
+    end;
 }

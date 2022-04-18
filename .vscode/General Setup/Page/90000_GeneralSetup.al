@@ -42,6 +42,10 @@ page 90000 "General Setup - Channels"
                 {
                     ApplicationArea = All;
                 }
+                field("Auto Release Sales Orders"; Rec."Auto Release Sales Orders")
+                {
+                    ApplicationArea = All;
+                }
                 //Sofyan--
                 //Pranali++
                 field("Print Return Note"; Rec."Print Return Note")
@@ -86,6 +90,13 @@ page 90000 "General Setup - Channels"
                 {
                     ApplicationArea = All;
                     DecimalPlaces = 0 : 0;
+                    Caption = 'Multi-Line Quantity Restriction';
+                }
+                field("Quantity Restriction (SINGLE)"; Rec."Quantity Restriction (SINGLE)")
+                {
+                    ApplicationArea = All;
+                    DecimalPlaces = 0 : 0;
+                    Caption = 'Single-Line Quantity Restriction';
                 }
                 field("Bank Account No."; Rec."Bank Account No.")
                 {
@@ -113,6 +124,44 @@ page 90000 "General Setup - Channels"
                     ApplicationArea = All;
                     Caption = 'G/L Account for Fee Posting';
                 }
+                field("Allocate Web Orders"; Rec."Allocate Web Orders")
+                {
+                    ApplicationArea = All;
+                }
+                field("Enable Carriage credit"; rec."Enable Carriage credit")
+                {
+                    ApplicationArea = All;
+                }
+                field("Download Lable on Azure"; Rec."Download Lable on Azure")
+                {
+                    ApplicationArea = All;
+                    trigger OnValidate()
+                    begin
+                        IsDownloadonAzureEnable := rec."Download Lable on Azure";
+                    end;
+
+                }
+                field("Courier Label Container Name"; rec."Courier Label Container Name")
+                {
+                    ApplicationArea = All;
+                    Editable = IsDownloadonAzureEnable;
+                }
+                field("Courier Label Container Token"; rec."Courier Label Container Token")
+                {
+                    ApplicationArea = All;
+                    Editable = IsDownloadonAzureEnable;
+                    ExtendedDatatype = Masked;
+                }
+                field("Courier Container Attribute"; rec."Courier Container Attribute")
+                {
+                    ApplicationArea = All;
+                    Editable = IsDownloadonAzureEnable;
+                }
+                field("Courier Container Endpoint"; rec."Courier Container Endpoint")
+                {
+                    ApplicationArea = All;
+                    Editable = IsDownloadonAzureEnable;
+                }
             }
         }
 
@@ -129,4 +178,12 @@ page 90000 "General Setup - Channels"
         END;
     end;
 
+    trigger OnAfterGetRecord()
+    begin
+        IsDownloadonAzureEnable := rec."Download Lable on Azure";
+    end;
+
+    var
+        [InDataSet]
+        IsDownloadonAzureEnable: Boolean;
 }

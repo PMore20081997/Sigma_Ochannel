@@ -40,7 +40,7 @@ codeunit 90098 "Auto Send Email"
         HISH.SetRange("No.", P_HISH."No.");
         if HISH.FindFirst() then
             ReportSelections.SendEmailToCust(
-                           90090, HISH, HISH."Channel Order ID", 'DESPATCH EMAIL', true, TempCustomer."No.", 0);
+                           90090, HISH, HISH."Channel Order ID", 'Confirmation of Despatch', true, TempCustomer."No.");
 
     end;
 
@@ -50,6 +50,7 @@ codeunit 90098 "Auto Send Email"
         TempCustomer.Init();
         TempCustomer."No." := P_HISH."Sell-to Customer No.";
         TempCustomer."E-Mail" := P_HISH."Ship-to Email";
+        TempCustomer."Search Name" := 'Email Executed';
         TempCustomer.Insert();
     end;
 

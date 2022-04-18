@@ -21,6 +21,7 @@ query 90002 "Get Registered Qty From Pick"
                 DataItemTableFilter = "Activity Type" = CONST(Pick), "Action Type" = CONST(Place);
                 column(Item_No; "Item No.")
                 {
+                    
                 }
                 column(Variant_Code;"Variant Code")
                 {                    

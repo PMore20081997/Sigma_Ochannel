@@ -2,7 +2,7 @@ page 90017 "Web Order Header"
 {
     ApplicationArea = All;
     UsageCategory = Administration;
-    //Editable = false;
+    Editable = true;
     CaptionML = ENU = 'Web Order',
                 ENG = 'Web Order';
     SourceTable = "Interim Sales Header";
@@ -17,6 +17,7 @@ page 90017 "Web Order Header"
         {
             group(General)
             {
+                Editable = false;
                 field("Document Type"; rec."Document Type")
                 {
                     Visible = false;
@@ -29,7 +30,7 @@ page 90017 "Web Order Header"
                 }
                 field("Channel Order ID"; rec."Channel Order ID")
                 {
-                    Editable = false;
+                    Editable = true;
                     ApplicationArea = all;
                 }
                 field("Sell-to Customer No."; rec."Sell-to Customer No.")
@@ -75,8 +76,8 @@ page 90017 "Web Order Header"
                 }
                 field("Order Date"; rec."Order Date")
                 {
-                    Editable = false;
-                    Visible = false;
+                    Editable = true;
+                    Visible = true;
                     ApplicationArea = all;
                 }
                 field("Order Placed At"; rec."Order Placed At")
@@ -140,35 +141,27 @@ page 90017 "Web Order Header"
                 field("Destination Doc Type"; Rec."Destination Doc Type")
                 {
                     ApplicationArea = all;
+                    Editable = false;
                 }
                 field(Rec; Rec."Destination Doc No.")
                 {
                     ApplicationArea = all;
+                    Editable = false;
                     trigger OnDrillDown()
                     begin
                         OpenDestinationDocument(Rec);
                     end;
                 }
+
                 group("Shipping Details")
                 {
                     Caption = 'Shipping Details';
+                    Editable = true;
                     field("Web Shipment Method"; rec."Web Shipment Method")
                     {
                         Editable = false;
                         Enabled = false;
                         Visible = true;
-                        ApplicationArea = all;
-                    }
-                    field("Shipment Method Code"; rec."Shipment Method Code")
-                    {
-                        ApplicationArea = all;
-                    }
-                    field("Shipping Agent Code"; rec."Shipping Agent Code")
-                    {
-                        ApplicationArea = all;
-                    }
-                    field("Shipping Agent Service Code"; rec."Shipping Agent Service Code")
-                    {
                         ApplicationArea = all;
                     }
                     field("Shipment Date"; rec."Shipment Date")
@@ -178,11 +171,13 @@ page 90017 "Web Order Header"
                     field("Tracking No."; rec."Tracking No.")
                     {
                         ApplicationArea = all;
+                        Editable = false;
                     }
                     field(Remarks; rec.Remarks)
                     {
                         Caption = 'Shipment Remark';
                         ApplicationArea = all;
+                        Editable = false;
                     }
                     field("Total Weight"; rec."Total Weight")
                     {
@@ -191,10 +186,12 @@ page 90017 "Web Order Header"
                     field("Pickup Date"; rec."Pickup Date")
                     {
                         ApplicationArea = all;
+                        Visible = false;
                     }
                     field("Pickup Time"; rec."Pickup Time")
                     {
                         ApplicationArea = all;
+                        Visible = false;
                     }
                     field("No. of Items"; rec."No. of Items")
                     {
@@ -204,11 +201,12 @@ page 90017 "Web Order Header"
                     field("No. Of Parcels"; rec."No. Of Parcels")
                     {
                         ApplicationArea = all;
+                        Editable = false;
                     }
                     field("Location Code"; rec."Location Code")
                     {
                         ApplicationArea = all;
-                        Editable = true;
+                        Editable = false;
                     }
                 }
             }
@@ -273,14 +271,25 @@ page 90017 "Web Order Header"
                     Visible = true;
                     ApplicationArea = all;
                 }
+                field("Shipment Method Code"; rec."Shipment Method Code")
+                {
+                    ApplicationArea = all;
+                }
+                field("Shipping Agent Code"; rec."Shipping Agent Code")
+                {
+                    ApplicationArea = all;
+                }
+                field("Shipping Agent Service Code"; rec."Shipping Agent Service Code")
+                {
+                    ApplicationArea = all;
+                }
             }
 
             part("Web Header Subform"; "Web order Subpage")
             {
                 ApplicationArea = all;
-                // Enabled = false;
                 SubPageLink = "Document Type" = FIELD("Document Type"), "Document No" = FIELD("No.");
-
+                Editable = true;
             }
 
         }
@@ -397,7 +406,7 @@ page 90017 "Web Order Header"
                 end;
             }
 
-            action("Authorise price")
+            action("Authorize price")
             {
                 ApplicationArea = All;
 

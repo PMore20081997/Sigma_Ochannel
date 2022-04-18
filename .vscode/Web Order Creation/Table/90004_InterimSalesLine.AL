@@ -170,6 +170,8 @@ table 90004 "Interim Sales Line"
         field(26; "Discount%"; Text[30])
         {
             DataClassification = ToBeClassified;
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Wrong Data type setup';
 
         }
         field(27; "Line Status"; Option)
@@ -178,6 +180,12 @@ table 90004 "Interim Sales Line"
             OptionMembers = " ","No Stock",Cancelled;
             OptionCaptionML = ENU = ' ,"No Stock",Cancelled',
                               ENG = ' ,"No Stock",Cancelled';
+        }
+
+        field(28; "Discount %"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+
         }
         field(29; "Gift Wrap"; Boolean)
         {
@@ -490,7 +498,8 @@ table 90004 "Interim Sales Line"
         }
         field(90017; "Sales Order Line No"; Integer)
         {
-
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Functionality for this field is moved to destination document line no';
         }
         field(90018; "Multiline Order"; Boolean)
         {
@@ -509,6 +518,11 @@ table 90004 "Interim Sales Line"
         {
 
         }
+        field(90022; "Reserved Qty"; Decimal)
+        {
+
+        }
+
     }
 
     keys

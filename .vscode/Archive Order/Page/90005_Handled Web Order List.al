@@ -6,7 +6,7 @@ page 90005 "Handled Web Order List"
     DeleteAllowed = false;
     Editable = false;
     InsertAllowed = false;
-    //ModifyAllowed = false;
+    ModifyAllowed = false;
     PageType = List;
     SaveValues = true;
     SourceTable = "Handled Interim Sales Header";
@@ -35,6 +35,7 @@ page 90005 "Handled Web Order List"
                 field("MultiLine Order No."; Rec."MultiLine Order No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("<Channel Order ID>"; Rec."Channel Order ID")
                 {
@@ -92,7 +93,14 @@ page 90005 "Handled Web Order List"
                 {
                     ApplicationArea = All;
                 }
-
+                field("Order Amount"; Rec."Order Amount")
+                {
+                    ApplicationArea = All;
+                }
+                field("Order Discount Amount"; Rec."Order Discount Amount")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

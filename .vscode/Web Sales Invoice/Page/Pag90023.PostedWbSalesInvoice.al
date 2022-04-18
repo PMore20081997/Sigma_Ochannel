@@ -30,6 +30,7 @@ page 90023 "Posted Web Sales Invoice"
                 field("Document Creation DateTime"; Rec."Document Creation DateTime")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Posting Date"; Rec."Posting Date")
                 {
@@ -45,14 +46,20 @@ page 90023 "Posted Web Sales Invoice"
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field(Posted; Rec.Posted)
+                field("Total Qty. to post"; Rec."Total Qty. to post")
                 {
                     ApplicationArea = All;
                 }
-                field("Processing Error"; Rec."Processing Error")
+                field("Total Amt. to post"; Rec."Total Amt. to post")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Total Amt. to post(Ex. VAT)';
+                }
+                field("Total Amt. to post(Inl. VAT)"; Rec."Total Amt. to post(Inl. VAT)")
                 {
                     ApplicationArea = All;
                 }
+
             }
             part("WebSalesInvoiceSubForm"; "Posted Web Sales Inv. Subform")
             {

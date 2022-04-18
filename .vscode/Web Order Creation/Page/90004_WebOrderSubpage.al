@@ -5,12 +5,12 @@ page 90004 "Web order Subpage"
     //UsageCategory = Administration;
     SourceTable = "Interim Sales Line";
     CaptionML = ENU = 'Web order Subpage', ENG = 'Web order Subpage';
-    // ModifyAllowed = true;
+    ModifyAllowed = true;
     // LinksAllowed = false;
     // DelayedInsert = true;
-    // AutoSplitKey = true;
-    InsertAllowed = false;
-    DeleteAllowed = false;
+    AutoSplitKey = true;
+    InsertAllowed = true;
+    DeleteAllowed = true;
     layout
     {
         area(content)
@@ -38,6 +38,20 @@ page 90004 "Web order Subpage"
                 {
                     Editable = true;
                     ApplicationArea = All;
+                    trigger OnValidate()
+                    var
+                        ISH: Record "Interim Sales Header";
+                    begin
+                        ISH.Reset();
+                        ISH.SetRange("No.", Rec."Document No");
+                        ISH.SetRange("Document Type", Rec."Document Type");
+                        if ISH.FindFirst() then begin
+                            if Rec."Trade Partner Code" = '' then begin
+                                Rec.Validate("Trade Partner Code", ISH."Trade Partner Code");
+                                Rec.Validate("Channel Order ID", ISH."Channel Order ID");
+                            end;
+                        end;
+                    end;
                 }
 
                 field(Description2; Rec.Description2)
@@ -48,6 +62,16 @@ page 90004 "Web order Subpage"
                 }
 
                 field(Quantity; Rec.Quantity)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Reserved Qty"; Rec."Reserved Qty")
+                {
+                    ApplicationArea = ALl;
+                    Editable = false;
+                }
+                field(Reserved; Rec.Reserved)
                 {
                     ApplicationArea = All;
                 }
@@ -79,6 +103,11 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                 }
                 field(Discount; Rec.Discount)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Discount %"; Rec."Discount %")
                 {
                     ApplicationArea = All;
                 }
@@ -138,6 +167,10 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     //Editable = false;
                 }
+                field("Scanned Date"; rec."Scanned Date")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }
@@ -154,26 +187,15 @@ page 90004 "Web order Subpage"
                 var
                     L_InterimSalesLine: Record "Interim Sales Line";
                     UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";
+                    L_InterimSalesHeader: Record "Interim Sales Header";
                 begin
+                    L_InterimSalesHeader.Get(Rec."Document Type", rec."Document No");
+                    if NOT (L_InterimSalesHeader.status IN [L_InterimSalesHeader.status::"Partially Scanned", L_InterimSalesHeader.status::Processing, L_InterimSalesHeader.status::Cancelled]) then
+                        Error('Line can cancel only when order status is Partially Scanned or Processing or Cancelled');
                     Clear(L_InterimSalesLine);
                     L_InterimSalesLine := Rec;
                     CurrPage.SETSELECTIONFILTER(L_InterimSalesLine);
                     UpdateDispatchedOnWebOrder.CancelSelectedLines(L_InterimSalesLine);
-                end;
-            }
-            action("Payment Details")
-            {
-                ApplicationArea = All;
-                Image = Payment;
-                //The property 'PromotedIsBig' can only be set if the property 'Promoted' is set to 'true'
-                //PromotedIsBig = true;
-
-                trigger OnAction()
-                var
-                    ChannelMedia: Record "Channel Media";
-                    ChannelOrderId: Text;
-                begin
-
                 end;
             }
         }

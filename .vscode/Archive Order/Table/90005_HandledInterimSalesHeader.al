@@ -309,6 +309,14 @@ table 90005 "Handled Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
+        field(75; "Order Fullfilled"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(76; "Order Fullfillment Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
         field(50010; "Pickup Name"; Text[50])
         {
             Description = 'Channel Integration';
@@ -344,6 +352,10 @@ table 90005 "Handled Interim Sales Header"
             Description = 'Channel Integration';
         }
         field(50018; "Pickup Date"; Date)
+        {
+            Description = 'Channel Integration';
+        }
+        field(50019; "Total Order Item Amount"; Decimal)
         {
             Description = 'Channel Integration';
         }

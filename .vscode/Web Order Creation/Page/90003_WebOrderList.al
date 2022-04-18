@@ -107,6 +107,10 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
+                {
+                    ApplicationArea = all;
+                }
                 field(Remarks; Rec.Remarks)
                 {
                     Visible = false;
@@ -277,45 +281,7 @@ page 90003 "Web Order List"
             }
             //CourierIntegration--
 
-            //  Delete for Handled Incoming message table ++
-            // action(WebOrderDelete)
-            // {
-            //     Promoted = true;
-            //     PromotedIsBig = true;
-            //     PromotedCategory = Process;
-            //     ApplicationArea = all;
 
-            //     trigger Onaction()
-            //     var
-            //         myInt: Integer;
-            //         Handled: Record "Handled Incoming Message";
-            //         ISH: Record "Interim Sales Header";
-            //         SH: Record "Sales Header";
-            //     begin
-            //         Clear(Rec."Sales Order No.");
-            //         Rec.Modify();
-            //         ISH.Reset();
-            //         CurrPage.SetSelectionFilter(ISH);
-            //         if ISH.FindSet() then begin
-            //             repeat
-            //                 SH.Reset();
-            //                 SH.SetRange("External Document No.", ISH."External Document No.");
-            //                 if Sh.FindFirst() then begin
-            //                     repeat
-
-
-            //                         Sh.Delete(true);
-            //                         Rec.Delete(True);
-
-            //                     until Sh.Next = 0;
-            //                 end else
-            //                     Rec.Delete(true);
-            //             Until ISH.Next = 0;
-            //         End;
-            //     End;
-
-            // }
-            //Delete for Handled Incoming message table --
             action(DisplayLabel)
             {
                 ApplicationArea = All;
@@ -395,6 +361,46 @@ page 90003 "Web Order List"
                     CU90000.RemoveDestinationDocReference(Rec, TRUE);
                 end;
             }
+            // action(ExportOrderAck)
+            // {
+            //     ApplicationArea = All;
+            //     Caption = 'ExportOrderAck';
+            //     Image = Export;
+            //     Promoted = true;
+            //     PromotedCategory = Process;
+            //     PromotedIsBig = true;
+            //     PromotedOnly = true;
+            //     trigger OnAction()
+            //     var
+            //     begin
+            //         OrderAck.OrderAckConvertText(rec."Channel Order ID");
+            //         CurrPage.Update();
+            //     end;
+            // }
+            // action(ExportOrderAckCopy)
+            // {
+            //     ApplicationArea = All;
+            //     Caption = 'ExportOrderAckCopy';
+            //     Image = Export;
+            //     Promoted = true;
+            //     PromotedCategory = Process;
+            //     PromotedIsBig = true;
+            //     PromotedOnly = true;
+            //     trigger OnAction()
+            //     var
+            // InterimSalesHeader: Record "Interim Sales Header";
+            //     begin
+            // Clear(InterimSalesHeader);
+            // InterimSalesHeader := Rec;
+            // CurrPage.SetSelectionFilter(InterimSalesHeader);
+            // InterimSalesHeader.SETRANGE("Trade Partner Code", 'SHOPDIRECT');
+            // if InterimSalesHeader.FindSet() then begin
+            //     repeat
+            //         OrderAck.OrderAckConvertTextCopy();
+            //         Message('%1', InterimSalesHeader."Channel Order ID");
+            //     until InterimSalesHeader.Next() = 0;
+            //     CurrPage.Update();
+            // end;
         }
     }
 
@@ -430,6 +436,7 @@ page 90003 "Web Order List"
         WebOrdMngt: Codeunit "Web Order Mgt";
         SalesHeader: Record "Sales Header";
         WhseInternalPickHeader: Record "Whse. Internal Pick Header";
+        OrderAck: Codeunit "Order Acknowledgement";
 
 
 
@@ -521,7 +528,7 @@ page 90003 "Web Order List"
 
                 Temp_SalesHeader."Ship-to Name" := P_InterimSalesHeader."Ship-to Name";
                 Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address";
-                Temp_SalesHeader."Ship-to Address 2" := P_InterimSalesHeader."Ship-to Address 2";
+                Temp_SalesHeader."Ship-to Address 2" := CopyStr(P_InterimSalesHeader."Ship-to Address 2", 1, 35);
                 Temp_SalesHeader."Ship-to City" := P_InterimSalesHeader."Ship-to City";
                 Temp_SalesHeader."Ship-to Country/Region Code" := P_InterimSalesHeader."Ship-to Country/Region Code";
                 Temp_SalesHeader."Ship-to Post Code" := P_InterimSalesHeader."Ship-to Post Code";

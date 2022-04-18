@@ -43,7 +43,8 @@ report 90022 "Get Scanned Lines"
                 _WSIH.get(WebSalesInvNo);
                 _ChannelRec.get(ChannelCode);
                 _WSIH."Location Code" := _ChannelRec.Location;
-                _WSIH."Posting Date" := WorkDate();
+                if Webinvh."To Date" <> 0D then
+                    _WSIH."Posting Date" := Webinvh."To Date";
                 _WSIH."Total Invoice Discount" := TotalInvDis;
                 _WSIH.Modify();
                 Window.Close();
@@ -151,7 +152,8 @@ report 90022 "Get Scanned Lines"
             WSIL."Trade Partner Code" := PChannelCode;
             WSIL.Type := WSIL.Type::Item;
             WSIL.validate("No.", PItemNo);
-            WSIL.validate("NAV Variant code", PNavvariant);
+            if PNavvariant <> '' then
+                WSIL.validate("NAV Variant code", PNavvariant);
             WSIL.Description := L_ArchivedScannedEntry."Item Desciption";
             WSIL."Unit of Measure Code" := L_UoM;
             WSIL.Quantity := Qty;

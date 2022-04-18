@@ -25,7 +25,7 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(5; Address; Text[50])
+        field(5; Address; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -71,7 +71,7 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(15; "Ship-to Address"; Text[50])
+        field(15; "Ship-to Address"; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -315,7 +315,7 @@ table 90003 "Interim Sales Header"
         {
             Description = 'Channel Integration';
         }
-        field(50011; "Pickup Address"; Text[50])
+        field(50011; "Pickup Address"; Text[100])
         {
             Description = 'Channel Integration';
 
@@ -349,6 +349,11 @@ table 90003 "Interim Sales Header"
         {
             Description = 'Channel Integration';
         }
+        field(50019; "Total Order Item Amount"; Decimal)
+        {
+            Description = 'Channel Integration';
+        }
+
         field(50020; "Email (Location)"; Text[80])
         {
             ExtendedDatatype = EMail;
@@ -485,8 +490,8 @@ table 90003 "Interim Sales Header"
         field(90021; "Shelf No."; Code[20])
         {
             Editable = false;
-            FieldClass = FlowField;
-            CalcFormula = lookup("Interim Sales Line"."Shelf No." where("Document Type" = field("Document Type"), "Document No" = field("No.")));
+            // FieldClass = FlowField;     // Irshad
+            // CalcFormula = lookup("Interim Sales Line"."Shelf No." where("Document Type" = field("Document Type"), "Document No" = field("No.")));    // Irshad
         }
 
         field(90022; "Order Discount Amount"; Decimal)
@@ -495,7 +500,14 @@ table 90003 "Interim Sales Header"
         }
         field(90023; Reconciled; Boolean)
         {
-            ObsoleteState = Removed; 
+            ObsoleteState = Removed;
+        }
+        field(90024; "Last Process Attempt"; DateTime)
+        {
+            ObsoleteState = Removed;
+        }
+        field(90026; "Last Process Attempt 2"; DateTime)
+        {
         }
     }
 
@@ -673,7 +685,8 @@ table 90003 "Interim Sales Header"
         ShipmentTracking.DeleteAll(true);
 
         ChannelMedia.Reset();
-        ChannelMedia.SetRange("Web Order No.", "Channel Order ID");
+        // ChannelMedia.SetRange("Web Order No.", "Channel Order ID");
+        ChannelMedia.SetRange("Channel Order ID", "Channel Order ID");//khan++
         ChannelMedia.DeleteAll(true);
 
         //code to delete error log

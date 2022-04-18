@@ -3,7 +3,7 @@ page 90020 "Handled Web Order Line"
 
     PageType = List;
     SourceTable = "Handled Interim Sales Line";
-
+    Editable = false;  
 
     layout
     {
@@ -24,6 +24,10 @@ page 90020 "Handled Web Order Line"
                     ApplicationArea = All;
                 }
                 field("No."; Rec."No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("NAV Variant code"; Rec."NAV Variant code")
                 {
                     ApplicationArea = All;
                 }
@@ -111,6 +115,8 @@ page 90020 "Handled Web Order Line"
                 field("VAT%"; Rec."VAT%")
                 {
                     ApplicationArea = All;
+                    Visible = false;
+                    
                 }
                 field(Remarks; Rec.Remarks)
                 {
@@ -123,6 +129,15 @@ page 90020 "Handled Web Order Line"
                     ApplicationArea = All;
                 }
                 field(Status; Rec."Ordser Status")
+                {
+                    ApplicationArea = All;
+                }
+                field("Line Status"; Rec."Line Status")
+                {
+                    ApplicationArea = All;
+                }
+                
+                field("Scanned Date"; Rec."Scanned Date")
                 {
                     ApplicationArea = All;
                 }

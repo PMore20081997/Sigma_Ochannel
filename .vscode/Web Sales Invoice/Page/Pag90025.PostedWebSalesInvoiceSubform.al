@@ -75,26 +75,7 @@ page 90025 "Posted Web Sales Inv. Subform"
     {
         area(Processing)
         {
-            action(GetShipmentLines)
-            {
-                AccessByPermission = TableData "Sales Shipment Header" = R;
-                ApplicationArea = Suite;
-                Caption = 'Get &Trolley Lines';
-                Ellipsis = true;
-                Image = Shipment;
-
-                trigger OnAction()
-                var
-                    //GetTrolleyDetails: report "Get Trolley Details";
-                    GetTrolleyDetails: report "Get Scanned Lines";
-                    WSI: Record "Web Sales Invoice";
-                begin
-                    WSI.get(Rec."Web Sales Invoice No.");
-                    GetTrolleyDetails.SetChannelcode(WSI."Web Sales Invoice No.", WSI."Trade Partner Code");
-                    GetTrolleyDetails.Run();
-                end;
-            }
-
+            
             action(WebOrderLines)
             {
                 ApplicationArea = Suite;

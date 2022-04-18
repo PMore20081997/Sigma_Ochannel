@@ -127,7 +127,8 @@ table 90006 "Handled Interim Sales Line"
         field(26; "Discount%"; Text[30])
         {
             DataClassification = ToBeClassified;
-
+            ObsoleteState = Removed;
+            ObsoleteReason   = 'Wrong Data type setup';
         }
         field(27; "Line Status"; Option)
         {
@@ -135,6 +136,11 @@ table 90006 "Handled Interim Sales Line"
             OptionMembers = ,"No Stock",Cancelled;
             OptionCaptionML = ENU = ' ,"No Stock",Cancelled',
                               ENG = ' ,"No Stock",Cancelled';
+        }
+        field(28; "Discount %"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+
         }
         field(29; "Gift Wrap"; Boolean)
         {
@@ -231,7 +237,8 @@ table 90006 "Handled Interim Sales Line"
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No")));
-
+            ObsoleteState = Removed;
+            ObsoleteReason =  'Column is not required'; 
         }
         field(48; "Ordser Status"; Option)
         {
@@ -304,7 +311,8 @@ table 90006 "Handled Interim Sales Line"
         field(50029; Reserved; Boolean)
         {
             DataClassification = ToBeClassified;
-
+            ObsoleteState = Removed;
+            ObsoleteReason =  'Column is not required';   
         }
         field(50030; "Old Item No."; Code[20])
         {
@@ -351,6 +359,8 @@ table 90006 "Handled Interim Sales Line"
         field(50041; "Moved In Handled"; Boolean)
         {
             DataClassification = ToBeClassified;
+            ObsoleteState = Removed;
+            ObsoleteReason =  'Column is not required'; 
         }
         field(50042; "Destination Doc Type"; Option)
         {

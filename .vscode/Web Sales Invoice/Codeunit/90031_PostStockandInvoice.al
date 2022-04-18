@@ -4,9 +4,30 @@ codeunit 90031 "Post Stock and Invoice"
 {
     trigger OnRun()
     begin
-
+     
     end;
 
+  /*  procedure TextToHex() 
+    var
+    TypeHelper: Codeunit "Type Helper";
+    CompanyInfo: Record "Company Information";
+    i: Integer;
+    input: text;
+    Inputint : Integer;
+    HexValue: Text;
+    base64Convert: Codeunit Base64Convert;
+    begin
+     CompanyInfo.get;
+     input := CompanyInfo.Name;
+     for i := 1 to strlen(input) do begin
+       Inputint := input[i];
+       HexValue += TypeHelper.IntToHex(Inputint);
+     end;  
+     Message(HexValue);      
+     HexValue := base64Convert.TextToBase64String(HexValue);
+     Message(HexValue);
+    end;
+    */
     procedure ProcessforStockPosting(WebSalesInvNo_P: code[20])
     var
         _WSInvHdr: record "Web Sales Invoice";
@@ -14,6 +35,8 @@ codeunit 90031 "Post Stock and Invoice"
         _PostErr: Label 'Document already Posted, Posting Aborted';
         _ItemJnlBatch: record "Item Journal Batch";
         _JnlBatch: Record "Gen. Journal Batch";
+        Report7315 : report 7315;
+        ItemJnlPagfe : page "Item Journal";
     begin
         GetSetup.Get();
         GetSetup.TestField("Item Journal Template");
@@ -77,7 +100,8 @@ codeunit 90031 "Post Stock and Invoice"
         if (GetLastErrorText() = '') then
             CreateNPostSalesInvoice(_WSInvHdr."Web Sales Invoice No.");
     end;
-
+    
+    //code to create Sales invoice Header ++
     procedure CreateNPostSalesInvoice(WebSalesInvNo_P: code[20])
     var
         _WSInvHdr: record "Web Sales Invoice";
@@ -87,7 +111,7 @@ codeunit 90031 "Post Stock and Invoice"
         _cust: record Customer;
         SalesCalcDiscByType: Codeunit "Sales - Calc Discount By Type";
         paymentposted: Boolean;
-
+        _WSInvLine: record "Web Sales Invoice Line";
     begin
         _WSInvHdr.get(WebSalesInvNo_P);
         if _WSInvHdr."Invoice Posted" then
@@ -96,6 +120,9 @@ codeunit 90031 "Post Stock and Invoice"
         _Cust.GET(_ChannelRec."Customer No.");
         IF _Cust."Prices Including VAT" THEN
             ERROR(STRSUBSTNO('Price including VAT must be No on Customer %1', _Cust."No."));
+        if checkallitemslineposted(_WSInvHdr."Web Sales Invoice No.") then
+          exit;
+
         if not _WSInvHdr."Invoice Created" then begin
             _SalesInv.Init();
             _SalesInv.Validate("Document Type", _SalesInv."Document Type"::Invoice);
@@ -111,10 +138,6 @@ codeunit 90031 "Post Stock and Invoice"
             _SalesInv.Modify();
             CreateSalesInvLines(_SalesInv."No.", _WSInvHdr."Web Sales Invoice No.");
             SalesCalcDiscByType.ApplyInvDiscBasedOnAmt(_WSInvHdr."Total Invoice Discount", _SalesInv);
-            /*_SalesInv.get(_SalesInv."Document Type",_SalesInv."No.");
-            _SalesInv.Validate("Invoice Discount Calculation",_SalesInv."Invoice Discount Calculation"::Amount);
-            _SalesInv.validate("Invoice Discount Value",_WSInvHdr."Total Invoice Discount");
-            _SalesInv.Modify();*/
             Commit();
         end else begin
             _SalesInv.get(2, WebSalesInvNo_P);
@@ -147,6 +170,17 @@ codeunit 90031 "Post Stock and Invoice"
         end;
 
     end;
+    procedure checkallitemslineposted(P_WebInvoice: Code[20]) : Boolean
+    var
+    L_WebInvLine: Record "Web Sales Invoice Line";
+    begin
+     L_WebInvLine.Reset();
+     L_WebInvLine.SetRange("Web Sales Invoice No.",P_WebInvoice);
+     L_WebInvLine.SetRange("Stock Posted",false);
+     L_WebInvLine.SetRange(Type, L_WebInvLine.Type::Item);;
+     if not L_WebInvLine.IsEmpty then
+       exit(true);
+    end;
 
     procedure MoveWebInvoiceToPosted(P_WebInvoice: Code[20])
     var
@@ -162,6 +196,11 @@ codeunit 90031 "Post Stock and Invoice"
 
             L_PostedWebInvHdr.Init();
             L_PostedWebInvHdr.TransferFields(L_WebInvHdr);
+            L_WebInvHdr.CalcFields("Total Qty. to post","Total Amt. to post");
+            L_WebInvHdr.CalcFields("Total Amt. to post(Inl. VAT)");
+            L_PostedWebInvHdr."Total Qty. to post" := L_WebInvHdr."Total Qty. to post";
+            L_PostedWebInvHdr."Total Amt. to post" := L_WebInvHdr."Total Amt. to post";
+            L_PostedWebInvHdr."Total Amt. to post(Inl. VAT)" := L_WebInvHdr."Total Amt. to post(Inl. VAT)";
             L_PostedWebInvHdr.Insert();
 
             _ChannelRec.get(L_PostedWebInvHdr."Trade Partner Code");
@@ -200,7 +239,7 @@ codeunit 90031 "Post Stock and Invoice"
         _PayDetails2temp: Record "Channel Media" temporary;
         _WebPayment: Record "Web Payment";
         _Lineno: Integer;
-        _PmtMethod: Code[10];
+        _PmtMethod: Text[50];
         _amt: Decimal;
         _AmtInclVAT: Decimal;
         _ChannelOrdID: Text;
@@ -210,6 +249,7 @@ codeunit 90031 "Post Stock and Invoice"
         GetSetup: Record "General Setup - Channels";
         _GenJnlLine1: Record "Gen. Journal Line";
         L_Cust: Record Customer;//Sofyan
+        L_WebSalesInvoice: Record "Web Sales Invoice";
     begin
         Commit();
         _ChannelRec.get(P_TradePartnercode);
@@ -257,6 +297,8 @@ codeunit 90031 "Post Stock and Invoice"
                 _PayDetails2temp.TransferFields(_PayDetailstemp);
                 _PayDetails2temp.Insert();
 
+                _PayDetails."Invoice No." := P_WebInvoice;
+                _PayDetails.Modify();
             until _PayDetails.next() = 0;
 
         _PayDetailstemp.SetCurrentKey("Payment Method", "Channel Order ID");
@@ -312,7 +354,12 @@ codeunit 90031 "Post Stock and Invoice"
                         _GenJnlLine.VALIDATE("Journal Template Name", GetSetup."Cash Rct Template Name");
                         _GenJnlLine.VALIDATE("Journal Batch Name", GetSetup."Cash Rct Batch Name");
                         _GenJnlLine.VALIDATE("Line No.", _Lineno);
-                        _GenJnlLine.validate("Posting Date", WorkDate());
+                        //_GenJnlLine.validate("Posting Date", WorkDate());//Sofyan
+                        L_WebSalesInvoice.Reset();
+                        L_WebSalesInvoice.SetRange("Web Sales Invoice No.", P_WebInvoice);
+                        if L_WebSalesInvoice.FindFirst() then
+                            if L_WebSalesInvoice."Posting Date" <> 0D then
+                                _GenJnlLine.Validate("Posting Date", L_WebSalesInvoice."Posting Date");
                         _GenJnlLine.VALIDATE("Source Code", 'CASHRECJNL');
                         _GenJnlLine.VALIDATE("Document Type", _GenJnlLine."Document Type"::" ");
                         _GenJnlLine."Document No." := _Noseriesmngmnt.GetNextNo(_JnlBatch."No. Series", Today, true);
@@ -321,7 +368,7 @@ codeunit 90031 "Post Stock and Invoice"
                         L_Cust.Reset();
                         L_Cust.SetRange("No.", _ChannelRec."Customer No.");
                         if L_Cust.FindFirst() then begin
-                            if L_Cust."No." <> L_Cust."Bill-to Customer No." then
+                            if (L_Cust."No." <> L_Cust."Bill-to Customer No.") and (L_Cust."Bill-to Customer No." <> '') then
                                 _GenJnlLine.Validate("Account No.", L_Cust."Bill-to Customer No.")
                             else
                                 _GenJnlLine.Validate("Account No.", L_Cust."No.");
@@ -785,6 +832,7 @@ codeunit 90031 "Post Stock and Invoice"
         WhseJnlPostLine: Codeunit "Whse. Jnl.-Register Line";
         TradePartner: Record "Trade Partner";
         L_Cust: Record Customer;
+        L_WInvLine: record "Web Sales Invoice Line";
     begin
         //  with ItemJnlLine do begin
 
@@ -833,26 +881,35 @@ codeunit 90031 "Post Stock and Invoice"
 
 
         If ItemJnlPostLine.Run(ItemJnlLine) then begin
-            P_WInvHdr."Stock Posted" := true;
-            P_WInvHdr.Modify();
             P_WInvLine."Stock Posted" := true;
             P_WInvLine.Modify();
         end Else begin
             P_WInvHdr."Stock Posted" := false;
             P_WInvHdr."Processing Error" := GetLastErrorText();
             TempWhseJnlLine2.DeleteAll();
+            ItemJnlLine.Delete();
             ItemJnlLineError.SetRange("Journal Template Name", G_GenSetup."Item Journal Template");
             ItemJnlLineError.SetRange("Journal Batch Name", G_GenSetup."Item Journal Batch");
             ItemJnlLineError.DeleteAll();
             P_WInvHdr.Modify();
+            P_WInvLine."Stock Posted" := false;
+            P_WInvLine.Modify();
         end;
-
+        
         TempWhseJnlLine2.Reset();
         if TempWhseJnlLine2.FindSet() then
             repeat
                 WhseJnlPostLine.Run(TempWhseJnlLine2);
             until TempWhseJnlLine2.Next() = 0;
-
+        
+        L_WInvLine.Reset();
+        L_WInvLine.SetRange("Web Sales Invoice No.",P_WInvHdr."Web Sales Invoice No.");
+        L_WInvLine.SetRange(Type,L_WInvLine.Type::Item);
+        L_WInvLine.SetRange("Stock Posted",false);
+        if L_WInvLine.IsEmpty then begin
+          P_WInvHdr."Stock Posted" := true;
+          P_WInvHdr.Modify();   
+        end;
     end;
 
 
@@ -943,6 +1000,12 @@ codeunit 90031 "Post Stock and Invoice"
             if not UserSetupManagement.IsPostingDateValidWithSetup(L_WSInvHdr."Posting Date", SetupRecordID) then
                 errorgeneraed := InsertErrorLog('Posting date is not allowed', L_WSInvHdr."Web Sales Invoice No.");
 
+            if L_WSInvHdr."Total Invoice Discount" > 0 then
+              if L_cust."Invoice Disc. Code" = '' then
+                errorgeneraed := InsertErrorLog(StrSubstNo('Invoice Discount code must not be blanl for customer %1',L_cust."No."), L_WSInvHdr."Web Sales Invoice No.");
+
+
+
             L_GenSetup_Channel.Get();
             L_tradepartner.Get(L_WSInvHdr."Trade Partner Code");
 
@@ -981,7 +1044,7 @@ codeunit 90031 "Post Stock and Invoice"
                             webpaymentMethod.SetRange("Channel Code", paymentDetail."Channel Code");
                             webpaymentMethod.SetRange("Web Payment Method", paymentDetail."Payment Method");
                             if NOT webpaymentMethod.FindFirst() then
-                                errorgeneraed := InsertErrorLog(StrSubstNo('Web payment Method is not setup for Channel code %1, Web Payment Method %2', L_tradepartner.Code, paymentDetail."Payment Method"), L_WSInvHdr."Web Sales Invoice No.");
+                                errorgeneraed := InsertErrorLog(StrSubstNo('Web payment Method is not setup for Channel code %1, Web Payment Method %2, Channel Order id %3', L_tradepartner.Code, paymentDetail."Payment Method",paymentDetail."Channel Order ID"), L_WSInvHdr."Web Sales Invoice No.");
                             paymentDetail.SetRange("Payment Method", paymentDetail."Payment Method");
                             paymentDetail.FindLast();
                             paymentDetail.SetRange("Payment Method");

@@ -48,7 +48,7 @@ page 90014 "Payment Details"
                 field("Nav Order No."; Rec."Web Order No.")
                 {
                     ApplicationArea = All;
-                    Visible = false;
+
                 }
                 field(Status; Rec.Status)
                 {
@@ -60,12 +60,43 @@ page 90014 "Payment Details"
                     ApplicationArea = All;
                     Visible = false;
                 }
+                field("Invoice No."; rec."Invoice No.")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
 
 
     }
+    actions
+    {
+        area(Processing)
+        {
+            action("updagte invoice no")
+            {
+                ApplicationArea = All;
 
+                trigger OnAction();
+                var
+                    HandledOrderheader: record "Handled Interim Sales Header";
+                    OrderPaymentDetail: record "Channel Media";
+                begin
+                    OrderPaymentDetail.Reset();
+                    if OrderPaymentDetail.FindFirst() then
+                        repeat
+                            HandledOrderheader.Reset();
+                            HandledOrderheader.SetRange("Document Type", HandledOrderheader."Document Type"::Order);
+                            HandledOrderheader.SetRange("No.", OrderPaymentDetail."Web Order No.");
+                            if HandledOrderheader.FindFirst() then begin
+                                OrderPaymentDetail."Invoice No." := HandledOrderheader."Invoice No.";
+                                OrderPaymentDetail.Modify();
+                            end;
+                        until OrderPaymentDetail.Next() = 0;  
+                end;
+            }
+        }
+    }
 
 
     trigger OnInsertRecord(BelowxRec: Boolean): Boolean

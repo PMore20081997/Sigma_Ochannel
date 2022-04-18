@@ -138,6 +138,18 @@ table 90020 "Web Sales Invoice"
         {
             DataClassification = ToBeClassified;
         }
+        field(20; "Total Amt. to post(Inl. VAT)"; Decimal)
+        {
+            Caption = 'Total Amt. to post(Inl. VAT)';
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = sum("Web Sales Invoice Line"."Amount Including VAT" where("Web Sales Invoice No." = field("Web Sales Invoice No.")));
+        }
+        field(21; "Total Payment Received"; Decimal)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+        }
 
     }
 

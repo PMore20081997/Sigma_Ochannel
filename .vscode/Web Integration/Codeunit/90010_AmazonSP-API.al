@@ -421,6 +421,11 @@ codeunit 90010 "Amazon SP API"
                 end;
             end;
         end;
+        if ChannelCode = 'AMAZONFBS' then begin
+            Sleep(1000);
+            UpdateShippingAddress(ChannelCode);
+        end;
+        //UpdateOrderItems(ChannelCode);
         MESSAGE('Order Sync Completed...');
     end;
 
@@ -503,8 +508,8 @@ codeunit 90010 "Amazon SP API"
         end;
 
         //Getting Shipping Address by Calling Shipping Address API
-        shippingAddressObject := GetShippingAddress(ChannelCode, ChannelOrderId, AccessToken);
         Sleep(900);
+        shippingAddressObject := GetShippingAddress(ChannelCode, ChannelOrderId, AccessToken);
 
         InterimSalesHeader."Ship-to Address" := '';
         if GetJsonvalue(shippingAddressObject, 'AddressLine1').IsNull = false then begin
@@ -639,6 +644,7 @@ codeunit 90010 "Amazon SP API"
         Url: Text;
         jArray: JsonArray;
     begin
+        Sleep(500);
         GetCredentials(ChannelCode);
 
         Url := 'http://webintegrationapi.azurewebsites.net/api/AmazonAPI/GetOrderItem?' +
@@ -651,6 +657,173 @@ codeunit 90010 "Amazon SP API"
                 jArray.ReadFrom(response);
                 exit(jArray);
             end;
+        end;
+    end;
+
+
+    local procedure UpdateShippingAddress(ChannelCode: Code[10])
+    var
+        client: HttpClient;
+        responseMessage: HttpResponseMessage;
+        response: Text;
+        Url: Text;
+        jObject: JsonObject;
+        AccessToken: Text;
+        L_InterimSalesHeader: Record "Interim Sales Header";
+    begin
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetFilter("Trade Partner Code", '%1', ChannelCode);
+        L_InterimSalesHeader.SetFilter("Ship-to Address", '%1', '');
+        if L_InterimSalesHeader.FindSet() then begin
+            repeat
+                GetCredentials(ChannelCode);
+                if AccessToken = '' then begin
+                    AccessToken := GetAccessToken(ChannelCode);
+                end;
+
+                Url := 'http://webintegrationapi.azurewebsites.net/api/AmazonAPI/GetShippingAddress?' +
+                'AccessToken=' + AccessToken + '&AccessKey=' + AccessKey + '&SecretKey=' + SecretKey +
+                '&Region=eu-west-1&OrderId=' + L_InterimSalesHeader."Channel Order ID";
+
+                if client.Get(Url, responseMessage) then begin
+                    if responseMessage.HttpStatusCode = 200 then begin
+                        responseMessage.Content.ReadAs(response);
+                        jObject.ReadFrom(response);
+
+                        if GetJsonvalue(jObject, 'AddressLine1').IsNull = false then begin
+                            L_InterimSalesHeader."Ship-to Address" := CopyStr(GetJsonvalue(jObject, 'AddressLine1').AsText(), 1, 50);
+                        end;
+
+                        if GetJsonvalue(jObject, 'AddressLine2').IsNull = false then begin
+                            L_InterimSalesHeader."Ship-to Address 2" := Copystr(GetJsonvalue(jObject, 'AddressLine2').AsText(), 1, 50);
+                        end;
+
+                        if L_InterimSalesHeader."Ship-to Post Code" = '' then begin
+                            If GetJsonvalue(jObject, 'PostalCode').IsNull = false then begin
+                                L_InterimSalesHeader."Ship-to Post Code" := CopyStr(GetJsonvalue(jObject, 'PostalCode').AsCode(), 1, 20);
+                            end;
+                        end;
+
+                        if L_InterimSalesHeader."Ship-to Country/Region Code" = '' then begin
+                            if GetJsonvalue(jObject, 'CountryCode').IsNull = false then begin
+                                L_InterimSalesHeader."Ship-to Country/Region Code" := CopyStr(GetJsonvalue(jObject, 'CountryCode').AsCode(), 1, 10);
+                            end;
+                        end;
+
+                        if L_InterimSalesHeader."Ship-to City" = '' then begin
+                            if GetJsonvalue(jObject, 'City').IsNull = false then begin
+                                L_InterimSalesHeader."Ship-to City" := CopyStr(GetJsonvalue(jObject, 'City').AsText(), 1, 30);
+                            end;
+                        end;
+
+                        if L_InterimSalesHeader."Ship-to Name" = '' then begin
+                            If GetJsonvalue(jObject, 'Name').IsNull = false then begin
+                                L_InterimSalesHeader."Ship-to Name" := CopyStr(GetJsonvalue(jObject, 'Name').AsText(), 1, 50);
+                            End;
+                        end;
+
+                        L_InterimSalesHeader.Modify(TRUE);
+                    end;
+                end;
+                Sleep(900);
+            until L_InterimSalesHeader.Next() = 0;
+        end;
+    end;
+
+
+    local procedure UpdateOrderItems(ChannelCode: Code[10])
+    var
+        client: HttpClient;
+        responseMessage: HttpResponseMessage;
+        response: Text;
+        Url: Text;
+        jArray: JsonArray;
+        AccessToken: Text;
+        NoOfItems: Integer;
+        i: Integer;
+        ShippingPrice: Decimal;
+        orderItemArray: JsonArray;
+        itemToken: JsonToken;
+        LineObject: JsonObject;
+        itemPriceObject: JsonObject;
+        shippingPriceObject: JsonObject;
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        InterimSalesLine: Record "Interim Sales Line";
+    begin
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetFilter("Trade Partner Code", '%1', ChannelCode);
+        L_InterimSalesHeader.SetFilter("No. of Items", '%1', 0);
+        if L_InterimSalesHeader.FindSet() then begin
+            repeat
+                GetCredentials(ChannelCode);
+                if AccessToken = '' then begin
+                    AccessToken := GetAccessToken(ChannelCode);
+                end;
+
+                Url := 'http://webintegrationapi.azurewebsites.net/api/AmazonAPI/GetOrderItem?' +
+                'AccessToken=' + AccessToken + '&AccessKey=' + AccessKey + '&SecretKey=' + SecretKey +
+                '&Region=eu-west-1&OrderId=' + L_InterimSalesHeader."Channel Order ID";
+
+                if client.Get(Url, responseMessage) then begin
+                    if responseMessage.HttpStatusCode = 200 then begin
+                        responseMessage.Content.ReadAs(response);
+                        jArray.ReadFrom(response);
+                        NoOfItems := jArray.Count;
+                        if NoOfItems > 0 then begin
+                            for i := 0 to NoOfItems - 1 do begin
+                                orderItemArray.Get(i, itemToken);
+                                LineObject := itemToken.AsObject;
+
+                                InterimSalesLine.Init;
+                                InterimSalesLine."Line No." := i;
+                                InterimSalesLine."Document Type" := InterimSalesLine."Document Type"::Order;
+                                InterimSalesLine.Type := InterimSalesLine.type::Item;
+                                InterimSalesLine."Document No" := L_InterimSalesHeader."No.";
+                                InterimSalesLine."Channel Order ID" := L_InterimSalesHeader."Channel Order ID";
+                                InterimSalesLine.Weight := 1;
+
+                                if GetJsonvalue(LineObject, 'OrderItemId').IsNull = false then begin
+                                    InterimSalesLine."Channel Item Id" := GetJsonvalue(LineObject, 'OrderItemId').AsCode();
+                                end;
+
+                                if GetJsonvalue(LineObject, 'QuantityOrdered').IsNull = false then begin
+                                    InterimSalesLine.Quantity := GetJsonvalue(LineObject, 'QuantityOrdered').AsDecimal();
+                                end;
+
+                                if GetJsonvalue(LineObject, 'Title').IsNull = false then begin
+                                    InterimSalesLine.Description := Copystr(GetJsonvalue(LineObject, 'Title').AsText(), 1, 100);
+                                end;
+
+                                itemPriceObject := GetJsonToken(LineObject, 'ItemPrice').AsObject();
+
+                                if GetJsonvalue(itemPriceObject, 'Amount').IsNull = false then begin
+                                    InterimSalesLine.Amount := GetJsonvalue(itemPriceObject, 'Amount').AsDecimal();
+                                end;
+                                if (InterimSalesLine.Quantity > 1) And (InterimSalesLine.Quantity <> 0) then begin
+                                    InterimSalesLine."Unit Price" := InterimSalesLine.Amount / InterimSalesLine.Quantity;
+                                end else begin
+                                    InterimSalesLine."Unit Price" := InterimSalesLine.Amount;
+                                end;
+
+                                if LineObject.Contains('ShippingPrice') then begin
+                                    shippingPriceObject := GetJsonToken(LineObject, 'ShippingPrice').AsObject();
+                                    if (GetJsonvalue(shippingPriceObject, 'Amount').IsNull = false) then begin
+                                        ShippingPrice := GetJsonvalue(shippingPriceObject, 'Amount').AsDecimal();
+                                        InterimSalesLine."Shipping Price" := ShippingPrice;
+                                    end;
+                                end;
+
+                                if GetJsonvalue(LineObject, 'SellerSKU').IsNull = false then begin
+                                    InterimSalesLine."Channel SKU" := GetJsonvalue(LineObject, 'SellerSKU').AsText();
+                                end;
+
+                                InterimSalesLine.Insert(true);
+                            end;
+                        end;
+                    end;
+                end;
+                Sleep(900);
+            until L_InterimSalesHeader.Next() = 0;
         end;
     end;
 

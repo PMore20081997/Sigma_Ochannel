@@ -313,7 +313,7 @@ page 90001 "Trade Partner List"
                             JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncShipment';
                             JobQueueEntry.Insert;
 
-                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
+                            Codeunit.Run(TradePartnerList."Order Acknowledgement Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
                 end;
@@ -391,7 +391,7 @@ page 90001 "Trade Partner List"
 
                 end;
             }
-            //Sofyan++
+            
             action("Order Acknowledgement")
             {
                 ApplicationArea = All;
@@ -414,7 +414,53 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
-            //Sofyan--
+            
+            action("Export Stock Available")
+            {
+                ApplicationArea = All;
+                Image = OrderPromising;    
+                //Visible = false;            
+                trigger OnAction()
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then
+                        repeat
+                            if TradePartnerList."Order Acknowledgement Required" then begin
+                                JobQueueEntry.Init;
+                                JobQueueEntry.ID := CreateGuid();
+                                JobQueueEntry."Parameter String" := TradePartnerList.Code + ';StockPosition';
+                                JobQueueEntry.Insert;
+
+                                Codeunit.Run(TradePartnerList."Order Acknowledgement Codeunit", JobQueueEntry);
+                                JobQueueEntry.Delete();
+                            end;
+                        until TradePartnerList.Next() = 0;
+                end;
+            }
+            action("Export Stock Status")
+            {
+                ApplicationArea = All;
+                Image = OrderPromising;
+                //Visible = false;
+                trigger OnAction()
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then
+                        repeat
+                            if TradePartnerList."Order Acknowledgement Required" then begin
+                                JobQueueEntry.Init;
+                                JobQueueEntry.ID := CreateGuid();
+                                JobQueueEntry."Parameter String" := TradePartnerList.Code + ';StockStatus';
+                                JobQueueEntry.Insert;
+
+                                Codeunit.Run(TradePartnerList."Order Acknowledgement Codeunit", JobQueueEntry);
+                                JobQueueEntry.Delete();
+                            end;
+                        until TradePartnerList.Next() = 0;
+                end;
+            }
 
         }
         area(Navigation)

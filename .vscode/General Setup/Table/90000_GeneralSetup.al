@@ -150,7 +150,42 @@ table 90000 "General Setup - Channels"
         {
             TableRelation = "G/L Account"."No.";
         }
+        field(25; "Allocate Web Orders"; Boolean)
+        {
 
+        }
+        field(26; "Enable Carriage credit"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(27; "Quantity Restriction (SINGLE)"; Decimal)
+        {
+
+        }
+        field(28; "Courier Label Container Name"; Text[250])
+        {
+
+        }
+        field(29; "Courier Label Container Token"; Text[250])
+        {
+        }
+        field(30; "Courier Container Endpoint"; Text[250])
+        {
+            Caption = 'Courier Label Container Endpoint';
+        }
+        field(31; "Courier Container Attribute"; Text[250])
+        {
+            Caption = 'Courier Label Container Attribute';
+        }
+        field(32; "Download Lable on Azure"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Download Delivery Lable on Azure';
+        }
+        field(33; "Auto Release Sales Orders"; Boolean)
+        {
+
+        }
     }
 
 }

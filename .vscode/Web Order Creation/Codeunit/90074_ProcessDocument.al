@@ -1,4 +1,4 @@
-codeunit 90074 MyCodeunit
+codeunit 90074 MyCodeunit2
 {
     trigger OnRun()
     begin

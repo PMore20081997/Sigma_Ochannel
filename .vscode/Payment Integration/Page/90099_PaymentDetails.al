@@ -19,6 +19,10 @@ page 90099 "Payment Detail"
                 {
                     ApplicationArea = All;
                 }
+                field("Payment Type"; Rec."Payment Type")
+                {
+                    ApplicationArea = All;
+                }
                 field("Transaction No."; Rec."Transaction No.")
                 {
                     ApplicationArea = All;

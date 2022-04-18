@@ -14,4 +14,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
 
         end;*/
     end;
+
+
+
 }

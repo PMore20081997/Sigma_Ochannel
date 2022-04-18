@@ -636,6 +636,7 @@ page 90008 "Despatch Scan Screen"
         RecInterimSalesLine.SETRANGE("Dispatch Scan", FALSE);
         RecInterimSalesLine.SETRANGE("Scanned Date", 0DT);
         //ak 011220 --
+        RecInterimSalesLine.SetFilter("Line Status",'<>%1',RecInterimSalesLine."Line Status"::Cancelled);//Sofyan
         IF RecInterimSalesLine.FINDSET THEN
             OrderLnneCount := RecInterimSalesLine.COUNT;
 
@@ -705,6 +706,7 @@ page 90008 "Despatch Scan Screen"
     local procedure PrintDispatchReport(L_TrolleyNo: Code[20]; L_weborderNo: Code[20])
     var
         L_Despatch: Record "Despatch Scan Line";
+        L_ArchieveDespatch: record "Archive Scanned Entries";
         L_InterimSalesLine: Record "Interim Sales Line";
         TotalSalesLines: Integer;
         TotalDespatchLines: Integer;
@@ -719,16 +721,25 @@ page 90008 "Despatch Scan Screen"
         R_DeliveryNote: Report 90072;
         InStm: InStream;
         filename: Text;
+        GeneralsetupOchannel: Record "General Setup - Channels";
     begin
         CLEAR(R_CourierLabel);
         CLEAR(TotalDespatchLines);
         CLEAR(TotalSalesLines);
+        GeneralsetupOchannel.Get();
+
         L_Despatch.RESET;
         L_Despatch.SETRANGE("Trolley No", L_TrolleyNo);
         L_Despatch.SETRANGE(Scanned, TRUE);
         L_Despatch.SETRANGE("Order No", L_weborderNo);
         IF L_Despatch.FINDSET THEN
             TotalDespatchLines := L_Despatch.COUNT;
+
+        L_ArchieveDespatch.RESET;
+        L_ArchieveDespatch.SETRANGE(Scanned, TRUE);
+        L_ArchieveDespatch.SETRANGE("Order No", L_weborderNo);
+        IF L_ArchieveDespatch.FINDSET THEN
+            TotalDespatchLines += L_ArchieveDespatch.COUNT;    
 
         L_InterimSalesLine.RESET;
         L_InterimSalesLine.SETRANGE(Type, L_InterimSalesLine.Type::Item);
@@ -747,6 +758,7 @@ page 90008 "Despatch Scan Screen"
             L_InterimSalesHeader.SETRANGE("No.", L_weborderNo);
             L_InterimSalesHeader.SETRANGE("Document Type", L_InterimSalesHeader."Document Type"::Order);
             IF L_InterimSalesHeader.FINDFIRST THEN BEGIN
+             if Not GeneralsetupOchannel."Download Lable on Azure" then begin   
                 L_ShipmentTracking.Reset();
                 L_ShipmentTracking.SetRange("Document No.", L_InterimSalesHeader."No.");
                 L_ShipmentTracking.SetRange("Shipping Agent Code", L_InterimSalesHeader."Shipping Agent Code");
@@ -757,6 +769,7 @@ page 90008 "Despatch Scan Screen"
                     R_CourierLabel.SaveAs('', ReportFormat::Pdf, FileOutStream);
                     FileMgt.BLOBExport(TempBlob, L_InterimSalesHeader."No." + '.pdf', true);
                 end;
+             end;   
                 /* if L_InterimSalesHeader."Trade Partner Code" = 'SHOPDIRECT' then begin
                      L_ShipmentTracking.Reset();
                      L_ShipmentTracking.SetRange("Document No.", L_InterimSalesHeader."No.");

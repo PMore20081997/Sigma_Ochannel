@@ -12,7 +12,10 @@ codeunit 90030 EventSubscribers
     begin
         WarehouseEntry."Trade Partner Code" := WarehouseJournalLine."Trade Partner Code";
     end;
+   
+    
 
+    
     var
         myInt: Integer;
 }

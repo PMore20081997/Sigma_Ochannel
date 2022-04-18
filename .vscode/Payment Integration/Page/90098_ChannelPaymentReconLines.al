@@ -6,7 +6,7 @@ page 90098 "Channel Pay. Recon Lines"
     LinksAllowed = false;
     PageType = ListPart;
     SourceTable = "Channel Payment Line";
-    Editable = false;
+    //Editable = false;
     RefreshOnActivate = true;
     layout
     {
@@ -19,85 +19,115 @@ page 90098 "Channel Pay. Recon Lines"
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Document Type"; Rec."Document Type")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("Payment Type"; Rec."Payment Type")
+                {
+                    ApplicationArea = All;
+                    StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Document No."; Rec."Document No.")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("External Document No."; Rec."External Document No.")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Order Amount (System)"; Rec."Order Amount (System)")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field(Amount; Rec.Amount)
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    trigger OnValidate()
+                    begin
+                     Rec.Diffrance := Rec."Order Amount (System)" - Rec."Discount Amount" - (Rec.Amount + abs(Rec.Fees));   
+                    end;
                 }
                 field("Discount Amount"; Rec."Discount Amount")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field(Fees; Rec.Fees)
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    trigger OnValidate()
+                    begin
+                     Rec.Diffrance := Rec."Order Amount (System)" - Rec."Discount Amount" - (Rec.Amount + abs(Rec.Fees));   
+                    end;
                 }
                 field(Diffrance; Rec.Diffrance)
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Payment Method Code"; Rec."Payment Method Code")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Account Type"; Rec."Account Type")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Account No."; Rec."Account No.")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Bal. Account Type"; Rec."Bal. Account Type")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field("Bal. Account No."; Rec."Bal. Account No.")
                 {
                     ApplicationArea = All;
                     StyleExpr = StyleTxt;
+                    Editable = false;
                 }
                 field(Reconciled; Rec.Reconciled)
                 {
                     ApplicationArea = All;
+                    Editable = false;
 
                 }
                 field("Journal Created"; Rec."Journal Created")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
             }
 
@@ -170,6 +200,8 @@ page 90098 "Channel Pay. Recon Lines"
                             if L_PaymentDetail.FindFirst() then
                                 repeat
                                     L_PaymentDetail.Reconciled := false;
+                                    //L_PaymentDetail."Journal Created" := false;
+                                    L_PaymentDetail.Modify();
                                 until L_PaymentDetail.Next() = 0;
                             L_ChannelPayLines.Reconciled := false;
                             L_ChannelPayLines.Modify();
@@ -196,7 +228,7 @@ page 90098 "Channel Pay. Recon Lines"
                     if ChannelPayLine.FindSet() then begin
                         repeat
                             CreateJournal(ChannelPayLine);
-                            CreateFeeJournal(ChannelPayLine);
+                            //CreateFeeJournal(ChannelPayLine);
                         until ChannelPayLine.Next() = 0;
                         PostJournal();
                         ArchiveChannelPayment();
@@ -257,8 +289,10 @@ page 90098 "Channel Pay. Recon Lines"
             exit(Style);
 
         if Rec.Reconciled then
-            exit('favorable');
-
+           exit('favorable');
+        
+        if rec.IsError then
+           exit('Attention');
     end;
 
     local procedure UpdateReconcileLine(P_ChannelPaymentLine: Record "Channel Payment Line"; P_ThresholdValue: Decimal; calledfrom: Integer)
@@ -292,23 +326,32 @@ page 90098 "Channel Pay. Recon Lines"
                 updaterecon := true;
 
         if updaterecon then begin
-            P_ChannelPaymentLine.Validate(Reconciled, true);
-            P_ChannelPaymentLine.Modify(true);
-            L_PaymentDetail.Reset();
-            L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
-            L_PaymentDetail.SetRange("Journal Created", true);
-            L_PaymentDetail.SetRange(Reconciled, false);
-            if L_PaymentDetail.FindFirst() then
+          L_HISH.Reset();
+          L_HISH.SetRange("Document Type", L_HISH."Document Type"::Order);
+          L_HISH.SetRange("Channel Order ID", P_ChannelPaymentLine."External Document No.");
+          if L_HISH.FindFirst() then begin
+            IF L_HISH.Reconciled = false then begin   
+              L_HISH.Validate(Reconciled, true);
+              L_HISH.Modify(true);            
+           
+              P_ChannelPaymentLine.Validate(Reconciled, true);
+              P_ChannelPaymentLine.Modify(true);
+            
+              L_PaymentDetail.Reset();
+              L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
+              L_PaymentDetail.SetRange("Journal Created", true);
+              L_PaymentDetail.SetRange(Reconciled, false);
+              if L_PaymentDetail.FindFirst() then
                 repeat
                     L_PaymentDetail.Reconciled := true;
-                until L_PaymentDetail.Next() = 0;
-            L_HISH.Reset();
-            L_HISH.SetRange("Document Type", L_HISH."Document Type"::Order);
-            L_HISH.SetRange("Channel Order ID", P_ChannelPaymentLine."External Document No.");
-            if L_HISH.FindFirst() then begin
-                L_HISH.Validate(Reconciled, true);
-                L_HISH.Modify(true);
-            end;
+                until L_PaymentDetail.Next() = 0;           
+            end else begin
+              P_ChannelPaymentLine.IsError := true;
+              P_ChannelPaymentLine.Error := StrSubstNo('Order %1 already reconciled',P_ChannelPaymentLine."External Document No.");
+              P_ChannelPaymentLine.Modify(true);   
+            end;  
+         end;
+
         end else begin
             L_Amount := L_Amount - P_ChannelPaymentLine.Amount;
 
@@ -338,14 +381,18 @@ page 90098 "Channel Pay. Recon Lines"
     local procedure CreateJournal(P_ChannelPayLines: Record "Channel Payment Line")
     var
         L_GenJournLine: Record "Gen. Journal Line";
+        L_GenJournLine1: Record "Gen. Journal Line";
         L_LineNo: Integer;
         ChannelSetup: Record "General Setup - Channels";
         L_Customer: Record Customer;
         L_HISL: Record "Handled Interim Sales Line";
+        NoSeriesMgt: Codeunit NoSeriesManagement;
+        GenJournalBatch: Record "Gen. Journal Batch";
     begin
         ChannelSetup.Get();
         ChannelSetup.TestField("Payment Journal Template");
         ChannelSetup.TestField("Payment Jounal Batch");
+        GenJournalBatch.Get(ChannelSetup."Payment Journal Template",ChannelSetup."Payment Jounal Batch");
         Clear(L_LineNo);
         L_GenJournLine.Reset();
         L_GenJournLine.SetRange("Journal Template Name", ChannelSetup."Payment Journal Template");
@@ -362,29 +409,75 @@ page 90098 "Channel Pay. Recon Lines"
         if P_ChannelPayLines."Payment Method Code" <> '' then
             L_GenJournLine.SetRange("Payment Method Code", P_ChannelPayLines."Payment Method Code");
         L_GenJournLine.SetRange("Creditor No.", P_ChannelPayLines."Channel Code");
-        L_GenJournLine.SetRange("Account Type", L_GenJournLine."Account Type"::"Bank Account");
+        if P_ChannelPayLines."Payment Type" = P_ChannelPayLines."Payment Type"::Payment then
+            L_GenJournLine.SetRange("Account Type", L_GenJournLine."Account Type"::"Bank Account")
+        else
+            L_GenJournLine.SetRange("Account Type", L_GenJournLine."Account Type"::Customer);
         if NOT L_GenJournLine.FindFirst() then begin
             L_GenJournLine.Init();
             L_GenJournLine.Validate("Journal Template Name", ChannelSetup."Payment Journal Template");
             L_GenJournLine.Validate("Journal Batch Name", ChannelSetup."Payment Jounal Batch");
             L_GenJournLine."Line No." += L_LineNo;
             L_GenJournLine.Validate("Posting Date", P_ChannelPayLines."Posting Date");
-            L_GenJournLine.Validate("Document No.", P_ChannelPayLines."Document No.");
-            L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Payment);
+
+            if P_ChannelPayLines."Document No." <>'' then
+              L_GenJournLine.Validate("Document No.", P_ChannelPayLines."Document No.")
+            else
+              L_GenJournLine.Validate("Document No.", NoSeriesMgt.GetNextNo(GenJournalBatch."No. Series",WorkDate(),true));
+
             L_GenJournLine.Validate("External Document No.", P_ChannelPayLines."External Document No.");
-            L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::"Bank Account");
-            L_GenJournLine.Validate("Account No.", ChannelSetup."Bank Account No.");
-            L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::Customer);
-            L_GenJournLine.Validate("Bal. Account No.", P_ChannelPayLines."Bal. Account No.");
+            if P_ChannelPayLines."Payment Type" = P_ChannelPayLines."Payment Type"::Payment then begin
+                L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Payment);
+                L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::"Bank Account");
+                L_GenJournLine.Validate("Account No.", ChannelSetup."Bank Account No.");
+                L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::Customer);
+                L_GenJournLine.Validate("Bal. Account No.", P_ChannelPayLines."Bal. Account No.");
+            end else begin
+                L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Refund);
+                L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::Customer);
+                L_GenJournLine.Validate("Account No.", P_ChannelPayLines."Bal. Account No.");
+                L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::"Bank Account");
+                L_GenJournLine.Validate("Bal. Account No.", ChannelSetup."Bank Account No.");
+            end;
             L_GenJournLine.Validate("Payment Method Code", P_ChannelPayLines."Payment Method Code");
             L_GenJournLine.Validate("Creditor No.", P_ChannelPayLines."Channel Code");
             L_GenJournLine.Validate(Amount, P_ChannelPayLines.Amount);
             L_GenJournLine.Insert(true);
+            if P_ChannelPayLines.Fees <> 0 then begin
+              L_GenJournLine1.Init();
+              L_GenJournLine1 := L_GenJournLine;
+              L_GenJournLine1."Line No." := L_GenJournLine1."Line No." + 1;
+              L_GenJournLine1.Validate("Account Type", L_GenJournLine."Account Type"::"G/L Account");
+              L_GenJournLine1.Validate("Account No.",ChannelSetup."G/L Account No.");
+              if P_ChannelPayLines.Fees < 0 then
+                L_GenJournLine1.Validate(Amount,-P_ChannelPayLines.Fees)
+              else
+                L_GenJournLine1.Validate(Amount,P_ChannelPayLines.Fees);
+
+              L_GenJournLine1.Insert(true); 
+            end;
             P_ChannelPayLines.Validate("Journal Created", true);
             P_ChannelPayLines.Modify(true);
         end else begin
             L_GenJournLine.Validate(Amount, L_GenJournLine.Amount + P_ChannelPayLines.Amount);
             L_GenJournLine.Modify(true);
+            if P_ChannelPayLines.Fees <> 0 then begin
+              L_GenJournLine1.Reset();
+              L_GenJournLine1.SetRange("Journal Template Name", ChannelSetup."Payment Journal Template");
+              L_GenJournLine1.SetRange("Journal Batch Name", ChannelSetup."Payment Jounal Batch");
+              L_GenJournLine1.SetRange("Posting Date", P_ChannelPayLines."Posting Date");
+              if P_ChannelPayLines."Payment Method Code" <> '' then
+                L_GenJournLine1.SetRange("Payment Method Code", P_ChannelPayLines."Payment Method Code");
+              L_GenJournLine1.SetRange("Creditor No.", P_ChannelPayLines."Channel Code");        
+              L_GenJournLine1.SetRange("Account No.", ChannelSetup."G/L Account No.");
+              if L_GenJournLine1.FindFirst() then begin
+                 if P_ChannelPayLines.Fees < 0 then 
+                   L_GenJournLine1.Validate(Amount,L_GenJournLine1.amount+(P_ChannelPayLines.Fees*-1))
+                 else
+                    L_GenJournLine1.Validate(Amount,L_GenJournLine1.amount+(P_ChannelPayLines.Fees));
+                L_GenJournLine1.Modify(true);
+              end;  
+            end;
             P_ChannelPayLines.Validate("Journal Created", true);
             P_ChannelPayLines.Modify(true);
         end;
@@ -482,12 +575,20 @@ page 90098 "Channel Pay. Recon Lines"
             L_GenJournLine."Line No." += L_LineNo;
             L_GenJournLine.Validate("Posting Date", P_ChannelPayLines."Posting Date");
             L_GenJournLine.Validate("Document No.", P_ChannelPayLines."Document No.");
-            L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Payment);
             L_GenJournLine.Validate("External Document No.", P_ChannelPayLines."External Document No.");
-            L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::"G/L Account");
-            L_GenJournLine.Validate("Account No.", ChannelSetup."G/L Account No.");
-            L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::Customer);
-            L_GenJournLine.Validate("Bal. Account No.", P_ChannelPayLines."Bal. Account No.");
+            if P_ChannelPayLines."Payment Type" = P_ChannelPayLines."Payment Type"::Payment then begin
+                L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Payment);
+                L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::"G/L Account");
+                L_GenJournLine.Validate("Account No.", ChannelSetup."G/L Account No.");
+                L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::Customer);
+                L_GenJournLine.Validate("Bal. Account No.", P_ChannelPayLines."Bal. Account No.");
+            end else begin
+                L_GenJournLine.Validate("Document Type", L_GenJournLine."Document Type"::Refund);
+                L_GenJournLine.Validate("Account Type", L_GenJournLine."Account Type"::"G/L Account");
+                L_GenJournLine.Validate("Account No.", ChannelSetup."G/L Account No.");
+                L_GenJournLine.Validate("Bal. Account Type", L_GenJournLine."Bal. Account Type"::"Bank Account");
+                L_GenJournLine.Validate("Bal. Account No.", ChannelSetup."Bank Account No.");
+            end;
             L_GenJournLine.Validate("Payment Method Code", P_ChannelPayLines."Payment Method Code");
             L_GenJournLine.Validate("Creditor No.", P_ChannelPayLines."Channel Code");
             L_GenJournLine.Validate(Amount, P_ChannelPayLines.Amount);

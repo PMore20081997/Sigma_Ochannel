@@ -80,7 +80,7 @@ report 90002 "Update Dispatched On Web Order"
         R80020: Report "Move Scanned Order to Handled";
         G_ISH: Record "Interim Sales Header";
 
-    local procedure UpdatedDispatchedonHeader(P_USERID: Text; var P_ISH: Record "Interim Sales Header")
+    local procedure UpdatedDispatchedonHeader(P_Status: Integer ; var P_ISH: Record "Interim Sales Header")
     var
         RecScannedISL: Record "Interim Sales Line";
         RecNotScannedISL: Record "Interim Sales Line";
@@ -117,12 +117,17 @@ report 90002 "Update Dispatched On Web Order"
 
                         UpdateDispatchOnAssemblyBOM(ISH);//Update Scanned in Assembly BOM products
 
-                        //Chandan++221020
+
                         UpdateDispatchOnGL(ISH);//Update Scanned on G/L lines if included e.g. (Shipping G/L in EBAY)
 
                         IF L_TradePartner.GET(ISH."Trade Partner Code") THEN;
 
-                        ISH.Status := ISH.Status::Dispatched; //Prathamesh 25112021//Status to be cancelled.
+                        //Sofyan++
+                        if P_Status = 5 then
+                            ISH.Status := ISH.Status::Dispatched
+                        else if P_Status = 8 then
+                            ISH.Status := ISH.Status::Cancelled;
+                        //Sofyan--
                         ISH."Scanned Date" := GetLastScannedDate(RecScannedISL);
 
                         /*IF L_TradePartner."Export ASN" THEN
@@ -210,7 +215,7 @@ report 90002 "Update Dispatched On Web Order"
         IF GUIALLOWED THEN
             Window.CLOSE;
 
-        UpdatedDispatchedonHeader(RecDispatch."User ID", G_ISH);
+        UpdatedDispatchedonHeader(5, G_ISH);
         RecDispatch.MARKEDONLY(TRUE);
         RecDispatch.DELETEALL;
     end;
@@ -302,6 +307,7 @@ report 90002 "Update Dispatched On Web Order"
         L_ISL.SETRANGE(Type, L_ISL.Type::Item);//CHANDAN++211220**TO MANAGE GL LINES*
         L_ISL.SETRANGE("Dispatch Scan", FALSE);
         L_ISL.SETFILTER("Item Type", '<>%1', L_ISL."Item Type"::Assembly);
+        L_ISL.SetFilter("Line Status", '<>%1', L_ISL."Line Status"::Cancelled);
         IF L_ISL.FINDSET THEN
             REPEAT
                 Despatch.RESET;
@@ -543,7 +549,7 @@ report 90002 "Update Dispatched On Web Order"
         IF GUIALLOWED THEN
             Window.CLOSE;
 
-        UpdatedDispatchedonHeader(RecDispatch."User ID", G_ISH);
+        UpdatedDispatchedonHeader(5, G_ISH);
         UpdateTrolleyCloseOnPostedPick(P_TrolleyNo, P_BayNo);
         /*IF L_TradePartner.GET(RecDispatch."Channel Parter Code") THEN BEGIN
             IF L_TradePartner."Scurry Validation Required" THEN
@@ -781,7 +787,7 @@ report 90002 "Update Dispatched On Web Order"
                 L_InterimSalesHeader.RESET;
                 L_InterimSalesHeader.SETRANGE("No.", TempOrderNo."No.");
                 IF L_InterimSalesHeader.FINDFIRST THEN
-                    UpdatedDispatchedonHeader('', L_InterimSalesHeader);
+                    UpdatedDispatchedonHeader(5, L_InterimSalesHeader);
             UNTIL TempOrderNo.NEXT = 0;
     end;
 

@@ -13,5 +13,10 @@ pageextension 90093 "Customer Extended" extends "Customer Card"
                 ApplicationArea = All;
             }
         }
+
+
     }
+
+
+
 }

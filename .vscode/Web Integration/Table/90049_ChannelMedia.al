@@ -70,6 +70,10 @@ table 90014 "Channel Media"
         {
 
         }
+        field(20; "Invoice No."; Code[20])
+        {
+
+        }
     }
 
     keys
