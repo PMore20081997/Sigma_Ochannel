@@ -32,6 +32,10 @@ codeunit 90089 "Shipment Tracking Insertion"
 
         if Trackingnumber <> '' then begin
             ShipmentTracking.VALIDATE("Tracking No.", TrackingNumber);
+        end
+        else begin
+            if Temp_SalesHeader."Package Tracking No." <> '' then
+                ShipmentTracking.Validate("Tracking No.", Temp_SalesHeader."Package Tracking No.");
         end;
 
         IF (Base64Label <> '') THEN BEGIN
@@ -48,34 +52,34 @@ codeunit 90089 "Shipment Tracking Insertion"
 
         ShipmentTracking.INSERT;
         GeneralSetupOchannel.Get();
-        if GeneralSetupOchannel."Download Lable on Azure" then begin          
-          Sleep(200);
-          GeneralSetupOchannel.TestField("Courier Container Endpoint");
-          GeneralSetupOchannel.TestField("Courier Label Container Name");
-          GeneralSetupOchannel.TestField("Courier Label Container Token");
-          ShipmentTracking.SetRange("Document No.", ShipmentTracking."Document No.");
-          DownloadCourierLabeltoAzure(ShipmentTracking);
-          ShipmentTracking.SetRange("Document No.");
-        end; 
+        if GeneralSetupOchannel."Download Lable on Azure" then begin
+            Sleep(200);
+            GeneralSetupOchannel.TestField("Courier Container Endpoint");
+            GeneralSetupOchannel.TestField("Courier Label Container Name");
+            GeneralSetupOchannel.TestField("Courier Label Container Token");
+            ShipmentTracking.SetRange("Document No.", ShipmentTracking."Document No.");
+            DownloadCourierLabeltoAzure(ShipmentTracking);
+            ShipmentTracking.SetRange("Document No.");
+        end;
     end;
 
     //code to download labels into azure
     procedure DownloadCourierLabeltoAzure(var P_ShipmentTracking: Record "Shipment Tracking")
     var
-     tempblob: Codeunit "Temp Blob";
-     RecRef: RecordRef;
-     Out: OutStream;
-     CU_90000: Codeunit 90000;
-     InStm: InStream;
-     fileName: text;
-     GeneralSetupOchannel: Record "General Setup - Channels";
+        tempblob: Codeunit "Temp Blob";
+        RecRef: RecordRef;
+        Out: OutStream;
+        CU_90000: Codeunit 90000;
+        InStm: InStream;
+        fileName: text;
+        GeneralSetupOchannel: Record "General Setup - Channels";
     begin
-     GeneralSetupOchannel.Get();
-     tempblob.CreateOutStream(Out);
-     RecRef.GetTable(P_ShipmentTracking);  
-     Report.SaveAs(90081,'',ReportFormat::Pdf,Out,RecRef);
-     tempblob.CreateInStream(InStm);
-     fileName := P_ShipmentTracking."Document No."+'.pdf';
-     CU_90000.UploadFilefromBCTOAzureBlob(InStm,fileName,GeneralSetupOchannel."Courier Container Endpoint",GeneralSetupOchannel."Courier Label Container Name",GeneralSetupOchannel."Courier Label Container Token",false);   
+        GeneralSetupOchannel.Get();
+        tempblob.CreateOutStream(Out);
+        RecRef.GetTable(P_ShipmentTracking);
+        Report.SaveAs(90081, '', ReportFormat::Pdf, Out, RecRef);
+        tempblob.CreateInStream(InStm);
+        fileName := P_ShipmentTracking."Document No." + '.pdf';
+        CU_90000.UploadFilefromBCTOAzureBlob(InStm, fileName, GeneralSetupOchannel."Courier Container Endpoint", GeneralSetupOchannel."Courier Label Container Name", GeneralSetupOchannel."Courier Label Container Token", false);
     end;
 }
