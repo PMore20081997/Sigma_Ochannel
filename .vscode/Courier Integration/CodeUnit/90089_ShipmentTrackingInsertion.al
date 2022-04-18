@@ -1,7 +1,7 @@
 codeunit 90089 "Shipment Tracking Insertion"
 {
     //code to store delivery/Return lable and tracking no into shipment tracking table
-    procedure InsertShipmentTracking(Trackingnumber: Text[30]; Base64Label: Text; Base64ReturnLabel: Text; CarrierName: Text[10]; var Temp_SalesHeader: Record "Sales Header" temporary)
+    procedure InsertShipmentTracking(Trackingnumber: Text[30]; Base64Label: Text; Base64ReturnLabel: Text; CarrierName: Text[10]; AgentShipmentNo: Text[100]; var Temp_SalesHeader: Record "Sales Header" temporary)
     var
         ShipmentTracking: Record "Shipment Tracking";
         RecShipmentTracking: Record "Shipment Tracking";
@@ -23,6 +23,9 @@ codeunit 90089 "Shipment Tracking Insertion"
         end;
 
         ShipmentTracking.VALIDATE("Shipping Agent Service Code", Temp_SalesHeader."Shipping Agent Service Code");
+        if AgentShipmentNo <> '' then begin
+            ShipmentTracking.Validate("Agent Shipment No.", AgentShipmentNo);
+        end;
         ShipmentTracking.Validate("Entry Created", Today);
 
         IF RecShipmentTracking.FINDLAST THEN

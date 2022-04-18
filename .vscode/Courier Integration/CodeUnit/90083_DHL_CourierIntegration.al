@@ -220,6 +220,7 @@ CodeUnit 90083 "DHL Courier"
         LabelAsValue: JsonValue;
         LabelText: Text;
         parcelNo: Text;
+        CU_GenericInsertShipment: Codeunit "Shipment Tracking Insertion";
     begin
         SSOAuthentication(salesHeader."Shipping Agent Code");
         //collectionJobNumber := CollectionRequests('DHL');
@@ -264,7 +265,8 @@ CodeUnit 90083 "DHL Courier"
                         labelsAsJsonArray.Get(j, labelsToken);
                         LabelAsValue := labelsToken.AsValue();
                         LabelText := LabelAsValue.AsText();
-                        InsertInShipmentTracking(salesHeader, LabelText, identifierValue + parcelNo);
+                        CU_GenericInsertShipment.InsertShipmentTracking(identifierValue + parcelNo, LabelText, '', '', identifierValue + parcelNo, salesHeader);
+                        //InsertInShipmentTracking(salesHeader, LabelText, identifierValue + parcelNo);
                     end;
                 end;
             end;

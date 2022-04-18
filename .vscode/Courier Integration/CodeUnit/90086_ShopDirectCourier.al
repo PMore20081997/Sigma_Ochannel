@@ -147,7 +147,7 @@ codeunit 90086 "Shop Direct Courier"
                     Base64Despatch := GetJsonvalue(DespatchNoteObject, 'BASE64_DATA').AsText();
                 end;
 
-                CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64Despatch, CarrierName, Temp_SalesHeader);
+                CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64Despatch, CarrierName, '', Temp_SalesHeader);
                 //InsertInShipmentTracking(printResponseObject, Temp_SalesHeader);
             end
             else begin
