@@ -64,6 +64,7 @@ codeunit 90091 "Hermes Courier"
         carrierName: Text;
         L_InterimSalesLine: Record "Interim Sales Line";
         L_InterimSalesHeader: Record "Interim Sales Header";
+        Rec_InterimSalesHeader: Record "Interim Sales Header";
         CU_ShipmentTrackingInsertion: Codeunit "Shipment Tracking Insertion";
     begin
         ClearAll();
@@ -194,6 +195,18 @@ codeunit 90091 "Hermes Courier"
                         Clear(barcodeNumber);
                         if GetJsonvalue(barcode1Object, 'barcodeNumber').IsNull = false then begin
                             barcodeNumber := GetJsonvalue(barcode1Object, 'barcodeNumber').AsText();
+                        end;
+
+                        //Updating Tracking Number on Web Order
+                        if barcodeNumber <> '' then begin
+                            if Temp_SalesHeader.FindFirst() then begin
+                                Rec_InterimSalesHeader.Reset();
+                                Rec_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."No.");
+                                if Rec_InterimSalesHeader.FindFirst() then begin
+                                    Rec_InterimSalesHeader.Validate("Package Tracking No.", CopyStr(barcodeNumber, 1, 30));
+                                    Rec_InterimSalesHeader.Modify(true);
+                                end;
+                            end;
                         end;
 
                         //Code to Insert Shipment Details in Shipment Tracking
