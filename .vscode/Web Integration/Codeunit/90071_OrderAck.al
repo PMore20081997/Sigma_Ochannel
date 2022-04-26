@@ -344,7 +344,8 @@ codeunit 90071 "Order Acknowledgement"
       
 
       tempblob.CreateOutStream(TextOutstream);
-      TextOutstream.WriteText(ExportTextFile);
+      //TextOutstream.Write(ExportTextFile); //Block_Nikhil_26/04/2022_(User Story 5034: ShopDirect Integration)
+        TextOutstream.WriteText(ExportTextFile);//Nikhil_26/04/2022_(User Story 5034: ShopDirect Integration)
       tempblob.CreateInStream(inStr);
       if Source = 'StockPosition' then
        CU_90000.UploadFilefromBCTOAzureBlob(inStr,FileName,P_TradePartner."API Endpoint",P_TradePartner."Outgoing Container 2 Name",P_TradePartner."Outgoing Container 2 Token",false)
@@ -476,7 +477,7 @@ codeunit 90071 "Order Acknowledgement"
         ExportText += '<FUTURE_EFFECTIVE_DATE />' + CRLF[1] + '<FUTURE_STOCK_STATUS />' + CRLF[1] + '<FUTURE_LEAD_TIME />' + CRLF[1] + '<FUTURE_DUE_DATE />' + CRLF[1]; 
         ExportText += '</STOCK_STATUS>' + CRLF[1];     
         //'</STOCK_POSITION>' + CRLF[1]; 
-        if Noofstocklines > 2500 then begin
+        if Noofstocklines > 1100 then begin //Nikhil_26/04/2022_(User Story 5034: ShopDirect Integration)
           CreateStockPositionandStatusfile(HeaderInfo,ExportText,L_TradePartner,'StockStatus');
           Clear(Noofstocklines);
           Clear(ExportText);
