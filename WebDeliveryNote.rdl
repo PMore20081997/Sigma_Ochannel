@@ -1269,10 +1269,10 @@
                                           <TablixCell>
                                             <CellContents>
                                               <Image Name="Image4">
-                                                <Source>Embedded</Source>
-                                                <Value>MicrosoftTeamsimage</Value>
+                                                <Source>Database</Source>
+                                                <Value>=First(Fields!CompanyLogo.Value, "DataSet_Result")</Value>
                                                 <MIMEType>image/bmp</MIMEType>
-                                                <Sizing>FitProportional</Sizing>
+                                                <Sizing>Fit</Sizing>
                                                 <ZIndex>6</ZIndex>
                                                 <Style>
                                                   <Border>
@@ -1281,6 +1281,7 @@
                                                 </Style>
                                               </Image>
                                               <ColSpan>2</ColSpan>
+                                              <rd:Selected>true</rd:Selected>
                                             </CellContents>
                                           </TablixCell>
                                           <TablixCell />
