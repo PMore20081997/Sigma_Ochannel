@@ -98,7 +98,7 @@ table 90002 "Interim Customer"
         {
             DataClassification = ToBeClassified;
             Caption = 'Customer No.';
-            TableRelation = Customer."No." WHERE("Web Customer No. 2" = FILTER(''));
+            TableRelation = Customer."No." WHERE("Web Customer No. 2" = FILTER(''), Blocked = const(0));
             trigger OnValidate()
             var
                 InterimCustomer: Record "Interim Customer";
@@ -106,17 +106,20 @@ table 90002 "Interim Customer"
             begin
                 IF "Customer No." <> '' THEN BEGIN
                     Customer.GET("Customer No.");
-                    "InterimCustomer".VALIDATE("Responsibility Center", Customer."Responsibility Center");
-                    InterimCustomer.VALIDATE("Customer Posting Group", Customer."Customer Posting Group");
-                    InterimCustomer.VALIDATE("Gen. Bus. Posting Group", Customer."Gen. Bus. Posting Group");
-                    InterimCustomer.VALIDATE("VAT Bus. Posting Group", Customer."VAT Bus. Posting Group");
+                    Rec.VALIDATE("Responsibility Center", Customer."Responsibility Center");
+                    Rec.VALIDATE("Customer Posting Group", Customer."Customer Posting Group");
+                    Rec.VALIDATE("Gen. Bus. Posting Group", Customer."Gen. Bus. Posting Group");
+                    Rec.VALIDATE("VAT Bus. Posting Group", Customer."VAT Bus. Posting Group");
+                    Rec.Validate(Process, true);
                     Rec.MODIFY;
                 END
                 ELSE BEGIN
-
-                    // {"Gen. Bus. Posting Group" := '';
-                    // "VAT Bus. Posting Group" := '';
-                    // "Customer Posting Group" := '';}
+                    Rec.Process := false;
+                    Rec."Responsibility Center" := '';
+                    Rec."Customer Posting Group" := '';
+                    Rec."Gen. Bus. Posting Group" := '';
+                    Rec."VAT Bus. Posting Group" := '';
+                    Rec.Modify;
                 END;
 
             end;

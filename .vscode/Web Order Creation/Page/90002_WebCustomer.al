@@ -51,16 +51,19 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Address';
+                    Visible = false;
                 }
                 field("Address 2"; Rec."Address 2")
                 {
                     ApplicationArea = All;
                     Caption = 'Address 2';
+                    Visible = false;
                 }
                 field(City; Rec.City)
                 {
                     ApplicationArea = All;
                     Caption = 'City';
+                    Visible = false;
                 }
                 field("Phone No"; Rec."Phone No")
                 {
@@ -71,6 +74,7 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Post Code';
+                    Visible = false;
                 }
                 field("E-Mail"; Rec."E-Mail")
                 {
@@ -81,11 +85,13 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Blocked';
+                    Visible = false;
                 }
                 field(Status; Rec.Status)
                 {
                     ApplicationArea = All;
                     Caption = 'Status';
+                    Visible = false;
                 }
                 field("Gen. Bus. Posting Group"; Rec."Gen. Bus. Posting Group")
                 {
@@ -113,56 +119,67 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Credit Limit (LCY)';
+                    Visible = false;
                 }
                 field("VAT No"; Rec."VAT No")
                 {
                     ApplicationArea = All;
                     Caption = 'VAT No';
+                    Visible = false;
                 }
                 field("Shipping Address"; Rec."Shipping Address")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping Address';
+                    Visible = false;
                 }
                 field("Shipping Address 2"; Rec."Shipping Address 2")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping Address 2';
+                    Visible = false;
                 }
                 field("Shipping Address 3"; Rec."Shipping Address 3")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping Address 3';
+                    Visible = false;
                 }
                 field("Shipping City"; Rec."Shipping City")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping City';
+                    Visible = false;
                 }
                 field("Shipping Post Code"; Rec."Shipping Post Code")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping Post Code';
+                    Visible = false;
                 }
                 field("Shipping County"; Rec."Shipping County")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping County';
+                    Visible = false;
                 }
                 field("Shipping Country"; Rec."Shipping Country")
                 {
                     ApplicationArea = All;
                     Caption = 'Shipping Country';
+                    Visible = false;
                 }
                 field(AccountNo; Rec.AccountNo)
                 {
                     ApplicationArea = All;
                     Caption = 'AccountNo';
+                    Visible = false;
                 }
                 field("Job Title"; Rec."Job Title")
                 {
                     ApplicationArea = All;
                     Caption = 'Job Title';
+                    Visible = false;
                 }
 
             }

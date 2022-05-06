@@ -800,9 +800,10 @@ codeunit 90000 "Web Order Mgt"
                         if (L_InterimSalesLine.Type = L_InterimSalesLine.Type::"G/L Account") and (L_InterimSalesLine."VAT Prod. Posting Group" = '') then
                             L_InterimSalesLine.CalculateVatAmount(L_InterimSalesLine);
 
-                        if L_InterimSalesLine."VAT Prod. Posting Group" = '' then
-                            InsertErrorLog(STRSUBSTNO('VAT Prod. Posting Group must not be blank'), P_InterimSalesHeader);
-
+                        IF L_InterimSalesLine.Type = L_InterimSalesLine.Type::Item THEN BEGIN
+                            if L_InterimSalesLine."VAT Prod. Posting Group" = '' then
+                                InsertErrorLog(STRSUBSTNO('VAT Prod. Posting Group must not be blank'), P_InterimSalesHeader);
+                        end;
                     end;
                 UNTIL L_InterimSalesLine.NEXT = 0;
 
@@ -1188,14 +1189,34 @@ codeunit 90000 "Web Order Mgt"
         NoSeriesLine: Record "No. Series Line";
         NoSeriesManagement: Codeunit NoSeriesManagement;
         ShiptoAddress: Record "Ship-to Address";
+        B2BCustUpdate: Codeunit B2B;
+        Company: Record "Company Information";
+        Subject: Text;
+        CustomerEmailList: List Of [Text];
+        NoOfRecs: Integer;
+        ProgressCount: Integer;
+        Windows: Dialog;
+        Text001: TextConst ENU = 'Customer Processing..';
+        Count: Integer;
 
     begin
+        ProgressCount := 0;
         IF NOT CONFIRM('Do you want to process?', FALSE) THEN
             EXIT;
         InterimCustomer.Reset;
         InterimCustomer.SetRange(Process, true);
+        NoOfRecs := InterimCustomer.Count;
+        Windows.OPEN(Text001 + ' @1@@@@@@@@@@@@@\' + 'Customer Mapping..' + ' #3##########' + 'Please Wait..');
         if InterimCustomer.FindSet then begin
             repeat
+                ProgressCount += 1;
+                IF NoOfRecs <= 100 THEN
+                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                ELSE
+                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                    END;
+                Windows.UPDATE(3, InterimCustomer."No.");
                 TradePartner.Get(InterimCustomer."Channel Code");
                 IF CheckPostingSetups(InterimCustomer."No.") then begin
                     if InterimCustomer."Customer No." = '' then begin
@@ -1213,48 +1234,46 @@ codeunit 90000 "Web Order Mgt"
                             Customer.VALIDATE("Post Code", InterimCustomer."Post Code");
                             Customer.VALIDATE("E-Mail", InterimCustomer."E-Mail");
                             Customer.VALIDATE(Blocked, InterimCustomer.Blocked);
-                            Customer.VALIDATE("Customer type 2", Customer."Customer type 2"::Web);
-                            Customer.VALIDATE("Web Customer No. 2", InterimCustomer."No.");
+                            Customer.Validate("Web Customer No. 2", InterimCustomer."No.");
                             Customer.VALIDATE("Customer Posting Group", InterimCustomer."Customer Posting Group");
                             Customer.VALIDATE("VAT Bus. Posting Group", InterimCustomer."VAT Bus. Posting Group");
                             Customer.VALIDATE("Gen. Bus. Posting Group", InterimCustomer."Gen. Bus. Posting Group");
                             Customer.VALIDATE("Responsibility Center", InterimCustomer."Responsibility Center");
                             Customer.VALIDATE("Credit Limit (LCY)", InterimCustomer."Credit Limit (LCY)");
-                            Customer.VALIDATE("Company Reg. No. 3", InterimCustomer."Company Reg No");
                             Customer.VALIDATE("Country/Region Code", InterimCustomer.Country);
                             Customer.VALIDATE(County, InterimCustomer.County);
-                            Customer.MODIFY;
-                            ShiptoAddress.Reset;
-                            ShiptoAddress.SetRange("Customer No.", Customer."No.");
-                            ShiptoAddress.SetRange(Code, '001');
-                            if not ShiptoAddress.FindFirst then begin
-                                ShiptoAddress.Init;
-                                ShiptoAddress.Validate(Code, '002');
-                                ShiptoAddress.Validate("Customer No.", Customer."No.");
-                                ShiptoAddress.Validate(Name, InterimCustomer."Shipping Contact");
-                                ShiptoAddress.Validate(Address, InterimCustomer."Shipping Address");
-                                ShiptoAddress.Validate("Address 2", InterimCustomer."Shipping Address 2");
-                                ShiptoAddress.Validate(City, InterimCustomer."Shipping City");
-                                ShiptoAddress.Validate(County, InterimCustomer."Shipping County");
-                                ShiptoAddress.Validate("Post Code", InterimCustomer."Shipping Post Code");
-                                ShiptoAddress.Validate("Country/Region Code", InterimCustomer."Shipping Country");
-                                ShiptoAddress.Validate(Contact, InterimCustomer."Shipping Phone No.");
-                                ShiptoAddress.Insert;
-                            end
-                            else begin
-                                ShiptoAddress.Init;
-                                ShiptoAddress.Validate(Code, '001');
-                                ShiptoAddress.Validate("Customer No.", Customer."No.");
-                                ShiptoAddress.Validate(Name, InterimCustomer."Shipping Contact");
-                                ShiptoAddress.Validate(Address, InterimCustomer."Shipping Address");
-                                ShiptoAddress.Validate("Address 2", InterimCustomer."Shipping Address 2");
-                                ShiptoAddress.Validate(City, InterimCustomer."Shipping City");
-                                ShiptoAddress.Validate(County, InterimCustomer."Shipping County");
-                                ShiptoAddress.Validate("Post Code", InterimCustomer."Shipping Post Code");
-                                ShiptoAddress.Validate("Country/Region Code", InterimCustomer."Shipping Country");
-                                ShiptoAddress.Validate(Contact, InterimCustomer."Shipping Phone No.");
-                                ShiptoAddress.Insert;
-                            end;
+                            Customer.MODIFY(true);
+                            //ShiptoAddress.Reset;
+                            //ShiptoAddress.SetRange("Customer No.", Customer."No.");
+                            //ShiptoAddress.SetRange(Code, '001');
+                            //if not ShiptoAddress.FindFirst then begin
+                            //ShiptoAddress.Init;
+                            //ShiptoAddress.Validate(Code, '002');
+                            //ShiptoAddress.Validate("Customer No.", Customer."No.");
+                            //ShiptoAddress.Validate(Name, InterimCustomer."Shipping Contact");
+                            // ShiptoAddress.Validate(Address, InterimCustomer."Shipping Address");
+                            //ShiptoAddress.Validate("Address 2", InterimCustomer."Shipping Address 2");
+                            //ShiptoAddress.Validate(City, InterimCustomer."Shipping City");
+                            //ShiptoAddress.Validate(County, InterimCustomer."Shipping County");
+                            //ShiptoAddress.Validate("Post Code", InterimCustomer."Shipping Post Code");
+                            //ShiptoAddress.Validate("Country/Region Code", InterimCustomer."Shipping Country");
+                            //ShiptoAddress.Validate(Contact, InterimCustomer."Shipping Phone No.");
+                            //ShiptoAddress.Insert;
+                            //end
+                            //else begin
+                            ///ShiptoAddress.Init;
+                            //ShiptoAddress.Validate(Code, '001');
+                            //ShiptoAddress.Validate("Customer No.", Customer."No.");
+                            //ShiptoAddress.Validate(Name, InterimCustomer."Shipping Contact");
+                            //ShiptoAddress.Validate(Address, InterimCustomer."Shipping Address");
+                            //ShiptoAddress.Validate("Address 2", InterimCustomer."Shipping Address 2");
+                            //ShiptoAddress.Validate(City, InterimCustomer."Shipping City");
+                            //ShiptoAddress.Validate(County, InterimCustomer."Shipping County");
+                            //ShiptoAddress.Validate("Post Code", InterimCustomer."Shipping Post Code");
+                            //ShiptoAddress.Validate("Country/Region Code", InterimCustomer."Shipping Country");
+                            //ShiptoAddress.Validate(Contact, InterimCustomer."Shipping Phone No.");
+                            //ShiptoAddress.Insert;
+                            //end;
 
                         end;
                     end
@@ -1262,6 +1281,16 @@ codeunit 90000 "Web Order Mgt"
                         UpdateCustomer(InterimCustomer."Customer No.");
                     end;
                 end;
+                // if InterimCustomer."Channel Code" = 'B2B' then begin
+                B2BCustUpdate.CustomerStatusSync(InterimCustomer."No.", InterimCustomer."Channel Code");
+                B2BCustUpdate.UpdateCustomer(InterimCustomer."No.", InterimCustomer."Channel Code");
+                B2BCustUpdate.UpdateShippingAddress(InterimCustomer."No.", InterimCustomer."Channel Code");
+                Company.Reset;
+                if Company.FindFirst then begin
+                    CustomerEmailList.Add(InterimCustomer."E-Mail");
+                    B2BCustUpdate.SendConfirmationEmail(Company.Name, Company."E-Mail", InterimCustomer.Name, CustomerEmailList, Subject);
+                end;
+                // end;
                 UpdateHandledCustomer(InterimCustomer."No.");
 
             until InterimCustomer.Next = 0;
@@ -1269,7 +1298,6 @@ codeunit 90000 "Web Order Mgt"
         InterimCustomer.MarkedOnly;
         InterimCustomer.DeleteAll;
     end;
-
 
     procedure CheckPostingSetups(CustWebNo: Code[20]): Boolean //Shailesh 08032021
     var
