@@ -192,10 +192,19 @@ report 90000 "Process Web Orders"
                         L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
                         L_InterimHeader.SetRange("Trade Partner Code", "Trade Partner".Code);
                         L_InterimHeader.SetRange(status, L_InterimHeader.status::"In Progress");
+                        /*
                         if NoOfItems = NoOfItems::Multiple then
                             L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
                         if NoOfItems = NoOfItems::Single then
-                            InterimSH.SETFILTER("No. of Items", '%1', 1);
+                            L_InterimHeader.SETFILTER("No. of Items", '%1', 1);
+                        */
+                        case NoOfItems of   
+                         NoOfItems::Multiple: 
+                           L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
+                         NoOfItems::Single:
+                           L_InterimHeader.SETFILTER("No. of Items", '%1', 1);
+                        end;
+
                         if L_InterimHeader.FindSet() then begin
                             TotalOrderToProcess := L_InterimHeader.Count;
                             CreateConsollidatedOrder.AllocateWebOrderWithAvailableQty2(L_InterimHeader, TotalOrderToProcess);

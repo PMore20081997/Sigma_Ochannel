@@ -1908,8 +1908,9 @@ codeunit 90005 "Process Web Order"
         Clear(OrderFilter3);
         Clear(OrderFilter4);
         Clear(OrderFilter5);
-        if CS_ISH.FindFirst() then begin
+        if CS_ISH.FindFirst() then 
             repeat
+            /*             
                 if StrLen(OrderFilter) < 250 then begin
                     if OrderFilter <> '' then
                         OrderFilter := OrderFilter + '|' + CS_ISH."No."
@@ -1940,11 +1941,19 @@ codeunit 90005 "Process Web Order"
                                     else
                                         OrderFilter5 := CS_ISH."No.";
                                 end;
+                                */
+                CS_ISH.Mark(true);
+                CS_InterimSalesLine.SETFILTER("Document No", CS_ISH."No.");
+                CS_InterimSalesLine.SETRANGE("Document Type", CS_ISH."Document Type");
+                CS_InterimSalesLine.SETRANGE(Type, CS_InterimSalesLine.Type::Item);
+                if CS_InterimSalesLine.FindSet() then
+                    repeat
+                        CS_InterimSalesLine.Mark(true);
+                    until CS_InterimSalesLine.Next() = 0;
             until CS_ISH.Next() = 0;
-        end;
         Window.CLOSE;
-
-
+ 
+        /*
         CS_InterimSalesLine.RESET;
         CS_InterimSalesLine.SETFILTER("Document No", OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
         CS_InterimSalesLine.SETRANGE("Document Type", CS_ISH."Document Type");
@@ -1952,10 +1961,16 @@ codeunit 90005 "Process Web Order"
         CS_InterimSalesLine.ASCENDING := TRUE;
         IF CS_InterimSalesLine.FINDSET THEN
             AllocateWebOrdersNew(CS_InterimSalesLine, LineModified, CS_InterimSalesLine.COUNT);
+        */
+        CS_InterimSalesLine.SetRange("Document No");
+        CS_InterimSalesLine.MarkedOnly(true);
+        IF CS_InterimSalesLine.FindFirst() THEN
+            AllocateWebOrdersNew(CS_InterimSalesLine, LineModified, CS_InterimSalesLine.COUNT);
 
         CLEAR(CurrRec);
         IF GUIALLOWED THEN
             Window.OPEN('Updating web headers... @1@@@@@@@@@@');
+        /*    
         CS_ISH2.RESET;
         CS_ISH2.SETRANGE("Document Type", CS_ISH2."Document Type"::Order);
         CS_ISH2.SETFILTER("No.", OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
@@ -1973,11 +1988,28 @@ codeunit 90005 "Process Web Order"
                             Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
                 END;
             UNTIL CS_ISH2.NEXT = 0;
+        */
+        CS_ISH.MarkedOnly(true);
+        Clear(NoOfRecs);
+        NoOfRecs := CS_ISH.COUNT;
+        IF CS_ISH.FINDFIRST THEN
+            REPEAT
+                UpdateResFlagOnISH(CS_ISH);
+                IF GUIALLOWED THEN BEGIN
+                    CurrRec += 1;
+                    IF NoOfRecs <= 100 THEN
+                        Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1)
+                    ELSE
+                        IF CurrRec MOD (NoOfRecs DIV 100) = 0 THEN
+                            Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
+                END;
+            UNTIL CS_ISH.NEXT = 0;    
         IF GUIALLOWED THEN
             Window.CLOSE;
 
         //Un-Allocate Partially Reserved Order
-        UnAllocatePartiallyReservedOrder(OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
+        UnAllocatePartiallyReservedOrder(CS_ISH);
+        //UnAllocatePartiallyReservedOrder(OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
         COMMIT;
     end;
 
@@ -2089,34 +2121,35 @@ codeunit 90005 "Process Web Order"
         InterimSalesHeader.MODIFY;
     end;
 
-    procedure UnAllocatePartiallyReservedOrder(OrderNoFilter: Text)
+    procedure UnAllocatePartiallyReservedOrder(var Rec_ISH: Record "Interim Sales Header")
     var
-        Rec_ISH: Record "Interim Sales Header";
+        //Rec_ISH: Record "Interim Sales Header";
         Rec_ISL: Record "Interim Sales Line";
         WHList: Page "Warehouse Shipment List";
         OrderFilterText: Text;
     begin
         Window.OPEN('Removing Allocation for Partially Reserved orders...');
-        Rec_ISH.RESET;
-        Rec_ISH.SETFILTER("No.", OrderNoFilter);
+        //Rec_ISH.RESET;
+        //Rec_ISH.SETFILTER("No.", OrderNoFilter);
+        Rec_ISH.MarkedOnly(true);
         Rec_ISH.SETRANGE(ReservedFlag, FALSE);
         IF Rec_ISH.FINDSET THEN
             REPEAT
-                WHList.AddToFilterText2(OrderFilterText, '|', '', Rec_ISH."No.");
+                //WHList.AddToFilterText2(OrderFilterText, '|', '', Rec_ISH."No.");
+                Rec_ISL.RESET;
+                Rec_ISL.SETRANGE("Document Type", Rec_ISH."Document Type");
+                Rec_ISL.SETFILTER("Document No", Rec_ISH."No.");
+                //OrderFilterText);
+                Rec_ISL.SETRANGE(Type, Rec_ISL.Type::Item);
+                Rec_ISL.SETRANGE(Reserved, TRUE);
+                IF Rec_ISL.FINDSET THEN
+                    REPEAT
+                        CLEAR(Rec_ISL."Reserved Qty");
+                        Rec_ISL.Reserved := FALSE;
+                        Rec_ISL.MODIFY;
+                    UNTIL Rec_ISL.NEXT = 0;
+
             UNTIL Rec_ISH.NEXT = 0;
-
-
-        Rec_ISL.RESET;
-        Rec_ISL.SETRANGE("Document Type", Rec_ISH."Document Type");
-        Rec_ISL.SETFILTER("Document No", OrderFilterText);
-        Rec_ISL.SETRANGE(Type, Rec_ISL.Type::Item);
-        Rec_ISL.SETRANGE(Reserved, TRUE);
-        IF Rec_ISL.FINDSET THEN
-            REPEAT
-                CLEAR(Rec_ISL."Reserved Qty");
-                Rec_ISL.Reserved := FALSE;
-                Rec_ISL.MODIFY;
-            UNTIL Rec_ISL.NEXT = 0;
         Window.CLOSE;
     end;
 

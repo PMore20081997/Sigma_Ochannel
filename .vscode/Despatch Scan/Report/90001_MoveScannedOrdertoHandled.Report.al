@@ -91,7 +91,7 @@ report 90001 "Move Scanned Order to Handled"
         L_Customer: Record Customer;
     begin
         HISH.INIT;
-        ISH.CALCFIELDS("No of Error", "Error Text", ISH."Error Text2", ISH."Amount Including VAT", ISH."Tracking No.", ISH.Reserved);
+        ISH.CALCFIELDS("No of Error", "Error Text", ISH."Error Text2", ISH."Amount Including VAT", ISH."Tracking No.");
         HISH.TransferFields(ISH);
         HISH.Insert(true);
 

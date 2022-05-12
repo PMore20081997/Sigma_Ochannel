@@ -422,6 +422,8 @@ table 90003 "Interim Sales Header"
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = - Exist("Interim Sales Line" WHERE("Document Type" = FIELD("Document Type"), "Document No" = FIELD("No."), Reserved = FILTER(false)));
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Unused, we are using field no 50102';
         }
         field(50090; "User ID"; Code[50])
         {
