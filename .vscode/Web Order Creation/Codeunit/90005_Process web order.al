@@ -1908,40 +1908,40 @@ codeunit 90005 "Process Web Order"
         Clear(OrderFilter3);
         Clear(OrderFilter4);
         Clear(OrderFilter5);
-        if CS_ISH.FindFirst() then 
+        if CS_ISH.FindFirst() then
             repeat
-            /*             
-                if StrLen(OrderFilter) < 250 then begin
-                    if OrderFilter <> '' then
-                        OrderFilter := OrderFilter + '|' + CS_ISH."No."
-                    else
-                        OrderFilter := CS_ISH."No.";
-                end else
-                    if StrLen(OrderFilter2) < 250 then begin
+                /*             
+                    if StrLen(OrderFilter) < 250 then begin
                         if OrderFilter <> '' then
-                            OrderFilter2 := OrderFilter2 + '|' + CS_ISH."No."
+                            OrderFilter := OrderFilter + '|' + CS_ISH."No."
                         else
-                            OrderFilter2 := CS_ISH."No.";
+                            OrderFilter := CS_ISH."No.";
                     end else
-                        if StrLen(OrderFilter3) < 250 then begin
-                            if OrderFilter3 <> '' then
-                                OrderFilter3 := OrderFilter3 + '|' + CS_ISH."No."
+                        if StrLen(OrderFilter2) < 250 then begin
+                            if OrderFilter <> '' then
+                                OrderFilter2 := OrderFilter2 + '|' + CS_ISH."No."
                             else
-                                OrderFilter3 := CS_ISH."No.";
+                                OrderFilter2 := CS_ISH."No.";
                         end else
-                            if StrLen(OrderFilter4) < 250 then begin
-                                if OrderFilter4 <> '' then
-                                    OrderFilter4 := OrderFilter4 + '|' + CS_ISH."No."
+                            if StrLen(OrderFilter3) < 250 then begin
+                                if OrderFilter3 <> '' then
+                                    OrderFilter3 := OrderFilter3 + '|' + CS_ISH."No."
                                 else
-                                    OrderFilter4 := CS_ISH."No.";
+                                    OrderFilter3 := CS_ISH."No.";
                             end else
-                                if StrLen(OrderFilter5) < 250 then begin
-                                    if OrderFilter5 <> '' then
-                                        OrderFilter5 := OrderFilter5 + '|' + CS_ISH."No."
+                                if StrLen(OrderFilter4) < 250 then begin
+                                    if OrderFilter4 <> '' then
+                                        OrderFilter4 := OrderFilter4 + '|' + CS_ISH."No."
                                     else
-                                        OrderFilter5 := CS_ISH."No.";
-                                end;
-                                */
+                                        OrderFilter4 := CS_ISH."No.";
+                                end else
+                                    if StrLen(OrderFilter5) < 250 then begin
+                                        if OrderFilter5 <> '' then
+                                            OrderFilter5 := OrderFilter5 + '|' + CS_ISH."No."
+                                        else
+                                            OrderFilter5 := CS_ISH."No.";
+                                    end;
+                                    */
                 CS_ISH.Mark(true);
                 CS_InterimSalesLine.SETFILTER("Document No", CS_ISH."No.");
                 CS_InterimSalesLine.SETRANGE("Document Type", CS_ISH."Document Type");
@@ -1952,7 +1952,7 @@ codeunit 90005 "Process Web Order"
                     until CS_InterimSalesLine.Next() = 0;
             until CS_ISH.Next() = 0;
         Window.CLOSE;
- 
+
         /*
         CS_InterimSalesLine.RESET;
         CS_InterimSalesLine.SETFILTER("Document No", OrderFilter + OrderFilter2 + OrderFilter3 + OrderFilter4 + OrderFilter5);
@@ -2003,7 +2003,7 @@ codeunit 90005 "Process Web Order"
                         IF CurrRec MOD (NoOfRecs DIV 100) = 0 THEN
                             Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
                 END;
-            UNTIL CS_ISH.NEXT = 0;    
+            UNTIL CS_ISH.NEXT = 0;
         IF GUIALLOWED THEN
             Window.CLOSE;
 
@@ -2050,7 +2050,8 @@ codeunit 90005 "Process Web Order"
                     ItemQuery1.SETRANGE(ItemQuery1.No, InterimSalesLine."No.");
                     ItemQuery1.SETRANGE(ItemQuery1.Location_Filter, InterimSalesLine."Location Code");
                     ItemQuery1.SETRANGE(ItemQuery1.Variant_Filter, InterimSalesLine."NAV Variant code");
-                    ItemQuery1.SETFILTER(ItemQuery1.Bin_Filter, '<>DDSHIP&<>SHIP');
+                    //ItemQuery1.SETFILTER(ItemQuery1.Bin_Filter, '<>DDSHIP&<>SHIP');//Block_User Story 6088
+                    ItemQuery1.SetFilter(ItemQuery1.Bin_Type_Filter, 'PUTPICK|PICK');
                     ItemQuery1.OPEN;
                     IF ItemQuery1.READ THEN BEGIN
                         CLEAR(QuantityForReservedKit);

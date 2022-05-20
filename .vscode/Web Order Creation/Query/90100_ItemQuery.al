@@ -24,13 +24,17 @@ query 90100 ItemQuery
             filter(Location_Filter; "Location Filter")
             {
             }
-            filter(Bin_Filter; "Bin Filter")
+            /*filter(Bin_Filter; "Bin Filter")
             {
-            }
+            }*///Block_NIKHIL_User Story 6088: The system will create WIP only for stock availability rather than checking at the Warehouse
             filter(Variant_Filter; "Variant Filter")
             {
 
             }
+            filter(Bin_Type_Filter; "Bin Type Filter")
+            {
+
+            }//NIKHIL_User Story 6088: The system will create WIP only for stock availability rather than checking at the Warehouse
         }
     }
 }

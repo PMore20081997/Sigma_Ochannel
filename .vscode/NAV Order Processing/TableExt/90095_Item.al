@@ -13,7 +13,14 @@ tableextension 90094 "Item Ext Allocation" extends Item
             Caption = 'Qty. on Web Order(Reserved)';
             FieldClass = FlowField;
             Editable = false;
+
             CalcFormula = Sum("Interim Sales Line".Quantity WHERE("Document Type" = CONST(Order), Type = CONST(Item), "No." = FIELD("No."), Reserved = CONST(true), "Destination Doc No." = FILTER(<> '')));
+        }
+        field(90102; "Bin Type Filter"; Code[20])
+        {
+            Caption = 'Bin Type Filter';
+            FieldClass = FlowFilter;
+            TableRelation = Bin."Bin Type Code" WHERE("Location Code" = FIELD("Location Filter"));
         }
     }
 }
