@@ -2,7 +2,7 @@ page 90017 "Web Order Header"
 {
     ApplicationArea = All;
     UsageCategory = Administration;
-    Editable = true;
+    //Editable = true;
     CaptionML = ENU = 'Web Order',
                 ENG = 'Web Order';
     SourceTable = "Interim Sales Header";
@@ -504,6 +504,18 @@ page 90017 "Web Order Header"
         WebOrdMngt: Codeunit "Web Order Mgt";
         SalesHeader: Record "Sales Header";
         WhseInternalPickHeader: Record "Whse. Internal Pick Header";
+
+    //Nikhil_31/05/2022_User Story 6536: Web Order edit functionality
+    trigger OnOpenPage()
+    begin
+        if Rec."Destination Doc No." <> '' then
+            CurrPage.Editable := false
+        else
+            CurrPage.Editable := true;
+
+        CurrPage.Update(false);
+    end;
+    //Nikhil_31/05/2022_User Story 6536: Web Order edit functionality
 
 
     local procedure GetLastTranastionNo(): Integer
