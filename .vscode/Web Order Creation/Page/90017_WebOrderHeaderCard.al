@@ -456,18 +456,11 @@ page 90017 "Web Order Header"
                     L_InterimSalesLine: Record "Interim Sales Line"; //Prathamesh
                     UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";//Prathamesh
                 begin
-                    WebOrdMngt.CancelOrder(Rec);
+                   if Not (Rec.status in [rec.status::Confirmed,rec.status::"In Progress"]) then
+                      Error('Order Status must be either Confirmed or In progress.');
+                   WebOrdMngt.CancelOrder(Rec);
 
-                    //Prathamesh
-                    L_InterimSalesLine.Reset();
-                    L_InterimSalesLine.SetRange("Document No", Rec."No.");
-                    if L_InterimSalesLine.FindSet() then begin
-                        repeat
-                            L_InterimSalesLine."Line Status" := L_InterimSalesLine."Line Status"::Cancelled;
-                            L_InterimSalesLine.Modify(true);
-                        until L_InterimSalesLine.Next() = 0;
-                    end;
-                    //Prathamesh
+
                 end;
             }
             action("Print Lable")

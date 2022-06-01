@@ -47,8 +47,8 @@ report 90001 "Move Scanned Order to Handled"
                     //if GenSetupChannels."Despatch Scan Enabled" = false then begin
                     "Interim Sales Header".SetRange(status, "Interim Sales Header".status::Processing)
                 else
-                    // "Interim Sales Header".SetFilter(status, '%1|%2', status::"Ready To Dispatch", status::Dispatched); //Prathamesh
-                    "Interim Sales Header".SetFilter(status, '%1|%2|%3', status::"Ready To Dispatch", status::Dispatched, status::Cancelled); //Prathamesh
+                    // "Interim Sales Header".SetFilter(status, '%1|%2', status::"Ready To Dispatch", status::Dispatched); 
+                    "Interim Sales Header".SetFilter(status, '%1|%2|%3', status::"Ready To Dispatch", status::Dispatched, status::Cancelled); 
                 //end;
                 //end  
             end;
