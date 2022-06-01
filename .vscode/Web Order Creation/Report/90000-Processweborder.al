@@ -50,6 +50,7 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
                             END;
                         "Trade Partner"."Process Order Type"::"Single Order":
@@ -62,6 +63,7 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
 
                             END;
@@ -82,6 +84,7 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
 
                             END;
@@ -198,11 +201,11 @@ report 90000 "Process Web Orders"
                         if NoOfItems = NoOfItems::Single then
                             L_InterimHeader.SETFILTER("No. of Items", '%1', 1);
                         */
-                        case NoOfItems of   
-                         NoOfItems::Multiple: 
-                           L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
-                         NoOfItems::Single:
-                           L_InterimHeader.SETFILTER("No. of Items", '%1', 1);
+                        case NoOfItems of
+                            NoOfItems::Multiple:
+                                L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
+                            NoOfItems::Single:
+                                L_InterimHeader.SETFILTER("No. of Items", '%1', 1);
                         end;
 
                         if L_InterimHeader.FindSet() then begin
@@ -216,10 +219,17 @@ report 90000 "Process Web Orders"
 
             trigger OnPreDataItem()
             begin
+                PickCreated := false;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                 IF G_ChannelCode <> '' THEN
                     "Trade Partner".SETRANGE("Trade Partner".Code, G_ChannelCode);
 
 
+            end;
+
+            trigger OnPostDataItem()
+            begin
+                if PickCreated = true then
+                    Message('Web Order Processed Successfully');//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
             end;
 
         }
@@ -340,6 +350,7 @@ report 90000 "Process Web Orders"
         G_ChannelCode: Code[20];
         G_TotalQty: Decimal;
         InterimsalesHeader: Record "Interim Sales Header" temporary;
+        PickCreated: Boolean; //NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
 
 
     procedure InsertErrorlog(P_Text: Text[250]; var InterimSalesHeader: Record "Interim Sales Header")

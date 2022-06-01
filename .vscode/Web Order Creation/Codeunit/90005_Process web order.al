@@ -722,7 +722,7 @@ codeunit 90005 "Process Web Order"
             UNTIL ISL.NEXT = 0;
             if GeneralSetup."Auto Release Sales Orders" = true then
                 UpdateStatusOnSalesOrder(HeaderNo);//Sofyan
-            Message('Web Order Processed Successfully'); //Sofyan
+            //Message('Web Order Processed Successfully'); //Sofyan //NIKHIL_30/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
             FirstOrder := FALSE;
         END;
     end;
@@ -1205,7 +1205,7 @@ codeunit 90005 "Process Web Order"
                         UpdateBayNoInWIP(HeaderNo, ISL, LineNo, G_BayNo);
                     UpdateOrderNo(ISL, Rec);
                 UNTIL ISL.NEXT = 0;
-                Message('Web Order Processed Successfully'); //Sofyan
+                //Message('Web Order Processed Successfully'); //Sofyan //NIKHIL_30/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                 FirstOrder := FALSE;
             END;
         END;
