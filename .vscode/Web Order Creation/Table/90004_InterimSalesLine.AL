@@ -67,7 +67,7 @@ table 90004 "Interim Sales Line"
             begin
 
                 IF (xRec."Unit Price" <> Rec."Unit Price") AND (Rec.Quantity > 0) THEN BEGIN
-                    "Channel Price" := "Unit Price";
+                    //"Channel Price" := "Unit Price";
                     CalculateVatAmount(Rec);
                 END;
             end;
@@ -81,7 +81,7 @@ table 90004 "Interim Sales Line"
                 myInt: Integer;
             begin
                 IF (Quantity > 0) THEN begin
-                    "Channel Price" := "Unit Price";
+                    //"Channel Price" := "Unit Price";
                     CalculateVatAmount(Rec);
 
                     CalculateBaseQuantity(Rec);

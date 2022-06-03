@@ -503,7 +503,8 @@ codeunit 90000 "Web Order Mgt"
             if Rec_Item.FindFirst() then
                 L_InterimSalesLine.Validate(Description, Rec_Item.Description);
         end;
-
+        
+         L_InterimSalesLine."Channel Price" := P_InterimSalesLine."Unit Price";
         L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
         case L_TradePartner."Price Pick From" of
             L_TradePartner."Price Pick From"::"Order Source":
