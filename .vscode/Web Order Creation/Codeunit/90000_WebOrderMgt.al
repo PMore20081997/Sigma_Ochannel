@@ -102,6 +102,7 @@ codeunit 90000 "Web Order Mgt"
         Query_OrderAmt: Query "Get Order item Amount";
         L_InterimSalesLine: Record "Interim Sales Line";
         L_Item: Record Item;
+        salesordere: page "Sales Order";
     Begin
         If CheckOrderNotExist(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Channel Order ID") then begin
 
@@ -232,10 +233,11 @@ codeunit 90000 "Web Order Mgt"
             //Code to Validate order
             OrderValidations(L_InterimSalesHeader);
 
-            //Shubham Calculate Total Weight for InterimSalesHeader
+            //Calculate Total Weight for InterimSalesHeader
             L_InterimSalesHeader."Total Weight" := CalculateWeight(L_InterimSalesHeader);
             L_InterimSalesHeader."No. of Items" := calculateNoofItems(L_InterimSalesHeader);
             L_InterimSalesHeader.Modify();
+            OnAfterCreateWebOrder(L_InterimSalesHeader);
         end;
     End;
 
@@ -254,6 +256,7 @@ codeunit 90000 "Web Order Mgt"
         L_PaymentDetails.Validate("Transaction Date", P_PaymentDetail."Transaction Date");
         L_PaymentDetails.Validate("Payment Status", P_PaymentDetail."Payment Status");
         L_PaymentDetails.Insert(true);
+
     end;
 
 
@@ -320,7 +323,7 @@ codeunit 90000 "Web Order Mgt"
     procedure FindItemNo(P_CrossRefNo: Code[20]; P_ASINNo: Code[50]; P_ChannelSKU: Text[50]; P_CustNo: Code[20]; P_ChannelPartner: Record "Trade Partner"): Code[20]
     //Code to Find a item no based on customer cross ref.
     var
-        ItemCrossReference: Record "Item Reference";
+        ItemReference: Record "Item Reference";
         L_Item: Record Item;
         ChannelItemList: Record "Channel Item Listing";
     begin
@@ -337,15 +340,13 @@ codeunit 90000 "Web Order Mgt"
                 EXIT(ChannelItemList."Item No.");
 
         End Else Begin
-            ItemCrossReference.RESET;
-            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
-            ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
-            ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
-            IF ItemCrossReference.FINDFIRST THEN
-                EXIT(ItemCrossReference."Item No.");
+            ItemReference.RESET;
+            ItemReference.SETRANGE("Reference Type", ItemReference."Reference Type"::Customer);
+            ItemReference.SETRANGE("Reference Type No.", P_CustNo);
+            ItemReference.SETRANGE("Reference No.", P_CrossRefNo);
+            IF ItemReference.FINDFIRST THEN
+                EXIT(ItemReference."Item No.");
 
-            // IF L_Item.GET(P_CrossRefNo) THEN
-            //     EXIT(L_Item."No.");
         End;
     end;
 
@@ -353,7 +354,7 @@ codeunit 90000 "Web Order Mgt"
     //Code to get UOM 
     var
         L_ChannelItemList: Record "Channel Item Listing";
-        ItemCrossReference: Record "Item Reference";
+        ItemReference: Record "Item Reference";
         L_Item: Record Item;
     begin
         IF P_ChannelCode."Order Item By" IN [P_ChannelCode."Order Item By"::ASIN, P_ChannelCode."Order Item By"::"Channel SKU"] Then begin
@@ -367,25 +368,19 @@ codeunit 90000 "Web Order Mgt"
             IF L_ChannelItemList.FindFirst() Then
                 Exit(L_ChannelItemList."Unit of Measure code")
         End Else Begin
-            ItemCrossReference.RESET;
-            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
-            ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
-            ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
+            ItemReference.RESET;
+            ItemReference.SETRANGE("Reference Type", ItemReference."Reference Type"::Customer);
+            ItemReference.SETRANGE("Reference Type No.", P_CustNo);
+            ItemReference.SETRANGE("Reference No.", P_CrossRefNo);
             //  ItemCrossReference.SETRANGE("Block Customer Cross Reference", false);
-            IF ItemCrossReference.FINDFIRST THEN
-                EXIT(ItemCrossReference."Unit of Measure");
+            IF ItemReference.FINDFIRST THEN
+                EXIT(ItemReference."Unit of Measure");
         End;
 
         If L_Item.Get(P_ItemNo) then
             exit(L_Item."Base Unit of Measure");
 
     end;
-
-    procedure WebOrderValidation()
-    begin
-
-    end;
-
 
     procedure CreateGLLines(P_InterimSalesHeader: Record "Interim Sales Header")
     //Code to create GL lines if applicable
@@ -446,18 +441,9 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine.VALIDATE("Unit Price", ShippingCharge);
         L_InterimSalesLine.FileName := P_InterimSalesHeader."File Name";
         L_InterimSalesLine."Channel Order ID" := P_InterimSalesHeader."Channel Order ID";
-        L_InterimSalesLine.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
-        if P_InterimSalesHeader."Order Discount Amount" = L_InterimSalesLine."Unit Price" then begin
-            L_InterimSalesLine."Discount %" := 100;
-            L_InterimSalesLine1.Reset();
-            L_InterimSalesLine1.SetRange("Document Type", L_InterimSalesLine."Document Type");
-            L_InterimSalesLine1.SetRange("Document No", L_InterimSalesLine."Document No");
-            L_InterimSalesLine1.SetRange(Type, L_InterimSalesLine1.Type::Item);
-            L_InterimSalesLine1.SetFilter("Discount %", '>%1', 0);
-            if L_InterimSalesLine1.FindSet() then
-                L_InterimSalesLine1.ModifyAll("Discount %", 0, false);
-        end;
+        L_InterimSalesLine.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");        
         L_InterimSalesLine.INSERT(TRUE);
+        OnAfterGLLineInsert(L_InterimSalesLine);
     end;
 
     procedure InsertSalesLine(P_InterimSalesHeader: Record "Interim Sales Header"; P_InterimSalesLine: Record "Interim Sales Line" temporary; P_ChannelPartner: Record "Trade Partner"; P_Discountper: Decimal)
@@ -533,14 +519,8 @@ codeunit 90000 "Web Order Mgt"
     procedure GetNavVariantCode(ChannelSKU: Text[50]; P_ChannelPartner: Record "Trade Partner"; P_ASINNo: Code[50]; P_CustNo: Code[20]): Code[20]
     var
         ChannelItemListing: Record "Channel Item Listing";
-        ItemCrossReference: Record "Item Reference";
+        ItemReference: Record "Item Reference";
     begin
-        /* ChannelItemListing.Reset();
-         ChannelItemListing.SetRange("Channel SKU", ChannelSKU);
-         ChannelItemListing.SetRange("Channel Code", P_ChannelPartner.Code);
-         if ChannelItemListing.FindFirst() then begin
-             exit(ChannelItemListing."NAV Variant");
-         end;*/
         IF P_ChannelPartner."Order Item By" IN [P_ChannelPartner."Order Item By"::ASIN, P_ChannelPartner."Order Item By"::"Channel SKU"] Then begin
             ChannelItemListing.SetRange("Channel Code", P_ChannelPartner.Code);
             CASE P_ChannelPartner."Order Item By" OF
@@ -553,12 +533,12 @@ codeunit 90000 "Web Order Mgt"
                 EXIT(ChannelItemListing."NAV Variant");
 
         End Else Begin
-            ItemCrossReference.RESET;
-            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
-            ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
-            ItemCrossReference.SETRANGE("Reference No.", ChannelSKU);
-            IF ItemCrossReference.FINDFIRST THEN
-                EXIT(ItemCrossReference."Variant Code");
+            ItemReference.RESET;
+            ItemReference.SETRANGE("Reference Type", ItemReference."Reference Type"::Customer);
+            ItemReference.SETRANGE("Reference Type No.", P_CustNo);
+            ItemReference.SETRANGE("Reference No.", ChannelSKU);
+            IF ItemReference.FINDFIRST THEN
+                EXIT(ItemReference."Variant Code");
 
             // IF L_Item.GET(P_CrossRefNo) THEN
             //     EXIT(L_Item."No.");
@@ -760,7 +740,9 @@ codeunit 90000 "Web Order Mgt"
                         END;
                     end;
                 end;
+                ValidateWebOrderHeader(P_InterimSalesHeader,L_ErrorRecorded);
             END;
+            
             //ROBONGP
             //Start Line Validations
 
@@ -789,9 +771,10 @@ codeunit 90000 "Web Order Mgt"
                                 InsertErrorLog(STRSUBSTNO('VAT Prod. Posting Group must not be blank'), P_InterimSalesHeader);
                         end;
                     end;
+                    ValidateWebOrderLines(L_InterimSalesLine,L_ErrorRecorded);
                 UNTIL L_InterimSalesLine.NEXT = 0;
 
-
+            
             If L_ErrorRecorded then begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
                 // P_InterimSalesHeader.Modify();
@@ -845,7 +828,7 @@ codeunit 90000 "Web Order Mgt"
         ItemCrossRfef: Record "Item Reference";
         L_Item: Record Item;
         L_TradePartner: Record "Trade Partner";
-        L_ItemVariant: Record "Item Variant";//Sofyan
+        L_ItemVariant: Record "Item Variant";
     begin
         If L_Item.Get(P_InterimSalesLine."No.") then begin
             If L_Item.Blocked then begin
@@ -885,28 +868,10 @@ codeunit 90000 "Web Order Mgt"
                 L_ErrorRecorded := TRUE;
             END;
 
-            /* IF L_Item."VAT Prod. Posting Group" = '' THEN BEGIN
+            IF L_Item."VAT Prod. Posting Group" = '' THEN BEGIN
                  InsertErrorLog(FORMAT('VAT Prod. Posting Group cannot be blank for item ' + P_InterimSalesLine."Channel SKU"), P_InterimSalesHeader);
                  L_ErrorRecorded := TRUE;
-             END;*///Commented by sofyan
-
-            //code to check vat from item variant++
-            if P_InterimSalesLine.Type = P_InterimSalesLine.Type::Item then begin
-                if P_InterimSalesLine."VAT Prod. Posting Group" = '' then begin
-                    /*L_ItemVariant.Reset();
-                    L_ItemVariant.SetRange(Code, P_InterimSalesLine."NAV Variant code");
-                    L_ItemVariant.SetRange("Item No.", P_InterimSalesLine."No.");
-                    if L_ItemVariant.FindFirst() then begin
-                        IF L_ItemVariant."VAT Prod Posting Group" = '' THEN BEGIN
-                            InsertErrorLog(FORMAT('VAT Prod. Posting Group cannot be blank for item ' + P_InterimSalesLine."Channel SKU"), P_InterimSalesHeader);
-                            L_ErrorRecorded := TRUE;
-                        END;
-                    end;*/
-                    P_InterimSalesLine.CalculateVatAmount(P_InterimSalesLine);
-                end;
-            end;
-            //code to check vat from item variant--
-
+            END;
 
             IF P_InterimSalesLine.Weight = 0 THEN BEGIN
                 P_InterimSalesLine.Weight := (GetWeightFromItemUoM(P_InterimSalesLine."No.", P_InterimSalesLine."Unit of Measure Code") * P_InterimSalesLine.Quantity);
@@ -963,7 +928,7 @@ codeunit 90000 "Web Order Mgt"
                 P_InterimSalesLine.Validate("No.", L_ItemNo);
                 P_InterimSalesLine.Validate("NAV Variant code", L_ItemVariantCode);
                 ValidateItemSetup(P_InterimSalesLine, L_ErrorRecorded, P_InterimSalesHeader);
-                //khan++
+                
                 L_ItemVariant.Reset();
                 L_ItemVariant.SetRange(Code, L_ItemVariantCode);
                 L_ItemVariant.SetRange("Item No.", L_ItemNo);
@@ -975,7 +940,7 @@ codeunit 90000 "Web Order Mgt"
                     if L_Item.FindFirst() then
                         P_InterimSalesLine.Validate(Description, L_Item.Description);
                 end;
-                //khan--
+                
             end;
             P_InterimSalesLine.Modify();
         end;
@@ -1083,7 +1048,8 @@ codeunit 90000 "Web Order Mgt"
         CLEAR(RecInterimSalesHeader.Remarks);
         Clear(RecInterimSalesHeader."Package Tracking No.");
         RecInterimSalesHeader.INSERT(TRUE);
-
+        OnAfterCopyWebHeader(RecInterimSalesHeader);
+        
         L_InterimSalesHeader.RESET;
         L_InterimSalesHeader.SETRANGE("Document Type", L_InterimSalesHeader."Document Type"::Order);
         L_InterimSalesHeader.SETRANGE("No.", L_DocNo);
@@ -1109,6 +1075,7 @@ codeunit 90000 "Web Order Mgt"
                     InterimSalesLine."Order Status" := InterimSalesLine."Order Status"::"In Progress";
                     InterimSalesLine.Reserved := FALSE;
                     InterimSalesLine.INSERT(TRUE);
+                    OnAfterCopyWebLine(InterimSalesLine);
                 UNTIL L_InterimSalesLine.NEXT = 0;
         END;
     End;
@@ -1594,6 +1561,41 @@ codeunit 90000 "Web Order Mgt"
     [IntegrationEvent(false,false)]
     local procedure OnBeforCreateShippingandGiftpackcostLine(var InterimSlaesH: record "Interim Sales Line"; var IsHandled: Boolean)
     begin                
+    end;
+    
+    [IntegrationEvent(false,false)]
+    local procedure OnAfterGLLineInsert(Var L_InterimSalesLine: record "Interim Sales Line")
+    begin        
+    end;
+
+    [IntegrationEvent(false,false)]
+    local procedure OnAfterPaymentLineInsert(var WebOrderPaymnetDetail: record "Channel Media")
+    begin        
+    end;
+
+    [IntegrationEvent(false,false)]
+    local procedure OnAfterCreateWebOrder(var InterimSlaesH: record "Interim Sales Header")
+    begin        
+    end;
+
+    [IntegrationEvent(false,false)]
+    local procedure ValidateWebOrderHeader(var InterimSlaesH: record "Interim Sales Header"; Var ErrorRecorded: Boolean )
+    begin        
+    end;
+
+    [IntegrationEvent(false,false)]
+    local procedure ValidateWebOrderLines(var InterimSlaesL: record "Interim Sales Line"; Var ErrorRecorded: Boolean )
+    begin        
+    end;
+
+    [IntegrationEvent(false,false)]
+    local procedure OnAfterCopyWebHeader(var InterimSalesHeader: Record "Interim Sales Header")
+    begin        
+    end;
+    
+    [IntegrationEvent(false,false)]
+    local procedure OnAfterCopyWebLine(var InterimSalesLine: Record "Interim Sales Line")
+    begin        
     end;
 
 }

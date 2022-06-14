@@ -16,7 +16,7 @@ codeunit 90099 "Barcode Management"
         txcErrorLength: Label 'Value to encode should be %1 digits.';
         txcErrorNumber: Label 'Only numbers allowed.';
 
-
+    
     procedure EncodeEAN13(pcodBarcode: Code[250]; pintSize: Integer; pblnVertical: Boolean; var precTmpTempBlob: Record "Name/Value Buffer" temporary)
     var
         lintCheckDigit: Integer;

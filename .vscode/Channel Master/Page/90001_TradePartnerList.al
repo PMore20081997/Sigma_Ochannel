@@ -683,13 +683,12 @@ page 90001 "Trade Partner List"
             }
 
 
-            action("Item Cross Reference")
+            action("Item Reference")
             {
-                Caption = 'Item Cross Reference';
+                Caption = 'Item Reference';
                 Image = Change;
                 Promoted = true;
                 PromotedCategory = Category4;
-                Visible = false;
                 ApplicationArea = All;
                 RunObject = Page "Item Reference List";
                 RunPageView = WHERE("Reference Type" = FILTER(Customer));
