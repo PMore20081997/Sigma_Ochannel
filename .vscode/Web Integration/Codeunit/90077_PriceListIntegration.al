@@ -15,16 +15,17 @@ codeunit 90077 "Price List Integration"
         OldFeatureSalesPrice := false;
         NewFeatureSalesPrice := false;
         L_TempSalesLine.DeleteAll();
-        if No <> L_InterimSalesHeader."No." then begin
-            L_TempSalesHeader.DeleteAll();
-            L_TempSalesHeader.Init();
-            L_TempSalesHeader."Document Type" := L_TempSalesHeader."Document Type"::Order;
-            L_TempSalesHeader."Sell-to Customer No." := L_InterimSalesHeader."Sell-to Customer No.";
-            L_TempSalesHeader."Bill-to Customer No." := L_InterimSalesHeader."Sell-to Customer No.";
-            L_TempSalesHeader."Currency Code" := L_InterimSalesHeader."Currency Code";
-            L_TempSalesHeader.Insert(true);
-            No := L_InterimSalesHeader."No.";
-        end;
+        //if No <> L_InterimSalesHeader."No." then begin
+        L_TempSalesHeader.DeleteAll();
+        L_TempSalesHeader.Init();
+        L_TempSalesHeader."No." := L_InterimSalesHeader."No.";
+        L_TempSalesHeader."Document Type" := L_TempSalesHeader."Document Type"::Order;
+        L_TempSalesHeader."Sell-to Customer No." := L_InterimSalesHeader."Sell-to Customer No.";
+        L_TempSalesHeader."Bill-to Customer No." := L_InterimSalesHeader."Sell-to Customer No.";
+        L_TempSalesHeader."Currency Code" := L_InterimSalesHeader."Currency Code";
+        L_TempSalesHeader.Insert(true);
+        //No := L_InterimSalesHeader."No.";
+        //end;
 
         if L_InterimSalesLine.Type = L_InterimSalesLine.Type::Item then begin
             L_TempSalesLine.init();
@@ -76,6 +77,7 @@ codeunit 90077 "Price List Integration"
         if not FoundBestLine then
             NewFeatureSalesPrice := true;
     end;
+
 
     var
         No: Code[20];

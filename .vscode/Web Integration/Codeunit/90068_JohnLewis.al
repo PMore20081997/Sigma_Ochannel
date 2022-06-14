@@ -122,6 +122,7 @@ codeunit 90068 "John Lewis Integration"
         L_PaymentDetails: Record "Channel Media" temporary;
         ShippingRule: Record "Shipping Rule";
         L_DateText: Text;
+        L_ExternalDocument: Code[20];
     begin
         ClearLastError();
         Clear(ResponseText);
@@ -155,31 +156,6 @@ codeunit 90068 "John Lewis Integration"
                 csvBuffer.LoadDataFromStream(CSVInstream, SingleQuote);
 
                 IF csvBuffer.GetNumberOfLines() > 0 then begin
-                    Clear(L_No);
-                    L_InterimHeader.Reset();
-                    L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
-                    if L_InterimHeader.FindLast() then
-                        L_No := IncStr(L_InterimHeader."No.")
-                    else
-                        L_No := '10000';
-                    L_InterimHeader.Init();
-                    L_InterimHeader.Validate("Document Type", L_InterimHeader."Document Type"::Order);
-                    L_InterimHeader."No." := L_No;
-                    L_TradePartner.Reset();
-                    L_TradePartner.SetRange(Code, StartParameter);
-                    if L_TradePartner.FindFirst() then begin
-                        L_InterimHeader.Validate("Trade Partner Code", L_TradePartner.Code);
-                        L_InterimHeader.Validate("Sell-to Customer No.", L_TradePartner."Customer No.");
-                        L_InterimHeader.Validate("Location Code", L_TradePartner.Location);
-                        ShippingRule.Reset();
-                        ShippingRule.SetRange("Channel Code", StartParameter);
-                        ShippingRule.SetRange("Web Shipping Agent", '10');
-                        if ShippingRule.FindFirst() then begin
-                            L_InterimHeader.Validate("Shipping Agent Code", ShippingRule."Shipping Agent");
-                        end;
-                        L_InterimHeader.Validate("File Name", FileName);
-                        L_InterimHeader.Insert(true);
-                    end;
                     IF csvBuffer.FindSet() then
                         repeat
                             Clear(L_List);
@@ -191,19 +167,47 @@ codeunit 90068 "John Lewis Integration"
                                     FileLineNo += 1;
                                     Clear(FileData);
                                     FileData := ResponseText2.Split('+');
-                                    if FileLineNo = 2 then
+                                    if CopyStr(ResponseText2, 1, 3) = 'UNH' then begin
                                         if FileData.Get(2) <> '' then begin
-                                            L_InterimHeader.Validate("External Document No.", FileData.Get(2));
-                                            L_InterimHeader.Modify(true);
+                                            Clear(L_ExternalDocument);
+                                            L_ExternalDocument := FileData.Get(2);
                                         end;
+                                    end;
 
-                                    if FileLineNo = 3 then
+                                    if CopyStr(ResponseText2, 1, 3) = 'BGM' then begin
                                         if FileData.Get(3) <> '' then begin
-                                            L_InterimHeader.Validate("Channel Order ID", FileData.Get(3));
-                                            L_InterimHeader.Modify(true);
+                                            Clear(L_No);
+                                            L_InterimHeader.Reset();
+                                            L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
+                                            if L_InterimHeader.FindLast() then
+                                                L_No := IncStr(L_InterimHeader."No.")
+                                            else
+                                                L_No := '10000';
+                                            L_InterimHeader.Init();
+                                            L_InterimHeader.Validate("Document Type", L_InterimHeader."Document Type"::Order);
+                                            L_InterimHeader."No." := L_No;
+                                            L_TradePartner.Reset();
+                                            L_TradePartner.SetRange(Code, StartParameter);
+                                            if L_TradePartner.FindFirst() then begin
+                                                L_InterimHeader.Validate("Trade Partner Code", L_TradePartner.Code);
+                                                L_InterimHeader.Validate("Sell-to Customer No.", L_TradePartner."Customer No.");
+                                                L_InterimHeader.Validate("Location Code", L_TradePartner.Location);
+                                                ShippingRule.Reset();
+                                                ShippingRule.SetRange("Channel Code", StartParameter);
+                                                ShippingRule.SetRange("Web Shipping Agent", '10');
+                                                if ShippingRule.FindFirst() then begin
+                                                    L_InterimHeader.Validate("Shipping Agent Code", ShippingRule."Shipping Agent");
+                                                end;
+                                                L_InterimHeader.Validate("File Name", FileName);
+                                                L_InterimHeader.Validate("Channel Order ID", FileData.Get(3));
+                                                L_InterimHeader.Validate("External Document No.", L_ExternalDocument);
+                                                L_InterimHeader.Insert(true);
+                                            end;
                                         end;
+                                    end;
 
-                                    if FileLineNo = 4 then begin
+
+                                    if CopyStr(ResponseText2, 1, 5) = 'DTM+2' then begin
                                         Clear(L_Pos);
                                         Clear(L_DateText);
                                         if FileData.Get(2) <> '' then begin
@@ -214,7 +218,7 @@ codeunit 90068 "John Lewis Integration"
                                         end;
                                     end;
 
-                                    if FileLineNo = 5 then begin
+                                    if CopyStr(ResponseText2, 1, 6) = 'DTM+137' then begin
                                         Clear(L_Pos);
                                         Clear(L_DateText);
                                         if FileData.Get(2) <> '' then begin
@@ -224,19 +228,19 @@ codeunit 90068 "John Lewis Integration"
                                             L_InterimHeader.Modify(true);
                                         end;
                                     end;
-                                    if CopyStr(FileName, StrPos(FileName, '.'), 4) = '.ORD' then begin
-                                        if FileLineNo = 9 then begin
-                                            if FileData.Get(5) <> '' then
-                                                L_InterimHeader.Validate("Ship-to Name", FileData.Get(5));
-                                            if FileData.Get(6) <> '' then
-                                                L_InterimHeader.Validate("Ship-to Address", FileData.Get(6));
-                                            if FileData.Get(7) <> '' then
-                                                L_InterimHeader.Validate("Ship-to City", FileData.Get(7));
-                                            if FileData.Get(9) <> '' then
-                                                L_InterimHeader.Validate("Ship-to Post Code", FileData.Get(9));
-                                            L_InterimHeader.Modify(true);
-                                        end;
-                                    end else
+                                    //if CopyStr(FileName, StrPos(FileName, '.'), 4) = '.txt' then begin
+                                    if CopyStr(ResponseText2, 1, 6) = 'NAD+DP' then begin
+                                        if FileData.Get(5) <> '' then
+                                            L_InterimHeader.Validate("Ship-to Name", FileData.Get(5));
+                                        if FileData.Get(6) <> '' then
+                                            L_InterimHeader.Validate("Ship-to Address", FileData.Get(6));
+                                        if FileData.Get(7) <> '' then
+                                            L_InterimHeader.Validate("Ship-to City", FileData.Get(7));
+                                        if FileData.Get(9) <> '' then
+                                            L_InterimHeader.Validate("Ship-to Post Code", FileData.Get(9));
+                                        L_InterimHeader.Modify(true);
+                                    end;
+                                    /*end else
                                         if CopyStr(FileName, StrPos(FileName, '.'), 4) = '.ORC' then begin
                                             if FileLineNo = 10 then begin
                                                 if FileData.Get(5) <> '' then
@@ -249,14 +253,14 @@ codeunit 90068 "John Lewis Integration"
                                                     L_InterimHeader.Validate("Ship-to Post Code", FileData.Get(9));
                                                 L_InterimHeader.Modify(true);
                                             end;
-                                        end;
-                                    if FileLineNo = 11 then begin
+                                        end;*/
+                                    if CopyStr(ResponseText2, 1, 3) = 'CUX' then begin
                                         if FileData.Get(2) <> '' then begin
                                             L_InterimHeader.Validate("Currency Code", CopyStr(FileData.Get(2), 3, 3));
                                             L_InterimHeader.Modify(true);
                                         end;
                                     end;
-                                    if CopyStr(ResponseText2, 1, 3) = 'PIA' then begin
+                                    if CopyStr(ResponseText2, 1, 3) = 'LIN' then begin
                                         L_InterimLine.Init();
                                         L_InterimLine."Document Type" := L_InterimLine."Document Type"::Order;
                                         L_InterimLine."Document No" := L_InterimHeader."No.";
@@ -264,9 +268,9 @@ codeunit 90068 "John Lewis Integration"
                                         L_InterimLine.Validate("Trade Partner Code", StartParameter);
                                         L_InterimLine."Channel Order ID" := L_InterimHeader."Channel Order ID";
                                         Clear(L_Pos);
-                                        if FileData.Get(3) <> '' then begin
-                                            L_Pos := StrPos(FileData.Get(3), ':');
-                                            L_InterimLine.Validate("Channel SKU", CopyStr(FileData.Get(3), 1, L_Pos - 1));
+                                        if FileData.Get(4) <> '' then begin
+                                            L_Pos := StrPos(FileData.Get(4), ':');
+                                            L_InterimLine.Validate("Channel SKU", CopyStr(FileData.Get(4), 1, L_Pos - 1));
                                         end;
                                         L_InterimLine.Insert(true);
                                     end;
@@ -297,10 +301,16 @@ codeunit 90068 "John Lewis Integration"
                                         end;
                                     end;
                                 end;
+                                if CopyStr(ResponseText2, 1, 3) = 'UNT' then begin
+                                    CUWebOrderMgt.CreateWebOrder(L_InterimHeader, L_InterimLine, L_ShipmnetTracking, L_PaymentDetails);
+                                    L_InterimHeader.DeleteAll();
+                                    L_InterimLine.DeleteAll();
+                                end;
+
                             end;
+
                         until csvBuffer.Next() = 0;
-                    if L_InterimHeader."No." <> '' then
-                        CUWebOrderMgt.CreateWebOrder(L_InterimHeader, L_InterimLine, L_ShipmnetTracking, L_PaymentDetails);
+
                 end;
             end;
         end;
