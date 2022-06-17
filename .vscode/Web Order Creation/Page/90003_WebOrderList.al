@@ -229,6 +229,7 @@ page 90003 "Web Order List"
                 trigger OnAction()
                 var
                 begin
+                    InterimSalesHeader.CopyFilters(Rec);
                     REPORT.RUN(90000, TRUE, FALSE, InterimSalesHeader);
                 end;
 

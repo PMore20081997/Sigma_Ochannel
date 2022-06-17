@@ -290,13 +290,18 @@ report 90000 "Process Web Orders"
         actions
         {
         }
+        trigger OnOpenPage()
+        begin
+            if InterimSH.GetFilter("Trade Partner Code")  <> '' then
+              "Trade Partner".SetRange(Code,InterimSH.GetFilter("Trade Partner Code"));           
+        end;
     }
 
     labels
     {
     }
 
-
+   
     local procedure GetTotalQtyInWebOrder(var P_ISH: Record "Interim Sales Header"): Decimal
     var
         ISL: Record "Interim Sales Line";

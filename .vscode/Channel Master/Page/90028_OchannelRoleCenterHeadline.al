@@ -6,7 +6,7 @@ page 90028 "Ochannel RoleCenter Headlines"
     {
         area(Content)
         {
-           field(Headline1; HeadLine1)
+           field(Headline1; GetHeadlineText(1))
            {
             ApplicationArea = All;
            }
@@ -40,10 +40,20 @@ page 90028 "Ochannel RoleCenter Headlines"
             }
         }
     }
-    
+    local procedure GetHeadlineText(HeadlineNo : Integer) : Text
+    begin
+     case HeadlineNo of  
+       1:
+        exit(StrSubstNo(HeadLine1,100)); 
+
+     end;
+    end;
     var
-        HeadLine1: Label 'Headline 1';
+        HeadLine1: Label '<qualifier>Todays Statistics</qualifier><payload>Total sales <emphasize>%1</emphasize>.</payload>';
         HeadLine2: Label 'Headline 2'; 
         HeadLine3: Label 'Headline 3';
         HeadLine4: Label 'Headline 4';
+        pageCDS: page "Assisted Company Setup Wizard";
+        CUAssited : Codeunit "Guided Experience";
+        
 }
