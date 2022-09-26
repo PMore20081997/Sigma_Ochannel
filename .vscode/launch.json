@@ -15,7 +15,7 @@
             "schemaUpdateMode":"ForceSync",
             //"environmentName": "Robosol_Master",
             //"tenant": "393a1605-6da8-4eaa-9b92-3bda3abb455f"
-            "environmentName":"Robosol_DEMO",
+            "environmentName":"Robo_Dev",
             "tenant": "1cf41952-b687-4c56-8f2b-96e0a300c5c7"
         }
     ]
