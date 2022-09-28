@@ -63,7 +63,7 @@ codeunit 90009 B2B
                 end;
             UpdateProductLable:
                 begin
-                    SyncUpdateProdNavToNop(StartParameter);
+                    UpdateProductFromBCToB2B(StartParameter);
                 end;
             SyncCustomerAddressLabel:
                 begin
@@ -2169,7 +2169,7 @@ codeunit 90009 B2B
 
         CIL.RESET;
         CIL.SETFILTER("Channel Code", ChannelCode);
-        CIL.SETRANGE(Status, CIL.Status::Active);
+        //CIL.SETRANGE(Status, CIL.Status::Active);
         CIL.SETRANGE("Listing Status", CIL."Listing Status"::Listed);
         //CIL.SETFILTER("Price Synced", '%1', FALSE);
         NoOfRecs := CIL.COUNT;
@@ -2259,7 +2259,7 @@ codeunit 90009 B2B
         exit(Converdate);
     end;
 
-    procedure SyncUpdateProdNavToNop(ChannelCode: Code[20])
+    procedure UpdateProductFromBCToB2B(ChannelCode: Code[20])
     var
         Client: HttpClient;
         ResponseMessage: HttpResponseMessage;
@@ -2694,7 +2694,7 @@ codeunit 90009 B2B
                         //recCIL.IsAttributePresent := itemattrvalue;
                         recCIL."Unit Price" := recItem."Unit Price";
                         recItem.CalcFields(Inventory);
-                        recCIL."Channel Inventory" := recItem.Inventory;
+                        recCIL."Channel Inventory" := ROUND(recItem.Inventory, 1, '=');
                     end;
                     recCIL.Modify();
                 end;

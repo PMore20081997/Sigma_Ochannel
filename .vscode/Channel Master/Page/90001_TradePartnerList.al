@@ -294,7 +294,7 @@ page 90001 "Trade Partner List"
                 Image = ItemGroup;
                 Promoted = true;
                 PromotedCategory = Process;
-                Visible = false;
+                Visible = true;
                 Enabled = Rec.SyncPrice; //Ps
                 ApplicationArea = All;
 
