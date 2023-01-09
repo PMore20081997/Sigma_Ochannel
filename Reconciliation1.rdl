@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="DataSource">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:SecurityType>None</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <Height>2in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Code>Public Function BlankZero(ByVal Value As Decimal)
+    if Value = 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankPos(ByVal Value As Decimal)
+    if Value &gt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankZeroAndPos(ByVal Value As Decimal)
+    if Value &gt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNeg(ByVal Value As Decimal)
+    if Value &lt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNegAndZero(ByVal Value As Decimal)
+    if Value &lt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+</Code>
+  <Language>=User!Language</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>0eeb6585-38ae-40f1-885b-8d50088d51b4</rd:ReportID>
+  <DataSets>
+    <DataSet Name="DataSet_Result">
+      <Fields>
+        <Field Name="G_ChannelPartner">
+          <DataField>G_ChannelPartner</DataField>
+        </Field>
+        <Field Name="Period_Start">
+          <DataField>Period_Start</DataField>
+        </Field>
+        <Field Name="HandledOrderQuantity">
+          <DataField>HandledOrderQuantity</DataField>
+        </Field>
+        <Field Name="HandledOrderQuantityFormat">
+          <DataField>HandledOrderQuantityFormat</DataField>
+        </Field>
+        <Field Name="StockPostedILE">
+          <DataField>StockPostedILE</DataField>
+        </Field>
+        <Field Name="StockPostedILEFormat">
+          <DataField>StockPostedILEFormat</DataField>
+        </Field>
+        <Field Name="HandledQuantityAmt">
+          <DataField>HandledQuantityAmt</DataField>
+        </Field>
+        <Field Name="HandledQuantityAmtFormat">
+          <DataField>HandledQuantityAmtFormat</DataField>
+        </Field>
+        <Field Name="HandledQuantityAmtInclVat">
+          <DataField>HandledQuantityAmtInclVat</DataField>
+        </Field>
+        <Field Name="HandledQuantityAmtInclVatFormat">
+          <DataField>HandledQuantityAmtInclVatFormat</DataField>
+        </Field>
+        <Field Name="InvoiceAmtPostedIntoCustomerLedger">
+          <DataField>InvoiceAmtPostedIntoCustomerLedger</DataField>
+        </Field>
+        <Field Name="InvoiceAmtPostedIntoCustomerLedgerFormat">
+          <DataField>InvoiceAmtPostedIntoCustomerLedgerFormat</DataField>
+        </Field>
+        <Field Name="InvoiceAmtLCYPostedIntoCustomerLedger">
+          <DataField>InvoiceAmtLCYPostedIntoCustomerLedger</DataField>
+        </Field>
+        <Field Name="InvoiceAmtLCYPostedIntoCustomerLedgerFormat">
+          <DataField>InvoiceAmtLCYPostedIntoCustomerLedgerFormat</DataField>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource</DataSourceName>
+        <CommandText />
+      </Query>
+    </DataSet>
+  </DataSets>
+</Report>

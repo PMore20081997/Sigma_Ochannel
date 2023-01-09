@@ -78,6 +78,11 @@ report 90071 DelivryNote1
 
             }
 
+            column(BarcodeText1; BarcodeText1)
+            {
+
+            }
+
             dataitem("Handled Interim Sales Line"; "Handled Interim Sales Line")
             {
                 DataItemLink = "Document Type" = FIELD("Document Type"),
@@ -173,13 +178,25 @@ report 90071 DelivryNote1
                     //Pranali++
                     L_GeneralSetup: Record "General Setup - Channels";
                     L_ShipmentTracking: Record "Shipment Tracking";
+                    //NIKHIL_18/04/2022
+                    BarcodeString: Text;
+                    BarcodeSymbology: Enum "Barcode Symbology";
+                    BarcodeFontProvider: Interface "Barcode Font Provider";
                 begin
                     Clear(BarcodeText);
-                    Clear(recTmpBlob1);
+                    Clear(BarcodeString);
+                    /*/Clear(recTmpBlob1);
                     Clear(BarcodeMgt);
                     BarcodeText := "Handled Interim Sales Header"."Channel Order ID";
                     BarcodeMgt.EncodeCode128(BarcodeText, 1, false, recTmpBlob1);
-                    //Pranali--
+                    //Pranali--*///NIKHIL_18/04/2022_Comment
+                    //NIKHIL_18/04/2022++
+                    BarcodeFontProvider := Enum::"Barcode Font Provider"::IDAutomation1D;
+                    BarcodeSymbology := Enum::"Barcode Symbology"::Code128;
+                    BarcodeString := "Handled Interim Sales Header"."Channel Order ID";
+                    BarcodeFontProvider.ValidateInput(BarcodeString, BarcodeSymbology);
+                    BarcodeText := BarcodeFontProvider.EncodeFont(BarcodeString, BarcodeSymbology);
+                    //NIKHIL_18/04/2022--
                     if "Handled Interim Sales Line".Type = "Handled Interim Sales Line".Type::Item then begin
                         G_LineCount += 1;
                     end;
@@ -229,6 +246,10 @@ report 90071 DelivryNote1
             var
                 InterimSalesLine: Record "Handled Interim Sales Line";//"90009";
                 ItemRec: Record 27;
+                //NIKHIL_18/04/2022
+                BarcodeString: Text;
+                BarcodeSymbology: Enum "Barcode Symbology";
+                BarcodeFontProvider: Interface "Barcode Font Provider";
             begin
                 TradePartner.RESET;
                 IF TradePartner.GET("Handled Interim Sales Header"."Trade Partner Code") THEN BEGIN
@@ -241,7 +262,7 @@ report 90071 DelivryNote1
                     IF Customer.GET(TradePartner."Customer No.") THEN;
                 END;
 
-                //Pranali++
+                /*//Pranali++
                 Clear(BarcodeText1);
                 Clear(recTmpBlob2);
                 if CopyStr("Handled Interim Sales Header"."No.", 1, 3) = 'WEB' then
@@ -249,7 +270,21 @@ report 90071 DelivryNote1
                 else
                     BarcodeText1 := "Handled Interim Sales Header"."No.";
                 BarcodeMgt.EncodeCode128(BarcodeText1, 1, false, recTmpBlob2);
-                //Pranali++
+                //Pranali++*///NIKHIL_18/04/2022_Comment
+
+                //NIKHIL_18/04/2022++
+                Clear(BarcodeText1);
+                Clear(BarcodeString);
+
+                BarcodeFontProvider := Enum::"Barcode Font Provider"::IDAutomation1D;
+                BarcodeSymbology := Enum::"Barcode Symbology"::Code128;
+                if CopyStr("Handled Interim Sales Header"."No.", 1, 3) = 'WEB' then
+                    BarcodeString := CopyStr("Handled Interim Sales Header"."No.", 4)
+                else
+                    BarcodeString := "Handled Interim Sales Header"."No.";
+                BarcodeFontProvider.ValidateInput(BarcodeString, BarcodeSymbology);
+                BarcodeText1 := BarcodeFontProvider.EncodeFont(BarcodeString, BarcodeSymbology);
+                //NIKHIL_18/04/2022--
 
                 CLEAR(Var1);
                 CLEAR(Var2);

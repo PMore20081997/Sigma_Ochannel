@@ -19,7 +19,7 @@
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
-                  <Width>10.45542cm</Width>
+                  <Width>10.2cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -32,7 +32,7 @@
                           <Source>Database</Source>
                           <Value>=Fields!Label_ShipmentTracking.Value</Value>
                           <MIMEType>image/bmp</MIMEType>
-                          <Sizing>FitProportional</Sizing>
+                          <Sizing>Fit</Sizing>
                           <Style>
                             <Border>
                               <Style>None</Style>
@@ -58,7 +58,7 @@
               </TablixMembers>
             </TablixRowHierarchy>
             <Height>14.565cm</Height>
-            <Width>10.45542cm</Width>
+            <Width>10.2cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -69,10 +69,10 @@
         <Height>14.565cm</Height>
         <Style />
       </Body>
-      <Width>10.45542cm</Width>
+      <Width>10.2cm</Width>
       <Page>
         <PageHeight>14.8cm</PageHeight>
-        <PageWidth>10.5cm</PageWidth>
+        <PageWidth>10.2cm</PageWidth>
         <ColumnSpacing>1.27cm</ColumnSpacing>
         <Style />
       </Page>

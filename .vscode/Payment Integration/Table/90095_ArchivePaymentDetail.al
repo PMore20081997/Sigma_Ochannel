@@ -51,6 +51,10 @@ table 90095 "Archive Payment Detail"
         {
 
         }
+        field(90015; "Payment Type"; Option)
+        {
+            OptionMembers = Payment,Refund;
+        }
     }
     keys
     {

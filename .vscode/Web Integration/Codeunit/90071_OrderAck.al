@@ -1,5 +1,6 @@
 codeunit 90071 "Order Acknowledgement"
 {
+    Description = 'this code unit we can use for all channels where any data need to be send via file';
     TableNo = 472;
     trigger OnRun()
     begin
@@ -11,8 +12,16 @@ codeunit 90071 "Order Acknowledgement"
         CASE StartParameter OF
             'SHOPDIRECT':
                 BEGIN
-                    //  ExportShopDirectAck(StartParameter);
-                    ShopdirectOrderAck(StartParameter);
+                    case RunType of
+                        'OrderAcknowledgement':
+                            ShopdirectOrderAckText(StartParameter);
+                        'SyncShipment':
+                            ShopdirectOrderdispatchText(StartParameter);
+                        'StockPosition':    
+                            ShopdirectStockPosition(StartParameter);
+                        'StockStatus':
+                            ShopDirectStockStatus(StartParameter);   
+                    end;
                 End;
         end;
     end;
@@ -21,20 +30,11 @@ codeunit 90071 "Order Acknowledgement"
 
     procedure UploadFileTOAzureBlob(P_FileInstream: InStream; P_FileName: Text; P__ChannelCode: Code[20])
     var
-        fileMgt: Codeunit "File Management";
-        L_httpResponse: HttpResponseMessage;
-        L_httpHeader: HttpHeaders;
-        apiEndPoint: Text;
-        containerName: Text;
-        filename: Text;
-        sasToken: text;
-        apiUrl: Text;
-        L_httpClient: HttpClient;
-        L_httpContent: HttpContent;
-        apiattribute: Text;
-        TradePartner: Record "Trade Partner";
+      TradePartner: Record "Trade Partner";
+      CU_90000: Codeunit 90000;
     begin
         //Upload++
+        /*below code is blocked because it is moved inot cu 90000 Web order Mgt which we can call from any where
         ClearLastError();
         Clear(L_httpContent);
         Clear(L_httpHeader);
@@ -52,308 +52,457 @@ codeunit 90071 "Order Acknowledgement"
         L_httpHeader.Add('x-ms-date', '2015-02-21');
         L_httpHeader.Add('x-ms-blob-type', 'BlockBlob');
         L_httpHeader.Add('Content-Type', 'text/xml');
-
+        */    
         TradePartner.Reset();
         TradePartner.SetRange(Code, P__ChannelCode);
         if TradePartner.FindFirst() then begin
+          /*below code is blocked because it is moved inot cu 90000 Web order Mgt which we can call from any where  
             apiEndPoint := TradePartner."API Endpoint";
             containerName := TradePartner."Order Acknow. Conatiner Name";
             sasToken := TradePartner."Order Acknow. Token";
+          */
+          CU_90000.UploadFilefromBCTOAzureBlob(P_FileInstream,P_FileName,TradePartner."API Endpoint",TradePartner."Order Acknow. Conatiner Name",TradePartner."Order Acknow. Token",true);
         end;
 
+        /*below code is blocked because it is moved inot cu 90000 Web order Mgt which we can call from any where
         apiUrl := apiEndPoint + '/' + containerName + '/' + P_FileName + sasToken;
         L_httpClient.Put(apiUrl, L_httpContent, L_httpResponse);
         if ((L_httpResponse.HttpStatusCode = 200) OR (L_httpResponse.HttpStatusCode = 201)) then
             Message('file uploaded successfully.');
         //Upload--
-    end;
-
-    local procedure ExportShopDirectAck(P_ChannelCode: Code[20])
+        */
+    end;  
+   
+    procedure ShopdirectOrderAckText(PartnerCode: Code[10])
     var
+        InterimSalesHeader: Record "Interim Sales Header";
         TodayDate: Text;
-        ISH: Record "Interim Sales Header";
-        xmlDoc: XmlDocument;
-        xmlDec: XmlDeclaration;
-        xmlElem: XmlElement;
-        xmlElem2: XmlElement;
-        Tempblob: Codeunit "Temp Blob";
-        outStr: OutStream;
+        MultilineorderNoref: Code[250];
+        InterimSalesHeader2: Record "Interim Sales Header";
+        InterimSalesHeader3: Record "Interim Sales Header";
+        P_ChannelPartner: Record "Trade Partner";
+        CRLF: Text[2];
         inStr: InStream;
-        TempFile: File;
-        fileName: Text;
+        TextOutstream: OutStream;
+        ExportText: Text;
+        HeaderInfo: Text;
+        HeaderInfo1: Text;
+        FileName: Text;
+        ExportTextFile: Text;
+        DateStr: Text;
+        DeleteStr1: Text;
+        DeleteStr2: Text;
+        DeleteStr3: Text;
+        Dateformat: Text;
+        TimeStr: Text;
+        TimeStr1: Text;
+        L_cust: Record Customer;
+        L_TradePartner: Record "Trade Partner";
         FileCount: Text;
-        xmlElem3: XmlElement;
-        xmlElem4: XmlElement;
-        xmlElem5: XmlElement;
-        xmlElem6: XmlElement;
-        xmlElem7: XmlElement;
-        xmlElem8: XmlElement;
-        xmlElem9: XmlElement;
-        xmlElem10: XmlElement;
-        xmlElem11: XmlElement;
-        xmlElem12: XmlElement;
-        ChannelPartner: Record "Trade Partner";
+        OrderAck: Codeunit "Order Acknowledgement";
     begin
-        Clear(xmlElem);
-        Clear(xmlElem2);
-        Clear(xmlElem3);
-        Clear(xmlElem4);
-        Clear(xmlElem5);
-        Clear(xmlElem6);
-        Clear(xmlElem7);
-        Clear(xmlElem8);
-        Clear(xmlElem9);
-        Clear(xmlElem10);
-        Clear(xmlElem11);
-        Clear(xmlElem12);
-        Clear(xmlDoc);
-        Clear(xmlDec);
-        Clear(outStr);
-        IF GUIALLOWED THEN
-            Windows.OPEN(Text001 + ' #########2#\' + Text005 + ' @1@@@@@@@@@@@@@');
-        TodayDate := FORMAT(TODAY, 0, '<Month,2>_<Day,2>_<Year4>');
-        TodayDate := DELCHR(TodayDate, '=', '/');
-        IF GUIALLOWED THEN
-            Windows.UPDATE(2, P_ChannelCode);
-        ChannelPartner.Reset();
-        ChannelPartner.SetRange(Code, P_ChannelCode);
-        if ChannelPartner.FindFirst() then begin
-            ISH.RESET;
-            ISH.SETFILTER("Trade Partner Code", ChannelPartner.Code);
-            ISH.SETRANGE(Status, ISH.Status::Processing);
-            ISH.SETRANGE("Order Ack. Exported", FALSE);
-            IF NOT ISH.ISEMPTY THEN BEGIN
-                IF ChannelPartner.Code = 'SHOPDIRECT' THEN BEGIN
-                    ExportOrderAckJDW2(ChannelPartner);
-                END;
-                /* ISH.RESET;
-                 ISH.SETFILTER("Trade Partner Code", ChannelPartner.Code);
-                 ISH.SETRANGE(Status, ISH.Status::Processing);
-                 ISH.SETRANGE("Order Ack. Exported", FALSE);
-                 IF ISH.FINDFIRST THEN
-                     REPEAT
-                         ISH."Order Ack. Exported" := TRUE;
-                         ISH.MODIFY;
-                     UNTIL ISH.NEXT = 0;*/
-            END;
-            IF GUIALLOWED THEN
-                Windows.CLOSE;
+        Clear(TodayDate);
+        Clear(Dateformat);
+        Clear(DeleteStr1);
+        Clear(DeleteStr2);
+        Clear(DeleteStr3);        
+        Clear(DateStr);
+        Clear(TimeStr);
+        Clear(TimeStr1);
+
+        InterimSalesHeader.RESET;
+        InterimSalesHeader.SETRANGE("Trade Partner Code", PartnerCode);
+        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
+        InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
+        TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');        
+        TimeStr := Format(Time, 0, '<Hours24,2>:<Minutes,2>:<Second,2>');
+        IF InterimSalesHeader.FindSet() THEN begin
+            Clear(CRLF);
+            CRLF[1] := 13;
+            CRLF[2] := 10;
+            HeaderInfo := '';
+            HeaderInfo := '<STATUSES>' + CRLF[1] + '<SENDERADDRESS>' + 'R0200' + '</SENDERADDRESS>' + CRLF[1] + '<DATATYPE>' + '30' + '</DATATYPE>' + CRLF[1];
+            ExportText := '';
+            repeat
+                L_cust.Get(InterimSalesHeader."Sell-to Customer No.");                
+                ExportText += '<STATUS>' + CRLF[1] + '<DATE>' + Format(TodayDate) + 'T00:00:00' + '</DATE>' + CRLF[1] + '<TIME>' + TimeStr + '</TIME>' + CRLF[1] + '<STATUSCODE>' + '11' + '</STATUSCODE>' + CRLF[1] + '<ORDER>' + CRLF[1] + '<ORDERNUMBER>' + InterimSalesHeader."Channel Order ID"
+            + '</ORDERNUMBER>' + CRLF[1] + '<ORDERDATE>' + FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>') + '</ORDERDATE>' + CRLF[1] + '<SUPPLIER>' + CRLF[1] + '<BUYERREFERENCE>' +L_cust."Our Account No."+ '</BUYERREFERENCE>' + CRLF[1] + '</SUPPLIER>' + CRLF[1] + '</ORDER>' + CRLF[1] + '</STATUS>' + CRLF[1];
+            until InterimSalesHeader.Next() = 0;
+            HeaderInfo1 := '';
+            HeaderInfo1 := '</STATUSES>';
+        end;
+        Clear(FileName);
+        Clear(inStr);
+        Clear(TextOutstream);
+        Clear(FileName);
+        Clear(FileName);
+        Clear(ExportTextFile);
+        ExportTextFile := HeaderInfo + ExportText + HeaderInfo1;
+        L_TradePartner.Reset();
+        L_TradePartner.SetRange(Code, PartnerCode);
+        if L_TradePartner.FindFirst() then begin
+            IF (L_TradePartner."Last Date to Export Order Ack" = 0D) OR (L_TradePartner."Last Date to Export Order Ack" <> TODAY) THEN
+              FileCount := '00'
+            ELSE
+              FileCount := INCSTR(L_TradePartner.TariffCode);
+
+            L_TradePartner."Last Date to Export Order Ack" := TODAY;
+            L_TradePartner.TariffCode := FileCount;
+            L_TradePartner.MODIFY;
+
+            // Save the data of the InStream as a file
+            fileName := L_TradePartner.Code + '.' + 'stupd.' + TodayDate + '.' + FileCount;// + '.XML';
         end;
 
+        tempblob.CreateOutStream(TextOutstream);
+        TextOutstream.WriteText(ExportTextFile);
+        tempblob.CreateInStream(inStr);
+        UploadFileTOAzureBlob(inStr, fileName, L_TradePartner.Code);
+    end;
+    
+    procedure ShopdirectOrderdispatchText(PartnerCode: Code[10])
+    var
+        HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+        TodayDate: Text;
+        MultilineorderNoref: Code[250];
+        InterimSalesHeader2: Record "Interim Sales Header";
+        InterimSalesHeader3: Record "Interim Sales Header";
+        P_ChannelPartner: Record "Trade Partner";
+        CRLF: Text[2];
+        inStr: InStream;
+        TextOutstream: OutStream;
+        ExportText: Text;
+        HeaderInfo: Text;
+        HeaderInfo1: Text;
+        FileName: Text;
+        ExportTextFile: Text;
+        DateStr: Text;        
+        DeleteStr1: Text;
+        DeleteStr2: Text;
+        DeleteStr3: Text;
+        Dateformat: Text;
+        TimeStr: Text;
+        TimeStr1: Text;
+        L_cust: Record Customer;
+        L_TradePartner: Record "Trade Partner";
+        FileCount: Text;
+        OrderAck: Codeunit "Order Acknowledgement";
+    begin
+        Clear(TodayDate);
+        Clear(Dateformat);
+        Clear(DeleteStr1);
+        Clear(DeleteStr2);
+        Clear(DeleteStr3);
+        Clear(DateStr);
+        Clear(TimeStr);
+        Clear(TimeStr1);
+
+        HandledInterimSalesHeader.RESET;  
+        //HandledInterimSalesHeader.SetFilter("No.",'%1..%2','WEB0000006','WEB0000007');      
+        HandledInterimSalesHeader.SETRANGE("Trade Partner Code", PartnerCode);
+        HandledInterimSalesHeader.SetRange("Document Type",HandledInterimSalesHeader."Document Type"::Order);
+        HandledInterimSalesHeader.SetFilter(Status,'%1|%2' ,HandledInterimSalesHeader.Status::Dispatched,HandledInterimSalesHeader.status::Cancelled );
+        HandledInterimSalesHeader.SETRANGE("Order Fullfilled", FALSE);
+        TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');
+        TimeStr := Format(Time, 0, '<Hours24,2>:<Minutes,2>:<Second,2>');
+        IF HandledInterimSalesHeader.FindSet() THEN begin
+            Clear(CRLF);
+            CRLF[1] := 13;
+            CRLF[2] := 10;
+            HeaderInfo := '';
+            HeaderInfo := '<STATUSES>' + CRLF[1] + '<SENDERADDRESS>' + 'R0200' + '</SENDERADDRESS>' + CRLF[1] + '<DATATYPE>' + '30' + '</DATATYPE>' + CRLF[1];
+            ExportText := '';
+            repeat
+                L_cust.Get(HandledInterimSalesHeader."Sell-to Customer No.");                
+                ExportText += '<STATUS>' + CRLF[1] + '<DATE>' + Format(TodayDate) + 'T00:00:00' + '</DATE>' + CRLF[1] + '<TIME>' + TimeStr + '</TIME>' + CRLF[1]; 
+                if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
+                  ExportText += '<STATUSCODE>' + '40' + '</STATUSCODE>' + CRLF[1]
+                else if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Cancelled then  
+                   ExportText += '<STATUSCODE>' + '17' + '</STATUSCODE>' + CRLF[1];
+
+             ExportText += '<ORDER>' + CRLF[1] + '<ORDERNUMBER>' + HandledInterimSalesHeader."Channel Order ID"
+            + '</ORDERNUMBER>' + CRLF[1] + '<ORDERDATE>' + FORMAT(HandledInterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>') + '</ORDERDATE>' + CRLF[1] + '<SUPPLIER>' + CRLF[1] + '<BUYERREFERENCE>' +L_cust."Our Account No."+ '</BUYERREFERENCE>' + CRLF[1] + '</SUPPLIER>' + CRLF[1] + '</ORDER>' + CRLF[1] + '</STATUS>' + CRLF[1];
+            until HandledInterimSalesHeader.Next() = 0;
+            HeaderInfo1 := '';
+            HeaderInfo1 := '</STATUSES>';
+        end;
+        Clear(FileName);
+        Clear(inStr);
+        Clear(TextOutstream);
+        Clear(FileName);
+        Clear(FileName);
+        Clear(ExportTextFile);
+        ExportTextFile := HeaderInfo + ExportText + HeaderInfo1;
+        L_TradePartner.Reset();
+        L_TradePartner.SetRange(Code, PartnerCode);
+        if L_TradePartner.FindFirst() then begin
+            IF (L_TradePartner."Last Date to Export Order Ack" = 0D) OR (L_TradePartner."Last Date to Export Order Ack" <> TODAY) THEN
+              FileCount := '00'
+            ELSE
+              FileCount := INCSTR(L_TradePartner.TariffCode);
+
+            L_TradePartner."Last Date to Export Order Ack" := TODAY;
+            L_TradePartner.TariffCode := FileCount;
+            L_TradePartner.MODIFY;
+
+            // Save the data of the InStream as a file
+            fileName := L_TradePartner.Code + '.' + 'stupd.' + TodayDate + '.' + FileCount;// + '.XML';
+        end;
+
+        tempblob.CreateOutStream(TextOutstream);
+        TextOutstream.WriteText(ExportTextFile);
+        tempblob.CreateInStream(inStr);
+        UploadFileTOAzureBlob(inStr, fileName, L_TradePartner.Code);
     end;
 
-    local procedure ExportOrderAckJDW2(P_ChannelPartner: Record "Trade Partner")
-    var
-        FileCount: Text;
-        Customer: Record Customer;
-        InterimSalesHeader: Record "Interim Sales Header";
-        TodayDate: Text;
-        MultilineorderNoref: Code[250];
-        InterimSalesHeader2: Record "Interim Sales Header";
-        InterimSalesHeader3: Record "Interim Sales Header";
-        xmlElem: XmlElement;
-        xmlElem2: XmlElement;
-        Tempblob: Codeunit "Temp Blob";
-        xmlElem3: XmlElement;
-        xmlElem4: XmlElement;
-        xmlElem5: XmlElement;
-        xmlElem6: XmlElement;
-        xmlElem7: XmlElement;
-        xmlElem8: XmlElement;
-        xmlElem9: XmlElement;
-        xmlElem10: XmlElement;
-        xmlElem11: XmlElement;
-        xmlElem12: XmlElement;
-        xmlDoc: XmlDocument;
-        xmlDec: XmlDeclaration;
-        OutStr: OutStream;
-        inStr: InStream;
-        fileName: Text;
+    local procedure ShopdirectStockPosition(PartnerCode: Code[10])
+    var    
+    CRLF: Text[2];
+    HeaderInfo: Text;
+    ExportText: Text;    
+    ItemVariant: record "Item Variant";
+    L_TradePartner: Record "Trade Partner";
+    FileName: Text;
+    inStr: InStream;
+    TextOutstream: OutStream;
+    TodayDate: Text;
+    L_cust: Record Customer;
+    ItemReferance: Record "Item Reference";
+    UniqueIdentifier: Text;
+    Noofstocklines: Integer;
+    AvailableQty:Decimal;
     begin
-        Clear(xmlElem);
-        Clear(xmlElem2);
-        Clear(xmlElem3);
-        Clear(xmlElem4);
-        Clear(xmlElem5);
-        Clear(xmlElem6);
-        Clear(xmlElem7);
-        Clear(xmlElem8);
-        Clear(xmlElem9);
-        Clear(xmlElem10);
-        Clear(xmlElem11);
-        Clear(xmlElem12);
-        Clear(xmlDoc);
-        Clear(xmlDec);
-        Clear(outStr);
-        TodayDate := FORMAT(TODAY, 0, '<Month,2>_<Day,2>_<Year4>');
-        TodayDate := DELCHR(TodayDate, '=', '/');
-        IF P_ChannelPartner.Code = 'SHOPDIRECT' THEN BEGIN
-            xmlDoc := xmlDocument.Create();
-            xmlDec := xmlDeclaration.Create('1.0', 'UTF-8', '');
-            xmlDoc.SetDeclaration(xmlDec);
+      Clear(CRLF);Clear(AvailableQty);
+      L_TradePartner.Reset();
+      L_TradePartner.SetRange(Code, PartnerCode);
+      L_TradePartner.FindFirst(); 
+      L_cust.Get(L_TradePartner."Customer No.");
+      CRLF[1] := 13;
+      CRLF[2] := 10;
+      HeaderInfo := '';
+      HeaderInfo := '<STOCK_POSITIONS>' + CRLF[1] + '<BUYER>'+ CRLF[1] + '<BUYERREFERENCE>' + 'R0200'+'</BUYERREFERENCE>' +CRLF[1] + '</BUYER>' + CRLF[1] + '<SUPPLIER>' + CRLF[1] + '<BUYERREFERENCE>' + L_cust."Our Account No." + '</BUYERREFERENCE>'+ CRLF[1] + '</SUPPLIER>'+CRLF[1];
+      ExportText := '';
+      
+      Clear(UniqueIdentifier);
+      ItemReferance.Reset();
+      //ItemReferance.SetRange("Item No.",'2778_7');
+      ItemReferance.SetRange("Reference Type",ItemReferance."Reference Type"::Customer);
+      ItemReferance.SetRange("Reference Type No.",L_cust."No.");
+      if ItemReferance.FindFirst() then repeat        
+        UniqueIdentifier := ItemReferance."Reference No.";         
+        Noofstocklines +=1;
+        AvailableQty := CalculateAvailableQuantity(ItemReferance."Item No.",ItemReferance."Variant Code",L_cust."Location Code");
+        ExportText += '<STOCK_POSITION>' + CRLF[1] + '<UNIQUEIDENTIFIER>' + UniqueIdentifier + '</UNIQUEIDENTIFIER>' + CRLF[1] + '<OWN_CODE>' + ItemReferance."Item No." + '</OWN_CODE>' + CRLF[1] + '<AVAILABLE_QUANTITY>' + format(AvailableQty)  + '</AVAILABLE_QUANTITY>' + CRLF[1] + '</STOCK_POSITION>' + CRLF[1]; 
+        if Noofstocklines > 2500 then begin
+          CreateStockPositionandStatusfile(HeaderInfo,ExportText,L_TradePartner,'StockPosition');
+          Clear(Noofstocklines);
+          Clear(ExportText);
+        end;  
+      until ItemReferance.Next() = 0;
+      if Noofstocklines > 0 then
+        CreateStockPositionandStatusfile(HeaderInfo,ExportText,L_TradePartner,'StockPosition');
+      
 
-            xmlElem := xmlElement.Create('STATUSES');
+    end;
+    
+    local procedure CreateStockPositionandStatusfile(P_HeaderInfo: Text;P_ExportText: Text;var P_TradePartner: record "Trade Partner";Source : Text)
+    var
+    FileName: Text;
+    inStr: InStream;
+    TextOutstream: OutStream;
+    FileCount: Text;
+    TodayDate: Text;
+    HeaderInfo1: Text;
+    ExportTextFile: Text;
+    CU_90000: Codeunit 90000;
+    TimeStr: Text;
+    begin
+     Clear(TodayDate); 
+     TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');
+     TodayDate := DELCHR(TodayDate, '=', '/');
+     TodayDate := DELCHR(TodayDate, '=', '-');
+     TimeStr := Format(Time, 0, '<Hours24,2>:<Minutes,2>:<Second,2>');
+     TimeStr := DelChr(TimeStr,'=',':'); 
+     TodayDate :=  TodayDate + TimeStr;
+     Clear(FileName);
+     HeaderInfo1 := '';
+     if Source = 'StockPosition' then begin     
+       HeaderInfo1 := '</STOCK_POSITIONS>';
+       fileName := P_TradePartner.Code + '.' + 'StockPosition.' + TodayDate;
+     end else if Source = 'StockStatus' then begin
+       HeaderInfo1 := '</STOCK_STATUSES>';
+       fileName := P_TradePartner.Code + '.' + 'StockStatus.' + TodayDate;
+     end;
 
-            xmlElem2 := XmlElement.Create('SENDERADDRESS');
-            xmlElem2.Add(xmlText.Create('R0200'));
+      
+      Clear(inStr);
+      Clear(TextOutstream);
+      Clear(ExportTextFile);      
+      ExportTextFile := P_HeaderInfo + P_ExportText + HeaderInfo1;      
 
-            xmlElem3 := XmlElement.Create('DATATYPE');
-            xmlElem3.Add(xmlText.Create('30'));
+      // Save the data of the InStream as a file   
+      
 
-            xmlElem.Add(xmlElem2);
-            xmlElem.Add(xmlElem3);
-        END;
+      tempblob.CreateOutStream(TextOutstream);
+      TextOutstream.WriteText(ExportTextFile);
+      tempblob.CreateInStream(inStr);
+      if Source = 'StockPosition' then
+       CU_90000.UploadFilefromBCTOAzureBlob(inStr,FileName,P_TradePartner."API Endpoint",P_TradePartner."Outgoing Container 2 Name",P_TradePartner."Outgoing Container 2 Token",false)
+      else if Source = 'StockStatus' then
+       CU_90000.UploadFilefromBCTOAzureBlob(inStr,FileName,P_TradePartner."API Endpoint",P_TradePartner."Outgoing Container 3 Name",P_TradePartner."Outgoing Container 3 Token",false);
+    end;
+    
+    
+    local procedure CalculateAvailableQuantity(P_ItemNo:Code[20];P_VariantCode:Code[20];P_Location:Code[20]) : Decimal
+    var
+    L_Item: Record Item;
+    Q90060: Query QuantityOnBin;
+    Q90061: Query QuantityonWebOrder;
+    QtyonReceive: Decimal;
+    QtyonQC: decimal;
+    OnhandQty: Decimal;
+    QtyonWebOrder: decimal;
+    FreeToSellStock: Decimal;
+    Shipdate: Date;
+    L_SalesLine: Record "Sales Line";
+    CurrentOutstandingSalesOrderQty: Decimal;
+    AvailableQuantity: Decimal;
+    begin
+     Clear(QtyonReceive);Clear(QtyonQC);Clear(QtyonWebOrder);
+     Clear(FreeToSellStock);Clear(CurrentOutstandingSalesOrderQty);Clear(AvailableQuantity);
 
-        InterimSalesHeader.RESET;
-        InterimSalesHeader.SETCURRENTKEY("MultiLine Order No.");
-        InterimSalesHeader.SETFILTER("Trade Partner Code", P_ChannelPartner.Code);
-        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
-        InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
-        InterimSalesHeader.SETFILTER("MultiLine Order No.", '<>%1', '');
-        IF InterimSalesHeader.FINDFIRST THEN
-            REPEAT
+     L_Item.Reset();
+     L_Item.SetRange("No.",P_ItemNo);
+     if L_Item.FindFirst() then begin
+       L_Item.SetRange("Variant Filter",P_VariantCode);
+       L_Item.CalcFields(Inventory,"Qty. on Sales Order","Qty. on Purch. Order");
 
-                IF (MultilineorderNoref <> InterimSalesHeader."MultiLine Order No.") THEN BEGIN
-                    MultilineorderNoref := InterimSalesHeader."MultiLine Order No.";
+       Clear(Q90060);
+       Q90060.SetRange(item_No,P_ItemNo);
+       Q90060.SetRange(variant_code,P_VariantCode);
+       Q90060.SetRange(Location_Code,P_Location);
+       Q90060.SetFilter(Bin_code,'Receive');
+       while Q90060.Read() do begin
+        QtyonReceive := Q90060.Quantity;    
+       end;
 
-                    InterimSalesHeader2.COPYFILTERS(InterimSalesHeader);
-                    InterimSalesHeader2.SETRANGE("MultiLine Order No.", MultilineorderNoref);
-                    IF InterimSalesHeader2.FINDSET THEN
-                        REPEAT
-                            IF P_ChannelPartner.Code = 'SHOPDIRECT' THEN BEGIN
-                                xmlElem4 := XmlElement.Create('STATUS');
+       Q90060.SetFilter(Bin_code,'QC');
+       while Q90060.Read() do begin
+        QtyonQC := Q90060.Quantity;    
+       end;
+     
+       OnhandQty := L_Item.Inventory - (QtyonReceive + QtyonQC);
+     
+       Clear(Q90061);
+       Q90061.SetRange(No_,P_ItemNo);
+       Q90061.SetRange(NAV_Variant_code,P_VariantCode);
+       while Q90061.Read() do begin
+        QtyonWebOrder := Q90061.Quantity;
+       end;
+ 
+        Clear(Shipdate);
+        Shipdate := CalcDate('6d', WorkDate());
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange("No.", P_ItemNo);
+        L_SalesLine.SetRange("Variant Code", P_VariantCode);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SetFilter("Shipment Date", '..%1', Shipdate);
+        if L_SalesLine.FindSet() then repeat
+        CurrentOutstandingSalesOrderQty +=  L_SalesLine."Outstanding Quantity";
+        until L_SalesLine.Next() = 0;      
 
-                                xmlElem5 := XmlElement.Create('DATE');
-                                xmlElem5.Add(xmlText.Create(Format(Today)));
-
-                                xmlElem6 := XmlElement.Create('TIME');
-                                xmlElem6.Add(xmlText.Create(Format(Time)));
-
-                                xmlElem12 := XmlElement.Create('STATUSCODE');
-                                xmlElem12.Add(xmlText.Create('11'));
-
-                                xmlElem4.Add(xmlElem5);
-                                xmlElem4.Add(xmlElem6);
-                                xmlElem4.Add(xmlElem12);
-
-                                xmlElem7 := XmlElement.Create('ORDER');
-
-                                xmlElem8 := XmlElement.Create('ORDERNUMBER');
-                                xmlElem8.Add(xmlText.Create(InterimSalesHeader."Channel Order ID"));
-
-                                xmlElem9 := XmlElement.Create('ORDERDATE');
-                                xmlElem9.Add(xmlText.Create(FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
-
-                                xmlElem7.Add(xmlElem8);
-                                xmlElem7.Add(xmlElem9);
-
-                                xmlElem10 := XmlElement.Create('SUPPLIER');
-                                xmlElem7.Add(xmlElem10);
-
-                                xmlElem11 := XmlElement.Create('BUYERREFERENCE');
-                                xmlElem11.Add(xmlText.Create(InterimSalesHeader."Web Shipping Agent"));
-
-                                xmlElem10.Add(xmlElem11);
-
-                                xmlElem4.Add(xmlElem7);
-                                xmlElem.Add(xmlElem4);
-                            END;
-                            IF InterimSalesHeader3.GET(InterimSalesHeader2."Document Type", InterimSalesHeader2."No.") THEN BEGIN
-                                InterimSalesHeader3."Order Ack. Exported" := TRUE;
-                                InterimSalesHeader3.MODIFY;
-                            END;
-                        UNTIL InterimSalesHeader2.NEXT = 0;
-                END;
-            UNTIL InterimSalesHeader.NEXT = 0;
-
-        InterimSalesHeader.RESET;
-        InterimSalesHeader.SETCURRENTKEY("MultiLine Order No.");
-        InterimSalesHeader.SETFILTER("Trade Partner Code", P_ChannelPartner.Code);
-        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
-        InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
-        InterimSalesHeader.SETFILTER("MultiLine Order No.", '%1', '');
-        IF InterimSalesHeader.FINDFIRST THEN
-            REPEAT
-                IF P_ChannelPartner.Code = 'SHOPDIRECT' THEN BEGIN
-
-                    xmlElem4 := XmlElement.Create('STATUS');
-
-                    xmlElem5 := XmlElement.Create('DATE');
-                    xmlElem5.Add(xmlText.Create(Format(Today)));
-
-                    xmlElem6 := XmlElement.Create('TIME');
-                    xmlElem6.Add(xmlText.Create(Format(Time)));
-
-                    xmlElem12 := XmlElement.Create('STATUSCODE');
-                    xmlElem12.Add(xmlText.Create('11'));
-
-                    xmlElem4.Add(xmlElem5);
-                    xmlElem4.Add(xmlElem6);
-                    xmlElem4.Add(xmlElem12);
-
-                    xmlElem7 := XmlElement.Create('ORDER');
-
-                    xmlElem8 := XmlElement.Create('ORDERNUMBER');
-                    xmlElem8.Add(xmlText.Create(InterimSalesHeader."Channel Order ID"));
-
-                    xmlElem9 := XmlElement.Create('ORDERDATE');
-                    xmlElem9.Add(xmlText.Create(FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
-
-                    xmlElem7.Add(xmlElem8);
-                    xmlElem7.Add(xmlElem9);
-
-                    xmlElem10 := XmlElement.Create('SUPPLIER');
-                    xmlElem7.Add(xmlElem10);
-
-                    xmlElem11 := XmlElement.Create('BUYERREFERENCE');
-                    xmlElem11.Add(xmlText.Create(InterimSalesHeader."Web Shipping Agent"));
-
-                    xmlElem10.Add(xmlElem11);
-
-                    xmlElem4.Add(xmlElem7);
-                    xmlElem.Add(xmlElem4);
-
-                    IF InterimSalesHeader3.GET(InterimSalesHeader."Document Type", InterimSalesHeader."No.") THEN BEGIN
-                        InterimSalesHeader3."Order Ack. Exported" := TRUE;
-                        InterimSalesHeader3.MODIFY;
-                    END;
-                END;
-            UNTIL InterimSalesHeader.NEXT = 0;
-        xmlDoc.Add(xmlElem);
+        FreeToSellStock := OnhandQty - (QtyonWebOrder + L_Item."Qty. on Sales Order") + L_Item."Qty. on Purch. Order";
+        
+        if FreeToSellStock < (OnhandQty - CurrentOutstandingSalesOrderQty - QtyonWebOrder) then
+        AvailableQuantity := FreeToSellStock
+        else
+        AvailableQuantity :=  OnhandQty - CurrentOutstandingSalesOrderQty - QtyonWebOrder;
+        
+        if AvailableQuantity < 0 then
+        AvailableQuantity := 0;
 
 
-        // Create an outStream from the Blob, notice the encoding.
-        TempBlob.CreateOutStream(outStr, TextEncoding::UTF8);
+        exit(AvailableQuantity);
+     end;   
+    end;
+    local procedure ShopDirectStockStatus(PartnerCode: Code[10])
+    var
+    CRLF: Text[2];
+    HeaderInfo: Text;
+    ExportText: Text;    
+    ItemVariant: record "Item Variant";
+    L_TradePartner: Record "Trade Partner";
+    FileName: Text;
+    inStr: InStream;
+    TextOutstream: OutStream;
+    TodayDate: Text;
+    L_cust: Record Customer;
+    ItemReferance: Record "Item Reference";
+    UniqueIdentifier: Text;
+    Noofstocklines: Integer;
+    AvailableQty:Decimal;
+    begin
+     Clear(CRLF);
+      L_TradePartner.Reset();
+      L_TradePartner.SetRange(Code, PartnerCode);
+      L_TradePartner.FindFirst(); 
+      L_cust.Get(L_TradePartner."Customer No.");
+      CRLF[1] := 13;
+      CRLF[2] := 10;
+      HeaderInfo := '';
+      HeaderInfo := '<STOCK_STATUSES>' + CRLF[1] + '<BUYER>'+ CRLF[1] + '<BUYERREFERENCE>' + 'R0200'+'</BUYERREFERENCE>' +CRLF[1] + '</BUYER>' + CRLF[1] + '<SUPPLIER>' + CRLF[1] + '<BUYERREFERENCE>' + L_cust."Our Account No." + '</BUYERREFERENCE>'+ CRLF[1] + '</SUPPLIER>'+CRLF[1];
+      ExportText := '';
+      
+      Clear(UniqueIdentifier);
+      ItemReferance.Reset();
+      //ItemReferance.SetRange("Item No.",'2778_7');
+      ItemReferance.SetRange("Reference Type",ItemReferance."Reference Type"::Customer);
+      ItemReferance.SetRange("Reference Type No.",L_cust."No.");
+      if ItemReferance.FindFirst() then repeat        
+        UniqueIdentifier := ItemReferance."Reference No.";    
+        Clear(TodayDate); 
+        TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');     
+        Noofstocklines +=1;
+        AvailableQty := CalculateAvailableQuantity(ItemReferance."Item No.",ItemReferance."Variant Code",L_cust."Location Code");
+        ExportText += '<STOCK_STATUS>' + CRLF[1] + '<UNIQUEIDENTIFIER>' + UniqueIdentifier + '</UNIQUEIDENTIFIER>' + CRLF[1] + '<OWN_CODE>' + ItemReferance."Item No." + '</OWN_CODE>' + CRLF[1] + '<CURRENT_EFFECTIVE_DATE>' + Format(TodayDate) + 'T00:00:00'  + '</CURRENT_EFFECTIVE_DATE>' + CRLF[1] ;
+        IF AvailableQty > 0 then
+          ExportText += '<CURRENT_STOCK_STATUS>' + 'IS' + '</CURRENT_STOCK_STATUS>'
+        else
+          ExportText += '<CURRENT_STOCK_STATUS>' + 'OOS' + '</CURRENT_STOCK_STATUS>';
 
-        // Write the contents of the doc to the stream
-        xmlDoc.WriteTo(outStr);
+        ExportText += CRLF[1] +'<CURRENT_LEAD_TIME>' + '2' +'</CURRENT_LEAD_TIME>'+ CRLF[1] + '<CURRENT_DUE_DATE />' + CRLF[1] ;
+        ExportText += '<NEXT_EFFECTIVE_DATE />' + CRLF[1] +'<NEXT_STOCK_STATUS />' + CRLF[1] + '<NEXT_LEAD_TIME />' + CRLF[1] + '<NEXT_DUE_DATE />'+ CRLF[1];
+        ExportText += '<FUTURE_EFFECTIVE_DATE />' + CRLF[1] + '<FUTURE_STOCK_STATUS />' + CRLF[1] + '<FUTURE_LEAD_TIME />' + CRLF[1] + '<FUTURE_DUE_DATE />' + CRLF[1]; 
+        ExportText += '</STOCK_STATUS>' + CRLF[1];     
+        //'</STOCK_POSITION>' + CRLF[1]; 
+        if Noofstocklines > 2500 then begin
+          CreateStockPositionandStatusfile(HeaderInfo,ExportText,L_TradePartner,'StockStatus');
+          Clear(Noofstocklines);
+          Clear(ExportText);
+        end;  
+      until ItemReferance.Next() = 0;
+      if Noofstocklines > 0 then
+        CreateStockPositionandStatusfile(HeaderInfo,ExportText,L_TradePartner,'StockStatus');
 
-        // From the same Blob, that now contains the XML document, create an inStr
-        TempBlob.CreateInStream(inStr, TextEncoding::UTF8);
+    end;
 
-        IF (P_ChannelPartner."Last Date to Export Order Ack" = 0D) OR (P_ChannelPartner."Last Date to Export Order Ack" <> TODAY) THEN
-            FileCount := '00'
-        ELSE
-            FileCount := INCSTR(P_ChannelPartner.TariffCode);
+    local procedure CreateStockstatusfile()
+    var
+    begin
 
-        P_ChannelPartner."Last Date to Export Order Ack" := TODAY;
-        P_ChannelPartner.TariffCode := FileCount;
-        P_ChannelPartner.MODIFY;
+    end;
 
-        // Save the data of the InStream as a file.
-        fileName := P_ChannelPartner.Code + '.' + 'ASN.' + TodayDate + '.' + FileCount + '.XML';
-        UploadFileTOAzureBlob(inStr, fileName, P_ChannelPartner.Code);
-    END;
-
-    local procedure ShopdirectOrderAck(PartnerCode: Code[10])
+    //this function is not in use
+    local procedure ShopdirectOrderdispatch(PartnerCode: Code[10])
     var
         FileCount: Text;
         Customer: Record Customer;
-        InterimSalesHeader: Record "Interim Sales Header";
+        HandledInterimSalesHeader: Record "Handled Interim Sales Header";
         TodayDate: Text;
         MultilineorderNoref: Code[250];
-        InterimSalesHeader2: Record "Interim Sales Header";
-        InterimSalesHeader3: Record "Interim Sales Header";
+        HandledInterimSalesHeader2: Record "Handled Interim Sales Header";
+        HandledInterimSalesHeader3: Record "Handled Interim Sales Header";
         xmlElem: XmlElement;
         xmlElem2: XmlElement;
         Tempblob: Codeunit "Temp Blob";
@@ -374,6 +523,7 @@ codeunit 90071 "Order Acknowledgement"
         fileName: Text;
         L_TradePartner: Record "Trade Partner";
         OrderAck: Codeunit "Order Acknowledgement";
+        L_cust: Record Customer;
     begin
         Clear(xmlElem);
         Clear(xmlElem2);
@@ -394,9 +544,10 @@ codeunit 90071 "Order Acknowledgement"
         TodayDate := DELCHR(TodayDate, '=', '/');
 
         xmlDoc := xmlDocument.Create();
+        /*
         xmlDec := xmlDeclaration.Create('1.0', 'UTF-8', '');
         xmlDoc.SetDeclaration(xmlDec);
-
+        */
         xmlElem := xmlElement.Create('STATUSES');
 
         xmlElem2 := XmlElement.Create('SENDERADDRESS');
@@ -411,24 +562,26 @@ codeunit 90071 "Order Acknowledgement"
 
 
 
-        InterimSalesHeader.RESET;
-        InterimSalesHeader.SETFILTER("Trade Partner Code", PartnerCode);
-        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
-        InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
-        IF InterimSalesHeader.FindSet() THEN begin
+        HandledInterimSalesHeader.RESET;
+        HandledInterimSalesHeader.SETFILTER("Trade Partner Code", PartnerCode);
+        HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
+        //InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
+        IF HandledInterimSalesHeader.FindSet() THEN begin
             REPEAT
-
+                L_cust.Get(HandledInterimSalesHeader."Sell-to Customer No.");
                 xmlElem4 := XmlElement.Create('STATUS');
 
                 xmlElem5 := XmlElement.Create('DATE');
-                xmlElem5.Add(xmlText.Create(Format(Today)));
+                xmlElem5.Add(xmlText.Create(Format(Today, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
 
                 xmlElem6 := XmlElement.Create('TIME');
                 xmlElem6.Add(xmlText.Create(Format(Time)));
 
                 xmlElem12 := XmlElement.Create('STATUSCODE');
-                xmlElem12.Add(xmlText.Create('11'));
-
+                if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
+                    xmlElem12.Add(xmlText.Create('40'))
+                else
+                    xmlElem12.Add(xmlText.Create('17'));
                 xmlElem4.Add(xmlElem5);
                 xmlElem4.Add(xmlElem6);
                 xmlElem4.Add(xmlElem12);
@@ -436,10 +589,10 @@ codeunit 90071 "Order Acknowledgement"
                 xmlElem7 := XmlElement.Create('ORDER');
 
                 xmlElem8 := XmlElement.Create('ORDERNUMBER');
-                xmlElem8.Add(xmlText.Create(InterimSalesHeader."Channel Order ID"));
+                xmlElem8.Add(xmlText.Create(HandledInterimSalesHeader."Channel Order ID"));
 
                 xmlElem9 := XmlElement.Create('ORDERDATE');
-                xmlElem9.Add(xmlText.Create(FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
+                xmlElem9.Add(xmlText.Create(FORMAT(HandledInterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
 
                 xmlElem7.Add(xmlElem8);
                 xmlElem7.Add(xmlElem9);
@@ -448,19 +601,21 @@ codeunit 90071 "Order Acknowledgement"
                 xmlElem7.Add(xmlElem10);
 
                 xmlElem11 := XmlElement.Create('BUYERREFERENCE');
-                xmlElem11.Add(xmlText.Create(InterimSalesHeader."Web Shipping Agent"));
+                xmlElem11.Add(xmlText.Create(L_cust."Our Account No."));
+                //HandledInterimSalesHeader."Web Shipping Agent"));
 
                 xmlElem10.Add(xmlElem11);
 
                 xmlElem4.Add(xmlElem7);
                 xmlElem.Add(xmlElem4);
 
-                IF InterimSalesHeader3.GET(InterimSalesHeader."Document Type", InterimSalesHeader."No.") THEN BEGIN
-                    InterimSalesHeader3."Order Ack. Exported" := TRUE;
-                    InterimSalesHeader3.MODIFY;
+                IF HandledInterimSalesHeader3.GET(HandledInterimSalesHeader."Document Type", HandledInterimSalesHeader."No.") THEN BEGIN
+                    HandledInterimSalesHeader3."Order Fullfilled" := TRUE;
+                    HandledInterimSalesHeader3."Order Fullfillment Date" := WorkDate();
+                    HandledInterimSalesHeader3.MODIFY;
                 END;
 
-            UNTIL InterimSalesHeader.NEXT = 0;
+            UNTIL HandledInterimSalesHeader.NEXT = 0;
 
 
             xmlDoc.Add(xmlElem);
@@ -477,26 +632,26 @@ codeunit 90071 "Order Acknowledgement"
             L_TradePartner.Reset();
             L_TradePartner.SetRange(Code, PartnerCode);
             if L_TradePartner.FindFirst() then begin
-                IF (L_TradePartner."Last Date to Export Order Ack" = 0D) OR (L_TradePartner."Last Date to Export Order Ack" <> TODAY) THEN
+                IF (L_TradePartner."Last Date to Ex. Odr. fullfill" = 0D) OR (L_TradePartner."Last Date to Ex. Odr. fullfill" <> TODAY) THEN
                     FileCount := '00'
                 ELSE
-                    FileCount := INCSTR(L_TradePartner.TariffCode);
+                    FileCount := INCSTR(L_TradePartner."Channel Sub Name");
 
-                L_TradePartner."Last Date to Export Order Ack" := TODAY;
-                L_TradePartner.TariffCode := FileCount;
+                L_TradePartner."Last Date to Ex. Odr. fullfill" := TODAY;
+                L_TradePartner."Channel Sub Name" := FileCount;
                 L_TradePartner.MODIFY;
 
                 // Save the data of the InStream as a file.
-                fileName := L_TradePartner.Code + '.' + 'ASN.' + TodayDate + '.' + FileCount + '.XML';
+                fileName := L_TradePartner.Code + '.' + 'des.' + TodayDate + '.' + FileCount + '.XML';
                 OrderAck.UploadFileTOAzureBlob(inStr, fileName, L_TradePartner.Code);
             end;
 
         end;
     end;
 
-
     var
         StartParameter: Text;
+        tempblob: Codeunit "Temp Blob";
         RunType: Text;
         Windows: Dialog;
         Text001: TextConst ENG = 'Channel Partner....';

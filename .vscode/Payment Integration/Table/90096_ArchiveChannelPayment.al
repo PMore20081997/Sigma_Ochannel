@@ -135,6 +135,10 @@ table 90096 "Archive Channel Payment"
         {
 
         }
+        field(27; "Payment Type"; Option)
+        {
+            OptionMembers = Payment,Refund;
+        }
     }
     keys
     {

@@ -12,23 +12,54 @@ codeunit 90002 "Shopify Integration"
             SyncOrderLabel:
                 BEGIN
                     GetShopifyOrder(StartParameter, '');
-                    MESSAGE('Order Sync Completed...');
+                    if IsError = true then begin
+                        Message('Some error has found while syncing process.\Please contact system administrator.');
+                    end
+                    else begin
+                        TradePartner.Reset();
+                        TradePartner.SetRange(Code, StartParameter);
+                        if TradePartner.FindFirst() then begin
+                            TradePartner."Last Order Sync" := CurrentDateTime;
+                            TradePartner.Modify();
+                        end;
+
+                        MESSAGE('Order Sync Completed.');
+                    end;
                 End;
             SyncItemLabel:
                 Begin
                     GetItems(StartParameter, '');
+                    Commit();
+
+                    if IsError = true then begin
+                        Message('Some error has found while syncing process.\Please contact system administrator.');
+                    end
+                    else begin
+                        if ChannelPartner.Get(StartParameter) then begin
+                            ChannelPartner."Last Product Sync" := CurrentDateTime;
+                            ChannelPartner.Modify();
+                        end;
+                        MESSAGE('Item Sync Completed.');
+                    end;
                 End;
             SyncInventoryLabel:
                 begin
-                    UpdateInventoryShopify(StartParameter);
+                    //setInventory(ChannelCode);
+                    UpdateChannelItemListing(StartParameter);
+                    UpdateInventoryShopify(StartParameter);  //Need to UnComment Before Going Live
                 end;
             CustomerSyncLabel:
                 begin
-                    SyncCustomer(StartParameter);
+                    //SyncCustomer(StartParameter);
                 end;
             SyncPriceLabel:
                 begin
-                    UpdatePriceShopify(StartParameter);
+                    //UpdatePriceShopify(StartParameter);
+                end;
+            SyncShipmentLabel:
+                begin
+                    OrderFuflillment(StartParameter);
+                    Message('Order Status Updated Successfully.');
                 end;
         end;
     end;
@@ -84,91 +115,104 @@ codeunit 90002 "Shopify Integration"
         LinkHeaderBool: Boolean;
         LinkHeaderValue: array[2] of Text;
         LinkHeaderTextValue: Text;
+        TestTime: Text;
     begin
         GetCredentials(ChannelCode);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         HttpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
         HttpHeaders.Add('Content-Type', 'application/x-www-form-urlencoded');
+        // TestTime := '2022-09-04T12:00:00Z';
 
         Datefrom := FORMAT(LastOrderSync, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
         DateTo := format(CurrentDateTime, 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Seconds,2><Second dec.>Z');
+        // DateTo := TestTime;
 
-        //TradePartner1."Sevice/API URL":='https://winter-in-venice-store.myshopify.com/admin/api';
         if NextURL = '' then begin
             URL := StrSubstNo('%1/orders.json?status=any&limit=250&created_at_min="%2"&created_at_max="%3"', ServiceURL, Datefrom, DateTo);
         end;
-        //URL := 'https://milroys.myshopify.com/admin/api/2020-07/orders.json';
 
         if NextURL <> '' then begin
             URL := NextURL;
         end;
 
+        IsError := false;
         if HttpClient.Get(URL, HttpResponse) then begin
-            //Getting Next API Call URL From Response Header ++
-            LinkHeaderBool := HttpResponse.Headers.GetValues('Link', LinkHeaderValue);
-            if LinkHeaderBool = true then begin
-                Clear(LinkHeaderTextValue);
-                LinkHeaderTextValue := LinkHeaderValue[1];
+            if HttpResponse.HttpStatusCode = 200 then begin
+                //Getting Next API Call URL From Response Header ++
+                LinkHeaderBool := HttpResponse.Headers.GetValues('Link', LinkHeaderValue);
+                if LinkHeaderBool = true then begin
+                    Clear(LinkHeaderTextValue);
+                    LinkHeaderTextValue := LinkHeaderValue[1];
+                end;
+                //Getting Next API Call URL From Response Header--
+
+                HttpResponse.Content.ReadAs(responseText);
+                OrderObject.ReadFrom(responseText);
+                JsonObjectInArray := GetJsonToken(OrderObject, 'orders').AsArray();
+                i := JsonObjectInArray.Count;
+                NoOfRecs := JsonObjectInArray.Count;
+                for i := 0 to NoOfRecs - 1 do begin
+                    InterimSalesHeader.DeleteAll();
+                    InterimSalesLine.DeleteAll();
+                    ShipmnetTracking.DeleteAll();
+                    PaymentDetails.DeleteAll();
+                    Clear(checkChar);
+                    Clear(ShippingAddr);
+                    Clear(BillingAddr);
+                    Clear(custBoolean);
+                    // If InterimSalesHeader.FindSet then;
+
+                    JsonObjectInArray.Get(i, orderHeareToken);
+                    OrderHeader := orderHeareToken.AsObject();
+
+                    checkChar := Format(OrderHeader);
+                    ShippingAddr := checkChar.Contains('shipping_address');
+                    BillingAddr := checkChar.Contains('billing_address');
+                    total_shipping_price_set := checkChar.Contains('total_shipping_price_set');
+
+                    custBoolean := checkChar.Contains('customer');
+                    testid := GetJsonvalue(OrderHeader, 'id').AsCode();
+                    ChannelOrderID := GetJsonvalue(OrderHeader, 'name').AsCode();
+
+                    if ShippingAddr = true then begin
+                        ShippingAddress := GetJsonToken(OrderHeader, 'shipping_address').AsObject();
+                    end;
+
+                    if BillingAddr = true then begin
+                        BillingAddress := GetJsonToken(OrderHeader, 'billing_address').AsObject();
+                    end;
+
+                    if custBoolean = true then begin
+                        CustomerDetails := GetJsonToken(OrderHeader, 'customer').AsObject();
+                    end;
+                    if total_shipping_price_set = true then begin
+                        Clear(G_ShippingPrice);
+                        totalshippingpricesetobject := GetJsonToken(OrderHeader, 'total_shipping_price_set').AsObject();
+                        totalshippingpricesetSubobject := GetJsonToken(totalshippingpricesetobject, 'shop_money').AsObject();
+                    end;
+
+                    GetShippingPrice();
+
+                    if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
+                        InterimSalesHeader."Email (Location)" := GetJsonToken(OrderHeader, 'email').AsValue.AsText();
+                    end;
+
+                    InsertIntSalesHeader(ChannelOrderID, OrderHeader, ChannelCode, InterimSalesHeader, ShippingAddr, BillingAddr, custBoolean, PaymentDetails);
+                    InsertInterimSalesLine(InterimSalesHeader, OrderHeader, InterimSalesLine, totalshippingpricesetSubobject);
+                    CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+                    Commit();
+                End;
+            end
+            else begin
+                HttpResponse.Content.ReadAs(responseText);
+                Error(StrSubstNo('Status Code - "%1" and Error Message - %2', HttpResponse.HttpStatusCode, responseText));
             end;
-            //Getting Next API Call URL From Response Header--
-
-            HttpResponse.Content.ReadAs(responseText);
-            OrderObject.ReadFrom(responseText);
-            JsonObjectInArray := GetJsonToken(OrderObject, 'orders').AsArray();
-            i := JsonObjectInArray.Count;
-            NoOfRecs := JsonObjectInArray.Count;
-            for i := 0 to NoOfRecs - 1 do begin
-                InterimSalesHeader.DeleteAll();
-                InterimSalesLine.DeleteAll();
-                ShipmnetTracking.DeleteAll();
-                PaymentDetails.DeleteAll();
-                Clear(checkChar);
-                Clear(ShippingAddr);
-                Clear(BillingAddr);
-                Clear(custBoolean);
-                // If InterimSalesHeader.FindSet then;
-
-                JsonObjectInArray.Get(i, orderHeareToken);
-                OrderHeader := orderHeareToken.AsObject();
-
-                checkChar := Format(OrderHeader);
-                ShippingAddr := checkChar.Contains('shipping_address');
-                BillingAddr := checkChar.Contains('billing_address');
-                total_shipping_price_set := checkChar.Contains('total_shipping_price_set');
-
-                custBoolean := checkChar.Contains('customer');
-                testid := GetJsonvalue(OrderHeader, 'id').AsCode();
-                ChannelOrderID := GetJsonvalue(OrderHeader, 'name').AsCode();
-
-                if ShippingAddr = true then begin
-                    ShippingAddress := GetJsonToken(OrderHeader, 'shipping_address').AsObject();
-                end;
-
-                if BillingAddr = true then begin
-                    BillingAddress := GetJsonToken(OrderHeader, 'billing_address').AsObject();
-                end;
-
-                if custBoolean = true then begin
-                    CustomerDetails := GetJsonToken(OrderHeader, 'customer').AsObject();
-                end;
-                if total_shipping_price_set = true then begin
-                    Clear(G_ShippingPrice);
-                    totalshippingpricesetobject := GetJsonToken(OrderHeader, 'total_shipping_price_set').AsObject();
-                    totalshippingpricesetSubobject := GetJsonToken(totalshippingpricesetobject, 'shop_money').AsObject();
-                end;
-
-                GetShippingPrice();
-
-                if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
-                    InterimSalesHeader."Email (Location)" := GetJsonToken(OrderHeader, 'email').AsValue.AsText();
-                end;
-
-                InsertIntSalesHeader(ChannelOrderID, OrderHeader, ChannelCode, InterimSalesHeader, ShippingAddr, BillingAddr, custBoolean);
-                InsertInterimSalesLine(InterimSalesHeader, OrderHeader, InterimSalesLine, totalshippingpricesetSubobject);
-                CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
-            End;
+        end
+        else begin
+            IsError := true;
         end;
 
         //Code to Get Next URL From Response Header++
@@ -189,13 +233,6 @@ codeunit 90002 "Shopify Integration"
             GetShopifyOrder(ChannelCode, NextURL);
         end;
         //Code to Get Next URL From Response Header--
-
-        TradePartner.Reset();
-        TradePartner.SetRange(Code, ChannelCode);
-        if TradePartner.FindFirst() then begin
-            TradePartner."Last Order Sync" := CurrentDateTime;
-            TradePartner.Modify();
-        end;
     End;
 
     procedure GetCredentials("ChannelCode": Code[20])
@@ -205,6 +242,7 @@ codeunit 90002 "Shopify Integration"
         TradePartner.RESET;
         if TradePartner.Get(ChannelCode) then begin
             AccessKeyId := TradePartner.AccessKeyId;
+            LocationId := TradePartner.MarketplaceId;
             SecretAccessKey := TradePartner.SecretAccessKey;
             ServiceURL := TradePartner."Sevice/API URL";
             LastOrderSync := TradePartner."Last Order Sync";
@@ -227,10 +265,10 @@ codeunit 90002 "Shopify Integration"
     end;
 
 
-    local procedure InsertIntSalesHeader(ChannelOrderId: Text; HeaderObject: JsonObject; ChannelCode: Code[20]; var InterimSalesHeader: Record "Interim Sales Header" temporary; ShippingAddr: Boolean; BillingAddr: Boolean; custBoolean: Boolean)
+    local procedure InsertIntSalesHeader(ChannelOrderId: Text; HeaderObject: JsonObject; ChannelCode: Code[20]; var InterimSalesHeader: Record "Interim Sales Header" temporary; ShippingAddr: Boolean; BillingAddr: Boolean; custBoolean: Boolean; var PaymentDetails: Record "Channel Media" temporary)
     var
         AddressLenght: Integer;
-        BigAddress: Text[100];
+        BigAddress: Text[200];
         TotalWeight: Decimal;
         CountryCode: Code[20];
         FulfillmentChannel: Text[250];
@@ -238,6 +276,14 @@ codeunit 90002 "Shopify Integration"
         CountyRegionCode: Record "Country/Region";
         CustomerId: Code[30];
         Customer: Record Customer;
+        OrderId: Code[50];
+        PaymentObject: JsonObject;
+        TransactionDate: Date;
+        WebOrderMgmt: Codeunit "Web Order Mgt";
+        JArray: JsonArray;
+        i: Integer;
+        NoOfRecs: Integer;
+        JToken: JsonToken;
     begin
         InterimSalesHeader."Trade Partner Code" := ChannelCode;
         InterimSalesHeader."Channel Order ID" := ChannelOrderId;
@@ -260,6 +306,10 @@ codeunit 90002 "Shopify Integration"
             if GetJsonvalue(ShippinglineObject, 'title').IsNull = false then begin
                 InterimSalesHeader."Web Shipment Method" := GetJsonToken(ShippinglineObject, 'title').AsValue().AsCode(); // NumOrderId
             end;
+        end;
+
+        if GetJsonvalue(HeaderObject, 'id').IsNull = false then begin
+            InterimSalesHeader."External Document No." := GetJsonToken(HeaderObject, 'id').AsValue().AsText();
         end;
 
         if GetJsonvalue(HeaderObject, 'created_at').IsNull = false then begin
@@ -291,8 +341,10 @@ codeunit 90002 "Shopify Integration"
         // end;
 
         if GetJsonvalue(OrderHeader, 'gateway').IsNull = false then begin
-            InterimSalesHeader."Payment Method" := GetJsonToken(OrderHeader, 'gateway').AsValue.AsCode();
+            if (GetJsonvalue(OrderHeader, 'gateway').AsText()) <> 'shopify_payments' then
+                InterimSalesHeader."Payment Method" := CopyStr(GetJsonToken(OrderHeader, 'gateway').AsValue.AsCode(), 1, 20);
         end;
+
 
         if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
             InterimSalesHeader."Email (Location)" := GetJsonToken(OrderHeader, 'email').AsValue.AsText();
@@ -328,14 +380,15 @@ codeunit 90002 "Shopify Integration"
         if ShippingAddr = true then begin
             If GetJsonvalue(ShippingAddress, 'address1').IsNull = false then begin
                 AddressLenght := StrLen(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText());
-                if AddressLenght > 50 then begin
-                    BigAddress := GetJsonToken(ShippingAddress, 'address1').AsValue().AsText();
-                    InterimSalesHeader.Address := CopyStr(BigAddress, 1, 50);
-                    InterimSalesHeader."Address 2" := CopyStr(BigAddress, 51, 50);
+                if AddressLenght > 100 then begin
+                    Clear(BigAddress);
+                    BigAddress := CopyStr(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText(), 1, 200);
+                    InterimSalesHeader.Address := CopyStr(BigAddress, 1, 100);
+                    InterimSalesHeader."Address 2" := CopyStr(BigAddress, 101, 100);
                 end else begin
-                    InterimSalesHeader.Validate(Address, GetJsonToken(ShippingAddress, 'address1').AsValue().AsText());
+                    InterimSalesHeader.Validate(Address, CopyStr(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText(), 1, 100));
                     If GetJsonvalue(ShippingAddress, 'address2').IsNull = false then begin
-                        InterimSalesHeader.Validate("Address 2", GetJsonvalue(ShippingAddress, 'address2').AsText());
+                        InterimSalesHeader.Validate("Address 2", CopyStr(GetJsonvalue(ShippingAddress, 'address2').AsText(), 1, 100));
                     end;
                 end;
             end;
@@ -343,6 +396,7 @@ codeunit 90002 "Shopify Integration"
 
         if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
             InterimSalesHeader."Buyer Email" := Copystr(GetJsonToken(OrderHeader, 'email').AsValue().AsText(), 1, 50);
+            InterimSalesHeader."Ship-to Email" := Copystr(GetJsonToken(OrderHeader, 'email').AsValue().AsText(), 1, 80);
         end;
         if ShippingAddr = true then begin
             if GetJsonvalue(ShippingAddress, 'address1').IsNull = false then begin
@@ -366,7 +420,7 @@ codeunit 90002 "Shopify Integration"
             end;
 
             if GetJsonvalue(ShippingAddress, 'phone').IsNull = false then begin
-                InterimSalesHeader."Ship-to Phone" := GetJsonToken(ShippingAddress, 'phone').AsValue().AsText();
+                InterimSalesHeader."Ship-to Phone" := CopyStr(GetJsonToken(ShippingAddress, 'phone').AsValue().AsText(), 1, 20);
             end;
 
             if GetJsonvalue(ShippingAddress, 'country').IsNull = false then begin
@@ -383,9 +437,105 @@ codeunit 90002 "Shopify Integration"
 
         // InterimSalesHeader.VALIDATE("Pickup Date", TODAY + 1);
         // InterimSalesHeader.VALIDATE("Pickup Time", 170000T);
-        InterimSalesHeader.VALIDATE("No. Of Parcels", 1);
+        //InterimSalesHeader.VALIDATE("No. Of Parcels", 1);
+
+        //Payment Details++
+        if WebOrderMgmt.CheckOrderNotExist(ChannelCode, ChannelOrderId) then begin
+            Clear(OrderId);
+            OrderId := GetJsonvalue(HeaderObject, 'id').AsCode();
+
+            if OrderId <> '' then begin
+                Sleep(2000);
+                JArray := GetPaymentDetails(OrderId);
+                if JArray.Count > 0 then begin
+                    i := JArray.Count;
+                    NoOfRecs := JArray.Count;
+                    for i := 0 to NoOfRecs - 1 do begin
+                        if JArray.Get(i, JToken) then begin
+
+                            PaymentObject := JToken.AsObject();
+                            PaymentDetails.Init();
+                            if PaymentDetails.FindLast() then
+                                PaymentDetails."Entry No" += 1
+                            else
+                                PaymentDetails."Entry No" := 1;
+                            PaymentDetails."Channel Code" := ChannelCode;
+                            PaymentDetails."Channel Order ID" := InterimSalesHeader."Channel Order ID";
+
+                            if PaymentObject.Contains('amount') then begin
+                                PaymentDetails.Amount := GetJsonvalue(PaymentObject, 'amount').AsDecimal();
+                            end
+                            else begin
+                                PaymentDetails.Amount := GetJsonvalue(OrderHeader, 'total_price').AsDecimal();
+                            end;
+
+                            if PaymentObject.Contains('id') then
+                                PaymentDetails."Transaction ID" := CopyStr(GetJsonvalue(PaymentObject, 'id').AsCode(), 1, 50);
+
+                            if PaymentObject.Contains('processed_at') then begin
+                                Clear(TransactionDate);
+                                TransactionDate := GenerateNewDate(GetJsonvalue(PaymentObject, 'processed_at').AsText());
+                                PaymentDetails."Transaction Date" := TransactionDate;
+                            end;
+
+                            if PaymentObject.Contains('gateway') then
+                                if (GetJsonvalue(PaymentObject, 'gateway').AsText()) = 'shopify_payments' then begin
+                                    PaymentDetails."Payment Method" := GetFromShipify(PaymentObject);
+                                    PaymentDetails."Gift Card" := false;
+                                end
+                                else
+                                    if (GetJsonvalue(PaymentObject, 'gateway').AsText()) = 'gift_card' then begin
+                                        PaymentDetails."Payment Method" := CopyStr(GetJsonvalue(PaymentObject, 'gateway').AsText(), 1, 10);
+                                        PaymentDetails."Gift Card" := true;
+                                    end
+                                    else begin
+                                        PaymentDetails."Payment Method" := CopyStr(GetJsonvalue(PaymentObject, 'gateway').AsText(), 1, 10);
+                                        PaymentDetails."Gift Card" := false;
+                                    end;
+                            if PaymentDetails."Payment Method" <> '' then
+                                PaymentDetails.Insert(true);
+                        end;
+                    end;
+                end;
+            end;
+        end;
+        //Payment Details--
+
+        if PaymentDetails.FindFirst() then
+            InterimSalesHeader."Payment Method" := PaymentDetails."Payment Method";
 
         InterimSalesHeader.Insert();
+    end;
+
+
+    //API Call To Retrieve Payment Details For Specific Order
+    local procedure GetPaymentDetails(P_OrderId: Code[50]): JsonArray
+    var
+        PaymentContent: HttpContent;
+        PaymentHeaders: HttpHeaders;
+        PaymentResponseMessage: HttpResponseMessage;
+        PaymentURL: Text;
+        PaymentClient: HttpClient;
+        responseText: Text;
+        JObject: JsonObject;
+        TransactionArray: JsonArray;
+        TransactionToken: JsonToken;
+        TransactionObject: JsonObject;
+    begin
+        PaymentHeaders := PaymentClient.DefaultRequestHeaders();
+        PaymentHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
+        PaymentContent.GetHeaders(PaymentHeaders);
+        Clear(PaymentURL);
+        PaymentURL := StrSubstNo('%1/orders/%2/transactions.json', ServiceURL, P_OrderId);
+
+        if PaymentClient.Get(PaymentURL, PaymentResponseMessage) then begin
+            if PaymentResponseMessage.HttpStatusCode = 200 then begin
+                PaymentResponseMessage.Content.ReadAs(responseText);
+                JObject.ReadFrom(responseText);
+                TransactionArray := GetJsonToken(JObject, 'transactions').AsArray();
+                exit(TransactionArray);
+            end;
+        end;
     end;
 
 
@@ -405,6 +555,8 @@ codeunit 90002 "Shopify Integration"
         DiscontCount: Integer;
         TotalItemQty: Integer;
         DisCountAmount: Decimal;
+        ItemWeight: Decimal;
+        GiftJsonToken: JsonToken;
     begin
         TotalItemQty := 0;
         ItemArray := GetJsonToken(jsonMainReq, 'line_items').AsArray();
@@ -412,6 +564,7 @@ codeunit 90002 "Shopify Integration"
         if cnt > 0 then begin
             P := 0;
             for k := 0 to cnt - 1 do begin
+
                 ItemArray.Get(k, WebLineToken);
                 LineObject := WebLineToken.AsObject;
                 InterimSalesLine."Document Type" := InterimSalesLine."Document Type"::Order;
@@ -423,6 +576,10 @@ codeunit 90002 "Shopify Integration"
                 if GetJsonvalue(LineObject, 'quantity').IsNull = false then begin
                     InterimSalesLine.Quantity := GetJsonvalue(LineObject, 'quantity').AsDecimal;
                     TotalItemQty := InterimSalesLine.Quantity + TotalItemQty;
+                end;
+
+                if GetJsonvalue(LineObject, 'id').IsNull = false then begin
+                    InterimSalesLine."Channel Identifier" := GetJsonvalue(LineObject, 'id').AsText();
                 end;
 
                 if GetJsonvalue(LineObject, 'product_id').IsNull = false then begin
@@ -467,8 +624,23 @@ codeunit 90002 "Shopify Integration"
                 if GetJsonvalue(LineObject, 'sku').IsNull = false then begin
                     InterimSalesLine."Channel SKU" := GetJsonvalue(LineObject, 'sku').AsCode;
                 end;
-                InterimSalesLine.Weight := 1;
+
+                Clear(ItemWeight);
+                if GetJsonvalue(LineObject, 'grams').IsNull = false then begin
+                    ItemWeight := GetJsonvalue(LineObject, 'grams').AsDecimal / 1000;
+                    InterimSalesLine.Weight := ItemWeight;
+                end;
+
+
+                if LineObject.Contains('gift_card') then
+                    if GetJsonvalue(LineObject, 'gift_card').AsBoolean() = true then
+                        InterimSalesLine."Gift Card" := true
+                    else
+                        InterimSalesLine."Gift Card" := false;
+
+                //InterimSalesLine.Weight := 1;
                 InterimSalesLine.Insert();
+
             End;
         end;
         InterimSalesHeader."No. of Items" := TotalItemQty;
@@ -515,7 +687,8 @@ codeunit 90002 "Shopify Integration"
         if TradePartner.Get(ChannelCode) then;
         GetCredentials(ChannelCode); //For Credentials
         HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         HttpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
         if NextURL = '' then begin
@@ -524,46 +697,57 @@ codeunit 90002 "Shopify Integration"
         if NextURL <> '' then begin
             URL := NextURL;
         end;
-        if HttpClient.Get(URL, HttpResponse) then begin
-            headerBool := Httpresponse.Headers().GetValues('Link', linkHeaderValue);
-            linkHeaderText := linkHeaderValue[1];
-            HttpResponse.Content.ReadAs(responseText);
-            jsonObject.ReadFrom(responseText);
-            Array := GetJsonToken(jsonObject, 'products').AsArray();
-            i := Array.Count;
-            NoOfRecs := Array.Count;
-            for i := 0 to NoOfRecs - 1 do begin
 
-                Array.Get(i, orderHeareToken);
-                orderheaderObject := orderHeareToken.AsObject;
-                GETSKU();
-                portalSku := GetJsonvalue(variantJsonobject, 'sku').AsCode();
-                Windows.OPEN(Text006 + ' @1@@@@@@@@@@@@@\' + portalSku + ' #3##########');
-                IF bool THEN BEGIN
-                    Count += 1;
-                    IF NoOfRecs <= 100 THEN
-                        Windows.UPDATE(1, (Count / NoOfRecs * 10000) DIV 1)
-                    ELSE
-                        IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
-                            Windows.UPDATE(1, (Count / NoOfRecs * 10000) DIV 1)
-                        END;
-                    Windows.UPDATE(3, FORMAT(ChannelItemListing."Channel Code"));
-                END;
-                //need to manage this code 
-                // SKU := SKU1;
-                //GETImages();
-                ChannelItemListing.RESET;
-                ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
-                ChannelItemListing.SetRange("ASIN No", GetJsonvalue(variantJsonobject, 'product_id').AsCode());
-                ChannelItemListing.SETRANGE("Channel SKU", GetJsonvalue(variantJsonobject, 'sku').AsCode());
-                IF ChannelItemListing.FINDFIRST THEN BEGIN
-                    UpdateProduct(FALSE, ChannelItemListing);
-                END
-                ELSE BEGIN
-                    CreateProduct(true, ChannelCode);
-                END;
+        IsError := false;
+        if HttpClient.Get(URL, HttpResponse) then begin
+            if Httpresponse.HttpStatusCode = 200 then begin
+                headerBool := Httpresponse.Headers().GetValues('Link', linkHeaderValue);
+                linkHeaderText := linkHeaderValue[1];
+                HttpResponse.Content.ReadAs(responseText);
+                jsonObject.ReadFrom(responseText);
+                Array := GetJsonToken(jsonObject, 'products').AsArray();
+                i := Array.Count;
+                NoOfRecs := Array.Count;
+                for i := 0 to NoOfRecs - 1 do begin
+
+                    Array.Get(i, orderHeareToken);
+                    orderheaderObject := orderHeareToken.AsObject;
+                    GETSKU();
+                    portalSku := GetJsonvalue(variantJsonobject, 'sku').AsCode();
+                    // Windows.OPEN(Text006 + ' @1@@@@@@@@@@@@@\' + portalSku + ' #3##########');
+                    // IF bool THEN BEGIN
+                    //     Count += 1;
+                    //     IF NoOfRecs <= 100 THEN
+                    //         Windows.UPDATE(1, (Count / NoOfRecs * 10000) DIV 1)
+                    //     ELSE
+                    //         IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                    //             Windows.UPDATE(1, (Count / NoOfRecs * 10000) DIV 1)
+                    //         END;
+                    //     Windows.UPDATE(3, FORMAT(ChannelItemListing."Channel Code"));
+                    // END;
+                    //need to manage this code 
+                    // SKU := SKU1;
+                    //GETImages();
+                    ChannelItemListing.RESET;
+                    ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
+                    ChannelItemListing.SetRange("ASIN No", GetJsonvalue(variantJsonobject, 'product_id').AsCode());
+                    ChannelItemListing.SETRANGE("Channel SKU", GetJsonvalue(variantJsonobject, 'sku').AsCode());
+                    IF ChannelItemListing.FINDFIRST THEN BEGIN
+                        UpdateProduct(FALSE, ChannelItemListing, ChannelCode);
+                    END
+                    ELSE BEGIN
+                        CreateProduct(true, ChannelCode);
+                    END;
+                end;
+            end
+            else begin
+                Httpresponse.Content.ReadAs(responseText);
+                Error(StrSubstNo('Status Code - "%1" and Error Message - %2', HttpResponse.HttpStatusCode, responseText));
             end;
-        END;
+        END
+        else begin
+            IsError := true;
+        end;
 
         //Windows.Close();
         //Next Page Code
@@ -607,13 +791,10 @@ codeunit 90002 "Shopify Integration"
         //     until ChannelItemListing.Next = 0;
         //     if bool then
         //         Windows.Close();
-        // end;
-
-
-        Message('Item Sync Completed...');
+        // end;                
     end;
 
-    local procedure UpdateProduct(bool: Boolean; ChannelItemListing: Record "Channel Item Listing")
+    local procedure UpdateProduct(bool: Boolean; ChannelItemListing: Record "Channel Item Listing"; ChannelCode: Code[10])
     var
         ItemName: Text;
         ItemDescription: Text;
@@ -628,7 +809,7 @@ codeunit 90002 "Shopify Integration"
         imagesArray: JsonArray;
     begin
         //CLEAR(ChannelItemListing);
-        ChannelItemListing.VALIDATE("Channel Code", 'SHOPIFY');
+        ChannelItemListing.VALIDATE("Channel Code", ChannelCode);
         /* if GetJsonvalue(variantJsonobject, 'sku').IsNull = false then begin
              ChannelItemListing."Channel SKU" := GetJsonToken(variantJsonobject, 'sku').AsValue().AsCode();
          end;*/
@@ -752,38 +933,59 @@ codeunit 90002 "Shopify Integration"
         res_getitemid: BigInteger;
         res_locationid: BigInteger;
         TradePartner: Record "Trade Partner";
+        Stock: Integer;
+        ItemRec: Record Item;
+        GeneralSetup: Record "General Setup - Channels";
     begin
-        setInventory(ChannelCode);
         GetCredentials(ChannelCode);
+        l := 0;
         ChannelItemListing.RESET;
         ChannelItemListing.SETRANGE("Channel Code", ChannelCode);
+        //ChannelItemListing.SetRange("Channel SKU", 'DTP001');
         ChannelItemListing.SETFILTER("Inventory Synced", '%1', FALSE);
-        HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
-        httpContent.GetHeaders(HttpHeaders);
-        HttpHeaders.Clear();
-        l := 0;
-        IF ChannelItemListing.FINDSET THEN BEGIN
+        ChannelItemListing.SetFilter("Item No.", '<>%1', '');
+        IF ChannelItemListing.FindSet() THEN BEGIN
             REPEAT
+                Clear(HttpHeaders);
+                Clear(HttpClient);
+                Clear(HttpResponse);
+                Clear(httpContent);
+
                 l := l + 1;
-                // ProductID := ChannelItemListing.EAN;
+
+                Clear(Stock);
+                ItemRec.Reset();
+                ItemRec.SetRange("No.", ChannelItemListing."Item No.");
+                ItemRec.SetRange("Production Item", true);
+                if ItemRec.FindFirst() then begin
+                    Clear(Stock);
+                    GeneralSetup.Get();
+                    Stock := GeneralSetup."Production Item Inventory";
+                end
+                else begin
+                    Clear(Stock);
+                    Stock := ChannelItemListing."Channel Inventory";
+                end;
+
+                Clear(ProductID);
                 ProductID := ChannelItemListing."ASIN No";
-                Windows.OPEN(Text006 + ' @1@@@@@@@@@@@@@\' + ProductID + '-' + format(l) + ' #3##########');
                 res_getitemid := GetInventoryItemID(ProductID);
                 if (res_getitemid <> 0) then begin
                     res_locationid := GetInventoryLocationID(res_getitemid);
                     if (res_locationid <> 0) then begin
-                        Sleep(3000);
-                        available := ChannelItemListing."Channel Inventory";
-                        TextRequest := StrSubstNo('{"location_id":%1,"inventory_item_id":%2,"available":%3}', res_locationid, res_getitemid, available);
+                        Sleep(1000);
+                        TextRequest := StrSubstNo('{"location_id":%1,"inventory_item_id":%2,"available":%3}', res_locationid, res_getitemid, Stock);
+
                         httpContent.WriteFrom(TextRequest);
                         HttpHeaders := HttpClient.DefaultRequestHeaders();
                         HttpHeaders.Clear();
-                        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+                        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
                         HttpContent.GetHeaders(HttpHeaders);
                         HttpHeaders.Clear();
                         HttpHeaders.Add('Content-Type', 'application/json');
-                        URL := StrSubstNo('%1/2019-07/inventory_levels/set.json', ServiceURL);
+
+                        //URL := StrSubstNo('%1/2019-07/inventory_levels/set.json', ServiceURL);
+                        URL := StrSubstNo('%1/inventory_levels/set.json', ServiceURL);
                         if HttpClient.Post(URL, httpContent, HttpResponse) then begin
                             HttpResponse.Content.ReadAs(responseText);
                             if (HttpResponse.HttpStatusCode = 200) then begin
@@ -793,7 +995,7 @@ codeunit 90002 "Shopify Integration"
                                 ChannelItemListing.Remarks := 'Inventory updated successfully';
                             end
                             else begin
-                                ChannelItemListing.Remarks := responseText;
+                                ChannelItemListing.Remarks := CopyStr(responseText, 1, 100);
                             end;
                         END;
                     end
@@ -805,10 +1007,12 @@ codeunit 90002 "Shopify Integration"
                     ChannelItemListing.Remarks := 'Error in Inventory ID generation for product ' + ProductID;
                 end;
                 ChannelItemListing.MODIFY;
+                Commit();
             UNTIL ChannelItemListing.NEXT = 0;
         END;
         Message('Inventory Update Complete');
     end;
+
 
     procedure GetInventoryItemID(Prodid: Code[20]): BigInteger
     var
@@ -829,12 +1033,14 @@ codeunit 90002 "Shopify Integration"
         k: Integer;
         Tradepartner: Record "Trade Partner";
     begin
-        Sleep(3000);
+        Sleep(1000);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         httpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
-        URL := StrSubstNo('%1/2020-07/products/' + Prodid + '.json', ServiceURL);
+        // URL := StrSubstNo('%1/2020-07/products/' + Prodid + '.json', ServiceURL);
+        URL := StrSubstNo('%1/products/' + Prodid + '.json', ServiceURL);
         if HttpClient.Get(URL, HttpResponse) then begin
             HttpResponse.Content.ReadAs(responseText);
             if (HttpResponse.HttpStatusCode = 200) then begin
@@ -877,12 +1083,14 @@ codeunit 90002 "Shopify Integration"
         i: Integer;
         Tradepartner: Record "Trade Partner";
     BEGIN
-        Sleep(3000);
+        Sleep(1000);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         httpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
-        URL := StrSubstNo('%1/2019-07/inventory_levels.json?inventory_item_ids=' + FORMAT(inventory_item_id), ServiceURL);
+        //URL := StrSubstNo('%1/2019-07/inventory_levels.json?inventory_item_ids=' + FORMAT(inventory_item_id), ServiceURL);
+        URL := StrSubstNo('%1/inventory_levels.json?inventory_item_ids=' + FORMAT(inventory_item_id), ServiceURL);
         if HttpClient.Get(URL, HttpResponse) then begin
             HttpResponse.Content.ReadAs(responseText);
             if (HttpResponse.HttpStatusCode = 200) then begin
@@ -1004,7 +1212,8 @@ codeunit 90002 "Shopify Integration"
         httpContent.WriteFrom(TextRequest);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
         HttpHeaders.Clear();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         HttpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
         HttpHeaders.Add('Content-Type', 'application/json');
@@ -1035,7 +1244,7 @@ codeunit 90002 "Shopify Integration"
 
         end
         else begin
-            RecChannelItemListing.Remarks := responseText;
+            RecChannelItemListing.Remarks := CopyStr(responseText, 1, 100);
         end;
         RecChannelItemListing.Modify();
     END;
@@ -1066,10 +1275,11 @@ codeunit 90002 "Shopify Integration"
         if TradePartner.Get(ChannelCode) then;
         GetCredentials(ChannelCode);
         HttpHeaders := HttpClient.DefaultRequestHeaders();
-        HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+        HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
         HttpContent.GetHeaders(HttpHeaders);
         HttpHeaders.Clear();
-        URL := 'https://2f973f9fb3fb5f7b51984e59bc2ffad2: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@milroys.myshopify.com/admin/api/2021-01/customers.json';
+        //URL := 'https://2f973f9fb3fb5f7b51984e59bc2ffad2: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@milroys.myshopify.com/admin/api/2021-01/customers.json';
         if HttpClient.Get(URL, Httpresponse) then begin
             Httpresponse.Content.ReadAs(responseText);
             Windows.Open(Text006 + ' @1@@@@@@@@@@@@@\' + InterimCustomer.FieldCaption("No.") + ' #3##########');
@@ -1230,11 +1440,12 @@ codeunit 90002 "Shopify Integration"
                 TextRequest := StrSubstNo('{"product":{"id":%1,"variants":[{"price":"%2"}]}}', ProductID, ProductPrice);
                 httpContent.WriteFrom(TextRequest);
                 HttpHeaders := HttpClient.DefaultRequestHeaders();
-                HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+                //HttpHeaders.Add('Authorization', CreateBasicAuth(AccessKeyId, SecretAccessKey));
+                HttpHeaders.Add('X-Shopify-Access-Token', AccessKeyId);
                 httpContent.GetHeaders(HttpHeaders);
                 HttpHeaders.Clear();
                 HttpHeaders.Add('Content-Type', 'application/json');
-                URL := StrSubstNo('%1/2021-01/products/' + ProductID + '.json', ServiceURL);
+                URL := StrSubstNo('%1/products/' + ProductID + '.json', ServiceURL);
                 if HttpClient.Put(URL, httpContent, HttpResponse) then begin
                     HttpResponse.Content.ReadAs(responseText);
                     if (HttpResponse.HttpStatusCode = 200) then begin
@@ -1288,11 +1499,362 @@ codeunit 90002 "Shopify Integration"
         END;
     end;
 
+    local procedure UpdateChannelItemListing(ChannelCode: Code[20])
     var
+        ChannelItemListing: Record "Channel Item Listing";
+        Item: Record Item;
+        ItemCategory: Record "Item Category";
+        TradePartner: Record "Trade Partner";
+        ItemQuery: Query ItemQuery;
+        AvailableInventory: Decimal;
+        BOMComponent: Record "BOM Component";
+        Counter: Integer;
+        LowestInventory: Decimal;
+        Rec_Item: Record Item;
+        GeneralSetup: Record "General Setup - Channels";
+    begin
+        GeneralSetup.Get();
+        if TradePartner.Get(ChannelCode) then;
+        ChannelItemListing.Reset();
+        ChannelItemListing.SetRange("Channel Code", ChannelCode);
+        ChannelItemListing.SetFilter("Item No.", '<>%1', '');
+        if ChannelItemListing.FindSet() then begin
+            repeat
+                if Item.Get(ChannelItemListing."Item No.") then begin
+                    if Item."Production Item" = true then begin
+                        ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
+                        ChannelItemListing."Inventory Synced" := false;
+                    end
+                    else begin
+                        ItemCategory.Reset();
+                        ItemCategory.SetRange(Code, Item."Item Category Code");
+                        if ItemCategory.FindFirst() then;
 
+                        if ItemCategory."Auto Assembly Order" = true then begin
+                            Counter := 0;
+                            Clear(LowestInventory);
+                            BOMComponent.Reset();
+                            BOMComponent.SetRange("Parent Item No.", ChannelItemListing."Item No.");
+                            BOMComponent.SetRange(Type, BOMComponent.Type::Item);
+                            if BOMComponent.FindSet() then begin
+                                repeat
+                                    if Rec_Item.Get(BOMComponent."No.") then begin
+                                        Clear(AvailableInventory);
+                                        CLEAR(ItemQuery);
+                                        ItemQuery.SETRANGE(ItemQuery.No, BOMComponent."No.");
+                                        ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
+                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+
+                                        ItemQuery.OPEN;
+                                        IF ItemQuery.READ THEN begin
+                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                        END;
+                                        ItemQuery.CLOSE;
+
+                                        if Counter = 0 then begin
+                                            LowestInventory := AvailableInventory;
+                                        end
+                                        else begin
+                                            if AvailableInventory < LowestInventory then
+                                                LowestInventory := AvailableInventory;
+                                        end;
+                                        Counter += 1;
+                                    end;
+                                until BOMComponent.Next() = 0;
+                            end;
+
+                            if LowestInventory <> ChannelItemListing."Channel Inventory" then begin
+                                if LowestInventory < 0 then begin
+                                    ChannelItemListing.Validate("Channel Inventory", 0);
+                                end
+                                else begin
+                                    ChannelItemListing.Validate("Channel Inventory", LowestInventory);
+                                end;
+                                ChannelItemListing."Inventory Synced" := false;
+                                ChannelItemListing."Modified On" := CurrentDateTime;
+                            end;
+                        end
+                        else begin
+                            Clear(AvailableInventory);
+                            CLEAR(ItemQuery);
+                            ItemQuery.SETRANGE(ItemQuery.No, ChannelItemListing."Item No.");
+                            ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
+                            ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+
+                            ItemQuery.OPEN;
+                            IF ItemQuery.READ THEN begin
+                                AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                            END;
+                            ItemQuery.CLOSE;
+
+                            if AvailableInventory <> ChannelItemListing."Channel Inventory" then begin
+                                if AvailableInventory < 0 then begin
+                                    ChannelItemListing.Validate("Channel Inventory", 0);
+                                end
+                                else begin
+                                    ChannelItemListing.Validate("Channel Inventory", AvailableInventory);
+                                end;
+                                ChannelItemListing."Inventory Synced" := false;
+                                ChannelItemListing."Modified On" := CurrentDateTime;
+                            end;
+                        end;
+                    end;
+                end
+                else begin
+                    ChannelItemListing.Remarks := 'Item Not Found ' + ChannelItemListing."Item No.";
+                    ChannelItemListing."Modified On" := CurrentDateTime;
+                end;
+
+                ChannelItemListing.Modify(true);
+                Commit();
+            until ChannelItemListing.Next() = 0;
+        end;
+    end;
+
+
+    procedure OrderFuflillment(ChannelCode: Code[10])
+    var
+        L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+        L_ShippingRule: Record "Shipping Rule";
+        CourierName: Code[10];
+        RequestBody: Text;
+        ItemBody: Text;
+        TrackingNoList: Text;
+        Client: HttpClient;
+        RequestMessage: HttpRequestMessage;
+        ResponseMessage: HttpResponseMessage;
+        Headers: HttpHeaders;
+        Content: HttpContent;
+        Response: Text;
+        URL: Text;
+    begin
+        L_HandledInterimSalesHeader.Reset();
+        L_HandledInterimSalesHeader.SetRange("Trade Partner Code", ChannelCode);
+        L_HandledInterimSalesHeader.SetFilter("FullFillment Status", '<>%1|%2', L_HandledInterimSalesHeader."FullFillment Status"::Fullfilled, L_HandledInterimSalesHeader."FullFillment Status"::Cancelled);
+        L_HandledInterimSalesHeader.SetRange("Document Type", L_HandledInterimSalesHeader."Document Type"::Order);
+        L_HandledInterimSalesHeader.SetFilter("Package Tracking No.", '<>%1', '');
+        L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
+        //L_HandledInterimSalesHeader.SetFilter("No.", '%1', 'WEB30028');
+        //L_HandledInterimSalesHeader.SetFilter("Channel Order ID", '%1', '#LHOME40626');
+        if L_HandledInterimSalesHeader.FindSet() then begin
+            repeat
+                ClearAll();
+                Clear(Headers);
+                Clear(Content);
+                Clear(Client);
+                Clear(CourierName);
+                Clear(ItemBody);
+                Clear(TrackingNoList);
+                L_HandledInterimSalesHeader.Remarks := '';
+                GetCredentials(ChannelCode);
+
+                if L_HandledInterimSalesHeader."Shipping Agent Code" <> '' then begin
+                    CourierName := L_HandledInterimSalesHeader."Shipping Agent Code";
+                end
+                else begin
+                    if L_HandledInterimSalesHeader."Web Shipment Method" <> '' then begin
+                        L_ShippingRule.Reset();
+                        L_ShippingRule.SetRange("Channel Code", Channelcode);
+                        L_ShippingRule.SetRange("Web Shipment Method", L_HandledInterimSalesHeader."Web Shipment Method");
+                        if L_ShippingRule.FindFirst() then begin
+                            CourierName := L_ShippingRule."Shipping Agent";
+                        end;
+                    end;
+                end;
+
+                ItemBody := GenerateItemBody(L_HandledInterimSalesHeader);
+                TrackingNoList := GetTrackingNumbers(L_HandledInterimSalesHeader);
+
+                RequestBody := StrSubstNo('{"fulfillment": {"location_id": %1,"tracking_numbers": [%2],"tracking_company": "%3",' +
+                                        '"line_items": [%4],"notify_customer": false}}', LocationId, TrackingNoList,
+                                        CourierName, ItemBody);
+
+                Content.WriteFrom(RequestBody);
+                Headers := Client.DefaultRequestHeaders();
+                Headers.Add('X-Shopify-Access-Token', AccessKeyId);
+                Content.GetHeaders(Headers);
+                Headers.Clear();
+                Headers.Add('Content-Type', 'application/json');
+
+                URL := StrSubstNo('%1/orders/%2/fulfillments.json', ServiceURL, L_HandledInterimSalesHeader."External Document No.");
+
+                if Client.Post(URL, Content, ResponseMessage) then begin
+                    ResponseMessage.Content.ReadAs(Response);
+                    if ResponseMessage.HttpStatusCode = 201 then begin
+                        L_HandledInterimSalesHeader.Validate("FullFillment Status", L_HandledInterimSalesHeader."FullFillment Status"::Fullfilled);
+                    end
+                    else begin
+                        if L_HandledInterimSalesHeader.Remarks <> '' then begin
+                            L_HandledInterimSalesHeader.Remarks := CopyStr(L_HandledInterimSalesHeader.Remarks + ' | ' + Response, 1, 250);
+                        end
+                        else begin
+                            L_HandledInterimSalesHeader.Remarks := CopyStr(Response, 1, 250);
+                        end;
+                    end;
+                end
+                else begin
+                    ResponseMessage.Content.ReadAs(Response);
+                    if L_HandledInterimSalesHeader.Remarks <> '' then begin
+                        L_HandledInterimSalesHeader.Remarks := CopyStr(L_HandledInterimSalesHeader.Remarks + ' | ' + Response, 1, 250);
+                    end
+                    else begin
+                        L_HandledInterimSalesHeader.Remarks := CopyStr(Response, 1, 250);
+                    end;
+                end;
+
+                L_HandledInterimSalesHeader.Modify(true);
+                Commit();
+            until L_HandledInterimSalesHeader.Next() = 0;
+        end;
+    end;
+
+
+    local procedure GenerateItemBody(var P_HandledInterimSalesHeader: Record "Handled Interim Sales Header"): Text
+    var
+        L_ItemBody: Text;
+        L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
+    begin
+        Clear(L_ItemBody);
+        L_HandledInterimSalesLine.Reset();
+        L_HandledInterimSalesLine.SetRange("Document Type", P_HandledInterimSalesHeader."Document Type");
+        L_HandledInterimSalesLine.SetRange("Document No", P_HandledInterimSalesHeader."No.");
+        L_HandledInterimSalesLine.SetRange(Type, L_HandledInterimSalesLine.Type::Item);
+        if L_HandledInterimSalesLine.FindSet() then begin
+            repeat
+                L_ItemBody += StrSubstNo('{"id": %1},', L_HandledInterimSalesLine."Channel Identifier");
+            //L_ItemBody += StrSubstNo('{"id": 12118085828822},');
+            until L_HandledInterimSalesLine.Next() = 0;
+            L_ItemBody := L_ItemBody.TrimEnd(',');
+        end;
+        exit(L_ItemBody);
+    end;
+
+
+    local procedure GetTrackingNumbers(var P_HandledInterimSalesHeader: Record "Handled Interim Sales Header"): Text
+    var
+        L_TrackingNumbers: Text;
+        ShipmentTracking: Record "Shipment Tracking";
+    begin
+        Clear(L_TrackingNumbers);
+        ShipmentTracking.Reset();
+        ShipmentTracking.SetRange("Document No.", P_HandledInterimSalesHeader."No.");
+        ShipmentTracking.SetRange("Document Type", P_HandledInterimSalesHeader."Document Type");
+        if ShipmentTracking.FindSet() then begin
+            repeat
+                L_TrackingNumbers += StrSubstNo('"%1",', ShipmentTracking."Tracking No.");
+            until ShipmentTracking.Next() = 0;
+            L_TrackingNumbers := L_TrackingNumbers.TrimEnd(',');
+        end
+        else begin
+            if P_HandledInterimSalesHeader."Package Tracking No." <> '' then
+                L_TrackingNumbers := StrSubstNo('"%1"', P_HandledInterimSalesHeader."Package Tracking No.");
+        end;
+        exit(L_TrackingNumbers);
+    end;
+
+
+    local procedure GenerateNewDate(Orderdate: Text): Date
+    var
+        Day: Integer;
+        Month: Integer;
+        Year: Integer;
+        Convertdate: Date;
+        Lenght: Integer;
+        ISh: Record "Interim Sales Header";
+    begin
+        if Orderdate <> '' then begin
+            Orderdate := Orderdate.Substring(1, 10);
+            Lenght := StrLen(Orderdate.Trim());
+            if Lenght > 0 then begin
+                if StrPos(Orderdate, '/') > 0 then begin
+                    Evaluate(Year, Orderdate.Split('/').Get(1));
+                    Evaluate(Month, Orderdate.Split('/').Get(2));
+                    Evaluate(Day, Orderdate.Split('/').Get(3));
+                    Convertdate := DMY2Date(Day, Month, Year);
+                end;
+                if StrPos(Orderdate, '-') > 0 then begin
+                    Evaluate(Year, Orderdate.Split('-').Get(1));
+                    Evaluate(Month, Orderdate.Split('-').Get(2));
+                    Evaluate(Day, Orderdate.Split('-').Get(3));
+                    Convertdate := DMY2Date(Day, Month, Year);
+                end;
+            end;
+        end;
+        exit(Convertdate);
+    end;
+
+
+    local procedure GetFromShipify(P_jObject: JsonObject): Text
+    var
+        JToken: JsonToken;
+        CopyToken: Text;
+        JArray: JsonArray;
+        JObject: JsonObject;
+    begin
+        Clear(JObject);
+        JObject := P_jObject;
+        if JObject.Get('receipt', JToken) then
+            if JToken.IsObject then begin
+                JToken.WriteTo(CopyToken);
+                JObject.ReadFrom(CopyToken);
+                if JObject.Get('charges', JToken) then begin
+                    if JToken.IsObject then begin
+                        JToken.WriteTo(CopyToken);
+                        JObject.ReadFrom(CopyToken);
+                        if JObject.Get('data', JToken) then
+                            if JToken.IsArray then begin
+                                JArray := JToken.AsArray();
+                                if JArray.Count > 0 then begin
+                                    JArray.Get(0, JToken);
+                                    JObject := JToken.AsObject();
+                                    if JObject.Get('payment_method_details', JToken) then
+                                        if JToken.IsObject then begin
+                                            JToken.WriteTo(CopyToken);
+                                            JObject.ReadFrom(CopyToken);
+                                            exit(CopyStr(GetJsonvalue(JObject, 'type').AsText(), 1, 10));
+                                        end;
+                                end;
+                            end;
+                    end;
+                    // end else begin
+                    //     if JObject.Get('error', JToken) then
+                    //         if JToken.IsObject then begin
+                    //             JToken.WriteTo(CopyToken);
+                    //             JObject.ReadFrom(CopyToken);
+                    //             if JObject.Get('payment_intent', JToken) then
+                    //                 if JToken.IsObject then begin
+                    //                     JToken.WriteTo(CopyToken);
+                    //                     JObject.ReadFrom(CopyToken);
+                    //                     if JObject.Get('charges', JToken) then
+                    //                         if JToken.IsObject then begin
+                    //                             JToken.WriteTo(CopyToken);
+                    //                             JObject.ReadFrom(CopyToken);
+                    //                             if JObject.Get('data', JToken) then
+                    //                                 if JToken.IsArray then begin
+                    //                                     JArray := JToken.AsArray();
+                    //                                     if JArray.Count > 0 then begin
+                    //                                         JArray.Get(0, JToken);
+                    //                                         JObject := JToken.AsObject();
+                    //                                         if JObject.Get('payment_method_details', JToken) then
+                    //                                             if JToken.IsObject then begin
+                    //                                                 JToken.WriteTo(CopyToken);
+                    //                                                 JObject.ReadFrom(CopyToken);
+                    //                                                 exit(CopyStr(GetJsonvalue(JObject, 'type').AsText(), 1, 10));
+                    //                                             end;
+                    //                                     end;
+                    //                                 end;
+                    //                         end;
+                    //                 end;
+                    //         end;
+                end;
+            end;
+    end;
+
+
+    var
         ShippingLinebool: Boolean;//Rohit
-        myInt: Integer;
         AccessKeyId: Text;
+        LocationId: Text;
         SecretAccessKey: text;
         OrderObject: JsonObject;
         JsonObjectInArray: JsonArray;
@@ -1302,13 +1864,10 @@ codeunit 90002 "Shopify Integration"
         OrderHeader: JsonObject;
         CustomerDetails: JsonObject;
         ShippinglineObject: JsonObject;
-
         totalshippingpricesetobject: JsonObject;
-
         totalshippingpricesetSubobject: JsonObject;
         G_ShippingPrice: Decimal;
         ServiceURL: Text;
-
         LastOrderSync: DateTime;
         //for Product
         variantJsonobject: JsonObject;
@@ -1316,7 +1875,6 @@ codeunit 90002 "Shopify Integration"
         Text006: Label 'Importing Items to Nav...';
         orderheaderObject: JsonObject;
         customerHeaderObject: JsonObject;
-        customerJsonObject: JsonObject;
         addressHeaderObject: JsonObject;
         bool: Boolean;
         Count: Integer;
@@ -1325,12 +1883,15 @@ codeunit 90002 "Shopify Integration"
         Shippingline: JsonArray;
         StartParameter: Text;
         RunType: Text;
-
         SyncOrderLabel: Label 'SyncOrder';
         SyncItemLabel: Label 'SyncItem';
         SyncInventoryLabel: Label 'UpdateInventory';
         imagesJsonobject: JsonObject;
         CustomerSyncLabel: Label 'CustomerSync';
         SyncPriceLabel: Label 'UpdatePrice';
+        SyncShipmentLabel: Label 'SyncShipment';
+        ChannelPartner: Record "Trade Partner";
+        IsError: Boolean;
+        TradePartner: Record "Trade Partner";
 
 }

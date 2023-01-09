@@ -68,6 +68,12 @@ page 90084 "Shipment Tracking"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("RAW Text"; Rec."RAW Text")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
 
             }
 
@@ -75,4 +81,41 @@ page 90084 "Shipment Tracking"
 
     }
 
+    actions
+    {
+        area(Processing)
+        {
+            action("Direct Printing Label")
+            {
+
+                ApplicationArea = All;
+                Caption = 'Label Print';
+                Image = Print;
+                PromotedCategory = Process;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+
+                trigger OnAction()
+                var
+                    HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+                    WebMgt: Codeunit "Web Order Mgt";
+                    ShippingAgent: Record "Shipping Agent";
+                    L_ShipmentTracking: Record "Shipment Tracking";
+                begin
+                    ShippingAgent.Reset();
+                    ShippingAgent.SetRange(Code, Rec."Shipping Agent Code");
+                    if ShippingAgent.FindFirst() then begin
+                        if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::RAW) then begin
+                            //RAW Printing Option Means it is For DPD EPL Label and PDF labels
+                            WebMgt.SendDirectPrintRequest(HandledInterimSalesHeader."No.", 90084, FORMAT(ShippingAgent."Printing Options")); // 90084 - DPD Label printer (RAW)
+                        end;
+                        if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::PDF) then begin
+                            WebMgt.SendDirectPrintRequest(HandledInterimSalesHeader."No.", 90081, FORMAT(ShippingAgent."Printing Options")); // 90081 - PDF Label Printer (Windows Driver)
+                        end;
+                    end;
+                end;
+            }
+        }
+    }
 }

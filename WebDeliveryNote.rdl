@@ -916,7 +916,6 @@
                                   </Paragraphs>
                                   <rd:DefaultName>Textbox63</rd:DefaultName>
                                   <Top>2.5667in</Top>
-                                  <Left>0in</Left>
                                   <Height>0.25in</Height>
                                   <Width>2.61747in</Width>
                                   <ZIndex>9</ZIndex>
@@ -970,7 +969,6 @@
                                       <Value>=Fields!A6_Label1.Value</Value>
                                       <MIMEType>image/bmp</MIMEType>
                                       <Sizing>FitProportional</Sizing>
-                                      <Top>0in</Top>
                                       <Left>0.85499in</Left>
                                       <Height>56mm</Height>
                                       <Width>76mm</Width>
@@ -1031,7 +1029,6 @@
                                       </Paragraphs>
                                       <rd:DefaultName>Textbox9</rd:DefaultName>
                                       <Top>2.25417in</Top>
-                                      <Left>0in</Left>
                                       <Height>0.25in</Height>
                                       <Width>0.82167in</Width>
                                       <ZIndex>2</ZIndex>
@@ -1043,11 +1040,22 @@
                                         <PaddingBottom>2pt</PaddingBottom>
                                       </Style>
                                     </Textbox>
-                                    <Image Name="Image9">
-                                      <Source>Database</Source>
-                                      <Value>=First(Fields!recTmpBlob1_Blob.Value, "DataSet_Result")</Value>
-                                      <MIMEType>image/bmp</MIMEType>
-                                      <Sizing>FitProportional</Sizing>
+                                    <Textbox Name="Textbox4">
+                                      <KeepTogether>true</KeepTogether>
+                                      <Paragraphs>
+                                        <Paragraph>
+                                          <TextRuns>
+                                            <TextRun>
+                                              <Value>=Fields!BarcodeText1.Value</Value>
+                                              <Style>
+                                                <FontFamily>IDAutomationC128S</FontFamily>
+                                              </Style>
+                                            </TextRun>
+                                          </TextRuns>
+                                          <Style />
+                                        </Paragraph>
+                                      </Paragraphs>
+                                      <rd:DefaultName>Textbox4</rd:DefaultName>
                                       <Top>3.10622cm</Top>
                                       <Left>10.2388cm</Left>
                                       <Height>0.78316cm</Height>
@@ -1057,11 +1065,15 @@
                                         <Border>
                                           <Style>None</Style>
                                         </Border>
+                                        <VerticalAlign>Middle</VerticalAlign>
+                                        <PaddingLeft>2pt</PaddingLeft>
+                                        <PaddingRight>2pt</PaddingRight>
+                                        <PaddingTop>2pt</PaddingTop>
+                                        <PaddingBottom>2pt</PaddingBottom>
                                       </Style>
-                                    </Image>
+                                    </Textbox>
                                   </ReportItems>
                                   <KeepTogether>true</KeepTogether>
-                                  <Top>0in</Top>
                                   <Left>1.3216in</Left>
                                   <Height>2.50417in</Height>
                                   <Width>5.33256in</Width>
@@ -1074,8 +1086,6 @@
                                 </Rectangle>
                               </ReportItems>
                               <KeepTogether>true</KeepTogether>
-                              <Top>0in</Top>
-                              <Left>0in</Left>
                               <Height>5.7874in</Height>
                               <Width>7.72575in</Width>
                               <Visibility>
@@ -1191,22 +1201,6 @@
                                           </TablixCell>
                                           <TablixCell>
                                             <CellContents>
-                                              <Image Name="Header_Barcode2">
-                                                <Source>Database</Source>
-                                                <Value>=First(Fields!recTmpBlob2.Value, "DataSet_Result")</Value>
-                                                <MIMEType>image/bmp</MIMEType>
-                                                <Sizing>FitProportional</Sizing>
-                                                <ZIndex>5</ZIndex>
-                                                <Style>
-                                                  <Border>
-                                                    <Style>None</Style>
-                                                  </Border>
-                                                </Style>
-                                              </Image>
-                                            </CellContents>
-                                          </TablixCell>
-                                          <TablixCell>
-                                            <CellContents>
                                               <Textbox Name="Textbox5">
                                                 <CanGrow>true</CanGrow>
                                                 <KeepTogether>true</KeepTogether>
@@ -1214,8 +1208,10 @@
                                                   <Paragraph>
                                                     <TextRuns>
                                                       <TextRun>
-                                                        <Value />
-                                                        <Style />
+                                                        <Value>=Fields!BarcodeText1.Value</Value>
+                                                        <Style>
+                                                          <FontFamily>IDAutomationC128S</FontFamily>
+                                                        </Style>
                                                       </TextRun>
                                                     </TextRuns>
                                                     <Style />
@@ -1236,11 +1232,48 @@
                                           </TablixCell>
                                           <TablixCell>
                                             <CellContents>
-                                              <Image Name="Image2">
+                                              <Textbox Name="Textbox40">
+                                                <CanGrow>true</CanGrow>
+                                                <KeepTogether>true</KeepTogether>
+                                                <Paragraphs>
+                                                  <Paragraph>
+                                                    <TextRuns>
+                                                      <TextRun>
+                                                        <Value />
+                                                        <Style>
+                                                          <FontSize>9pt</FontSize>
+                                                        </Style>
+                                                      </TextRun>
+                                                    </TextRuns>
+                                                    <Style />
+                                                  </Paragraph>
+                                                </Paragraphs>
+                                                <rd:DefaultName>Textbox40</rd:DefaultName>
+                                                <Style>
+                                                  <Border>
+                                                    <Style>None</Style>
+                                                  </Border>
+                                                  <TopBorder>
+                                                    <Color>Black</Color>
+                                                    <Style>None</Style>
+                                                    <Width>1pt</Width>
+                                                  </TopBorder>
+                                                  <PaddingLeft>2pt</PaddingLeft>
+                                                  <PaddingRight>2pt</PaddingRight>
+                                                  <PaddingTop>2pt</PaddingTop>
+                                                  <PaddingBottom>2pt</PaddingBottom>
+                                                </Style>
+                                              </Textbox>
+                                            </CellContents>
+                                          </TablixCell>
+                                          <TablixCell>
+                                            <CellContents>
+                                              <Image Name="Image4">
                                                 <Source>Database</Source>
-                                                <Value>=Fields!CompanyLogo.Value</Value>
+                                                <Value>=First(Fields!CompanyLogo.Value, "DataSet_Result")</Value>
                                                 <MIMEType>image/bmp</MIMEType>
-                                                <Sizing>FitProportional</Sizing>
+                                                <Sizing>Fit</Sizing>
+                                                <ZIndex>6</ZIndex>
                                                 <Style>
                                                   <Border>
                                                     <Style>None</Style>
@@ -1248,6 +1281,7 @@
                                                 </Style>
                                               </Image>
                                               <ColSpan>2</ColSpan>
+                                              <rd:Selected>true</rd:Selected>
                                             </CellContents>
                                           </TablixCell>
                                           <TablixCell />
@@ -2555,7 +2589,6 @@
                                   </TablixRowHierarchy>
                                   <KeepTogether>true</KeepTogether>
                                   <DataSetName>DataSet_Result</DataSetName>
-                                  <Top>0in</Top>
                                   <Left>0.00792cm</Left>
                                   <Height>1.84791in</Height>
                                   <Width>7.7175in</Width>
@@ -2612,8 +2645,6 @@
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <Top>0in</Top>
-            <Left>0in</Left>
             <Height>7.64311in</Height>
             <Width>7.72575in</Width>
             <Style>
@@ -2784,6 +2815,9 @@ p5l1CJ1LK04AAAAASUVORK5CYII=</ImageData>
         </Field>
         <Field Name="Flag">
           <DataField>Flag</DataField>
+        </Field>
+        <Field Name="BarcodeText1">
+          <DataField>BarcodeText1</DataField>
         </Field>
         <Field Name="DocumentNo_InterimSalesLine">
           <DataField>DocumentNo_InterimSalesLine</DataField>

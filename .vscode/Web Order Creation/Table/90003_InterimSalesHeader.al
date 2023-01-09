@@ -155,7 +155,7 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(36; "Payment Method"; code[20])
+        field(36; "Payment Method"; code[10])
         {
             TableRelation = "Payment Method".Code;
             DataClassification = ToBeClassified;
@@ -349,6 +349,11 @@ table 90003 "Interim Sales Header"
         {
             Description = 'Channel Integration';
         }
+        field(50019; "Total Order Item Amount"; Decimal)
+        {
+            Description = 'Channel Integration';
+        }
+
         field(50020; "Email (Location)"; Text[80])
         {
             ExtendedDatatype = EMail;
@@ -417,6 +422,8 @@ table 90003 "Interim Sales Header"
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = - Exist("Interim Sales Line" WHERE("Document Type" = FIELD("Document Type"), "Document No" = FIELD("No."), Reserved = FILTER(false)));
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Unused, we are using field no 50102';
         }
         field(50090; "User ID"; Code[50])
         {
@@ -460,11 +467,10 @@ table 90003 "Interim Sales Header"
         }
         field(50102; ReservedFlag; Boolean)
         {
-
+            Caption = 'Reserved';
         }
         field(50105; "Process Date"; date)
         {
-
         }
         field(50044; "Trolley No."; Code[20])
         {
@@ -485,8 +491,8 @@ table 90003 "Interim Sales Header"
         field(90021; "Shelf No."; Code[20])
         {
             Editable = false;
-            FieldClass = FlowField;
-            CalcFormula = lookup("Interim Sales Line"."Shelf No." where("Document Type" = field("Document Type"), "Document No" = field("No.")));
+            // FieldClass = FlowField;     // Irshad
+            // CalcFormula = lookup("Interim Sales Line"."Shelf No." where("Document Type" = field("Document Type"), "Document No" = field("No.")));    // Irshad
         }
 
         field(90022; "Order Discount Amount"; Decimal)
@@ -496,6 +502,71 @@ table 90003 "Interim Sales Header"
         field(90023; Reconciled; Boolean)
         {
             ObsoleteState = Removed;
+        }
+        field(90024; "Last Process Attempt"; DateTime)
+        {
+            ObsoleteState = Removed;
+        }
+        field(90026; "Last Process Attempt 2"; DateTime)
+        {
+        }
+        field(90027; "Fraud Check"; Boolean)  //Irshad 11052022
+        {
+        }
+        //Hermes Specific Fields US-8196++
+        field(90028; "Child Client ID"; Text[100])
+        {
+
+        }
+        field(90029; "Child Client Name"; Text[100])
+        {
+
+        }
+        //Hermes Specific Fields US-8196--
+
+        //Paarth D Dave - 8197-5 - Adding Assembly Order Exist Field ---- Start
+        field(90030; "Assembly Order Created"; Boolean)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Assembly Header" Where("Description 2" = field("Channel Order ID")));
+        }
+
+        field(90031; "Pstd. Assembly Order"; Boolean)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Posted Assembly Header" Where("Description 2" = field("Channel Order ID")));
+            Caption = 'Posted Assembly Order';
+        }
+
+        field(90032; "Assemply Order"; Boolean)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Interim Sales Line" where("Document No" = field("No."), "Auto Assembly Order" = filter(true)));
+        }
+        //Paarth D Dave - 8197-5 - Adding Assembly Order Exist Field ---- End 
+
+        field(90033; "Total No. of Items"; Integer)
+        {
+
+        }
+        //8862++
+        field(90034; "Customer Posting Group"; Code[20])
+        {
+
+        }
+        //8862--
+        field(90035; "Gift Card"; Boolean)
+        {
+        }
+        field(90036; "Gift Order Amount"; Decimal)
+        {
+        }
+        field(90037; "Order Status"; Text[250])
+        {
+            DataClassification = ToBeClassified;
         }
     }
 
@@ -660,9 +731,11 @@ table 90003 "Interim Sales Header"
     trigger OnDelete()
     var
         ShipmentTracking: Record "Shipment Tracking";
+        HandledInterimSalesHeader: Record "Handled Interim Sales Header";
     begin
 
         //code to delete web order line
+
         IntrimSalesLine.RESET;
         IntrimSalesLine.SetRange("Document Type", Rec."Document Type");
         IntrimSalesLine.SETRANGE("Document No", Rec."No.");
@@ -672,9 +745,15 @@ table 90003 "Interim Sales Header"
         ShipmentTracking.SetRange("Agent Shipment No.", "Channel Order ID");
         ShipmentTracking.DeleteAll(true);
 
-        ChannelMedia.Reset();
-        ChannelMedia.SetRange("Web Order No.", "Channel Order ID");
-        ChannelMedia.DeleteAll(true);
+        HandledInterimSalesHeader.Reset();
+        HandledInterimSalesHeader.SetRange("Channel Order ID", Rec."Channel Order ID");
+        if not HandledInterimSalesHeader.FindFirst() then begin
+            ChannelMedia.Reset();
+            ChannelMedia.SetRange("Web Order No.", Rec."No.");
+            ChannelMedia.SetRange("Channel Order ID", "Channel Order ID");//khan++
+            if ChannelMedia.FindSet() then
+                ChannelMedia.DeleteAll(true);
+        end;
 
         //code to delete error log
         ErrorLog.RESET;

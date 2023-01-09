@@ -1,5 +1,6 @@
 pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
 {
+
     actions
     {
         addafter(Release)
@@ -102,6 +103,220 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     end;
                 end;
             }
+            action("Web Order")
+            {
+                ApplicationArea = All;
+                Image = Web;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                trigger OnAction()
+                var
+                    InterimSalesHeader: Record "Interim Sales Header";
+                    HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+                    P_WebOrder: Page "Web Order Header";
+                    P_HnadledWebOrder: Page "Handle Web Order";
+                    SalesLine: Record "Sales Line";
+                begin
+                    SalesLine.Reset();
+                    SalesLine.SetRange("Document Type", SalesLine."Document Type"::Order);
+                    SalesLine.SetRange(Type, SalesLine.Type::Item);
+                    SalesLine.SetRange("Document No.", Rec."No.");
+                    if SalesLine.FindFirst() then begin
+                        InterimSalesHeader.Reset();
+                        InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
+                        InterimSalesHeader.SetRange("Channel Order ID", SalesLine."Channel Order ID");
+                        if InterimSalesHeader.FindFirst() then begin
+                            Clear(P_WebOrder);
+                            P_WebOrder.SetRecord(InterimSalesHeader);
+                            P_WebOrder.Run();
+                        end
+                        else begin
+                            HandledInterimSalesHeader.Reset();
+                            HandledInterimSalesHeader.SetRange("Channel Order ID", SalesLine."Channel Order ID");
+                            if HandledInterimSalesHeader.FindFirst() then begin
+                                Clear(P_HnadledWebOrder);
+                                P_HnadledWebOrder.SetRecord(HandledInterimSalesHeader);
+                                P_HnadledWebOrder.Run();
+                            end;
+                        end;
+                    end;
+                end;
+            }
+        }
+
+        modify(Release)
+        {
+            trigger OnAfterAction()
+            var
+                HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+            begin
+                HandledInterimSalesHeader.Reset();
+                HandledInterimSalesHeader.SetRange("No.", Rec."No.");
+                if HandledInterimSalesHeader.FindFirst() then begin
+                    if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Processing then
+                        UpdateHandledWebOrder(Rec);
+                end;
+            end;
         }
     }
+
+    local procedure UpdateHandledWebOrder(Rec: Record "Sales Header")
+    var
+        HandledInterimSalesLine: Record "Handled Interim Sales Line";
+        SalesLine: Record "Sales Line";
+        IsHandled: Boolean;
+    begin
+        OnBeforeUpdateHandledWebOrder(IsHandled);
+        if IsHandled then
+            exit;
+
+        SalesLine.Reset();
+        SalesLine.SetRange("Document Type", SalesLine."Document Type"::Order);
+        SalesLine.SetRange("Document No.", Rec."No.");
+        if SalesLine.FindSet() then begin
+            repeat
+                UpdateHandledInterimSalesLine(SalesLine);
+            until SalesLine.Next() = 0;
+            UpdateHandledInterimSalesHeader(SalesLine);
+        end;
+        OnAfterUpdateHandledWebOrder();
+    end;
+
+    local procedure UpdateHandledInterimSalesLine(var SalesLine: Record "Sales Line")
+    var
+        HandledInterimSalesLine: Record "Handled Interim Sales Line";
+        IsHandled: Boolean;
+    begin
+        OnBeforeUpdateHandledInterimSalesLine(SalesLine, IsHandled);
+        if IsHandled then
+            exit;
+
+        HandledInterimSalesLine.Reset();
+        HandledInterimSalesLine.SetRange("Document Type", HandledInterimSalesLine."Document Type"::Order);
+        HandledInterimSalesLine.SetRange("Document No", SalesLine."Document No.");
+        HandledInterimSalesLine.SetRange("Line No.", SalesLine."Line No.");
+        if HandledInterimSalesLine.FindFirst() then
+            ModifyAndInsertHandledInetrimSalesLine(HandledInterimSalesLine, SalesLine, false)
+        else
+            ModifyAndInsertHandledInetrimSalesLine(HandledInterimSalesLine, SalesLine, True);
+
+        OnAfterUpdateHandledInterimSalesLine(SalesLine);
+    end;
+
+    local procedure ModifyAndInsertHandledInetrimSalesLine(Var HandledInterimSalesLine: Record "Handled Interim Sales Line"; var SalesLine: Record "Sales Line"; arg: Boolean)
+    var
+        ChannelItemListing: Record "Channel Item Listing";
+    begin
+        if arg then begin
+            HandledInterimSalesLine.Init();
+            HandledInterimSalesLine."Document Type" := SalesLine."Document Type"::Order;
+            HandledInterimSalesLine."Document No" := SalesLine."Document No.";
+            HandledInterimSalesLine."Line No." := SalesLine."Line No.";
+        end;
+        HandledInterimSalesLine.Type := SalesLine.Type;
+        HandledInterimSalesLine."No." := SalesLine."No.";
+        HandledInterimSalesLine.Description := SalesLine.Description;
+        if HandledInterimSalesLine.Type = HandledInterimSalesLine.Type::Item then
+            HandledInterimSalesLine."Channel SKU" := GetChannelSKU(SalesLine."No.");
+        HandledInterimSalesLine."Location Code" := SalesLine."Location Code";
+        HandledInterimSalesLine.Quantity := SalesLine.Quantity;
+        HandledInterimSalesLine."Unit Price" := SalesLine."Unit Price";
+        HandledInterimSalesLine."Channel Price" := SalesLine."Unit Price";
+        HandledInterimSalesLine.Amount := SalesLine.Amount;
+        HandledInterimSalesLine."Amount Including VAT" := SalesLine."Amount Including VAT";
+        HandledInterimSalesLine."VAT amount" := SalesLine."Amount Including VAT" - SalesLine.Amount;
+        HandledInterimSalesLine.Discount := SalesLine."Line Discount Amount";
+        HandledInterimSalesLine."Discount %" := SalesLine."Line Discount %";
+        HandledInterimSalesLine."VAT Bus. Posting Group" := SalesLine."VAT Bus. Posting Group";
+        HandledInterimSalesLine."VAT Prod. Posting Group" := SalesLine."VAT Prod. Posting Group";
+        HandledInterimSalesLine."Channel Order ID" := SalesLine."Channel Order ID";
+        HandledInterimSalesLine."Trade Partner Code" := SalesLine."Channel Code";
+        HandledInterimSalesLine."Unit of Measure Code" := SalesLine."Unit of Measure Code";
+        HandledInterimSalesLine.Weight := SalesLine."Net Weight";
+        if arg then
+            HandledInterimSalesLine.Insert(true)
+        else
+            HandledInterimSalesLine.Modify(true);
+    end;
+
+    local procedure GetChannelSKU(No: Code[20]): Text[50]
+    var
+        ChannelItemListing: Record "Channel Item Listing";
+    begin
+        ChannelItemListing.Reset();
+        ChannelItemListing.SetRange("Item No.", No);
+        if ChannelItemListing.FindFirst() then
+            exit(ChannelItemListing."Channel SKU");
+    end;
+
+
+    procedure UpdateHandledInterimSalesHeader(SalesLine: Record "Sales Line")
+    var
+        HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+        HandledInterimSalesLine: Record "Handled Interim Sales Line";
+        OrderAmount: Decimal;
+        OrderDiscountAmount: Decimal;
+        TotalWeight: Decimal;
+        TotalNoOfItem: Integer;
+        NoOfItems: Integer;
+        GiftOrderAmount: Decimal;
+    begin
+        Clear(OrderAmount);
+        Clear(OrderDiscountAmount);
+        Clear(TotalWeight);
+        Clear(TotalNoOfItem);
+        Clear(NoOfItems);
+        Clear(GiftOrderAmount);
+        HandledInterimSalesHeader.Reset();
+        HandledInterimSalesHeader.SetRange("No.", SalesLine."Document No.");
+        if HandledInterimSalesHeader.FindFirst() then begin
+            HandledInterimSalesLine.Reset();
+            HandledInterimSalesLine.SetRange("Document No", HandledInterimSalesHeader."No.");
+            if HandledInterimSalesLine.FindSet() then
+                repeat
+                    if HandledInterimSalesLine."Amount Including VAT" > 0 then
+                        OrderAmount += HandledInterimSalesLine."Amount Including VAT";
+                    OrderDiscountAmount += HandledInterimSalesLine.Discount;
+                    TotalWeight += HandledInterimSalesLine.Weight * HandledInterimSalesLine.Quantity;
+
+                    if HandledInterimSalesLine.Type = HandledInterimSalesLine.Type::Item then begin
+                        TotalNoOfItem += HandledInterimSalesLine.Quantity;
+                        NoOfItems += 1;
+                    end;
+                    if (HandledInterimSalesLine.Type = HandledInterimSalesLine.Type::"G/L Account") And (HandledInterimSalesLine."Gift Card" = true) then begin
+                        GiftOrderAmount += HandledInterimSalesLine."Amount Including VAT";
+                    end;
+                // TotalNoOfItem += 1;
+                until HandledInterimSalesLine.Next() = 0;
+
+            HandledInterimSalesHeader."Order Amount" := OrderAmount;
+            HandledInterimSalesHeader."Order Discount Amount" := OrderDiscountAmount;
+            HandledInterimSalesHeader."Total No. of Items" := TotalNoOfItem;
+            HandledInterimSalesHeader."No. of Items" := NoOfItems;
+            HandledInterimSalesHeader."Total Weight" := TotalWeight;
+            HandledInterimSalesHeader."Gift Order Amount" := GiftOrderAmount;
+            HandledInterimSalesHeader.Modify(true);
+        end;
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeUpdateHandledWebOrder(var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterUpdateHandledWebOrder()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeUpdateHandledInterimSalesLine(var SalesLine: Record "Sales Line"; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterUpdateHandledInterimSalesLine(var SalesLine: Record "Sales Line")
+    begin
+    end;
 }

@@ -94,6 +94,16 @@ codeunit 90087 "Royal Mail"
         ShipperReference: Text;
         TokenDuration: Duration;
         NoOfHours: Decimal;
+        PackagesArray: JsonArray;
+        PackagesCount: Integer;
+        i: Integer;
+        PackageToken: JsonToken;
+        PackageObject: JsonObject;
+        TrackingNumber: Text[30];
+        Base64StringLabel: Text;
+        Base64ReturnLabel: Text;
+        CU_ShipmentTrackingInsertion: Codeunit "Shipment Tracking Insertion";
+        L_InterimSalesHeader: Record "Interim Sales Header";
         L_ShippingAgent: Record "Shipping Agent";
     begin
         ClearAll();
@@ -115,8 +125,9 @@ codeunit 90087 "Royal Mail"
             if L_ShippingAgent.FindFirst() then begin
                 if L_ShippingAgent.New_AuthDate <> 0DT then begin
                     TokenDuration := CreateDateTime(WorkDate, Time) - L_ShippingAgent.New_AuthDate;
-                    NoOfHours := Round(TokenDuration / 3600000, 3, '=');
-                    if NoOfHours > 3 then begin
+                    //NoOfHours := Round(TokenDuration / 3600000, 3, '=');
+                    NoOfHours := Round(TokenDuration / 3600000);
+                    if NoOfHours >= 3.9 then begin
                         AccessToken := CreateConsignment(Temp_SalesHeader);
                         L_ShippingAgent.Validate("Access Token", AccessToken);
                         L_ShippingAgent.Validate(New_AuthDate, CreateDateTime(WorkDate, Time));
@@ -156,7 +167,39 @@ codeunit 90087 "Royal Mail"
             if L_httpresponseMessage.HttpStatusCode = 200 then begin
                 L_httpresponseMessage.Content.ReadAs(L_response);
                 jObject.ReadFrom(L_response);
-                InsertInShipmentTracking(jObject, Temp_SalesHeader);
+
+                PackagesArray := GetJsonToken(jObject, 'Packages').AsArray();
+                PackagesCount := PackagesArray.Count;
+                if PackagesCount > 0 then begin
+                    for i := 0 to PackagesCount - 1 do begin
+                        PackagesArray.Get(i, PackageToken);
+                        PackageObject := PackageToken.AsObject();
+                        Clear(TrackingNumber);
+                        Clear(Base64StringLabel);
+                        Clear(Base64ReturnLabel);
+
+                        //Getting Tracking Number
+                        TrackingNumber := CopyStr(GetJsonvalue(PackageObject, 'TrackingNumber').AsText(), 1, 30);
+
+                        //Getting Label and Return Label
+                        Base64StringLabel := GetJsonvalue(jObject, 'LabelImages').AsText();
+                        Base64ReturnLabel := GetJsonvalue(jObject, 'ReturnLabelImages').AsText();
+
+                        if Temp_SalesHeader.FindFirst() then begin
+                            L_InterimSalesHeader.Reset();
+                            L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."No.");
+                            if L_InterimSalesHeader.FindFirst() then begin
+                                L_InterimSalesHeader.Validate("Package Tracking No.", TrackingNumber);
+                                L_InterimSalesHeader.Modify(true);
+                            end;
+                        end;
+
+                        //Calling Generic Shipment Tracking Insert Method
+                        CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64ReturnLabel, '', '', Temp_SalesHeader);
+                    end;
+                end;
+
+                //InsertInShipmentTracking(jObject, Temp_SalesHeader);  //Commented Shubham 11032022 (As Created Generic Codeunit)
             end
             else begin
                 L_httpresponseMessage.Content.ReadAs(L_response);

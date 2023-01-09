@@ -29,16 +29,9 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                 }
                 action("Despatch Scan")
                 {
-                    RunObject = page "Despatch Scan Screen";
+                    RunObject = page "New Despatch Scan";
                     ApplicationArea = all;
-                    Caption = 'B2C Dispatch Scan (WIP)';
-                    //Visible = ShowDespatchScanButton;
-                }
-                action("Dispatch Scan (WHS)")
-                {
-                    RunObject = page "Dispatch Scan (WHS)";
-                    ApplicationArea = all;
-                    Caption = 'B2C Dispatch Scan (WHS)';
+                    Caption = 'Dispatch Scan';
                     //Visible = ShowDespatchScanButton;
                 }
                 action("Ochannel Return Order")
@@ -83,14 +76,9 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                         RunObject = page "Scanned Entries";
                         ApplicationArea = all;
                     }
-                    action("Scanned Header Entries")
+                    action("Archived Scanned Entries")
                     {
-                        RunObject = page "Scanned Header Entries";
-                        ApplicationArea = all;
-                    }
-                    action("Archieved Scanned Entries")
-                    {
-                        RunObject = page "Archieved Scanned Entries";
+                        RunObject = page "Archived Scanned Entries";
                         ApplicationArea = all;
                     }
                 }
@@ -98,6 +86,7 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                 group(WebSalesInvoices)
                 {
                     Caption = 'Web Sales Invoice';
+                    Visible = false;
 
                     action(WebSalesInvoice)
                     {
@@ -118,6 +107,7 @@ pageextension 90098 ExtendNavigation extends "Whse. Worker WMS Role Center"
                 }
                 group(Payment)
                 {
+                    Visible = false;
                     Caption = 'Payment';
 
                     action("Payment Detail")

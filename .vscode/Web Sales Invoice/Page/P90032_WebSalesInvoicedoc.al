@@ -79,6 +79,11 @@ page 90032 "Web Sales Invoice"
                 field("Total Amt. to post"; Rec."Total Amt. to post")
                 {
                     ApplicationArea = All;
+                    Caption = 'Total Amt. to post(Ex. VAT)';
+                }
+                field("Total Amt. to post(Inl. VAT)"; Rec."Total Amt. to post(Inl. VAT)")
+                {
+                    ApplicationArea = All;
                 }
                 field("Total Invoice Discount"; Rec."Total Invoice Discount")
                 {
@@ -116,6 +121,7 @@ page 90032 "Web Sales Invoice"
                     salesin: Page "Sales Invoice";
                     ErrorLog: Record "Incoming/Outgoing Error Log";
                     errorlogpage: Page "Web Order Error Log";
+                    SalesInvoice: page "Sales Invoice";
                 begin
                     if not StockPost.CheckHeaderData(Rec."Web Sales Invoice No.")then begin
                       StockPost.ProcessItemJournalPosting(Rec."Web Sales Invoice No.");
@@ -189,6 +195,16 @@ page 90032 "Web Sales Invoice"
                     L_Posted.MoveWebInvoiceToPosted(Rec."Web Sales Invoice No.");
                 end;
             }
+            /*action(HaxValue)
+            {
+                ApplicationArea = All;                
+                trigger OnAction()
+                var
+                 StockPost: Codeunit "Post Stock and Invoice";
+                begin
+                 StockPost.TextToHex();       
+                end;
+            }*/
           }
           group(Prepare) 
           {
@@ -239,17 +255,17 @@ page 90032 "Web Sales Invoice"
                 ApplicationArea = Suite;
                 Caption = 'Show Web Orders';
                 Ellipsis = true;
-                Image = Shipment;
-
+                Image = Shipment;                
                 trigger OnAction()
                 var
                     L_HISH: Record "Handled Interim Sales Header";
+                    L_HandledHeaderPage: Page "Handled Web Order List";
                 begin
                     L_HISH.Reset();
                     L_HISH.SetRange("Invoice No.", Rec."Web Sales Invoice No.");
-                    If L_HISH.FindSet() then
-                        Page.Run(0, L_HISH);
-                end;
+                    L_HandledHeaderPage.SetTableView(L_HISH);
+                    L_HandledHeaderPage.Run();
+                end;  
             }
             action(WebOrderLines)
             {
@@ -261,11 +277,13 @@ page 90032 "Web Sales Invoice"
                 trigger OnAction()
                 var
                     L_HISL: Record "Handled Interim Sales Line";
+                    L_HandledLinePage: Page "Handled Web Order Line";
+                    
                 begin
                     L_HISL.Reset();
                     L_HISL.SetRange("Web Sales Invoice No.", Rec."Web Sales Invoice No.");
-                    If L_HISL.FindSet() then
-                        Page.Run(0, L_HISL);
+                    L_HandledLinePage.SetTableView(L_HISL);
+                    L_HandledLinePage.Run();
 
                 end;
             }

@@ -74,6 +74,10 @@ page 90031 "Web Sales Invoice SubForm"
                 {
                     ApplicationArea = All;
                 }
+                field("Stock Posted"; rec."Stock Posted")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

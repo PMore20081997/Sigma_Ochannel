@@ -27,6 +27,10 @@ page 90091 "Archive Channel Pay. Recon"
                     ApplicationArea = All;
 
                 }
+                field("Payment Type"; Rec."Payment Type")
+                {
+                    ApplicationArea = All;
+                }
                 field("External Document No."; Rec."External Document No.")
                 {
                     ApplicationArea = All;

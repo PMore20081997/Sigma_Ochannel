@@ -14,6 +14,10 @@ tableextension 90008 "Warehouse Activity Line Ext" extends "Warehouse Activity L
         {
 
         }
+        field(90004; "Channel Code"; Code[20])
+        {
+            Caption = 'Channel Code';
+        }
     }
 
     var

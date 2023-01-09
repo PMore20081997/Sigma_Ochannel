@@ -105,6 +105,28 @@ table 90088 "Shipping Rule"
         {
             DataClassification = ToBeClassified;
         }
+        field(17; "Weight"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        //US-8196++
+        field(18; "Child Client Id"; Text[100])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(19; "Child Client Name"; Text[100])
+        {
+            DataClassification = ToBeClassified;
+        }
+        //US-8196++
+        field(20; "Assign Bay"; Boolean)
+        {
+            DataClassification = CustomerContent;
+        }
+        field(21; "Starting Bay No. "; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys

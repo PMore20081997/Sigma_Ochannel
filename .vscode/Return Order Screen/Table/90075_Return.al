@@ -74,6 +74,24 @@ table 90075 "Interim Sales Return"
         {
             DataClassification = ToBeClassified;
         }
+        field(19; "Discount %"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(20; Type; Option)
+        {
+            OptionMembers = " ","G/L Account",Item,Resource,"Fixed Asset","Cross reference","Common Item No.";
+            DataClassification = ToBeClassified;
+            OptionCaptionML = ENU = ',G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.',
+            ENG = ' ,G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.';
+
+        }
+        //Azhar++
+        field(21; "Scanned Date"; DateTime)
+        {
+            DataClassification = ToBeClassified;
+        }
+        //Azhar--
     }
     keys
     {
@@ -81,9 +99,13 @@ table 90075 "Interim Sales Return"
         {
             Clustered = true;
         }
-        key(sk;"Trolley No.","Bay No.")
+        key(sk; "Trolley No.", "Bay No.")
         {
             SumIndexFields = "Quantity to Return";
+        }
+        key(key2; "Web Order No.")
+        {
+
         }
     }
 }

@@ -143,7 +143,30 @@ page 90018 "Web Order Line List"
                 {
                     ApplicationArea = All;
                 }
-
+                //Paarth D Dave - 8197-3 - Adding Assembly Order No. ---- Start
+                field("Assembly Order"; Rec."Auto Assembly Order")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Assembly Order';
+                }
+                field("Assembly Order No."; Rec."Assembly Order No.")
+                {
+                    Editable = false;
+                    ApplicationArea = ALl;
+                }
+                field("Posted Ass. Order No "; Rec."Pstd. Ass. Order No ")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Posted Ass. Order No.';
+                }
+                //Paarth D Dave - 8197-3 - Adding Assembly Order No. ---- End
+                field("Gift Card"; Rec."Gift Card")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the value of the Gift Card field.';
+                }
             }
         }
     }
@@ -173,6 +196,10 @@ page 90018 "Web Order Line List"
                 ApplicationArea = All;
                 RunObject = page "Web Order Header";
                 RunPageLink = "Document Type" = field("Document Type"), "No." = field("Document No");
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedOnly = true;
+                PromotedIsBig = true;
                 trigger OnAction()
                 begin
 
@@ -182,6 +209,11 @@ page 90018 "Web Order Line List"
             {
                 Image = RemoveLine;
                 ApplicationArea = All;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedOnly = true;
+                PromotedIsBig = true;
+                Visible = false;
 
                 trigger OnAction()
                 var

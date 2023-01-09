@@ -264,6 +264,8 @@ table 90001 "Trade Partner"
         field(50035; "Use Channel List Price"; Boolean)
         {
             DataClassification = ToBeClassified;
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Replaced with (channel Price) in General Setup Option field Price pick from';
         }
         field(50036; "Channel List Price"; Option)
         {
@@ -311,9 +313,11 @@ table 90001 "Trade Partner"
         //ContainersDetail++
         field(50044; "Incoming Orders Conatiner Name"; Text[250])
         {
+            Caption = 'Incoming Container 1 Name';
         }
         field(50045; "Incoming Orders Token"; Text[250])
         {
+            Caption = 'Incoming Container 1 Token';
         }
         field(50046; "API Endpoint"; Text[250])
         {
@@ -323,15 +327,19 @@ table 90001 "Trade Partner"
         }
         field(50048; "Status Conatiner Name"; Text[20])
         {
+            Caption = 'Incoming Container 2 Name';
         }
         field(50049; "Status Token"; Text[250])
         {
+            Caption = 'Incoming Container 2 Token';
         }
         field(50050; "Order Acknow. Conatiner Name"; Text[250])
         {
+            Caption = 'Outgoing Container Name';
         }
         field(50051; "Order Acknow. Token"; Text[250])
         {
+            Caption = 'Outgoing Container Token';
         }
         //ContainersDetail--
         field(50052; "Export Invoice"; Boolean)
@@ -353,7 +361,6 @@ table 90001 "Trade Partner"
 
             OptionMembers = None,Both,"Shipping Agent";
         }
-        //CAS-27945-M1R5J2.MH -->
         field(50056; "Post auto payment"; Boolean)
         {
             DataClassification = ToBeClassified;
@@ -362,7 +369,6 @@ table 90001 "Trade Partner"
         {
             TableRelation = "Bank Account";
         }
-        //CAS-27945-M1R5J2.MH <--
         field(50058; "Print Return Note"; Boolean)
         {
             DataClassification = ToBeClassified;
@@ -371,8 +377,42 @@ table 90001 "Trade Partner"
         {
 
         }
-    }
+        field(50060; "Last Date to Ex. Odr. fullfill"; Date)
+        {
 
+        }
+        field(50061; "Outgoing Container 2 Name"; Text[250])
+        {
+
+        }
+        field(50062; "Outgoing Container 2 Token"; Text[250])
+        {
+
+        }
+
+        field(50063; "Outgoing Container 3 Name"; Text[250])
+        {
+
+        }
+        field(50064; "Outgoing Container 3 Token"; Text[250])
+        {
+
+        }
+        field(50065; "Price Pick From"; Option)
+        {
+            OptionMembers = "Order Source","channel Price","Sales Price";
+            Caption = 'Price Pick From';
+
+        }
+        //Field For Specifying Which Credentials to Choose for DPD.
+        //True - Will use ILW/VISUALSOFT Credentials For DPD.
+        //False - Will Use SHOPIFY Credentials for DPD.
+        field(50067; "DPD Setup"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+
+    }
     keys
     {
         key(PK; Code)

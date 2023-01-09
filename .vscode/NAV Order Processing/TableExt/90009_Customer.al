@@ -2,27 +2,7 @@ tableextension 90009 CustomerAdd extends Customer
 {
     fields
     {
-        field(70194825; "Web Customer No."; Code[20])
-        {
-            DataClassification = ToBeClassified;
-            Caption = 'Web Customer No.';
-            ObsoleteState = Removed;
-            ObsoleteReason = 'Not In use';
-        }
-        field(70194826; "Customer type"; Option)
-        {
-            DataClassification = ToBeClassified;
-            OptionMembers = NAV,Web,Both;
-            OptionCaptionML = ENU = 'NAV,Web,Both', ENG = 'NAV,Web,Both';
-            ObsoleteState = Removed;
-            ObsoleteReason = 'Not In use';
-        }
-        field(70194827; "Company Reg. No."; Text[20])
-        {
-            CaptionML = ENU = 'Company Reg. No.';
-            ObsoleteState = Removed;
-            ObsoleteReason = 'Not In use';
-        }
+
         field(90000; "Payment Service Code"; Code[20])
         {
 

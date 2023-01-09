@@ -28,6 +28,19 @@ tableextension 90080 "Reg Whse. Activity Hdr" extends "Registered Whse. Activity
         {
             Caption = 'Trolley No.';
         }
+        field(50007; "Created Date"; Date)
+        {
+            Editable = false;
+        }
+
+        field(90002; Comments; Text[250])
+        {
+            Caption = 'Comments';
+            DataClassification = ToBeClassified;
+        }
         //Robosol Ochannel--
     }
+
+    var
+        cod: Codeunit "Create Pick";
 }

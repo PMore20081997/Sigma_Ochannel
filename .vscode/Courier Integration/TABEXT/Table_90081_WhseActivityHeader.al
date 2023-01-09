@@ -36,6 +36,42 @@ tableextension 90081 "Warehouse Activity Header Ext" extends "Warehouse Activity
         {
             Editable = false;
         }
+        field(50007; "Created Date"; Date)
+        {
+            Editable = false;
+        }
+        field(90002; Comments; Text[250])
+        {
+            Caption = 'Comments';
+            DataClassification = ToBeClassified;
+        }
+        field(90003; "No. of Take lines"; Integer)
+        {
+            FieldClass = FlowField;
+            CalcFormula = Count("Warehouse Activity Line" WHERE("Activity Type" = FIELD(Type),
+                                                                "Action Type" = filter(Take),
+                                                                 "No." = FIELD("No."),
+                                                                 "Source Type" = FIELD("Source Type Filter"),
+                                                                 "Source Subtype" = FIELD("Source Subtype Filter"),
+                                                                 "Source No." = FIELD("Source No. Filter"),
+                                                                 "Location Code" = FIELD("Location Filter")));
+            Editable = false;
+
+        }
+        field(90004; "Total Outstanding Qty"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Warehouse Activity Line"."Qty. Outstanding" WHERE("Activity Type" = FIELD(Type),
+                                                                "Action Type" = filter(Take),
+                                                                 "No." = FIELD("No."),
+                                                                 "Source Type" = FIELD("Source Type Filter"),
+                                                                 "Source Subtype" = FIELD("Source Subtype Filter"),
+                                                                 "Source No." = FIELD("Source No. Filter"),
+                                                                 "Location Code" = FIELD("Location Filter")));
+            Editable = false;
+            DecimalPlaces = 0 : 0;
+
+        }
         //Ochannel--
     }
 }

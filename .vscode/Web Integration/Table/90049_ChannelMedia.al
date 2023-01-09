@@ -70,6 +70,14 @@ table 90014 "Channel Media"
         {
 
         }
+        field(20; "Invoice No."; Code[20])
+        {
+
+        }
+        field(22; "Gift Card"; Boolean)
+        {
+
+        }
     }
 
     keys
@@ -77,7 +85,7 @@ table 90014 "Channel Media"
         key(Key1; "Entry No")
         {
         }
-        key(key2;"Payment Method")
+        key(key2; "Payment Method")
         {
         }
     }
@@ -115,7 +123,7 @@ table 90014 "Channel Media"
                 begin
                     ChannelMedia.Reset();
                     ChannelMedia.SetFilter("Channel Order ID", ChannelOrderId);
-                    ChannelMedia.SetRange("Channel Code", 'MAGENTO');
+                    //ChannelMedia.SetRange("Channel Code", 'MAGENTO');
                     If ChannelMedia.FindSet then begin
                         //PaymentDetails.Editable(false);
                         PaymentDetails.SetTableView(ChannelMedia);

@@ -66,6 +66,19 @@ tableextension 90083 "Shipping Agent Ext" extends "Shipping Agent"
             DataClassification = ToBeClassified;
             TableRelation = "G/L Account"."No.";
         }
+        field(50013; "Manifest"; Blob)
+        {
+            Subtype = Bitmap;
+            DataClassification = ToBeClassified;
+            Compressed = false;
+        }
+        //Field "Printing Options" is to Identify the Shipping Agent Based on Options While Direct Label Printing
+        //RAW - DPD, PDF - RM
+        field(50014; "Printing Options"; Option)
+        {
+            DataClassification = ToBeClassified;
+            OptionMembers = " ",RAW,PDF;
+        }
     }
 
 }

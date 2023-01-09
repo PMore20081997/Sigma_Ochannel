@@ -158,8 +158,26 @@ page 90016 "Trade Partner card"
                     ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
+                field("Outgoing Container 2 Name"; rec."Outgoing Container 2 Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Outgoing Container 2 Token"; rec."Outgoing Container 2 Token")
+                {
+                    ApplicationArea = All;
+                    ExtendedDatatype = Masked;
+                }
+                field("Outgoing Container 3 Name"; rec."Outgoing Container 3 Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Outgoing Container 3 Token"; rec."Outgoing Container 3 Token")
+                {
+                    ApplicationArea = All;
+                    ExtendedDatatype = Masked;
+                }
             }
-            //Sofyan--
+
             group(Authentication)
             {
                 Editable = InboxTypeAPI;
@@ -235,18 +253,6 @@ page 90016 "Trade Partner card"
 
                     end;
                 }
-                field(ProductCount; Rec."API Attribute")
-                {
-                    ApplicationArea = all;
-                    Caption = 'Product Count';
-                }
-                field(ProductPageCount; Rec."API Endpoint")
-                {
-                    ApplicationArea = all;
-                    Caption = 'Product Page Count';
-                }
-
-
             }
 
             group("Feature Setup")
@@ -288,6 +294,13 @@ page 90016 "Trade Partner card"
                     ApplicationArea = All;
                     Editable = Flag;
                 }
+                //DPD Setup Field For Specifying Which Credentials to Choose for DPD.
+                //True - Will use ILW/VISUALSOFT Credentials For DPD.
+                //False - Will Use SHOPIFY Credentials for DPD.
+                field("DPD Setup"; Rec."DPD Setup")
+                {
+                    ApplicationArea = All;
+                }
                 field("Order Acknowledgement Codeunit"; Rec."Order Acknowledgement Codeunit")
                 {
                     ApplicationArea = All;
@@ -313,6 +326,10 @@ page 90016 "Trade Partner card"
                     ApplicationArea = All;
                 }
                 field("Send Email To Customer"; Rec."Send Email To Customer")
+                {
+                    ApplicationArea = All;
+                }
+                field("Price Pick From"; Rec."Price Pick From")
                 {
                     ApplicationArea = All;
                 }
@@ -432,55 +449,16 @@ page 90016 "Trade Partner card"
     {
         area(Processing)
         {
-            action("Import Items In Channel")
-            {
-                Caption = 'Import Items In Channel';
-                Promoted = true;
-                PromotedCategory = Process;
-                Visible = false;
-                ApplicationArea = All;
-            }
-            action("Sync Item")
-            {
-                Caption = 'Sync Item';
-                Image = CreateInteraction;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                ApplicationArea = All;
-                //Enabled = Rec.SyncItem;
-
-                trigger OnAction()
-                var
-                    ItemChannelCode: Code[10];
-                    ChannelCode: Code[10];
-                    WooCommerce: Codeunit "Woo Commerce";
-                    TradePartner: Record "Trade Partner";
-                begin
-                    Clear(TradePartnerList);
-                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
-                        repeat
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncItem';
-                            JobQueueEntry.Insert;
-
-                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
-                            JobQueueEntry.Delete();
-                        until TradePartnerList.Next() = 0;
-                end;
-
-
-            }
             action("Sync Order")
             {
+                ApplicationArea = All;
                 Caption = '&Sync Order';
+                Enabled = Rec.SyncOrder;
                 Image = NewTransferOrder;
                 Promoted = true;
+                PromotedIsBig = true;
                 PromotedCategory = Process;
-                ApplicationArea = All;
-                Enabled = Rec.SyncOrder;
+                PromotedOnly = true;
 
                 trigger OnAction()
                 var
@@ -533,16 +511,106 @@ page 90016 "Trade Partner card"
                 end;
 
             }
-
-            action("Update Inventory")
+            action("Sync Shipment")
             {
-                Caption = '&Update Inventory';
-                Image = ItemGroup;
+                ApplicationArea = All;
+                Caption = 'Sync Shipment';
+                Enabled = Rec.SyncOrder;
+                Image = NewTransferOrder;
                 Promoted = true;
                 PromotedCategory = Process;
-                Visible = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+
+                trigger OnAction()
+                var
+                    Channelcode: Code[10];
+
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then
+                        repeat
+                            JobQueueEntry.Init;
+                            JobQueueEntry.ID := CreateGuid();
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncShipment';
+                            JobQueueEntry.Insert;
+
+                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);//NG_need_to_check
+                            JobQueueEntry.Delete();
+                        until TradePartnerList.Next() = 0;
+                end;
+
+            }
+            action("Sync Customer")
+            {
                 ApplicationArea = All;
+                Image = Intercompany;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                trigger OnAction()
+                var
+                    myInt: Integer;
+                    B2B: Codeunit B2B;
+                    TradePartner: Record "Trade Partner";
+                begin
+                    if TradePartnerList.FindSet() then
+                        repeat
+                            JobQueueEntry.Init;
+                            JobQueueEntry.ID := CreateGuid();
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';CustomerSync';
+                            JobQueueEntry.Insert;
+                            if TradePartnerList."Order Import Codeunit" <> 0 then begin
+                                Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
+                                JobQueueEntry.Delete();
+                            end;
+
+                        until TradePartnerList.Next() = 0;
+                end;
+            }
+            action("Sync Item")
+            {
+                ApplicationArea = All;
+                Caption = 'Sync Item';
+                Image = Intercompany;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+
+                trigger OnAction()
+                var
+                    ItemChannelCode: Code[10];
+                    ChannelCode: Code[10];
+                    WooCommerce: Codeunit "Woo Commerce";
+                    TradePartner: Record "Trade Partner";
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then
+                        repeat
+                            JobQueueEntry.Init;
+                            JobQueueEntry.ID := CreateGuid();
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncItem';
+                            JobQueueEntry.Insert;
+
+                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
+                            JobQueueEntry.Delete();
+                        until TradePartnerList.Next() = 0;
+                end;
+            }
+            action("Update Inventory")
+            {
+                ApplicationArea = All;
+                Caption = '&Update Inventory';
                 Enabled = Rec.SyncInventory;
+                Image = ItemGroup;
+                PromotedCategory = Process;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
                 trigger OnAction()
                 var
                     UpdateInventoryChannelCode: Code[10];
@@ -566,65 +634,18 @@ page 90016 "Trade Partner card"
 
             action("Update Price")
             {
+                ApplicationArea = All;
                 Caption = '&Update Price';
+                Enabled = Rec.SyncPrice; //Ps
+                PromotedCategory = Process;
                 Image = ItemGroup;
                 Promoted = true;
-                PromotedCategory = Process;
-                Visible = true;
-                Enabled = Rec.SyncPrice; //Ps
-                ApplicationArea = All;
-
+                PromotedIsBig = true;
+                PromotedOnly = true;
                 trigger OnAction()
                 var
                     UpdatePriceChannelCode: Code[10];
-                begin
-                    // IF TradePartnerList.Code = 'B2B' THEN BEGIN
-                    //     //   NopPriceUpdate.UpdatePrice();Ps
-                    //     TradePartnerList."Last Inventory Sync" := CREATEDATETIME(WORKDATE, TIME);
-                    //     TradePartnerList.MODIFY
-                    // END;
-
-                    // CLEAR(TradePartnerList);
-                    // CurrPage.SETSELECTIONFILTER(TradePartnerList);
-
-                    // IF TradePartnerList.FINDSET THEN REPEAT    //For Handling Multiple Tradepartner
-                    //                                            //IF TradePartnerList.FINDFIRST THEN
-                    //     BEGIN
-                    //         UpdatePriceChannelCode := COPYSTR(TradePartnerList.Code, 1, 6);
-                    //         //MESSAGE(FORMAT(UpdatePriceChannelCode));
-                    //         IF UpdatePriceChannelCode = 'AMAZON' THEN BEGIN
-                    //             AmazonIntegration.SetParameter(TradePartnerList.Code, 'Price', TradePartnerList.Domain);
-                    //             AmazonIntegration.RUN(JobQueueEntry);
-                    //             TradePartnerList."Last Order Sync" := CREATEDATETIME(WORKDATE, TIME);
-                    //             TradePartnerList.MODIFY;
-                    //         END;
-
-
-
-                    //     END;
-                    //     UNTIL TradePartnerList.NEXT = 0;
-
-
-
-
-                end;
-            }
-
-            action("Sync Shipment")
-            {
-                Caption = 'Sync Shipment';
-                Image = CreateInteraction;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                Visible = true;
-                ApplicationArea = All;
-                Enabled = Rec.SyncOrder;
-
-                trigger OnAction()
-                var
-                    Channelcode: Code[10];
-
+                    ChannelCode: code[20];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -632,25 +653,20 @@ page 90016 "Trade Partner card"
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncShipment';
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';UpdatePrice';
                             JobQueueEntry.Insert;
 
-                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);//NG_need_to_check
+                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
                 end;
-
             }
             action("Sync Location")
             {
                 Caption = 'Sync Location';
                 Image = CreateInteraction;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
                 Visible = false;
                 ApplicationArea = All;
-
                 trigger OnAction()
                 var
                     Channelcode: Code[10];
@@ -665,32 +681,50 @@ page 90016 "Trade Partner card"
                         //LinnWorks.GetLinnworksLocation();
                     end;
                 end;
-
             }
-            action("Sync Customer")
+            action("Export Invoices")
             {
+                Caption = 'Export Invoice';
                 ApplicationArea = All;
-                Image = Customer;
+                Image = Invoice;
                 trigger OnAction()
-                var
-                    myInt: Integer;
-                    B2B: Codeunit B2B;
-                    TradePartner: Record "Trade Partner";
+                Var
+                    EDIinvoice: Page "EDI Invoice";
+                    L_PSI: Record "Sales Invoice Header";
                 begin
-                    if TradePartnerList.FindSet() then
-                        repeat
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';CustomerSync';
-                            JobQueueEntry.Insert;
-                            if TradePartnerList."Order Import Codeunit" <> 0 then begin
-                                Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
-                                JobQueueEntry.Delete();
-                            end;
-
-                        until TradePartnerList.Next() = 0;
+                    Clear(EDIinvoice);
+                    L_PSI.Reset();
+                    L_PSI.SetRange("Bill-to Customer No.", Rec."Customer No.");
+                    L_PSI.SetRange(Export, false);
+                    EDIinvoice.SetTableView(L_PSI);
+                    EDIinvoice.RunModal();
                 end;
             }
+            action("Import Web Order")
+            {
+                Caption = 'Import Web Order';
+                ApplicationArea = All;
+                Image = Import;
+                trigger OnAction()
+                var
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then begin
+                        if TradePartnerList.Count = 1 then begin
+                            JobQueueEntry.Init;
+                            JobQueueEntry.ID := CreateGuid();
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';ImportOrder';
+                            JobQueueEntry.Insert;
+                            Codeunit.Run(90078, JobQueueEntry);
+                            JobQueueEntry.Delete();
+                        end else begin
+                            exit;
+                        end;
+                    end;
+                end;
+            }
+
         }
         area(Navigation)
         {
@@ -700,8 +734,8 @@ page 90016 "Trade Partner card"
                 Image = OrderList;
                 Promoted = true;
                 PromotedCategory = Category4;
+                PromotedOnly = true;
                 Visible = true;
-
                 ApplicationArea = All;
                 RunObject = page "Web Order List";
                 RunPageLink = "Trade Partner Code" = field(code);
@@ -721,6 +755,7 @@ page 90016 "Trade Partner card"
                 Image = OrderList;
                 Promoted = true;
                 PromotedCategory = Category4;
+                PromotedOnly = true;
                 Visible = true;
                 ApplicationArea = All;
                 RunObject = page "Web Order Line List";
@@ -742,9 +777,10 @@ page 90016 "Trade Partner card"
                 Image = Change;
                 Promoted = true;
                 PromotedCategory = Category4;
+                PromotedOnly = true;
                 Visible = true;
                 ApplicationArea = All;
-                RunObject = Page "Item Reference List";
+                RunObject = Page "Item Reference Entries";
                 RunPageView = WHERE("Reference Type" = FILTER(Customer));
                 RunPageLink = "Reference Type No." = FIELD("Customer No.");
 
@@ -758,14 +794,13 @@ page 90016 "Trade Partner card"
 
             }
 
-
-
             action("Handeled Orders")
             {
                 Caption = 'Handeled Orders';
                 Image = OrderList;
                 Promoted = true;
                 PromotedCategory = Category4;
+                PromotedOnly = true;
                 Visible = true;
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order List";
@@ -787,6 +822,7 @@ page 90016 "Trade Partner card"
                 Image = OrderList;
                 Promoted = true;
                 PromotedCategory = Category4;
+                PromotedOnly = true;
                 Visible = true;
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order Line";
@@ -801,35 +837,16 @@ page 90016 "Trade Partner card"
                 end;
 
             }
-            action("&Channel Browse Node")
+            action(WebPayment)
             {
-                ApplicationArea = Basic, Suite;
-                Caption = '&Channel Browse Node';
-                Image = NextSet;
+                Caption = 'Web Payment';
                 Promoted = true;
-                PromotedCategory = Process;
-                Visible = false;
-
-                trigger OnAction()
-                begin
-
-
-                end;
-            }
-            action("&Channel Attribute Attributes")
-            {
-                ApplicationArea = Basic, Suite;
-                Caption = '&Channel Attribute Attributes';
-                Image = Category;
-                Promoted = true;
-                PromotedCategory = Process;
-                Visible = false;
-
-                trigger OnAction()
-                begin
-
-
-                end;
+                PromotedCategory = Category4;
+                PromotedOnly = true;
+                Image = Payment;
+                RunObject = page "Web Payments";
+                RunPageLink = "Channel Code" = field(Code);
+                ApplicationArea = all;
             }
         }
         area(Reporting)
@@ -840,6 +857,7 @@ page 90016 "Trade Partner card"
                 Image = Print;
                 Promoted = true;
                 PromotedCategory = Category5;
+                PromotedOnly = true;
                 trigger OnAction()
                 var
                     L_TradePartner: Record "Trade Partner";

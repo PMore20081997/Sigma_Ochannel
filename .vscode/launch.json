@@ -9,11 +9,13 @@
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
-            "startupObjectType":"Table",
-            "startupObjectId": 90009,
+            "startupObjectType": "Page",
+            "startupObjectId": 22,
             "environmentType": "Sandbox",
-            "schemaUpdateMode":"ForceSync",
-            "environmentName": "ILoveWallpaper_Sandbox",
+            "schemaUpdateMode": "ForceSync",
+            //"environmentName": "UAT",
+            "environmentName": "PROD_RESTORE",
+            //"environmentName": "Demo",
             "tenant": "7bac1391-1bbb-46cf-ae0d-ad536338587c"
         }
     ]

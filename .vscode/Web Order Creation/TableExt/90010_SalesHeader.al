@@ -2,7 +2,11 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
 {
     fields
     {
+        field(90001; "Web Shipment Method"; Code[50])
+        {
+            DataClassification = ToBeClassified;
 
+        }
     }
 
     trigger OnDelete()

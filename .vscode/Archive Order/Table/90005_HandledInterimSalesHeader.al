@@ -24,12 +24,12 @@ table 90005 "Handled Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(5; Address; Text[50])
+        field(5; Address; Text[100])
         {
             DataClassification = ToBeClassified;
 
         }
-        field(6; "Address 2"; Text[50])
+        field(6; "Address 2"; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -69,12 +69,12 @@ table 90005 "Handled Interim Sales Header"
             DataClassification = ToBeClassified;
 
         }
-        field(15; "Ship-to Address"; Text[50])
+        field(15; "Ship-to Address"; Text[100])
         {
             DataClassification = ToBeClassified;
 
         }
-        field(16; "Ship-to Address 2"; Text[50])
+        field(16; "Ship-to Address 2"; Text[100])
         {
             DataClassification = ToBeClassified;
 
@@ -305,7 +305,15 @@ table 90005 "Handled Interim Sales Header"
         field(73; "Location Code"; Code[20])
         {
         }
-        field(74; "Ship to Address 3"; Text[50])
+        field(74; "Ship to Address 3"; Text[100])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(75; "Order Fullfilled"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(76; "Order Fullfillment Date"; Date)
         {
             DataClassification = ToBeClassified;
         }
@@ -313,12 +321,12 @@ table 90005 "Handled Interim Sales Header"
         {
             Description = 'Channel Integration';
         }
-        field(50011; "Pickup Address"; Text[50])
+        field(50011; "Pickup Address"; Text[100])
         {
             Description = 'Channel Integration';
 
         }
-        field(50012; "Pickup Address 2"; Text[50])
+        field(50012; "Pickup Address 2"; Text[100])
         {
             Description = 'Channel Integration';
         }
@@ -344,6 +352,10 @@ table 90005 "Handled Interim Sales Header"
             Description = 'Channel Integration';
         }
         field(50018; "Pickup Date"; Date)
+        {
+            Description = 'Channel Integration';
+        }
+        field(50019; "Total Order Item Amount"; Decimal)
         {
             Description = 'Channel Integration';
         }
@@ -520,6 +532,64 @@ table 90005 "Handled Interim Sales Header"
         field(90025; "Return Note Download"; Boolean)
         {
 
+        }
+        //Hermes Specific Fields US-8196++
+        field(90028; "Child Client ID"; Text[100])
+        {
+
+        }
+        field(90029; "Child Client Name"; Text[100])
+        {
+
+        }
+        //Hermes Specific Fields US-8196--
+
+        //Paarth D Dave - 8197-4  - Adding Posted Assembly Order No ---- Start
+        field(90030; "Assembly Order Created"; Boolean)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Assembly Header" Where("Description 2" = field("Channel Order ID")));
+        }
+
+
+        field(90031; "Pstd. Assembly Order"; Boolean)
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Posted Assembly Header" Where("Description 2" = field("Channel Order ID")));
+            Caption = 'Posted Assembly Order';
+        }
+
+        field(90032; "Assemply Order"; Boolean)
+        {
+            Caption = 'Assembly Order';
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = exist("Handled Interim Sales Line" where("Document No" = field("No."), "Auto Assembly Order" = filter(true)));
+        }
+
+        //Paarth D Dave - 8197-4  - Adding Posted Assembly Order No ---- End
+
+        field(90033; "Total No. of Items"; Integer)
+        {
+
+        }
+        //8862++
+        field(90034; "Customer Posting Group"; Code[20])
+        {
+
+        }
+        //8862--
+        field(90035; "Gift Card"; Boolean)
+        {
+        }
+        field(90036; "Gift Order Amount"; Decimal)
+        {
+        }
+        field(90037; "Order Status"; Text[250])
+        {
+            DataClassification = ToBeClassified;
         }
     }
 

@@ -1,17 +1,52 @@
 tableextension 90097 "Sales Line Extended" extends "Sales Line"
 {
-    trigger OnDelete()
-    var
-        InterimSalesLine: Record "Interim Sales Line";
-    begin
-        /*InterimSalesLine.Reset();
-        InterimSalesLine.SetRange("Destination Doc Type", InterimSalesLine."Destination Doc Type"::"Sales Order");
-        InterimSalesLine.SetRange("Destination Doc No.", Rec."Document No.");
-        InterimSalesLine.SetRange("Destination Doc. Line No", Rec."Line No.");
-        if InterimSalesLine.FindFirst() then begin
-            if InterimSalesLine.Status <> InterimSalesLine.Status::Cancelled then
-             / Error('Status must be cancelled in Web Order %1 for Item %2, Line No. %3', InterimSalesLine."Document No", InterimSalesLine."No.", InterimSalesLine."Destination Doc. Line No");
 
-        end;*/
+    fields
+    {
+        modify("No.")
+        {
+            trigger OnAfterValidate()
+            var
+                L_SalesLine: Record "Sales Line";
+            begin
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                L_SalesLine.SetRange("Document No.", Rec."Document No.");
+                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                if L_SalesLine.FindFirst() then begin
+                    if Rec."Channel Order ID" <> L_SalesLine."Channel Order ID" then
+                        Rec."Channel Order ID" := L_SalesLine."Channel Order ID";
+                    Rec."Channel Code" := L_SalesLine."Channel Code";
+                end;
+            end;
+        }
+        field(90000; "Scanned Date"; DateTime)
+        {
+
+        }
+        field(90001; "Channel Order ID"; Code[50])
+        {
+        }
+        field(90002; "Channel Code"; Code[20])
+        {
+        }
+
+    }
+
+
+    trigger OnBeforeDelete()
+    var
+        HISL: Record "Handled Interim Sales Line";
+    begin
+        if Rec.Type = Rec.Type::Item then begin
+            HISL.Reset();
+            HISL.SetRange("Document Type", HISL."Document Type"::Order);
+            HISL.SetRange(Type, HISL.Type::Item);
+            HISL.SetRange(HISL."Document No", Rec."Document No.");
+            HISL.SetRange(HISL."No.", Rec."No.");
+            if HISL.FindFirst() then begin
+                HISL.Delete(true);
+            end;
+        end;
     end;
 }

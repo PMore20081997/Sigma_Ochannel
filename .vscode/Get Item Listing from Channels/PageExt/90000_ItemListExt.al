@@ -3,6 +3,25 @@ pageextension 90000 ItemListExt extends "Item List"
     layout
     {
         // Add changes to page layout here
+        addlast(Control1)
+        {
+            field("W/H Inventory"; Rec."W/H Inventory")
+            {
+                DecimalPlaces = 0;
+                Caption = 'Available Inventory';
+                ApplicationArea = All;
+            }
+
+
+
+
+            // field("Available Inventory"; Rec."Available Inventory")
+            // {
+            //     DecimalPlaces = 0;
+            //     Caption = 'Available Inventory';
+            //     ApplicationArea = All;
+            // }
+        }
     }
 
     actions
@@ -55,7 +74,25 @@ pageextension 90000 ItemListExt extends "Item List"
                     // RESET;
                 end;
             }
+
         }
+        addafter(Orders)
+        {
+            action("PO Stock-Level")
+            {
+                ApplicationArea = All;
+                Image = Sales;
+                Promoted = true;
+                PromotedIsBig = true;
+
+                trigger OnAction()
+                var
+                begin
+                    Report.RunModal(90095, true, false, Rec);
+                end;
+            }
+        }
+
 
     }
 

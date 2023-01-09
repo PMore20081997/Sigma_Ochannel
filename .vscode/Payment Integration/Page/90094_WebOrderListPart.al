@@ -8,7 +8,7 @@ page 90094 "Web Order Detail"
     RefreshOnActivate = true;
     ModifyAllowed = false;
     SourceTable = "Handled Interim Sales Header";
-    SourceTableView = WHERE("Document Type" = CONST(Order), Reconciled = const(true));
+    SourceTableView = WHERE(Reconciled = const(true));
     InsertAllowed = false;
     layout
     {

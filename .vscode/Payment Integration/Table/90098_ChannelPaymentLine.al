@@ -125,7 +125,7 @@ table 90098 "Channel Payment Line"
         }
         field(22; Fees; Decimal)
         {
-            Editable = false;
+            //Editable = false;
         }
         field(23; "Journal Created"; Boolean)
         {
@@ -142,6 +142,19 @@ table 90098 "Channel Payment Line"
         field(26; "Discount Amount"; Decimal)
         {
 
+        }
+        field(27; "Payment Type"; Option)
+        {
+            OptionMembers = Payment,Refund;
+        }
+
+        field(28; IsError; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(29; Error; Text[100])
+        {
+            DataClassification = ToBeClassified;
         }
     }
     keys

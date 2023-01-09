@@ -131,7 +131,10 @@ page 90092 "Channel Pay. Reconciliation"
                 L_ChannelLine."Line No." += L_LineNo;
                 L_ChannelLine.Validate("Posting Date", PaymentDetail."Transaction Date");
                 L_ChannelLine.Validate("Document No.", PaymentDetail."Transaction No.");
-                L_ChannelLine.Validate("Document Type", L_ChannelLine."Document Type"::Payment);
+                if PaymentDetail."Payment Type" =  PaymentDetail."Payment Type"::Payment then
+                  L_ChannelLine.Validate("Document Type", L_ChannelLine."Document Type"::Payment)
+                else
+                  L_ChannelLine."Document Type" := L_ChannelLine."Document Type"::Refund;  
                 L_ChannelLine.Validate("External Document No.", PaymentDetail."Order No.");
                 L_ChannelLine.Validate("Account Type", L_ChannelLine."Account Type"::"Bank Account");
                 L_ChannelLine.Validate("Account No.", ChannelSetup."Bank Account No.");
@@ -153,19 +156,26 @@ page 90092 "Channel Pay. Reconciliation"
                 WebPayment.SetRange("Web Payment Method", PaymentDetail."Web Payment Method Code 2");
                 if WebPayment.FindFirst() then
                     L_ChannelLine."Payment Method Code" := WebPayment."NAV Payment Method 2";
-               
+
                 L_ChannelLine.Fees := PaymentDetail.Fees;
                 L_HISL.Reset();
-                L_HISL.SetRange("Document Type", L_HISL."Document Type"::Order);
+                if L_ChannelLine."Payment Type" = L_ChannelLine."Payment Type"::Payment then
+                  L_HISL.SetRange("Document Type", L_HISL."Document Type"::Order)
+                else
+                   L_HISL.SetRange("Document Type", L_HISL."Document Type"::"Return Order");
                 L_HISL.SetRange("Channel Order ID", L_ChannelLine."External Document No.");
                 if L_HISL.FindSet() then
                     repeat
                         L_ChannelLine."Order Amount (System)" += L_HISL."Amount Including VAT";//     Amount;
                     until L_HISL.Next() = 0;
-                L_HISH.Get(L_HISL."Document Type",L_HISL."Document No");   
+                L_HISH.Get(L_HISL."Document Type", L_HISL."Document No");
                 L_ChannelLine."Discount Amount" := L_HISH."Order Discount Amount"; 
-                L_ChannelLine.Diffrance := L_ChannelLine."Order Amount (System)" - L_ChannelLine."Discount Amount"  - (L_ChannelLine.Amount + abs(L_ChannelLine.Fees));
+                if L_ChannelLine."Payment Type" = L_ChannelLine."Payment Type"::Payment then               
+                  L_ChannelLine.Diffrance := L_ChannelLine."Order Amount (System)" - L_ChannelLine."Discount Amount" - (abs(L_ChannelLine.Amount) + abs(L_ChannelLine.Fees));
+                //else
+                //  L_ChannelLine.Diffrance := L_ChannelLine."Order Amount (System)" - L_ChannelLine."Discount Amount" + (abs(L_ChannelLine.Amount )+ abs(L_ChannelLine.Fees));  
                 L_ChannelLine."Channel Code" := PaymentDetail."Channel Code";
+                L_ChannelLine."Payment Type" := PaymentDetail."Payment Type";
                 L_ChannelLine.Insert(true);
                 PaymentDetail.Validate("Journal Created", true);
                 PaymentDetail.Modify(true);
@@ -187,8 +197,17 @@ page 90092 "Channel Pay. Reconciliation"
         Clear(L_Amount);
         Clear(updaterecon);
 
-        L_Amount := P_ChannelPaymentLine."Order Amount (System)";
+        if P_ChannelPaymentLine."Discount Amount" < 0 then
+            L_Amount := P_ChannelPaymentLine."Order Amount (System)" + P_ChannelPaymentLine."Discount Amount"
+        else
+            if P_ChannelPaymentLine."Discount Amount" > 0 then
+                L_Amount := P_ChannelPaymentLine."Order Amount (System)" - P_ChannelPaymentLine."Discount Amount"
+            else
+                if P_ChannelPaymentLine."Discount Amount" = 0 then
+                    L_Amount := P_ChannelPaymentLine."Order Amount (System)";
+
         L_PaymentDetail.Reset();
+        L_PaymentDetail.SetRange("Payment Type",P_ChannelPaymentLine."Payment Type");
         L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
         if L_PaymentDetail.FindFirst() then
             repeat
@@ -197,31 +216,42 @@ page 90092 "Channel Pay. Reconciliation"
 
 
 
-        if L_Amount = P_ChannelPaymentLine.Amount + abs(L_fees) then
+        if L_Amount = ABS(P_ChannelPaymentLine.Amount) + abs(L_fees) then
             updaterecon := true
         else
             if calledfrom = 1 then
                 updaterecon := true;
 
         if updaterecon then begin
-            P_ChannelPaymentLine.Validate(Reconciled, true);
-            P_ChannelPaymentLine.Modify(true);
-            L_PaymentDetail.Reset();
-            L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
-            L_PaymentDetail.SetRange("Journal Created", true);
-            L_PaymentDetail.SetRange(Reconciled, false);
-            if L_PaymentDetail.FindFirst() then
-                repeat
-                    L_PaymentDetail.Reconciled := true;
-                    L_PaymentDetail.Modify(true);
-                until L_PaymentDetail.Next() = 0;
             L_HISH.Reset();
-            L_HISH.SetRange("Document Type", L_HISH."Document Type"::Order);
+            if P_ChannelPaymentLine."Payment Type" = P_ChannelPaymentLine."Payment Type"::Payment then
+                L_HISH.SetRange("Document Type", L_HISH."Document Type"::Order)
+            else
+                L_HISH.SetRange("Document Type", L_HISH."Document Type"::"Return Order");
             L_HISH.SetRange("Channel Order ID", P_ChannelPaymentLine."External Document No.");
             if L_HISH.FindFirst() then begin
+              IF NOT L_HISH.Reconciled then begin  
                 L_HISH.Validate(Reconciled, true);
                 L_HISH.Modify(true);
-            end;
+            
+                P_ChannelPaymentLine.Validate(Reconciled, true);
+                P_ChannelPaymentLine.Modify(true);
+                
+                L_PaymentDetail.Reset();
+                L_PaymentDetail.SetRange("Payment Type",P_ChannelPaymentLine."Payment Type");
+                L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
+                L_PaymentDetail.SetRange("Journal Created", true);
+                L_PaymentDetail.SetRange(Reconciled, false);
+                if L_PaymentDetail.FindFirst() then repeat
+                  L_PaymentDetail.Reconciled := true;
+                  L_PaymentDetail.Modify(true);
+                until L_PaymentDetail.Next() = 0;
+              end else begin
+                P_ChannelPaymentLine.IsError := true;
+                P_ChannelPaymentLine.Error := StrSubstNo('Order %1 already reconciled',P_ChannelPaymentLine."External Document No.");
+                P_ChannelPaymentLine.Modify(true);   
+              end;
+            end;    
         end else begin
             L_Amount := L_Amount - P_ChannelPaymentLine.Amount;
 
@@ -234,8 +264,7 @@ page 90092 "Channel Pay. Reconciliation"
                 if L_HISH.FindFirst() then begin
                     //L_ISH.Validate(Reconciled, true);
                     L_HISH.Modify(true);
-                end;
-                L_PaymentDetail.Reset();
+                    L_PaymentDetail.Reset();
                 L_PaymentDetail.SetRange("Order No.", P_ChannelPaymentLine."External Document No.");
                 L_PaymentDetail.SetRange("Journal Created", true);
                 L_PaymentDetail.SetRange(Reconciled, true);
@@ -244,6 +273,8 @@ page 90092 "Channel Pay. Reconciliation"
                         L_PaymentDetail.Reconciled := true;
                         L_PaymentDetail.Modify(true);
                     until L_PaymentDetail.Next() = 0;
+                end;
+                
             end;
             //ThresholdValue--
         end;

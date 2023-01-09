@@ -2,19 +2,6 @@ pageextension 90085 "Posted Whse. Rcpt Card" extends "Registered Pick"
 {
     layout
     {
-        addafter("No. Printed")
-        {
-            field("Trolley No."; Rec."Trolley No.")
-            {
-                ApplicationArea = All;
-                Editable = false;
-            }
-            field("Trolley Closed"; Rec."Trolley Closed")
-            {
-                ApplicationArea = All;
-                Editable = false;
-            }
-        }
         addafter("Registering Date")
         {
             field("No. of Boxes"; Rec."No. of Boxes")
@@ -32,6 +19,34 @@ pageextension 90085 "Posted Whse. Rcpt Card" extends "Registered Pick"
             field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
             {
                 ApplicationArea = All;
+            }
+        }
+        addlast(General)
+        {
+            field("Trolley No."; Rec."Trolley No.")
+            {
+                ApplicationArea = All;
+            }
+            field("Trolley Closed"; Rec."Trolley Closed")
+            {
+                ApplicationArea = All;
+            }
+            field(SystemCreatedAt; Rec.SystemCreatedAt)
+            {
+                ApplicationArea = All;
+            }
+            field(CreateBy; GetUser(Rec.SystemCreatedBy))
+            {
+                Caption = 'Created By';
+                ApplicationArea = All;
+            }
+        }
+        addbefore(WhseActivityLines)
+        {
+            field(Comments; Rec.Comments)
+            {
+                ApplicationArea = all;
+                Editable = false;
             }
         }
     }
@@ -110,4 +125,13 @@ pageextension 90085 "Posted Whse. Rcpt Card" extends "Registered Pick"
             }
         }
     }
+    procedure GetUser(UserGUID: Guid): Text
+    var
+        User: Record User;
+    begin
+        User.Reset();
+        User.SetRange("User Security ID", UserGUID);
+        if User.FindFirst() then
+            exit(User."Full Name");
+    end;
 }

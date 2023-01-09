@@ -1,11 +1,13 @@
 page 90090 "Archive Payment Detail"
 {
     PageType = List;
-    ApplicationArea = All;
+    ApplicationArea = All;   // // Irshad -Payment Integrations ?? 1496
     UsageCategory = Lists;
     SourceTable = "Archive Payment Detail";
     Editable = false;
     Caption = 'Archive Payment Details';
+
+
     layout
     {
         area(Content)
@@ -17,6 +19,10 @@ page 90090 "Archive Payment Detail"
                     ApplicationArea = All;
                 }
                 field("Order No."; Rec."Order No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Payment Type"; Rec."Payment Type")
                 {
                     ApplicationArea = All;
                 }

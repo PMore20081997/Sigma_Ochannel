@@ -17,7 +17,8 @@ report 90000 "Process Web Orders"
                                           "Destination Doc No." = filter(''),
                                            Status = FILTER("In Progress"),
                                           "No of Error" = CONST(0),
-                 "Tracking No." = FILTER(<> '')
+                                          "Fraud Check" = const(false)
+                // "Tracking No." = FILTER(<> '')
                 );//Sofyan
                 RequestFilterFields = "No.", "Document Date", "Shipping Agent Code", "Shipping Agent Service Code";//"Sell-to Customer No.", "Ship-to Country/Region Code", ; //, "Prime Order", "Premium Order"
 
@@ -50,6 +51,7 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
                             END;
                         "Trade Partner"."Process Order Type"::"Single Order":
@@ -62,7 +64,9 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
+
                             END;
                         "Trade Partner"."Process Order Type"::"Consolidate Order":
                             BEGIN
@@ -81,10 +85,13 @@ report 90000 "Process Web Orders"
                                 END ELSE BEGIN
                                     // InsertIntoTempHeader(InterimSH."Sales Order No.");
                                     LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                                 END;
 
                             END;
+
                     END;
+
 
                     CurrRec += 1;
                     IF NoOfRecs <= 100 THEN
@@ -102,13 +109,17 @@ report 90000 "Process Web Orders"
                             //UpdatePreviousOrderLines("Trade Partner");code is blocked by AK as this code is not is use
                         END;
                     END;
-
+                    // InterimsalesHeader.DeleteAll();
+                    // if InterimSH."Channel Order ID" <> '' then begin
+                    //     InterimsalesHeader."Channel Order ID" += '|' + InterimSH."Channel Order ID";
+                    // end;
                 end;
 
                 trigger OnPostDataItem()
                 var
                     TradePartner: Record "Trade Partner";
-                    JobQueueEntry: Record "Job Queue Entry";
+                    JobQueueEntry: Record "Job Queue Entry" temporary;
+                    OrderAck: Codeunit "Order Acknowledgement";
                 begin
                     TradePartner.Reset();
                     TradePartner.SetRange(Code, "Trade Partner".Code);
@@ -120,6 +131,7 @@ report 90000 "Process Web Orders"
                             JobQueueEntry.Insert;
 
                             Codeunit.Run(TradePartner."Order Acknowledgement Codeunit", JobQueueEntry);
+                            //OrderAck.OrderAckConvertText(InterimsalesHeader."Channel Order ID");
                             JobQueueEntry.Delete();
                         end;
                 end;
@@ -131,49 +143,95 @@ report 90000 "Process Web Orders"
                     L_Qty: Decimal;
                     CheckQty: Decimal;
                 begin
-
-                    Window.OPEN('Processing Internal Pick... @1@@@@@@@@@@');
-                    case NoOfItems of
-                        //IF NoOfItems = NoOfItems::Single THEN 
-                        NoOfItems::Single:
-                            begin
-                                InterimSH.SETFILTER("No. of Items", '%1', 1);
-                                InterimSH.CalcFields("Shelf No.");
-                                InterimSH.SetCurrentKey("Shelf No.");
-                                InterimSH.SetAscending("Shelf No.", true);
-                                //  InterimSH.SetFilter("Shelf No.", '<>%1', '');
-                            end;
-
-                        NoOfItems::Multiple:
-                            //IF NoOfItems = NoOfItems::Multiple THEN 
-                            begin
-                                InterimSH.SETFILTER("No. of Items", '>%1', 1);
-                                Clear(G_TotalQty);
-                                G_TotalQty := GetTotalQtyInWebOrder(InterimSH);
-                            end;
-                    end;
-
+                    L_OchannelGenSetup.Get();
                     if "Trade Partner"."Tracking No Valid. Required" then
                         InterimSH.SetFilter("Tracking No.", '<>%1', '');
-                    NoOfRecs := InterimSH.COUNT;
 
+                    //code to filter reserved order only if allocate web order feature is enable                    
+                    if L_OchannelGenSetup."Allocate Web Orders" then
+                        InterimSH.SetRange(ReservedFlag, true);
+
+                    Window.OPEN('Processing... @1@@@@@@@@@@');
+                    if "Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick" then begin
+
+                        case NoOfItems of
+
+                            NoOfItems::Single:
+                                begin
+                                    InterimSH.SETFILTER("No. of Items", '%1', 1);
+                                    // InterimSH.CalcFields("Shelf No.");       // Irshad
+                                    InterimSH.SetCurrentKey("Shelf No.");
+                                    InterimSH.SetAscending("Shelf No.", true);
+                                    if L_OchannelGenSetup."Allocate Web Orders" = true then
+                                        InterimSH.SETFILTER(ReservedFlag, '%1', TRUE);
+                                end;
+
+                            NoOfItems::Multiple:
+
+                                begin
+                                    InterimSH.SETFILTER("No. of Items", '>%1', 1);
+                                    Clear(G_TotalQty);
+                                    G_TotalQty := GetTotalQtyInWebOrder(InterimSH);
+                                    if L_OchannelGenSetup."Allocate Web Orders" = true then
+                                        InterimSH.SETFILTER(ReservedFlag, '%1', TRUE);
+                                end;
+                        end;
+                    end;
+
+
+                    NoOfRecs := InterimSH.COUNT;
 
                 end;
             }
 
             trigger OnAfterGetRecord()
+            var
+                L_InterimHeader: Record "Interim Sales Header";
+                GenSetup: Record "General Setup - Channels";
             begin
-
                 Reseti;
                 ResetFirstOrder;
+
+                // code for Allocate WebOrder feature ++
+                GenSetup.Get();
+                if GenSetup."Allocate Web Orders" = true then begin
+                    if (("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick") OR ("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Single Order")) then begin
+                        Clear(TotalOrderToProcess);
+                        L_InterimHeader.Reset();
+                        L_InterimHeader.CopyFilters(InterimSH);
+                        L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
+                        L_InterimHeader.SetRange("Trade Partner Code", "Trade Partner".Code);
+                        L_InterimHeader.SetRange(status, L_InterimHeader.status::"In Progress");
+                        if NoOfItems = NoOfItems::Multiple then
+                            L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
+                        if NoOfItems = NoOfItems::Single then
+                            InterimSH.SETFILTER("No. of Items", '%1', 1);
+                        if L_InterimHeader.FindSet() then begin
+                            TotalOrderToProcess := L_InterimHeader.Count;
+                            CreateConsollidatedOrder.AllocateWebOrderWithAvailableQty2(L_InterimHeader, TotalOrderToProcess);
+                        end;
+                    end;
+                end;
+                //AllocateWebOrder--
             end;
 
             trigger OnPreDataItem()
             begin
+                PickCreated := false;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
                 IF G_ChannelCode <> '' THEN
                     "Trade Partner".SETRANGE("Trade Partner".Code, G_ChannelCode);
+
+
             end;
+
+            trigger OnPostDataItem()
+            begin
+                if PickCreated = true then
+                    Message('Web Order Processed Successfully');//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
+            end;
+
         }
+
     }
 
     requestpage
@@ -186,7 +244,7 @@ report 90000 "Process Web Orders"
                 field("Item No"; Itemno)
                 {
                     Visible = false;
-
+                    ApplicationArea = all;
                     trigger OnLookup(var Text: Text): Boolean
                     begin
                         CLEAR(ItemList);
@@ -194,19 +252,25 @@ report 90000 "Process Web Orders"
                         RecItem.SETRANGE(Blocked, FALSE);
                         ItemList.SETTABLEVIEW(RecItem);
                         ItemList.LOOKUPMODE(TRUE);
-                        IF ItemList.RUNMODAL = ACTION::LookupOK THEN BEGIN
-                            Itemno := ItemList.GetSelectionFilter();
-                        END;
+                        //IF ItemList.RUNMODAL = ACTION::LookupOK THEN BEGIN
+                        //    Itemno := ItemList.GetSelectionFilter();
+                        //END;
                     end;
                 }
                 field("No Of Orders"; NoOfOrders)
                 {
                     ApplicationArea = all;
-                    Visible = false;
+                    //Visible = false;
                     trigger OnValidate()
                     begin
 
                     end;
+                }
+                field("Total No of Orders"; "TotalNoOfOrders")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Total No Of Orders';
+                    Editable = false;
                 }
                 field("No Of Items"; NoOfItems)
                 {
@@ -217,14 +281,14 @@ report 90000 "Process Web Orders"
                 field("Use Last Processed order"; UseLastProcessedOrder)
                 {
                     Visible = false;
+                    ApplicationArea = all;
                 }
                 field("Use Allocation"; UseAllocationboolean)
                 {
                     Visible = false;
+                    ApplicationArea = all;
                 }
-
             }
-
         }
 
         actions
@@ -233,12 +297,16 @@ report 90000 "Process Web Orders"
         trigger OnOpenPage()
         begin
             NoOfItems := NoOfItems::Everything;
+            if InterimSH.GetFilter("Trade Partner Code") <> '' then
+                "Trade Partner".SetRange(Code, InterimSH.GetFilter("Trade Partner Code"));
         end;
     }
 
     labels
     {
     }
+
+
     local procedure GetTotalQtyInWebOrder(var P_ISH: Record "Interim Sales Header"): Decimal
     var
         ISL: Record "Interim Sales Line";
@@ -276,6 +344,7 @@ report 90000 "Process Web Orders"
         ItemList: Page "Item List";
 
         NoOfOrders: Integer;
+        TotalNoOfOrders: Integer;
         i: Integer;
         CurrRec: Integer;
         NoOfItems: Option Single,Multiple,Everything;
@@ -291,6 +360,9 @@ report 90000 "Process Web Orders"
         CreateConsollidatedOrder: Codeunit "Process Web Order";
         G_ChannelCode: Code[20];
         G_TotalQty: Decimal;
+        InterimsalesHeader: Record "Interim Sales Header" temporary;
+        PickCreated: Boolean; //NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
+
 
     procedure InsertErrorlog(P_Text: Text[250]; var InterimSalesHeader: Record "Interim Sales Header")
     var
@@ -320,6 +392,11 @@ report 90000 "Process Web Orders"
     procedure SetNoOfOrders(tempnooforderno: Integer)
     begin
         NoOfOrders := tempnooforderno;
+    end;
+
+    procedure SetTotalNoOfOrders(temptotal: Integer)
+    begin
+        TotalNoOfOrders := temptotal;
     end;
 
     local procedure Reseti()
@@ -368,6 +445,7 @@ report 90000 "Process Web Orders"
         G_ChannelCode := P_ChannelCode;
     end;
 
+    //this function is not in use and moved into codeunit order ackknowladge 
     local procedure ShopdirectOrderAck(ChannelPartner: Record "Trade Partner")
     var
         FileCount: Text;
@@ -398,119 +476,119 @@ report 90000 "Process Web Orders"
         L_TradePartner: Record "Trade Partner";
         OrderAck: Codeunit "Order Acknowledgement";
     begin
-        Clear(xmlElem);
-        Clear(xmlElem2);
-        Clear(xmlElem3);
-        Clear(xmlElem4);
-        Clear(xmlElem5);
-        Clear(xmlElem6);
-        Clear(xmlElem7);
-        Clear(xmlElem8);
-        Clear(xmlElem9);
-        Clear(xmlElem10);
-        Clear(xmlElem11);
-        Clear(xmlElem12);
-        Clear(xmlDoc);
-        Clear(xmlDec);
-        Clear(outStr);
-        TodayDate := FORMAT(TODAY, 0, '<Month,2>_<Day,2>_<Year4>');
-        TodayDate := DELCHR(TodayDate, '=', '/');
+        /*    Clear(xmlElem);
+            Clear(xmlElem2);
+            Clear(xmlElem3);
+            Clear(xmlElem4);
+            Clear(xmlElem5);
+            Clear(xmlElem6);
+            Clear(xmlElem7);
+            Clear(xmlElem8);
+            Clear(xmlElem9);
+            Clear(xmlElem10);
+            Clear(xmlElem11);
+            Clear(xmlElem12);
+            Clear(xmlDoc);
+            Clear(xmlDec);
+            Clear(outStr);
+            TodayDate := FORMAT(TODAY, 0, '<Month,2>_<Day,2>_<Year4>');
+            TodayDate := DELCHR(TodayDate, '=', '/');
 
-        xmlDoc := xmlDocument.Create();
-        xmlDec := xmlDeclaration.Create('1.0', 'UTF-8', '');
-        xmlDoc.SetDeclaration(xmlDec);
+            xmlDoc := xmlDocument.Create();
+            xmlDec := xmlDeclaration.Create('1.0', 'UTF-8', '');
+            xmlDoc.SetDeclaration(xmlDec);
 
-        xmlElem := xmlElement.Create('STATUSES');
+            xmlElem := xmlElement.Create('STATUSES');
 
-        xmlElem2 := XmlElement.Create('SENDERADDRESS');
-        xmlElem2.Add(xmlText.Create('R0200'));
+            xmlElem2 := XmlElement.Create('SENDERADDRESS');
+            xmlElem2.Add(xmlText.Create('R0200'));
 
-        xmlElem3 := XmlElement.Create('DATATYPE');
-        xmlElem3.Add(xmlText.Create('30'));
+            xmlElem3 := XmlElement.Create('DATATYPE');
+            xmlElem3.Add(xmlText.Create('30'));
 
-        xmlElem.Add(xmlElem2);
-        xmlElem.Add(xmlElem3);
-
-
+            xmlElem.Add(xmlElem2);
+            xmlElem.Add(xmlElem3);
 
 
-        InterimSalesHeader.RESET;
-        InterimSalesHeader.SETFILTER("Trade Partner Code", ChannelPartner.Code);
-        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
-        InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
-        IF InterimSalesHeader.FindSet() THEN begin
-            REPEAT
-
-                xmlElem4 := XmlElement.Create('STATUS');
-
-                xmlElem5 := XmlElement.Create('DATE');
-                xmlElem5.Add(xmlText.Create(Format(Today)));
-
-                xmlElem6 := XmlElement.Create('TIME');
-                xmlElem6.Add(xmlText.Create(Format(Time)));
-
-                xmlElem12 := XmlElement.Create('STATUSCODE');
-                xmlElem12.Add(xmlText.Create('11'));
-
-                xmlElem4.Add(xmlElem5);
-                xmlElem4.Add(xmlElem6);
-                xmlElem4.Add(xmlElem12);
-
-                xmlElem7 := XmlElement.Create('ORDER');
-
-                xmlElem8 := XmlElement.Create('ORDERNUMBER');
-                xmlElem8.Add(xmlText.Create(InterimSalesHeader."Channel Order ID"));
-
-                xmlElem9 := XmlElement.Create('ORDERDATE');
-                xmlElem9.Add(xmlText.Create(FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
-
-                xmlElem7.Add(xmlElem8);
-                xmlElem7.Add(xmlElem9);
-
-                xmlElem10 := XmlElement.Create('SUPPLIER');
-                xmlElem7.Add(xmlElem10);
-
-                xmlElem11 := XmlElement.Create('BUYERREFERENCE');
-                xmlElem11.Add(xmlText.Create(InterimSalesHeader."Web Shipping Agent"));
-
-                xmlElem10.Add(xmlElem11);
-
-                xmlElem4.Add(xmlElem7);
-                xmlElem.Add(xmlElem4);
-
-                IF InterimSalesHeader3.GET(InterimSalesHeader."Document Type", InterimSalesHeader."No.") THEN BEGIN
-                    InterimSalesHeader3."Order Ack. Exported" := TRUE;
-                    InterimSalesHeader3.MODIFY;
-                END;
-
-            UNTIL InterimSalesHeader.NEXT = 0;
 
 
-            xmlDoc.Add(xmlElem);
+            InterimSalesHeader.RESET;
+            InterimSalesHeader.SETFILTER("Trade Partner Code", ChannelPartner.Code);
+            InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
+            InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
+            IF InterimSalesHeader.FindSet() THEN begin
+                REPEAT
+
+                    xmlElem4 := XmlElement.Create('STATUS');
+
+                    xmlElem5 := XmlElement.Create('DATE');
+                    xmlElem5.Add(xmlText.Create(Format(Today)));
+
+                    xmlElem6 := XmlElement.Create('TIME');
+                    xmlElem6.Add(xmlText.Create(Format(Time)));
+
+                    xmlElem12 := XmlElement.Create('STATUSCODE');
+                    xmlElem12.Add(xmlText.Create('11'));
+
+                    xmlElem4.Add(xmlElem5);
+                    xmlElem4.Add(xmlElem6);
+                    xmlElem4.Add(xmlElem12);
+
+                    xmlElem7 := XmlElement.Create('ORDER');
+
+                    xmlElem8 := XmlElement.Create('ORDERNUMBER');
+                    xmlElem8.Add(xmlText.Create(InterimSalesHeader."Channel Order ID"));
+
+                    xmlElem9 := XmlElement.Create('ORDERDATE');
+                    xmlElem9.Add(xmlText.Create(FORMAT(InterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>')));
+
+                    xmlElem7.Add(xmlElem8);
+                    xmlElem7.Add(xmlElem9);
+
+                    xmlElem10 := XmlElement.Create('SUPPLIER');
+                    xmlElem7.Add(xmlElem10);
+
+                    xmlElem11 := XmlElement.Create('BUYERREFERENCE');
+                    xmlElem11.Add(xmlText.Create(InterimSalesHeader."Web Shipping Agent"));
+
+                    xmlElem10.Add(xmlElem11);
+
+                    xmlElem4.Add(xmlElem7);
+                    xmlElem.Add(xmlElem4);
+
+                    IF InterimSalesHeader3.GET(InterimSalesHeader."Document Type", InterimSalesHeader."No.") THEN BEGIN
+                        InterimSalesHeader3."Order Ack. Exported" := TRUE;
+                        InterimSalesHeader3.MODIFY;
+                    END;
+
+                UNTIL InterimSalesHeader.NEXT = 0;
 
 
-            // Create an outStream from the Blob, notice the encoding.
-            TempBlob.CreateOutStream(outStr, TextEncoding::UTF8);
+                xmlDoc.Add(xmlElem);
 
-            // Write the contents of the doc to the stream
-            xmlDoc.WriteTo(outStr);
 
-            // From the same Blob, that now contains the XML document, create an inStr
-            TempBlob.CreateInStream(inStr, TextEncoding::UTF8);
+                // Create an outStream from the Blob, notice the encoding.
+                TempBlob.CreateOutStream(outStr, TextEncoding::UTF8);
 
-            IF (ChannelPartner."Last Date to Export Order Ack" = 0D) OR (ChannelPartner."Last Date to Export Order Ack" <> TODAY) THEN
-                FileCount := '00'
-            ELSE
-                FileCount := INCSTR(ChannelPartner.TariffCode);
+                // Write the contents of the doc to the stream
+                xmlDoc.WriteTo(outStr);
 
-            ChannelPartner."Last Date to Export Order Ack" := TODAY;
-            ChannelPartner.TariffCode := FileCount;
-            ChannelPartner.MODIFY;
+                // From the same Blob, that now contains the XML document, create an inStr
+                TempBlob.CreateInStream(inStr, TextEncoding::UTF8);
 
-            // Save the data of the InStream as a file.
-            fileName := ChannelPartner.Code + '.' + 'ASN.' + TodayDate + '.' + FileCount + '.XML';
-            OrderAck.UploadFileTOAzureBlob(inStr, fileName, ChannelPartner.Code);
-        end;
+                IF (ChannelPartner."Last Date to Export Order Ack" = 0D) OR (ChannelPartner."Last Date to Export Order Ack" <> TODAY) THEN
+                    FileCount := '00'
+                ELSE
+                    FileCount := INCSTR(ChannelPartner.TariffCode);
+
+                ChannelPartner."Last Date to Export Order Ack" := TODAY;
+                ChannelPartner.TariffCode := FileCount;
+                ChannelPartner.MODIFY;
+
+                // Save the data of the InStream as a file.
+                fileName := ChannelPartner.Code + '.' + 'ASN.' + TodayDate + '.' + FileCount + '.XML';
+                OrderAck.UploadFileTOAzureBlob(inStr, fileName, ChannelPartner.Code);
+            end;*/
     end;
 }
 

@@ -15,7 +15,12 @@ tableextension 90000 "Whse. Internal Pick Header Ext" extends "Whse. Internal Pi
             Caption = 'Order Line Type';
             OptionMembers = ,"Single Line Orders","Multi Line Order";
         }
+        field(90003; "Created Date"; Date)
+        {
+
+        }
     }
+
 
 
 }

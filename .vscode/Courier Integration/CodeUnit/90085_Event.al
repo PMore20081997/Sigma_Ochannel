@@ -34,92 +34,92 @@ codeunit 90085 "Events"
 
 
     //InsertShipmentTrackingAndGenerateLabel++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnBeforeCode', '', true, true)]
-    local procedure OnBeforeCode(var WarehouseActivityLine: Record "Warehouse Activity Line")
-    var
-        WareActHeader: Record "Warehouse Activity Header";
-        L_ShippingAgent: Record "Shipping Agent";
-        ShipmentLabel: Report "Courier Label";
-        ShipmentLabel_DHL: Report "Courier Label - DHL";
-        L_ShipmentTracking: Record "Shipment Tracking";
-        L_ShipmentTracking2: Record "Shipment Tracking";
-        L_SalesHeader: Record "Sales Header";
-    begin
-        //InsertTemp++
-        if WarehouseActivityLine.FindSet() then begin
-            repeat
-                WareActHeader.Reset();
-                WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
-                WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
-                if WareActHeader.FindFirst() then begin
-                    //  if WareActHeader."Shipping Agent Code" <> '' then
-                    InsertInTemp(WareActHeader, WarehouseActivityLine, 'LINE', WarehouseActivityLine."Line No.");
-                end;
-            until WarehouseActivityLine.Next() = 0;
-            WareActHeader.Reset();
-            WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
-            WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
-            if WareActHeader.FindFirst() then begin
-                InsertInTemp(WareActHeader, WarehouseActivityLine, 'HEADER', WarehouseActivityLine."Line No." + 1);
+    /* [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnBeforeCode', '', true, true)]
+     local procedure OnBeforeCode(var WarehouseActivityLine: Record "Warehouse Activity Line")
+     var
+         WareActHeader: Record "Warehouse Activity Header";
+         L_ShippingAgent: Record "Shipping Agent";
+         ShipmentLabel: Report "Courier Label";
+         ShipmentLabel_DHL: Report "Courier Label - DHL";
+         L_ShipmentTracking: Record "Shipment Tracking";
+         L_ShipmentTracking2: Record "Shipment Tracking";
+         L_SalesHeader: Record "Sales Header";
+     begin
+         //InsertTemp++
+         if WarehouseActivityLine.FindSet() then begin
+             repeat
+                 WareActHeader.Reset();
+                 WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
+                 WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
+                 if WareActHeader.FindFirst() then begin
+                     //  if WareActHeader."Shipping Agent Code" <> '' then
+                     InsertInTemp(WareActHeader, WarehouseActivityLine, 'LINE', WarehouseActivityLine."Line No.");
+                 end;
+             until WarehouseActivityLine.Next() = 0;
+             WareActHeader.Reset();
+             WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
+             WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
+             if WareActHeader.FindFirst() then begin
+                 InsertInTemp(WareActHeader, WarehouseActivityLine, 'HEADER', WarehouseActivityLine."Line No." + 1);
 
-                L_ShippingAgent.Reset();
-                L_ShippingAgent.SetRange(Code, WareActHeader."Shipping Agent Code");
-                if L_ShippingAgent.FindFirst() then begin
-                    if L_ShippingAgent.Code <> '' then
-                        Codeunit.Run(L_ShippingAgent."Procesing Codeunit", Temp_SalesHeader);
-                end;
-            end;
-        end;
+                 L_ShippingAgent.Reset();
+                 L_ShippingAgent.SetRange(Code, WareActHeader."Shipping Agent Code");
+                 if L_ShippingAgent.FindFirst() then begin
+                     if L_ShippingAgent.Code <> '' then
+                         Codeunit.Run(L_ShippingAgent."Procesing Codeunit", Temp_SalesHeader);
+                 end;
+             end;
+         end;
 
-        //GenerateLabel++
-        WareActHeader.Reset();
-        WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
-        WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
-        if WareActHeader.FindFirst() then begin
-            if WareActHeader."Shipping Agent Code" <> '' then begin
-                if WareActHeader."Shipping Agent Code" = 'APC' then begin
-                    L_ShipmentTracking.Reset();
-                    L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
-                    L_ShipmentTracking.SetRange("Document No.", WarehouseActivityLine."Source No.");
-                    L_ShipmentTracking.SetRange("Shipping Agent Code", WareActHeader."Shipping Agent Code");
-                    if L_ShipmentTracking.FindSet() then begin
-                        repeat
-                            L_ShipmentTracking2.Reset();
-                            L_ShipmentTracking2.SetRange("Shipping Agent Code", L_ShipmentTracking."Shipping Agent Code");
-                            L_ShipmentTracking2.SetRange("Document No.", L_ShipmentTracking."Document No.");
-                            L_ShipmentTracking2.SetRange("Tracking No.", L_ShipmentTracking."Tracking No.");
-                            if L_ShipmentTracking2.FindFirst() then begin
-                                Clear(ShipmentLabel);
-                                ShipmentLabel.SetTableView(L_ShipmentTracking2);
-                                ShipmentLabel.UseRequestPage(false);
-                                ShipmentLabel.Run();
-                            end;
-                        until L_ShipmentTracking.Next() = 0;
-                    end;
-                end else
-                    if WareActHeader."Shipping Agent Code" = 'DHL' then begin
-                        L_ShipmentTracking.Reset();
-                        L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
-                        L_ShipmentTracking.SetRange("Document No.", WarehouseActivityLine."Source No.");
-                        L_ShipmentTracking.SetRange("Shipping Agent Code", WareActHeader."Shipping Agent Code");
-                        if L_ShipmentTracking.FindSet() then begin
-                            repeat
-                                L_ShipmentTracking2.Reset();
-                                L_ShipmentTracking2.SetRange("Shipping Agent Code", L_ShipmentTracking."Shipping Agent Code");
-                                L_ShipmentTracking2.SetRange("Document No.", L_ShipmentTracking."Document No.");
-                                L_ShipmentTracking2.SetRange("Tracking No.", L_ShipmentTracking."Tracking No.");
-                                if L_ShipmentTracking2.FindFirst() then begin
-                                    Clear(ShipmentLabel_DHL);
-                                    ShipmentLabel_DHL.SetTableView(L_ShipmentTracking2);
-                                    ShipmentLabel_DHL.UseRequestPage(false);
-                                    ShipmentLabel_DHL.Run();
-                                end;
-                            until L_ShipmentTracking.Next() = 0;
-                        end;
-                    end;
-            end;
-        end;
-    end;
+         //GenerateLabel++
+         WareActHeader.Reset();
+         WareActHeader.SetRange("No.", WarehouseActivityLine."No.");
+         WareActHeader.SetRange(Type, WarehouseActivityLine."Activity Type");
+         if WareActHeader.FindFirst() then begin
+             if WareActHeader."Shipping Agent Code" <> '' then begin
+                 if WareActHeader."Shipping Agent Code" = 'APC' then begin
+                     L_ShipmentTracking.Reset();
+                     L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
+                     L_ShipmentTracking.SetRange("Document No.", WarehouseActivityLine."Source No.");
+                     L_ShipmentTracking.SetRange("Shipping Agent Code", WareActHeader."Shipping Agent Code");
+                     if L_ShipmentTracking.FindSet() then begin
+                         repeat
+                             L_ShipmentTracking2.Reset();
+                             L_ShipmentTracking2.SetRange("Shipping Agent Code", L_ShipmentTracking."Shipping Agent Code");
+                             L_ShipmentTracking2.SetRange("Document No.", L_ShipmentTracking."Document No.");
+                             L_ShipmentTracking2.SetRange("Tracking No.", L_ShipmentTracking."Tracking No.");
+                             if L_ShipmentTracking2.FindFirst() then begin
+                                 Clear(ShipmentLabel);
+                                 ShipmentLabel.SetTableView(L_ShipmentTracking2);
+                                 ShipmentLabel.UseRequestPage(false);
+                                 ShipmentLabel.Run();
+                             end;
+                         until L_ShipmentTracking.Next() = 0;
+                     end;
+                 end else
+                     if WareActHeader."Shipping Agent Code" = 'DHL' then begin
+                         L_ShipmentTracking.Reset();
+                         L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
+                         L_ShipmentTracking.SetRange("Document No.", WarehouseActivityLine."Source No.");
+                         L_ShipmentTracking.SetRange("Shipping Agent Code", WareActHeader."Shipping Agent Code");
+                         if L_ShipmentTracking.FindSet() then begin
+                             repeat
+                                 L_ShipmentTracking2.Reset();
+                                 L_ShipmentTracking2.SetRange("Shipping Agent Code", L_ShipmentTracking."Shipping Agent Code");
+                                 L_ShipmentTracking2.SetRange("Document No.", L_ShipmentTracking."Document No.");
+                                 L_ShipmentTracking2.SetRange("Tracking No.", L_ShipmentTracking."Tracking No.");
+                                 if L_ShipmentTracking2.FindFirst() then begin
+                                     Clear(ShipmentLabel_DHL);
+                                     ShipmentLabel_DHL.SetTableView(L_ShipmentTracking2);
+                                     ShipmentLabel_DHL.UseRequestPage(false);
+                                     ShipmentLabel_DHL.Run();
+                                 end;
+                             until L_ShipmentTracking.Next() = 0;
+                         end;
+                     end;
+             end;
+         end;
+     end;*///Khan++
 
     local procedure InsertInTemp(WareActHeader: Record "Warehouse Activity Header"; WareActLine: Record "Warehouse Activity Line"; EntryType: Text[20]; L_No: Integer)
     var

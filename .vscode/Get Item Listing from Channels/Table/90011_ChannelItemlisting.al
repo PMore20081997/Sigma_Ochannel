@@ -47,22 +47,22 @@ table 90011 "Channel Item Listing"
                 Chancode: Code[20];
                 ChannelInventory: Decimal;
             begin
-                IF Rec."Channel Title" = '' THEN BEGIN
-                    Item1.RESET;
-                    IF Item1.GET("Item No.") THEN BEGIN
-                        //ChannelInventory := Item1.Inventory - Item1."Qty. on Sales Order";
-                        //Validate(Rec."Channel Inventory", ChannelInventory);
-                        VALIDATE(Rec."Description 2", Item1."Description 2");
-                        VALIDATE(Rec.Description, Item1.Description);
-                        //VALIDATE(Rec.UOM, Item1."Base Unit of Measure");
-                        VALIDATE(Rec."Channel Unit Price", Item1."Unit Price");
-                        VALIDATE(Rec."Unit Price", Item1."Unit Price");
-                        // VALIDATE(Rec."Channel Title", Description); commented by pavan 
-                        //  VALIDATE("Channel SKU", Item1."No.");
-                        //VALIDATE(Rec.Brand, Item1.brand);
-                        VALIDATE(Rec."Item Category Code", Item1."Item Category Code");
-                    END;
+                //IF Rec."Channel Title" = '' THEN BEGIN  //Commented by Shubham12052022
+                Item1.RESET;
+                IF Item1.GET("Item No.") THEN BEGIN
+                    //ChannelInventory := Item1.Inventory - Item1."Qty. on Sales Order";
+                    //Validate(Rec."Channel Inventory", ChannelInventory);
+                    VALIDATE(Rec."Description 2", Item1."Description 2");
+                    VALIDATE(Rec.Description, Item1.Description);
+                    //VALIDATE(Rec.UOM, Item1."Base Unit of Measure");
+                    VALIDATE(Rec."Channel Unit Price", Item1."Unit Price");
+                    VALIDATE(Rec."Unit Price", Item1."Unit Price");
+                    // VALIDATE(Rec."Channel Title", Description); commented by pavan 
+                    //  VALIDATE("Channel SKU", Item1."No.");
+                    //VALIDATE(Rec.Brand, Item1.brand);
+                    VALIDATE(Rec."Item Category Code", Item1."Item Category Code");
                 END;
+                //END;
 
                 SalesPrice.RESET;
                 //SalesPrice.SETRANGE(SalesPrice."Item No.", Rec."Item No.");
@@ -131,7 +131,7 @@ table 90011 "Channel Item Listing"
             begin
             end;
         }
-        field(10; "Channel Inventory"; Integer)
+        field(10; "Channel Inventory"; Decimal)
         {
 
         }
@@ -272,7 +272,7 @@ table 90011 "Channel Item Listing"
         {
             InitValue = true;
         }
-        field(48; "Item Category Code"; Code[10])
+        field(48; "Item Category Code"; Code[20])
         {
             DataClassification = ToBeClassified;
             TableRelation = "Item Category".Code;
@@ -475,9 +475,8 @@ table 90011 "Channel Item Listing"
         T_Item: Text;
     begin
         CIL.RESET;
-
         CIL.SETRANGE("Item No.", '');
-        Window.OPEN('Update Item Coupling....' + ' @1@@@@@@@@@@@@@\' + CIL.FIELDCAPTION("Item No.") + ' #3##########');
+        Window.OPEN('Update Item Coupling....' + ' @1@@@@@@@@@@@@@\' + CIL.FIELDCAPTION("Channel SKU") + ' #3##########');
         IF CIL.FINDSET THEN BEGIN
             REPEAT
                 NoOfRecs := CIL.COUNT;
@@ -485,14 +484,11 @@ table 90011 "Channel Item Listing"
                 // T_Item := GetItemNoCoupling(CIL."Channel SKU", CIL.EAN, CIL."Channel Code");
                 T_Item := ProcessCouplingItemNo(CIL."Channel SKU", CIL."ASIN No");
                 IF T_Item <> '' THEN BEGIN
-
                     CIL.VALIDATE("Item No.", T_Item);
                     CIL.VALIDATE(Action, CIL.Action::Updated);
                     CIL.VALIDATE("Listing Status", CIL."Listing Status"::Listed);
                     CIL.VALIDATE(Status, CIL.Status::Active);
-
                     CIL.MODIFY;
-
                 END;
             UNTIL CIL.NEXT = 0;
         END;
@@ -503,55 +499,61 @@ table 90011 "Channel Item Listing"
         ItemNo: Code[20];
     BEGIN
         Item.RESET;
-        IF STRLEN(P_SKU) <= 20 THEN BEGIN
-            CLEAR(ItemNo);
-            ItemNo := CheckAvaliableItem_sku(P_SKU);
-            if (ItemNo = '') then begin
-                ItemNo := CheckAvaliableItem_ASIN(P_ASIN);
-            end;
-            IF ItemNo <> '' THEN
-                EXIT(ItemNo);
-        END;
+        if P_SKU <> '' then begin
+            IF STRLEN(P_SKU) <= 20 THEN BEGIN
+                CLEAR(ItemNo);
+                ItemNo := CheckAvaliableItem_sku(P_SKU);
+                if (ItemNo = '') then begin
+                    ItemNo := CheckAvaliableItem_ASIN(P_ASIN);
+                end;
+                IF ItemNo <> '' THEN
+                    EXIT(ItemNo);
+            END;
+        end;
     END;
 
     local procedure CheckAvaliableItem_sku(VAR TxtItem: Text): Code[20]
     var
 
     begin
-        IF STRLEN(TxtItem) <= 20 THEN BEGIN
-            Item.RESET;
-            Item.SETRANGE("No.", TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No.");
+        if TxtItem <> '' then begin
+            IF STRLEN(TxtItem) <= 20 THEN BEGIN
+                Item.RESET;
+                Item.SETRANGE("No.", TxtItem);
+                IF Item.FINDSET THEN
+                    EXIT(Item."No.");
 
-            Item.RESET;
-            Item.SETRANGE("No. 2", TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No. 2");
+                Item.RESET;
+                Item.SETRANGE("No. 2", TxtItem);
+                IF Item.FINDSET THEN
+                    EXIT(Item."No. 2");
 
-            Item.RESET;
-            Item.SETRANGE("Common Item No.", TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."Common Item No.");
-        END;
+                Item.RESET;
+                Item.SETRANGE("Common Item No.", TxtItem);
+                IF Item.FINDSET THEN
+                    EXIT(Item."Common Item No.");
+            END;
+        end;
     end;
 
     local procedure CheckAvaliableItem_ASIN(VAR TxtItem: Text): Code[20]
     var
         ItemCrossReference: Record "Item Reference";
     BEGIN
-        IF STRLEN(TxtItem) <= 20 THEN BEGIN
-            Item.RESET;
-            Item.SETRANGE(GTIN, TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No.");
-        END;
+        if TxtItem <> '' then begin
+            IF STRLEN(TxtItem) <= 20 THEN BEGIN
+                Item.RESET;
+                Item.SETRANGE(GTIN, TxtItem);
+                IF Item.FINDSET THEN
+                    EXIT(Item."No.");
+            END;
 
-        ItemCrossReference.RESET;
-        ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::"Bar Code");
-        ItemCrossReference.SETRANGE("Reference No.", TxtItem);
-        IF ItemCrossReference.FINDSET THEN
-            EXIT(ItemCrossReference."Item No.");
+            ItemCrossReference.RESET;
+            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::"Bar Code");
+            ItemCrossReference.SETRANGE("Reference No.", TxtItem);
+            IF ItemCrossReference.FINDSET THEN
+                EXIT(ItemCrossReference."Item No.");
+        end;
     END;
 
     procedure GetItemNoCoupling(P_SKU: Text; P_EAN: Text; ChannelCode: Code[20]): Code[20]

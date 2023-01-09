@@ -31,6 +31,14 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
                 Visible = false;
             }
         }
+        addbefore(WhseActivityLines)
+        {
+            field(Comments; Rec.Comments)
+            {
+                ApplicationArea = all;
+                Editable = false;
+            }
+        }
     }
     //CourierIntegration--
     /* actions

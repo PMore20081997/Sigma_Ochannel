@@ -42,6 +42,23 @@ codeunit 90086 "Shop Direct Courier"
         jObject: JsonObject;
         printResponseObject: JsonObject;
         OrderDate: Text;
+        TrackingNumber: Text[30];
+        i: Integer;
+        orderNumber: Code[20];
+        CarrierName: Text[10];
+        Base64StringLabel: Text;
+        Base64Despatch: Text;
+        CarrierDataArray: JsonArray;
+        CarrierDataCount: Integer;
+        CarrierDataToken: JsonToken;
+        CarrierDataObject: JsonObject;
+        CarrierTrackingObject: JsonObject;
+        LabelDataObject: JsonObject;
+        ParcelObjet: JsonObject;
+        CarrierObject: JsonObject;
+        DespatchNoteObject: JsonObject;
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        CU_ShipmentTrackingInsertion: Codeunit "Shipment Tracking Insertion";
     begin
         GetCredentials(Temp_SalesHeader."Bill-to Customer No.");
         headers := client.DefaultRequestHeaders;
@@ -69,7 +86,69 @@ codeunit 90086 "Shop Direct Courier"
                 responseMessage.Content.ReadAs(response);
                 jObject.ReadFrom(response);
                 printResponseObject := GetJsonToken(jObject, 'PRINT_RESPONSE').AsObject();
-                InsertInShipmentTracking(printResponseObject, Temp_SalesHeader);
+
+                //Checking Condition For Multiline Order No as Passing it in Customer Posting Group Field
+                if Temp_SalesHeader."Customer Posting Group" = '' then begin
+                    CarrierDataObject := GetJsonToken(printResponseObject, 'CMS_CARRIER_DATA').AsObject();
+                    CarrierTrackingObject := GetJsonToken(CarrierDataObject, 'CARRIER_TRACKING_DETAILS').AsObject();
+
+                    Clear(TrackingNumber);
+                    TrackingNumber := CopyStr(GetJsonvalue(CarrierTrackingObject, 'TRACKINGID').AsText(), 1, 30);
+                end
+                else begin
+                    CarrierDataArray := GetJsonToken(printResponseObject, 'CMS_CARRIER_DATA').AsArray();
+                    CarrierDataCount := CarrierDataArray.Count;
+
+                    if CarrierDataCount > 0 then begin
+                        for i := 0 to CarrierDataCount - 1 do begin
+                            CarrierDataArray.Get(i, CarrierDataToken);
+                            CarrierDataObject := CarrierDataToken.AsObject;
+                            Clear(orderNumber);
+                            orderNumber := CopyStr(GetJsonvalue(CarrierDataObject, 'ORDER_NUMBER').AsCode(), 1, 20);
+                            if (orderNumber = Temp_SalesHeader."Applies-to ID") then begin
+                                CarrierTrackingObject := GetJsonToken(CarrierDataObject, 'CARRIER_TRACKING_DETAILS').AsObject();
+                                Clear(TrackingNumber);
+                                TrackingNumber := CopyStr(GetJsonvalue(CarrierTrackingObject, 'TRACKINGID').AsText(), 1, 30);
+                            end;
+                        end;
+                    end;
+                end;
+
+                Clear(CarrierName);
+                CarrierName := CopyStr(GetJsonvalue(CarrierDataObject, 'CARRIER_NAME').AsText(), 1, 10);
+
+                if Temp_SalesHeader.FindFirst() then begin
+                    L_InterimSalesHeader.Reset();
+                    L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."No.");
+                    if L_InterimSalesHeader.FindFirst() then begin
+                        if CarrierName <> '' then begin
+                            L_InterimSalesHeader."Shipping Agent Code" := CarrierName;
+                        end
+                        else begin
+                            L_InterimSalesHeader."Shipping Agent Code" := Temp_SalesHeader."Shipping Agent Code";
+                        end;
+
+                        if L_InterimSalesHeader."Package Tracking No." = '' then begin
+                            L_InterimSalesHeader."Package Tracking No." := TrackingNumber;
+                        end;
+                        L_InterimSalesHeader.Modify(true);
+                    end;
+                end;
+
+                LabelDataObject := GetJsonToken(printResponseObject, 'CMS_LABEL_DATA').AsObject();
+                ParcelObjet := GetJsonToken(LabelDataObject, 'PARCEL').AsObject();
+                CarrierObject := GetJsonToken(ParcelObjet, 'CARRIER').AsObject();
+                Clear(Base64StringLabel);
+                Base64StringLabel := GetJsonvalue(CarrierObject, 'BASE64_DATA').AsText();
+
+                if LabelDataObject.Contains('DESPATCHNOTE') then begin
+                    DespatchNoteObject := GetJsonToken(LabelDataObject, 'DESPATCHNOTE').AsObject();
+                    Clear(Base64Despatch);
+                    Base64Despatch := GetJsonvalue(DespatchNoteObject, 'BASE64_DATA').AsText();
+                end;
+
+                CU_ShipmentTrackingInsertion.InsertShipmentTracking(TrackingNumber, Base64StringLabel, Base64Despatch, CarrierName, '', Temp_SalesHeader);
+                //InsertInShipmentTracking(printResponseObject, Temp_SalesHeader);
             end
             else begin
                 Clear(response);

@@ -2,7 +2,7 @@
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
   "name": "Robosol-Ochannel",
   "publisher": "Robosol",
-  "version": "19.0.0.55",
+  "version": "20.0.0.44",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -15,19 +15,31 @@
       "id": "a5727ce6-368c-49e2-84cb-1a6052f0551c",
       "publisher": "Tasklet Factory",
       "name": "Mobile WMS",
-      "version": "5.29.190.209"
+      "version": "5.34.190.214"
+    },
+    {
+      "id": "b0c8bcc7-2924-4cd2-8562-4e71ebd07323",
+      "publisher": "Insight Works",
+      "name": "Insight Works PrintNode Connector",
+      "version": "2.2.7873.8"
+    },
+    {
+      "id": "ba1776ba-1198-4b4c-a61e-c4612f1880d5",
+      "publisher": "Insight Works",
+      "name": "IWorks Common",
+      "version": "2.7.8118.0"
     }
   ],
   "screenshots": [],
-  "platform": "19.0.0.0",
-  "application": "19.0.0.0",
+  "platform": "20.0.0.0",
+  "application": "20.0.0.0",
   "idRanges": [
     {
       "from": 90000,
-      "to": 90100
+      "to": 90100 
     }
   ],
   "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",
-  "runtime": "8.0"
+  "runtime": "9.0"
   
 }

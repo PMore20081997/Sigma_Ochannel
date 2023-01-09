@@ -68,6 +68,21 @@ table 90012 "Posted Web Sales Invoice"
             Caption = 'Invoice Posted';
             Editable = False;
         }
+        field(11; "Total Qty. to post"; Decimal)
+        {
+            Caption = 'Total Qty. to post';
+            Editable = false;
+        }
+        field(12; "Total Amt. to post"; Decimal)
+        {
+            Caption = 'Total Amt. to post';
+            Editable = false;
+        }
+        field(20; "Total Amt. to post(Inl. VAT)"; Decimal)
+        {
+            Caption = 'Total Amt. to post(Inl. VAT)';
+            Editable = false;
+        }
     }
 
     keys

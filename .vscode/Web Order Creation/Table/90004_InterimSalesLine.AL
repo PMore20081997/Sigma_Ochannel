@@ -65,13 +65,11 @@ table 90004 "Interim Sales Line"
             var
                 myInt: Integer;
             begin
-
                 IF (xRec."Unit Price" <> Rec."Unit Price") AND (Rec.Quantity > 0) THEN BEGIN
                     "Channel Price" := "Unit Price";
                     CalculateVatAmount(Rec);
                 END;
             end;
-
         }
         field(8; Quantity; Decimal)
         {
@@ -81,14 +79,12 @@ table 90004 "Interim Sales Line"
                 myInt: Integer;
             begin
                 IF (Quantity > 0) THEN begin
-                    "Channel Price" := "Unit Price";
+                    //"Channel Price" := "Unit Price";
                     CalculateVatAmount(Rec);
 
                     CalculateBaseQuantity(Rec);
                 end;
-
             end;
-
         }
         field(9; Amount; Decimal)
         {
@@ -115,11 +111,17 @@ table 90004 "Interim Sales Line"
         {
             DataClassification = ToBeClassified;
         }
-        field(16; "VAT Prod. Posting Group"; Code[10])
+        field(16; "VAT Prod. Posting Group"; Code[20])
         {
             TableRelation = "VAT Product Posting Group";
             DataClassification = ToBeClassified;
 
+            trigger OnValidate()
+            var
+
+            begin
+                Validate(Quantity);
+            end;
         }
         field(17; "Channel Identifier"; Code[20])
         {
@@ -160,7 +162,6 @@ table 90004 "Interim Sales Line"
         field(24; Weight; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
         field(25; "VAT%"; Text[30])
         {
@@ -170,6 +171,8 @@ table 90004 "Interim Sales Line"
         field(26; "Discount%"; Text[30])
         {
             DataClassification = ToBeClassified;
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Wrong Data type setup';
 
         }
         field(27; "Line Status"; Option)
@@ -178,6 +181,12 @@ table 90004 "Interim Sales Line"
             OptionMembers = " ","No Stock",Cancelled;
             OptionCaptionML = ENU = ' ,"No Stock",Cancelled',
                               ENG = ' ,"No Stock",Cancelled';
+        }
+
+        field(28; "Discount %"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+
         }
         field(29; "Gift Wrap"; Boolean)
         {
@@ -201,7 +210,7 @@ table 90004 "Interim Sales Line"
         }
         field(35; "Amount Including VAT"; Decimal)
         {
-            Editable = false;
+            // Editable = false;
             DataClassification = ToBeClassified;
 
         }
@@ -290,6 +299,7 @@ table 90004 "Interim Sales Line"
             DataClassification = ToBeClassified;
             trigger OnValidate()
             begin
+                Validate(Quantity);
                 VALIDATE("VAT Prod. Posting Group");
             end;
 
@@ -490,7 +500,8 @@ table 90004 "Interim Sales Line"
         }
         field(90017; "Sales Order Line No"; Integer)
         {
-
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Functionality for this field is moved to destination document line no';
         }
         field(90018; "Multiline Order"; Boolean)
         {
@@ -506,6 +517,47 @@ table 90004 "Interim Sales Line"
             Caption = 'Quantity Handled';
         }
         field(90021; "Shelf No."; Code[20])
+        {
+
+        }
+        field(90022; "Reserved Qty"; Decimal)
+        {
+
+        }
+        field(90023; "Sacnned Qty"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Despatch Scan Line"."Scanned Quantity" where("Trolley No" = field("Trolley No."), "Item No." = field("No."), "Channel Order Id" = field("Channel Order ID"), "Order No" = field("Document No"), "Order Line No." = field("Line No.")));
+        }
+        //Paarth D Dave - 8197-3 - Adding Assembly Order No. ---- Start  
+        field(90024; "Assembly Order No."; Code[20])
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = lookup("Assembly Header"."No." Where("Description 2" = field("Channel Order ID"), "Item No." = field("No."), "Channel Order Line No." = field("Line No.")));
+        }
+
+        field(90025; "Pstd. Ass. Order No "; Code[20])
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = lookup("Posted Assembly Header"."No." where("Description 2" = field("Channel Order ID"), "Item No." = field("No.")));
+        }
+
+        field(90026; "Auto Assembly Order"; Boolean)
+        {
+            InitValue = false;
+            Caption = 'Posted Assembly Order';
+        }
+        //Paarth D Dave - 8197-3 - Adding Assembly Order No. ---- End
+        field(90027; "Partially Post"; Boolean)
+        {
+            DataClassification = SystemMetadata;
+        }
+        field(90028; "Parked"; Boolean)
+        {
+        }
+        field(90030; "Gift Card"; Boolean)
         {
 
         }
@@ -558,6 +610,7 @@ table 90004 "Interim Sales Line"
         UnitVatAmount: Decimal;
         L_VatProdPostingSetup: Record "VAT Posting Setup";
         L_ItemVariant: Record "Item Variant";
+        Countries: Record "Country/Region";
     begin
         L_ISH.RESET;
         L_ISH.SETRANGE("Document Type", P_ISL."Document Type");
@@ -566,8 +619,22 @@ table 90004 "Interim Sales Line"
 
         L_TradePartner.GET(L_ISH."Trade Partner Code");
 
-        IF L_Customer.GET(L_ISH."Sell-to Customer No.") THEN;
-        P_ISL."VAT Bus. Posting Group" := L_Customer."VAT Bus. Posting Group";
+        //8862++
+        if L_ISH."Ship-to Country/Region Code" = 'GB' then begin
+            IF L_Customer.GET(L_ISH."Sell-to Customer No.") THEN;
+            P_ISL."VAT Bus. Posting Group" := L_Customer."VAT Bus. Posting Group";
+        end
+        else begin
+            if Countries.Get(L_ISH."Ship-to Country/Region Code") then begin
+                if Countries."EU Country/Region Code" <> '' then begin
+                    P_ISL."VAT Bus. Posting Group" := 'EU';
+                end
+                else begin
+                    P_ISL."VAT Bus. Posting Group" := 'EXPORT';
+                end;
+            end;
+        end;
+        //8862--
 
         CASE P_ISL.Type OF
             P_ISL.Type::Item:
@@ -605,8 +672,8 @@ table 90004 "Interim Sales Line"
         CLEAR(UnitVatAmount);
         L_VatProdPostingSetup.RESET;
         IF L_VatProdPostingSetup.GET(P_ISL."VAT Bus. Posting Group", P_ISL."VAT Prod. Posting Group") THEN BEGIN
-            if L_VatProdPostingSetup."VAT Calculation Type" = L_VatProdPostingSetup."VAT Calculation Type"::"Reverse Charge VAT" then
-                L_VatProdPostingSetup."VAT %" := 0;
+            // if L_VatProdPostingSetup."VAT Calculation Type" = L_VatProdPostingSetup."VAT Calculation Type"::"Reverse Charge VAT" then
+            //     L_VatProdPostingSetup."VAT %" := 0;  //Commented Bug-8862
             IF L_TradePartner."Prices Including VAT" THEN BEGIN
                 P_ISL.Amount := (ROUND(((P_ISL."Channel Price" * P_ISL.Quantity) / ((L_VatProdPostingSetup."VAT %" / 100) + 1)), 0.01, '='));
                 P_ISL."Amount Including VAT" := round((P_ISL."Channel Price" * P_ISL.Quantity), 0.01, '=');

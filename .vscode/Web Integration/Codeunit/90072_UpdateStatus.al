@@ -1,5 +1,6 @@
 codeunit 90072 "Update Status"
 {
+    Description = 'This codeunit in not in use';
     TableNo = 472;
     trigger OnRun()
     begin

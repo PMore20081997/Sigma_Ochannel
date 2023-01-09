@@ -7,6 +7,8 @@ page 90013 "Posted Web Sales Invoices"
     CardPageId = "Posted Web Sales Invoice";
     SourceTable = "Posted Web Sales Invoice";
     UsageCategory = Lists;
+    InsertAllowed = false;
+    DeleteAllowed = false;
 
     layout
     {
@@ -29,10 +31,12 @@ page 90013 "Posted Web Sales Invoices"
                 field("Document Creation DateTime"; Rec."Document Creation DateTime")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Posted; Rec.Posted)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Posting Date"; Rec."Posting Date")
                 {

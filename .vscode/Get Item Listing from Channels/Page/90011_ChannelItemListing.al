@@ -54,7 +54,7 @@ page 90011 "Channel Item Listing"
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
-                    Visible = false;
+                    Visible = true;
 
                 }
                 field("NAV Variant"; Rec."NAV Variant")
@@ -95,15 +95,14 @@ page 90011 "Channel Item Listing"
                 }
                 field(UOM; Rec."Unit of Measure code")
                 {
-
                     Caption = 'Unit of Measure';
                     ApplicationArea = All;
-
+                    Visible = false;
                 }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = All;
-
+                    //Visible = false;
                 }
                 field("Image Url 1"; Rec."Image Url 1")
                 {
@@ -146,7 +145,7 @@ page 90011 "Channel Item Listing"
                 field("Price Synced"; Rec."Price Synced")
                 {
                     ApplicationArea = All;
-
+                    Visible = false;
                 }
                 field(SpecialPriceSynced; Rec.SPecialPriceSynced)
                 {
@@ -182,13 +181,11 @@ page 90011 "Channel Item Listing"
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
                 field(EAN; Rec.EAN)
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
                 field(FeedType; Rec.FeedType)
                 {
@@ -196,43 +193,32 @@ page 90011 "Channel Item Listing"
                     CaptionML = ENU = 'Feed Type',
                            ENG = 'Feed Type';
                     Visible = false;
-
                 }
                 field("Feed Submission ID"; Rec."Feed Submission ID")
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
                 field(Remarks; Rec.Remarks)
                 {
                     ApplicationArea = All;
-                    Visible = false;
-
+                    Visible = true;
                 }
-
                 field("Created On"; Rec."Created On")
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
                 field("Created By"; Rec."Created By")
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
                 field("Item Category Code"; Rec."Item Category Code")
                 {
                     ApplicationArea = All;
                     Visible = false;
-
                 }
-
-
-
-
             }
         }
     }
@@ -241,15 +227,142 @@ page 90011 "Channel Item Listing"
     {
         area(Processing)
         {
+            action(ChannelInventory)
+            {
+                ApplicationArea = All;
+                Caption = 'Update Channel Inventory';
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                PromotedOnly = true;
+                Image = CalculateInventory;
+
+                trigger OnAction()
+                var
+                    Item: Record Item;
+                    ItemCategory: Record "Item Category";
+                    TradePartner: Record "Trade Partner";
+                    ItemQuery: Query ItemQuery;
+                    AvailableInventory: Decimal;
+                    BOMComponent: Record "BOM Component";
+                    Counter: Integer;
+                    LowestInventory: Decimal;
+                    Rec_Item: Record Item;
+                    ChannelItemListing: Record "Channel Item Listing";
+                    GeneralSetup: Record "General Setup - Channels";
+                begin
+                    GeneralSetup.Get();
+                    ChannelItemListing.Reset();
+                    ChannelItemListing.SetFilter("Item No.", '<>%1', '');
+                    //ChannelItemListing.SetFilter("Item No.", 'ILW20008-SAMPLE');
+                    if ChannelItemListing.FindSet() then begin
+                        repeat
+                            if Item.Get(ChannelItemListing."Item No.") then begin
+                                if Item."Production Item" = true then begin
+                                    ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
+                                    ChannelItemListing."Inventory Synced" := false;
+                                end
+                                else begin
+                                    if TradePartner.Get(ChannelItemListing."Channel Code") then;
+
+                                    ItemCategory.Reset();
+                                    ItemCategory.SetRange(Code, Item."Item Category Code");
+                                    if ItemCategory.FindFirst() then;
+
+                                    if ItemCategory."Auto Assembly Order" = true then begin
+                                        Counter := 0;
+                                        Clear(LowestInventory);
+                                        BOMComponent.Reset();
+                                        BOMComponent.SetRange("Parent Item No.", ChannelItemListing."Item No.");
+                                        BOMComponent.SetRange(Type, BOMComponent.Type::Item);
+                                        if BOMComponent.FindSet() then begin
+                                            repeat
+                                                if Rec_Item.Get(BOMComponent."No.") then begin
+                                                    Clear(AvailableInventory);
+                                                    CLEAR(ItemQuery);
+                                                    ItemQuery.SETRANGE(ItemQuery.No, BOMComponent."No.");
+                                                    ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
+                                                    ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+
+                                                    ItemQuery.OPEN;
+                                                    IF ItemQuery.READ THEN begin
+                                                        AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                                    END;
+                                                    ItemQuery.CLOSE;
+
+                                                    if Counter = 0 then begin
+                                                        LowestInventory := AvailableInventory;
+                                                    end
+                                                    else begin
+                                                        if AvailableInventory < LowestInventory then
+                                                            LowestInventory := AvailableInventory;
+                                                    end;
+                                                    Counter += 1;
+                                                end;
+                                            until BOMComponent.Next() = 0;
+                                        end;
+
+                                        if LowestInventory <> ChannelItemListing."Channel Inventory" then begin
+                                            if LowestInventory < 0 then begin
+                                                ChannelItemListing.Validate("Channel Inventory", 0);
+                                            end
+                                            else begin
+                                                ChannelItemListing.Validate("Channel Inventory", LowestInventory);
+                                            end;
+                                            ChannelItemListing."Inventory Synced" := false;
+                                            ChannelItemListing."Modified On" := CurrentDateTime;
+                                        end;
+                                    end
+                                    else begin
+                                        Clear(AvailableInventory);
+                                        CLEAR(ItemQuery);
+                                        ItemQuery.SETRANGE(ItemQuery.No, ChannelItemListing."Item No.");
+                                        ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
+                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+
+                                        ItemQuery.OPEN;
+                                        IF ItemQuery.READ THEN begin
+                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                        END;
+                                        ItemQuery.CLOSE;
+
+                                        if AvailableInventory <> ChannelItemListing."Channel Inventory" then begin
+                                            if AvailableInventory < 0 then begin
+                                                ChannelItemListing.Validate("Channel Inventory", 0);
+                                            end
+                                            else begin
+                                                ChannelItemListing.Validate("Channel Inventory", AvailableInventory);
+                                            end;
+                                            ChannelItemListing."Inventory Synced" := false;
+                                            ChannelItemListing."Modified On" := CurrentDateTime;
+                                        end;
+                                    end;
+                                end;
+                            end
+                            else begin
+                                ChannelItemListing.Remarks := 'Item Not Found ' + ChannelItemListing."Item No.";
+                                ChannelItemListing."Modified On" := CurrentDateTime;
+                            end;
+
+                            ChannelItemListing.Modify(true);
+
+                        Until ChannelItemListing.Next = 0;
+                    end;
+                    Message('Success');
+                end;
+            }
+
             action("Item Coupling")
             {
                 ApplicationArea = All;
                 CaptionML = ENU = '&Manually Couple', ENG = '&Item Coupling';
                 RunObject = Page "Item Coupling";
                 RunPageView = WHERE(Action = FILTER(<> Updated));
-                Promoted = true;
                 Image = CoupledItem;
                 PromotedCategory = Process;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
                 Visible = false;
 
                 trigger OnAction()
@@ -273,10 +386,11 @@ page 90011 "Channel Item Listing"
             {
                 ApplicationArea = All;
                 CaptionML = ENU = '&Auto Couple', ENG = 'Auto Coupling';
-                Promoted = true;
                 Image = CoupledOrderList;
                 PromotedCategory = Process;
-
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
                 trigger OnAction()
                 VAR
                     TempChannelItemListing: Record "Channel Item Listing";
@@ -285,53 +399,14 @@ page 90011 "Channel Item Listing"
                     Rec.UpdateItemNo;
                 end;
             }
-            action(Edit)
-            {
-                ApplicationArea = All;
-                CaptionML = ENU = 'Edit', ENG = 'Edit';
-                //RunObject = Page "Channel  Listing";
-                RunPageOnRec = false;
-                Promoted = true;
-                Visible = false;
-                PromotedCategory = Process;
-                trigger OnAction()
-                VAR
-                    Rec_ChannelItemListing: Record "Channel Item Listing";
-                //ChannelItemList: Page "Channel  Listing";
-                begin
-                    CLEAR(Rec_ChannelItemListing);
-                    Rec_ChannelItemListing.SETRANGE("Item No.", Rec."Item No.");
-                    IF Rec_ChannelItemListing.FINDSET THEN BEGIN
-                        PAGE.RUN(50145, Rec_ChannelItemListing);
-                        //ChannelItemList.SETTABLEVIEW(Rec_ChannelItemListing);
-                        //ChannelItemList.RUN();
-                    END ELSE BEGIN
-                        Rec_ChannelItemListing.VALIDATE("Item No.", Rec."Item No.");
-                        Rec_ChannelItemListing.INSERT;
-                        PAGE.RUN(50145, Rec_ChannelItemListing);
-                    END;
-                end;
-            }
-            action("Update Price Routine")
-            {
-                ApplicationArea = All;
-                CaptionML = ENU = '&Update Price Routine';
-                Visible = false;
-                //RunObject=Report 80001;
-                Image = PriceAdjustment;
-                trigger OnAction()
-                begin
-
-                end;
-            }
             action(Card)
             {
                 ApplicationArea = All;
-                CaptionML = ENU = 'Card', ENG = 'Card';
-                Promoted = true;
-                PromotedIsBig = false;
+                CaptionML = ENU = 'Item Card', ENG = 'Item Card';
                 Image = Item;
                 PromotedCategory = Process;
+                Promoted = true;
+                PromotedIsBig = true;
                 PromotedOnly = true;
                 trigger OnAction()
                 var
@@ -347,55 +422,16 @@ page 90011 "Channel Item Listing"
                         ERROR('Please couple item with NAV item master.');
                 end;
             }
-            action("Sync Single Item")
-            {
-                ApplicationArea = All;
-                CaptionML = ENU = 'Sync Single Item';
-                Visible = false;
-                trigger OnAction()
-                var
-                    TradePartnerCodeList: Record "Trade Partner";
-                    AmazonChannels: TextConst ENU = 'AMAZON*';
-                    CUShopify: Codeunit "Shopify Integration";
-                    CIL: Record "Channel Item Listing";
-                begin
-                    /*CurrPage.SetSelectionFilter(Rec);
-                    CIL.Reset();
-                    CIL.Copy(Rec);
-                    if CIL.FindSet then begin
-                        repeat
-                            if (CIL."Listing Status" = CIL."Listing Status"::"Not Listed") then begin
-                                CUShopify.CreateProductShopify(CIL);
-                            end;
-                        until CIL.Next = 0;
-                    end;*/
 
-                    /*
-                                        IF (Rec."Channel Code" = 'MAGENTO') AND (Rec."Listing Status" = Rec."Listing Status"::"Not Listed") THEN BEGIN
-                                            //TestMagentoIntegration.CreateIndividualProduct(Rec);
-                                        END;
-
-
-                                        TradePartnerCodeList.SETFILTER(Code, '%1', AmazonChannels);
-                                        IF TradePartnerCodeList.FINDSET THEN
-                                            REPEAT
-                                            BEGIN
-                                                IF Rec."Channel Code" = TradePartnerCodeList.Code THEN BEGIN
-                                                    // AmazonIntegration.UpdateProdutOnAmazon(Rec."Channel Code");
-                                                END;
-                                            END;
-                                            UNTIL TradePartnerCodeList.NEXT = 0;
-                    */
-                end;
-            }
             action("Eliminate Error")
             {
                 ApplicationArea = All;
                 CaptionML = ENU = 'Eliminate Error', ENG = 'Edit';
                 RunPageOnRec = false;
-                Promoted = true;
                 PromotedCategory = Process;
-                Visible = false;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
                 trigger OnAction()
                 var
                     Rec_ChannelItemListing: Record "Channel Item Listing";
@@ -437,101 +473,87 @@ page 90011 "Channel Item Listing"
 
                 end;
             }
-            action(ChannelInventory)
+            action("Update Price Routine")
             {
                 ApplicationArea = All;
-                Caption = 'Update Channel Inventory';
-                Promoted = true;
-                PromotedIsBig = true;
-                PromotedCategory = Process;
-                Image = UpdateUnitCost;
-                trigger onaction()
-                var
-                    Stock1: Decimal;
-                    Stock2: Decimal;
-                    ChannelItemListing: Record "Channel Item Listing";
-                    TradePartner: Record "Trade Partner";
-                    LocationCode: Code[20];
-                    InventoryQuery: Query "Calculate Inventory";
-                    CalculateQtyOnSO: Query "Qty on SO";
-                    CalculateQtyOnPO: Query "Qty on PO";
-                    CalculateQtyOnWeb: Query "Qty on Web";
-                    L_Inv: Decimal;
-                    L_QtyOnSO: Decimal;
-                    L_QtyOnPO: Decimal;
-                    L_QtyOnWeb: Decimal;
+                CaptionML = ENU = '&Update Price Routine';
+                //RunObject=Report 80001;
+                Image = PriceAdjustment;
+                Visible = false;
+                trigger OnAction()
                 begin
-                    ChannelItemListing.Reset();
-                    ChannelItemListing.SetFilter("Item No.", '<>%1', '');
-                    if ChannelItemListing.FindFirst() then begin
+
+                end;
+            }
+            action(Edit)
+            {
+                ApplicationArea = All;
+                CaptionML = ENU = 'Edit', ENG = 'Edit';
+                Visible = false; // Irshad
+                //RunObject = Page "Channel  Listing";
+                // RunPageOnRec = false;
+                // PromotedCategory = Process;
+                // Promoted = true;
+                // PromotedIsBig = true;
+                // PromotedOnly = true;
+                trigger OnAction()
+                VAR
+                    Rec_ChannelItemListing: Record "Channel Item Listing";
+                //ChannelItemList: Page "Channel  Listing";
+                begin
+                    CLEAR(Rec_ChannelItemListing);
+                    Rec_ChannelItemListing.SETRANGE("Item No.", Rec."Item No.");
+                    IF Rec_ChannelItemListing.FINDSET THEN BEGIN
+                        PAGE.RUN(50145, Rec_ChannelItemListing);
+                        //ChannelItemList.SETTABLEVIEW(Rec_ChannelItemListing);
+                        //ChannelItemList.RUN();
+                    END ELSE BEGIN
+                        Rec_ChannelItemListing.VALIDATE("Item No.", Rec."Item No.");
+                        Rec_ChannelItemListing.INSERT;
+                        PAGE.RUN(50145, Rec_ChannelItemListing);
+                    END;
+                end;
+            }
+            action("Sync Single Item")
+            {
+                ApplicationArea = All;
+                CaptionML = ENU = 'Sync Single Item';
+                Visible = false;
+
+                trigger OnAction()
+                var
+                    TradePartnerCodeList: Record "Trade Partner";
+                    AmazonChannels: TextConst ENU = 'AMAZON*';
+                    CUShopify: Codeunit "Shopify Integration";
+                    CIL: Record "Channel Item Listing";
+                begin
+                    /*CurrPage.SetSelectionFilter(Rec);
+                    CIL.Reset();
+                    CIL.Copy(Rec);
+                    if CIL.FindSet then begin
                         repeat
+                            if (CIL."Listing Status" = CIL."Listing Status"::"Not Listed") then begin
+                                CUShopify.CreateProductShopify(CIL);
+                            end;
+                        until CIL.Next = 0;
+                    end;*/
 
-                            Clear(LocationCode);
-                            TradePartner.Reset();
-                            TradePartner.SetRange(Code, Rec."Channel Code");
-                            if TradePartner.FindFirst() then
-                                LocationCode := TradePartner.Location;
+                    /*
+                                        IF (Rec."Channel Code" = 'MAGENTO') AND (Rec."Listing Status" = Rec."Listing Status"::"Not Listed") THEN BEGIN
+                                            //TestMagentoIntegration.CreateIndividualProduct(Rec);
+                                        END;
 
-                            CLEAR(InventoryQuery);
-                            Clear(L_Inv);
-                            InventoryQuery.SETRANGE(InventoryQuery.Item_No_, Rec."Item No.");
-                            InventoryQuery.SETRANGE(InventoryQuery.Location_Code, LocationCode);
-                            InventoryQuery.SETRANGE(InventoryQuery.Variant_Code, Rec."NAV Variant");
-                            InventoryQuery.OPEN;
-                            WHILE InventoryQuery.READ DO BEGIN
-                                L_Inv := InventoryQuery.Quantity;
-                            END;
-                            InventoryQuery.CLOSE;
 
-                            CLEAR(CalculateQtyOnSO);
-                            Clear(L_QtyOnSO);
-                            CalculateQtyOnSO.SETRANGE(CalculateQtyOnSO.No_, Rec."Item No.");
-                            CalculateQtyOnSO.SETRANGE(CalculateQtyOnSO.Location_Code, LocationCode);
-                            CalculateQtyOnSO.SETRANGE(CalculateQtyOnSO.Variant_Code, Rec."NAV Variant");
-                            CalculateQtyOnSO.OPEN;
-                            WHILE CalculateQtyOnSO.READ DO BEGIN
-                                L_QtyOnSO := CalculateQtyOnSO.Outstanding_Qty___Base_;
-                            END;
-                            CalculateQtyOnSO.CLOSE;
-
-                            CLEAR(CalculateQtyOnPO);
-                            Clear(L_QtyOnPO);
-                            CalculateQtyOnPO.SETRANGE(CalculateQtyOnPO.No_, Rec."Item No.");
-                            CalculateQtyOnPO.SETRANGE(CalculateQtyOnPO.Location_Code, LocationCode);
-                            CalculateQtyOnPO.SETRANGE(CalculateQtyOnPO.Variant_Code, Rec."NAV Variant");
-                            CalculateQtyOnPO.OPEN;
-                            WHILE CalculateQtyOnPO.READ DO BEGIN
-                                L_QtyOnPO := CalculateQtyOnPO.Outstanding_Qty___Base_;
-                            END;
-                            CalculateQtyOnPO.CLOSE;
-
-                            CLEAR(CalculateQtyOnWeb);
-                            Clear(L_QtyOnWeb);
-                            CalculateQtyOnWeb.SETRANGE(CalculateQtyOnWeb.No_, Rec."Item No.");
-                            CalculateQtyOnWeb.SETRANGE(CalculateQtyOnWeb.Location_Code, LocationCode);
-                            CalculateQtyOnWeb.SETRANGE(CalculateQtyOnWeb.NAV_Variant_code, Rec."NAV Variant");
-                            CalculateQtyOnWeb.OPEN;
-                            WHILE CalculateQtyOnWeb.READ DO BEGIN
-                                L_QtyOnWeb := CalculateQtyOnWeb.Quantity;
-                            END;
-                            CalculateQtyOnWeb.CLOSE;
-
-                            Clear(Stock1);
-                            Clear(Stock2);
-                            Stock1 := L_Inv - L_QtyOnWeb;
-                            Stock2 := L_Inv + L_QtyOnPO - L_QtyOnSO - L_QtyOnWeb;
-                            if Stock1 > Stock2 then
-                                ChannelItemListing."Channel Inventory" := Stock2
-                            else
-                                ChannelItemListing."Channel Inventory" := Stock1;
-
-                            if ChannelItemListing."Channel Inventory" < 0 then
-                                ChannelItemListing."Channel Inventory" := 0;
-                            ChannelItemListing.Modify(true);
-
-                        Until ChannelItemListing.Next = 0;
-                    end;
-                    Message('Sucess ');
+                                        TradePartnerCodeList.SETFILTER(Code, '%1', AmazonChannels);
+                                        IF TradePartnerCodeList.FINDSET THEN
+                                            REPEAT
+                                            BEGIN
+                                                IF Rec."Channel Code" = TradePartnerCodeList.Code THEN BEGIN
+                                                    // AmazonIntegration.UpdateProdutOnAmazon(Rec."Channel Code");
+                                                END;
+                                            END;
+                                            UNTIL TradePartnerCodeList.NEXT = 0;
+                    */
                 end;
             }
         }

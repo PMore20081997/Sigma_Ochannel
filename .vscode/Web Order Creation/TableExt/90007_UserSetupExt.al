@@ -7,6 +7,11 @@ tableextension 90007 UserSetupExt extends "User Setup"
         {
             DataClassification = ToBeClassified;
         }
+        field(90000; "Allow Edit Qty. to ship"; Boolean)
+        {
+            Caption = 'Edit Qty. to ship';
+            DataClassification = CustomerContent;
+        }
     }
 
     var

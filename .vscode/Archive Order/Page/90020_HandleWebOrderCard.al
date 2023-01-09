@@ -1,9 +1,9 @@
 page 90019 "Handle Web Order"
 {
     DeleteAllowed = false;
-    Editable = false;
+    Editable = true;
     InsertAllowed = false;
-    //  ModifyAllowed = false;
+    ModifyAllowed = true;
     PageType = Card;
     SourceTable = "Handled Interim Sales Header";
 
@@ -13,9 +13,11 @@ page 90019 "Handle Web Order"
         {
             group(General)
             {
+                //Editable = false;
                 field("Document No."; Rec."No.")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("MultiLine Order No."; Rec."MultiLine Order No.")
                 {
@@ -25,58 +27,133 @@ page 90019 "Handle Web Order"
                 field("Channel Order ID"; Rec."Channel Order ID")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Sell-to Customer No."; Rec."Sell-to Customer No.")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Bill-to Customer No."; Rec."Bill-to Customer No.")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field(Address; Rec.Address)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Address 2"; Rec."Address 2")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field(City; Rec.City)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Post Code"; Rec."Post Code")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
+                //8862++
+                field("Customer Posting Group"; Rec."Customer Posting Group")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                //8862--
                 field("External Document No."; Rec."External Document No.")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Deal ID"; Rec."Deal ID")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Fullfillment Channel"; Rec."Fullfillment Channel")
                 {
                     ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Currency Code"; Rec."Currency Code")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
                 }
                 field("Order Amount"; Rec."Order Amount")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
+
                 field("Order Discount Amount"; Rec."Order Discount Amount")
                 {
                     ApplicationArea = All;
                     Caption = 'Discount Amount';
+                    Editable = false;
                 }
+                field("Gift Order Amount"; Rec."Gift Order Amount")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the value of the Gift Order Amount field.';
+                    Editable = false;
+                }
+
+
                 field(Status; Rec.Status)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Order Status"; Rec."Order Status")
+                {
+                    Editable = false;
+                    ApplicationArea = all;
+                }
+                field("Payment Method"; Rec."Payment Method")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                //Paarth D Dave - 8197-4 - Adding Boolean for Assembly Order ---- Start
+                field("Assembly Order Created"; Rec."Assembly Order Created")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                }
+
+                field("Posted Assembly Order"; Rec."Pstd. Assembly Order")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Posted Assembly Order';
+                }
+
+                field("Assemply Order"; Rec."Assemply Order")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                }
+                field("Gift Card"; Rec."Gift Card")
+                {
+                    ToolTip = 'Specifies the value of the Gift Card field.';
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                //Paarth D Dave - 8197-4 - Adding Boolean for Assembly Order ---- End
+                field("No. Of Parcels"; Rec."No. Of Parcels")
                 {
                     ApplicationArea = All;
                 }
                 group("Shipping Details")
                 {
+                    Editable = false;
                     Caption = 'Shipping Details';
 
                     field("Web Shipment Method"; Rec."Web Shipment Method")
@@ -95,6 +172,16 @@ page 90019 "Handle Web Order"
                     {
                         ApplicationArea = All;
                     }
+                    //US-8196++
+                    field("Child Client ID"; Rec."Child Client ID")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Child Client Name"; Rec."Child Client Name")
+                    {
+                        ApplicationArea = All;
+                    }
+                    //US-8196--
                     field("Shipment Date"; Rec."Shipment Date")
                     {
                         ApplicationArea = All;
@@ -107,10 +194,20 @@ page 90019 "Handle Web Order"
                     {
                         ApplicationArea = All;
                     }
+                    field("No. of Items"; Rec."No. of Items")
+                    {
+                        ApplicationArea = All;
+                        Caption = 'No. of Item lines';
+                    }
+                    field("Total No. of Items"; Rec."Total No. of Items")
+                    {
+                        ApplicationArea = All;
+                    }
                 }
             }
             group(Shipping)
             {
+                Editable = false;
                 Caption = 'Shipping';
                 field("Ship-to Name"; Rec."Ship-to Name")
                 {
@@ -164,7 +261,7 @@ page 90019 "Handle Web Order"
             part("HanHandle Web Order Subform"; "Handled Web Order Subpage")
             {
                 ApplicationArea = All;
-                Enabled = false;
+                Editable = false;
                 SubPageLink = "Document Type" = FIELD("Document Type"),
                               "Document No" = FIELD("No.");
             }
@@ -173,43 +270,32 @@ page 90019 "Handle Web Order"
 
     actions
     {
-        area(processing)
+
+        area(Processing)
         {
-            group(Navigate)
+            action("Generate Shipment")
             {
-                CaptionML = ENU = 'Navigate',
-                            ENG = 'Navigate';
-                Image = SelectLineToApply;
-            }
-            action("Sales Document")
-            {
-                Caption = '&Sales Document';
-                Image = Document;
+                Image = Shipment;
+                ApplicationArea = All;
                 Promoted = true;
                 PromotedCategory = Process;
-                Visible = false;
-                ApplicationArea = All;
-
-                trigger OnAction();
+                PromotedIsBig = true;
+                trigger OnAction()
+                var
+                    L_InterimHeader: Record "Handled Interim Sales Header";
+                    ShippingRule: Record "Shipping Rule";
+                    Rec_ShippingAgent: Record "Shipping Agent";
+                    ShipmentTracking: Record "Shipment Tracking";
+                    ProcessLabel: Codeunit "Generate Shipment";
                 begin
-                    /*IF Rec."Dispatch No." <> '' THEN BEGIN
-                        SalesShipmentHeader.RESET;
-                        //SalesShipmentHeader.GET(Rec."Dispatch No.");
-                        IF SalesShipmentHeader.FINDSET THEN BEGIN
-                            CLEAR(PostedSalesShipment);
-                            PostedSalesShipment.SETRECORD(SalesShipmentHeader);
-                            PostedSalesShipment.RUN;
-                        END;
-                    END ELSE*/
-                    BEGIN
-                        SalesHeader.RESET;
-                        //SalesHeader.SETRANGE(SalesHeader."Web Order No.", Rec."Document No.");
-                        IF SalesHeader.FINDSET THEN BEGIN
-                            CLEAR(SalesOrder);
-                            SalesOrder.SETRECORD(SalesHeader);
-                            SalesOrder.RUN;
-                        END;
-                    END;
+                    L_InterimHeader.Reset();
+                    L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
+                    L_InterimHeader.SetRange("No.", Rec."No.");
+                    L_InterimHeader.SetRange("No of Error", 0);
+                    if L_InterimHeader.FindFirst() then begin
+                        ProcessLabel.GenerateLabel(L_InterimHeader);
+                        Message('Generate Shipment Process Completed.Please check Error Text in Order if label not generated.');
+                    end;
                 end;
             }
             action(ReOrder)
@@ -240,7 +326,7 @@ page 90019 "Handle Web Order"
                     RecInterimSalesHeader."Order Date" := TODAY;
                     RecInterimSalesHeader."Document Date" := TODAY;
                     RecInterimSalesHeader."Channel Order ID" := rec."Channel Order ID" + 'R';
-                    RecInterimSalesHeader."External Document No." := rec."External Document No." + 'R';
+                    RecInterimSalesHeader."External Document No." := CopyStr(rec."External Document No." + 'R', 1, 20);
                     RecInterimSalesHeader.Comments := 'Reorder';
                     CLEAR(RecInterimSalesHeader."Scanned By");
                     CLEAR(RecInterimSalesHeader."Package Tracking No.");
@@ -264,7 +350,7 @@ page 90019 "Handle Web Order"
                                 InterimSalesLine.TRANSFERFIELDS(L_HandledInterimSalesHeader);
                                 InterimSalesLine."Document Type" := L_InterimSalesHeader."Document Type";
                                 InterimSalesLine."Document No" := L_InterimSalesHeader."No.";
-                                InterimSalesLine."Sales Order Line No" := 0;
+                                Clear(InterimSalesLine."Destination Doc. Line No");
                                 CLEAR(InterimSalesLine."Destination Doc No.");
                                 CLEAR(InterimSalesLine."Destination Doc Type");
                                 CLEAR(InterimSalesLine."Scanned Date");
@@ -284,21 +370,20 @@ page 90019 "Handle Web Order"
 
                 end;
             }
-            action("Cancel Order")
+            action(Cancel)
             {
+                Caption = 'Cancel';
                 ApplicationArea = All;
-                Caption = 'Cancel Order';
                 Image = Cancel;
                 trigger OnAction()
                 var
-                    L_HISH: Record "Handled Interim Sales Header";
                     L_HISL: Record "Handled Interim Sales Line";
                 begin
-                    //Prathamesh
                     rec.TESTFIELD("Stock Posted", FALSE);
                     rec.Status := rec.Status::Cancelled;
                     CurrPage.UPDATE;
 
+                    //Prathamesh
                     L_HISL.Reset();
                     L_HISL.SetRange("Document No", Rec."No.");
                     if L_HISL.FindSet() then begin
@@ -309,87 +394,180 @@ page 90019 "Handle Web Order"
                     end;
                     //Prathamesh
                 end;
-
             }
-
-            action("Print Delivery Note")
+            action("Payment Details")
             {
+                Image = Payment;
                 ApplicationArea = All;
-                Image = Print;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedOnly = true;
-
                 trigger OnAction()
                 var
-                    L_InterimHeader: Record "Handled Interim Sales Header";
-                    SalesHeader: Record 36;
-                    NewDeliveryNote: Report 90071;
-                    ShipmentTracking: Record "Shipment Tracking";
-                    InStm: InStream;
-                    filename: Text;
-                    SMTP: Codeunit "Mail Management";
+                    // ArchivePayment: Record "Archive Payment Detail";
+                    // PageArchivePayment: Page "Archive Payment Detail";
+                    ChannelMedia: Record "Channel Media";
+                    ChannelOrderId: Text;
+                    ChannelOrderId1: Text;
+                    Length: Integer;
                 begin
+                    /* if Rec."Document Type" = Rec."Document Type"::Order then begin
+                         ArchivePayment.Reset();
+                         ArchivePayment.SetRange("Order No.", Rec."Channel Order ID");
+                         if ArchivePayment.FindFirst() then begin
+                             Clear(PageArchivePayment);
+                             PageArchivePayment.SetTableView(ArchivePayment);
+                             PageArchivePayment.Run();
+                         end;
+                     end;*/
+                    CurrPage.SetSelectionFilter(HandledOrder);
+                    if HandledOrder.FindSet then
+                        repeat
+                            ChannelOrderId += HandledOrder."Channel Order ID" + '|' + '';
+                        until HandledOrder.Next = 0;
 
-                    if Rec."Trade Partner Code" = 'SHOPDIRECT' then begin
-                        ShipmentTracking.Reset();
-                        ShipmentTracking.SetRange("Document No.", Rec."No.");
-                        if ShipmentTracking.FindFirst() then begin
-                            ShipmentTracking.CalcFields("A6 Label1");
-                            ShipmentTracking."A6 Label1".CreateInStream(InStm);
-                            filename := 'DespatchNote' + '-' + Rec."Channel Order ID" + '.pdf';
-                            DownloadFromStream(InStm, '', '', '', filename);
-
-                        end;
-                    end
-                    else begin
-                        L_InterimHeader.RESET;
-                        L_InterimHeader.SETRANGE("No.", Rec."No.");
-                        IF L_InterimHeader.FINDSET THEN BEGIN
-                            CLEAR(NewDeliveryNote);
-                            NewDeliveryNote.SETTABLEVIEW(L_InterimHeader);
-                            NewDeliveryNote.RUN;
-                        END;
-                    end;
+                    Length := STRLEN(ChannelOrderId);
+                    ChannelOrderId1 := CopyStr(ChannelOrderId, 1, Length - 1);
+                    ChannelMedia.ShowPaymentDetails(ChannelOrderId1, HandledOrder."Channel Order ID", 0, Rec."Trade Partner Code");
 
                 end;
             }
-            action("Download Delivery Label")
+        }
+        area(Navigation)
+        {
+            action("Direct Printing Label")
             {
                 ApplicationArea = All;
                 Image = Print;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedOnly = true;
+                Caption = 'Label Print';
+
                 trigger OnAction()
                 var
-                    R_CourierLabel: Report "Courier Label";
-                    L_InterimSalesHeader: Record "Handled Interim Sales Header";
+                    HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+                    WebMgt: Codeunit "Web Order Mgt";
+                    ShippingAgent: Record "Shipping Agent";
                     L_ShipmentTracking: Record "Shipment Tracking";
-                    L_ShipmentTracking2: Record "Shipment Tracking";
-                    FileOutStream: OutStream;
-                    filename: Text;
-                    TempBlob: Codeunit "Temp Blob";
-                    FileMgt: Codeunit "File Management";
                 begin
-                    /*Clear(R_CourierLabel);
-                    L_ShipmentTracking.Reset();
-                    L_ShipmentTracking.SetRange("Document No.", Rec."No.");
-                    if L_ShipmentTracking.FindSet() then begin
-                        R_CourierLabel.SETTABLEVIEW(L_ShipmentTracking);
-                        R_CourierLabel.USEREQUESTPAGE(FALSE);
-                        R_CourierLabel.Run();
-                    end;*/
-                    L_ShipmentTracking.Reset();
-                    L_ShipmentTracking.SetRange("Document No.", Rec."No.");
-                    L_ShipmentTracking.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                    if L_ShipmentTracking.FindFirst() then begin
-                        TempBlob.CREATEOUTSTREAM(FileOutStream);
-                        R_CourierLabel.SETTABLEVIEW(L_ShipmentTracking);
-                        R_CourierLabel.USEREQUESTPAGE(FALSE);
-                        R_CourierLabel.SaveAs('', ReportFormat::Pdf, FileOutStream);
-                        FileMgt.BLOBExport(TempBlob, 'Courier Label - ' + Rec."Channel Order ID" + '.pdf', true);
-                    end;
+                    HandledInterimSalesHeader.RESET;
+                    HandledInterimSalesHeader.SETRANGE("No.", Rec."No.");
+                    IF HandledInterimSalesHeader.FindFirst() THEN BEGIN
+                        ShippingAgent.Reset();
+                        ShippingAgent.SetRange(Code, HandledInterimSalesHeader."Shipping Agent Code");
+                        if ShippingAgent.FindFirst() then begin
+                            if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::RAW) then begin
+                                //RAW Printing Option Means it is For DPD EPL Label and PDF labels
+                                WebMgt.SendDirectPrintRequest(HandledInterimSalesHeader."No.", 90084, FORMAT(ShippingAgent."Printing Options")); // 90084 - DPD Label printer (RAW)
+                            end;
+                            if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::PDF) then begin
+                                WebMgt.SendDirectPrintRequest(HandledInterimSalesHeader."No.", 90081, FORMAT(ShippingAgent."Printing Options")); // 90081 - PDF Label Printer (Windows Driver)
+                            end;
+                        end;
+                    END;
+                end;
+            }
+            action(DeliveryNoteNew)
+            {
+                ApplicationArea = Basic, Suite;
+                Caption = 'Delivery Note';
+                Image = Print;
+                trigger OnAction()
+                var
+                    HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+                    NewDeliveryNote: Report "Handled Delivery Note";
+                begin
+                    HandledInterimSalesHeader.RESET;
+                    HandledInterimSalesHeader.SETRANGE("No.", Rec."No.");
+                    IF HandledInterimSalesHeader.FINDSET THEN BEGIN
+                        CLEAR(NewDeliveryNote);
+                        NewDeliveryNote.SETTABLEVIEW(HandledInterimSalesHeader);
+                        NewDeliveryNote.RUN;
+                    END;
+                end;
+            }
+
+            action("Eliminate Error")
+            {
+                Caption = 'Eliminate Error';
+                RunPageOnRec = false;
+                ApplicationArea = All;
+                Visible = false;
+                trigger OnAction()
+                var
+                    Rec_ChannelItemListing: Record "Channel Item Listing";
+                    ChannelItemList: Page "Channel Item Listing";
+                    Channelitemlisting: Record "Channel Item Listing";
+                //HandleIncomingMessage: Record "Handled Incoming Message";
+                begin
+                    // CurrPage.SETSELECTIONFILTER(HandleIncomingMessage);
+                    //IF HandleIncomingMessage.FINDSET THEN
+                    //  REPEAT
+                    BEGIN
+                        //IF (HandleIncomingMessage.Remarks <> 'Success') AND (HandleIncomingMessage."Feed Submission ID" <> '') THEN BEGIN
+                        //HandleIncomingMessage.VALIDATE("Feed Submission ID", '');
+                        //HandleIncomingMessage.VALIDATE(Remarks, '');
+                        //END;
+                        // HandleIncomingMessage.MODIFY;
+                    END;
+                    //UNTIL HandleIncomingMessage.NEXT = 0;
+                end;
+            }
+
+            action("Update Shipping")
+            {
+                Image = Add;
+                ApplicationArea = All;
+                Visible = false;
+                trigger OnAction()
+                begin
+                    /*    IF Rec."Channel Order ID" <> '' THEN BEGIN
+
+
+
+                            //Rec.CALCFIELDS("Dispatch No.");
+                            Rec.SETRANGE("Trade Partner Code", 'MAGENTO');
+                            Rec.SETFILTER("Channel Order ID", '<>%1', '');
+                            //Rec.SETFILTER("Dispatch No.", '<>%1', '');
+                            //Rec.SETRANGE("Nav Order No", '');
+
+
+                            CLEAR(TradePartnerList);
+                            TradePartnerList.SETFILTER(Code, '%1', AMAZON);
+                            IF TradePartnerList.FINDFIRST THEN 
+                              REPEAT                            
+                               IF TradePartnerList.OrderFullFilment THEN BEGIN
+                                 IF Rec."Trade Partner Code" = TradePartnerList.Code THEN BEGIN
+                                   //     AmazonCodeUnit.OrderFullFillmentAmazon(Rec."Trade Partner Code", Rec); //PS
+                                 END;
+                               END;
+                              UNTIL TradePartnerList.NEXT = 0;
+                            //End;
+
+
+                        END;
+                    */
+                end;
+            }
+            action("Sales Document")
+            {
+                Caption = '&Sales Document';
+                Image = Document;
+                Visible = false;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    /*  IF Rec."Dispatch No." <> '' THEN BEGIN
+                          SalesShipmentHeader.RESET;
+                          SalesShipmentHeader.GET(Rec."Dispatch No.");
+                          IF SalesShipmentHeader.FINDSET THEN BEGIN
+                              CLEAR(PostedSalesShipment);
+                              PostedSalesShipment.SETRECORD(SalesShipmentHeader);
+                              PostedSalesShipment.RUN;
+                          END;
+                      END ELSE BEGIN
+                          SalesHeader.RESET;
+                          IF SalesHeader.FINDSET THEN BEGIN
+                              CLEAR(SalesOrder);
+                              SalesOrder.SETRECORD(SalesHeader);
+                              SalesOrder.RUN;
+                          END;
+                      END;*/
                 end;
             }
         }
@@ -475,5 +653,8 @@ page 90019 "Handle Web Order"
         RecInterimSalesHeader.VALIDATE("Deal ID", HandledIncomingMessage."Deal ID");
         RecInterimSalesHeader.VALIDATE("Ship-to Country/Region Code", HandledIncomingMessage."Ship-to Country/Region Code");*/
     end;
+
+    var
+        HandledOrder: Record "Handled Interim Sales Header";
 }
 

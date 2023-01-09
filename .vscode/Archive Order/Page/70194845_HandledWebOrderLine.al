@@ -3,7 +3,7 @@ page 90020 "Handled Web Order Line"
 
     PageType = List;
     SourceTable = "Handled Interim Sales Line";
-
+    Editable = false;
 
     layout
     {
@@ -24,6 +24,10 @@ page 90020 "Handled Web Order Line"
                     ApplicationArea = All;
                 }
                 field("No."; Rec."No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("NAV Variant code"; Rec."NAV Variant code")
                 {
                     ApplicationArea = All;
                 }
@@ -89,6 +93,7 @@ page 90020 "Handled Web Order Line"
                     Editable = true;
                     Enabled = true;
                     ApplicationArea = All;
+                    CaptionML = ENU = 'Gift', ENG = 'Gift';
                 }
                 field("Channel Identifier"; Rec."Channel Identifier")
                 {
@@ -111,6 +116,8 @@ page 90020 "Handled Web Order Line"
                 field("VAT%"; Rec."VAT%")
                 {
                     ApplicationArea = All;
+                    Visible = false;
+
                 }
                 field(Remarks; Rec.Remarks)
                 {
@@ -125,6 +132,39 @@ page 90020 "Handled Web Order Line"
                 field(Status; Rec."Ordser Status")
                 {
                     ApplicationArea = All;
+                }
+                field("Line Status"; Rec."Line Status")
+                {
+                    ApplicationArea = All;
+                }
+
+                field("Scanned Date"; Rec."Scanned Date")
+                {
+                    ApplicationArea = All;
+                }
+                //Paarth D Dave - 8418-2 - Adding Posted Assembly Order No ---- Start
+                field("Assembly Order"; Rec."Auto Assembly Order")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Assembly Order';
+                }
+                field("Assembly Order No."; Rec."Assembly Order No.")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                }
+                field("Posted Ass. Order No "; Rec."Pstd. Ass. Order No ")
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Posted Ass. Order No.';
+                }
+                //Paarth D Dave - 8418-2 - Adding Posted Assembly Order No ---- End
+                field("Gift Card"; Rec."Gift Card")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the value of the Gift Card field.';
                 }
             }
         }

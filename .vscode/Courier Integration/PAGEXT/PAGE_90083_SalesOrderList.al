@@ -2,6 +2,35 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
 {
     actions
     {
+        addafter("Create &Warehouse Shipment")
+        {
+            action(UndoShipmentCreated)
+            {
+                Image = Undo;
+                Caption = 'Undo Shipment Created';
+                ApplicationArea = All;
+
+                trigger onAction()
+                var
+                    WarehouseRequest: Record "Warehouse Request";
+                    SalesHeader: Record "Sales Header";
+                begin
+                    SalesHeader.Reset();
+                    CurrPage.SetSelectionFilter(SalesHeader);
+                    if SalesHeader.FindSet() then begin
+                        repeat
+                            WarehouseRequest.Reset();
+                            WarehouseRequest.SetRange("Source Document", WarehouseRequest."Source Document"::"Sales Order");
+                            WarehouseRequest.SetRange("Source No.", SalesHeader."No.");
+                            if WarehouseRequest.FindFirst() then begin
+                                WarehouseRequest."Shipment Created" := false;
+                                WarehouseRequest.Modify();
+                            end;
+                        until SalesHeader.Next() = 0;
+                    end;
+                end;
+            }
+        }
         addafter(Release)
         {
             action("Shipment Tracking")

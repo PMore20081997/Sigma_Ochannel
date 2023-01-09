@@ -150,7 +150,81 @@ table 90000 "General Setup - Channels"
         {
             TableRelation = "G/L Account"."No.";
         }
-        field(50000; "Production Item Inventory"; Integer)
+        field(25; "Allocate Web Orders"; Boolean)
+        {
+
+        }
+        field(26; "Enable Carriage credit"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(27; "Quantity Restriction (SINGLE)"; Decimal)
+        {
+
+        }
+        field(28; "Courier Label Container Name"; Text[250])
+        {
+
+        }
+        field(29; "Courier Label Container Token"; Text[250])
+        {
+        }
+        field(30; "Courier Container Endpoint"; Text[250])
+        {
+            Caption = 'Courier Label Container Endpoint';
+        }
+        field(31; "Courier Container Attribute"; Text[250])
+        {
+            Caption = 'Courier Label Container Attribute';
+        }
+        field(32; "Download Lable on Azure"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Download Delivery Lable on Azure';
+        }
+        field(33; "Auto Release Sales Orders"; Boolean)
+        {
+
+        }
+        field(34; "Production Item Inventory"; Integer)
+        {
+
+        }
+        field(35; "Order Value"; Decimal)
+        {
+            trigger OnValidate()
+            var
+                L_InterimSalesHeader: Record "Interim Sales Header";
+            begin
+                L_InterimSalesHeader.Reset();
+                L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
+                L_InterimSalesHeader.SetRange(status, L_InterimSalesHeader.status::"In Progress");
+                if L_InterimSalesHeader.FindSet() then
+                    repeat
+                        if L_InterimSalesHeader."Order Amount" > Rec."Order Value" then begin
+                            L_InterimSalesHeader."Fraud Check" := true;
+                            L_InterimSalesHeader.Modify();
+                        end
+                        else begin
+                            L_InterimSalesHeader."Fraud Check" := false;
+                            L_InterimSalesHeader.Modify();
+                        end;
+                    until L_InterimSalesHeader.Next() = 0;
+            end;
+        }
+        field(36; "Despatch Printer Selection"; Boolean)
+        {
+
+        }
+        field(37; "Despatch Note Report ID"; Integer)
+        {
+
+        }
+        field(38; "Label Report ID"; Integer)
+        {
+
+        }
+        field(39; "DPD Label Report ID"; Integer)
         {
 
         }

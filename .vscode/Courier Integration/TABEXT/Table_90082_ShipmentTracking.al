@@ -74,6 +74,10 @@ table 90082 "Shipment Tracking"
         {
 
         }
+        field(14; "RAW Text"; Text[2048])
+        {
+
+        }
     }
 
     keys

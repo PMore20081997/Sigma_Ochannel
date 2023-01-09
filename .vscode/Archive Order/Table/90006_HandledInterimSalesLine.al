@@ -72,7 +72,7 @@ table 90006 "Handled Interim Sales Line"
         {
             DataClassification = ToBeClassified;
         }
-        field(16; "VAT Prod. Posting Group"; Code[10])
+        field(16; "VAT Prod. Posting Group"; Code[20])
         {
             TableRelation = "VAT Product Posting Group";
             DataClassification = ToBeClassified;
@@ -127,7 +127,8 @@ table 90006 "Handled Interim Sales Line"
         field(26; "Discount%"; Text[30])
         {
             DataClassification = ToBeClassified;
-
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Wrong Data type setup';
         }
         field(27; "Line Status"; Option)
         {
@@ -135,6 +136,11 @@ table 90006 "Handled Interim Sales Line"
             OptionMembers = ,"No Stock",Cancelled;
             OptionCaptionML = ENU = ' ,"No Stock",Cancelled',
                               ENG = ' ,"No Stock",Cancelled';
+        }
+        field(28; "Discount %"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+
         }
         field(29; "Gift Wrap"; Boolean)
         {
@@ -231,7 +237,8 @@ table 90006 "Handled Interim Sales Line"
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No")));
-
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Column is not required';
         }
         field(48; "Ordser Status"; Option)
         {
@@ -304,7 +311,8 @@ table 90006 "Handled Interim Sales Line"
         field(50029; Reserved; Boolean)
         {
             DataClassification = ToBeClassified;
-
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Column is not required';
         }
         field(50030; "Old Item No."; Code[20])
         {
@@ -351,6 +359,8 @@ table 90006 "Handled Interim Sales Line"
         field(50041; "Moved In Handled"; Boolean)
         {
             DataClassification = ToBeClassified;
+            ObsoleteState = Removed;
+            ObsoleteReason = 'Column is not required';
         }
         field(50042; "Destination Doc Type"; Option)
         {
@@ -425,6 +435,36 @@ table 90006 "Handled Interim Sales Line"
         {
 
         }
+
+
+        //Paarth D Dave - 8197-6 - Adding Posted Assembly Order No ---- Start
+        field(90025; "Pstd. Ass. Order No "; Code[20])
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = lookup("Posted Assembly Header"."No." where("Description 2" = field("Channel Order ID"), "Item No." = field("No."), "Channel Order Line No." = field("Line No.")));
+        }
+        field(90026; "Auto Assembly Order"; Boolean)
+        {
+            InitValue = false;
+            Caption = 'Posted Assembly Order';
+        }
+        field(90024; "Assembly Order No."; Code[20])
+        {
+            Editable = false;
+            FieldClass = FlowField;
+            CalcFormula = lookup("Assembly Header"."No." Where("Description 2" = field("Channel Order ID"), "Item No." = field("No."), "Channel Order Line No." = field("Line No.")));
+        }
+        field(90029; "Sacnned Qty"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Warehouse Shipment Line"."Scanned Quantity" where("Item No." = field("No."), "Channel Order Id" = field("Channel Order ID"), "Source No." = field("Document No")));
+        }
+        field(90030; "Gift Card"; Boolean)
+        {
+
+        }
+        //Paarth D Dave - 8197-6 - Adding Posted Assembly Order No ---- End
 
     }
 

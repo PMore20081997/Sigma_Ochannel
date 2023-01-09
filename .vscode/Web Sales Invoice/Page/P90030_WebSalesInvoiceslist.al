@@ -1,4 +1,5 @@
 //CAS-26633-Z8W1Y1.MH
+#pragma implicitwith disable
 page 90030 "Web Sales Invoices"
 {
     PageType = List;
@@ -31,6 +32,23 @@ page 90030 "Web Sales Invoices"
                 {
                     ApplicationArea = All;
                 }
+                field("Stock Posted"; Rec."Stock Posted")
+                {
+                    ApplicationArea = All;
+                }
+                field("Invoice Created"; Rec."Invoice Created")
+                {
+                    ApplicationArea = All;
+                }
+                field("Invoice Posted"; Rec."Invoice Posted")
+                {
+                    ApplicationArea = All;
+                }
+                field("Payment Posted"; Rec."Payment Posted")
+                {
+                    ApplicationArea = All;
+                }
+
                 field(Posted; Rec.Posted)
                 {
                     ApplicationArea = All;
@@ -38,6 +56,7 @@ page 90030 "Web Sales Invoices"
                 field("Posting Date"; Rec."Posting Date")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
             }
         }
@@ -62,17 +81,18 @@ page 90030 "Web Sales Invoices"
                 RunPageLink = "No." = field("Web Sales Invoice No.");
             }
 
-          /*  action(TEST)
-            {
-                ApplicationArea = All;
+            /*  action(TEST)
+              {
+                  ApplicationArea = All;
 
-                trigger OnAction()
-                var
-                    L_post: Codeunit "Post Stock and Invoice";
-                begin
-                    L_post.CreateandpostItemJournal;
-                end;
-            }*/
+                  trigger OnAction()
+                  var
+                      L_post: Codeunit "Post Stock and Invoice";
+                  begin
+                      L_post.CreateandpostItemJournal;
+                  end;
+              }*/
         }
     }
 }
+#pragma implicitwith restore

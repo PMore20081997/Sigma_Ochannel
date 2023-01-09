@@ -388,27 +388,30 @@ codeunit 90014 "Cloudfy Integration"
                     if TradePartner.Get(ChannelCode) then begin
                         if (OrderSource = 'Cloudfy') and (ChannelCode = 'CLOUDFYB2B') then begin
                             InsertInInterimSalesHeader(L_OrderNodeList, ChannelCode, InterimSalesHeader, PaymentDetails, OrderSource);
-                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine);
+                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine, OrderSource);
 
                             CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+                            Commit();
                             UpdateOrderTracking(ChannelCode);
                             ConvertStatusToAcknowledge(ChannelCode);
                         end;
 
                         if (OrderSource = 'API') and (ChannelCode = 'CLOUDFYB2C') then begin
                             InsertInInterimSalesHeader(L_OrderNodeList, ChannelCode, InterimSalesHeader, PaymentDetails, OrderSource);
-                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine);
+                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine, OrderSource);
 
                             CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+                            Commit();
                             UpdateOrderTracking(ChannelCode);
                             ConvertStatusToAcknowledge(ChannelCode);
                         end;
 
                         if (OrderSource = 'NEXT') and (ChannelCode = 'CLOUDFYNXT') then begin
                             InsertInInterimSalesHeader(L_OrderNodeList, ChannelCode, InterimSalesHeader, PaymentDetails, OrderSource);
-                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine);
+                            InsertInInterimSalesLine(L_OrderNodeList, ChannelCode, InterimSalesHeader, InterimSalesLine, OrderSource);
 
                             CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+                            Commit();
                             UpdateOrderTracking(ChannelCode);
                             ConvertStatusToAcknowledge(ChannelCode);
                         end;
@@ -966,7 +969,7 @@ codeunit 90014 "Cloudfy Integration"
     end;
 
 
-    local procedure InsertInInterimSalesLine(P_OrderDataNodeList: XmlNodeList; ChannelCode: Code[10]; var InterimSalesHeader: Record "Interim Sales Header" temporary; var InterimSalesLine: Record "Interim Sales Line" temporary)
+    local procedure InsertInInterimSalesLine(P_OrderDataNodeList: XmlNodeList; ChannelCode: Code[10]; var InterimSalesHeader: Record "Interim Sales Header" temporary; var InterimSalesLine: Record "Interim Sales Line" temporary; OrderSource: Text)
     var
         OrderItemNodeList: XmlNodeList;
         OrderItemList: XmlNodeList;
@@ -975,6 +978,7 @@ codeunit 90014 "Cloudfy Integration"
         Quantity: Decimal;
         Amount: Decimal;
         ShippingPrice: Decimal;
+        DeliveryDate: Date;
     begin
         //OrderItem
         Clear(GenericNode);
@@ -1003,6 +1007,18 @@ codeunit 90014 "Cloudfy Integration"
                 if not GenericElement.IsEmpty() and GenericElement.HasElements() then begin
                     OrderItemList := GenericElement.GetChildNodes();
                 end;
+
+                //Delivery Date
+                if (OrderSource = 'Cloudfy') and (ChannelCode = 'CLOUDFYB2B') then begin
+                    Clear(GenericNode);
+                    Clear(GenericElement);
+                    if OrderItemList.Get(3, GenericNode) then begin
+                        GenericElement := GenericNode.AsXmlElement();
+                        DeliveryDate := GenerateDate(GenericElement.InnerText());
+                        InterimSalesLine."Shipment Date" := DeliveryDate;
+                    end;
+                end;
+                //Delivery Date
 
                 //Product Price (Unit Price)
                 Clear(GenericNode);
@@ -1160,7 +1176,10 @@ codeunit 90014 "Cloudfy Integration"
 
         L_HandledInterimSalesHeader.Reset();
         L_HandledInterimSalesHeader.SetRange("Trade Partner Code", ChannelCode);
-        L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
+        if ChannelCode = 'CLOUDFYNXT' then
+            L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Processing)
+        else
+            L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
         if L_HandledInterimSalesHeader.FindSet() then begin
             repeat
                 RequestBody := '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Body><UpdateOrderTracking xmlns="http://tempuri.org/Navision">' +
