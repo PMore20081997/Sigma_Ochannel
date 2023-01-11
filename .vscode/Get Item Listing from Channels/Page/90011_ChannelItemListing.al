@@ -259,8 +259,13 @@ page 90011 "Channel Item Listing"
                         repeat
                             if Item.Get(ChannelItemListing."Item No.") then begin
                                 if Item."Production Item" = true then begin
-                                    ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
-                                    ChannelItemListing."Inventory Synced" := false;
+                                    if ChannelItemListing."Channel Inventory" <> GeneralSetup."Production Item Inventory" then begin
+                                        ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
+                                        ChannelItemListing."Inventory Synced" := false;
+                                    end
+                                    else begin
+                                        ChannelItemListing."Inventory Synced" := true;
+                                    end;
                                 end
                                 else begin
                                     if TradePartner.Get(ChannelItemListing."Channel Code") then;
@@ -286,7 +291,7 @@ page 90011 "Channel Item Listing"
 
                                                     ItemQuery.OPEN;
                                                     IF ItemQuery.READ THEN begin
-                                                        AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                                        AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order + ItemQuery.Qty__on_Assembly_Order);
                                                     END;
                                                     ItemQuery.CLOSE;
 

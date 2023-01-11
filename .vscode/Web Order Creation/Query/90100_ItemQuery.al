@@ -25,6 +25,10 @@ query 90100 ItemQuery
             {
 
             }
+            column(Qty__on_Assembly_Order; "Qty. on Assembly Order")
+            {
+
+            }
             filter(Location_Filter; "Location Filter")
             {
             }

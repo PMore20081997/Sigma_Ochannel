@@ -670,11 +670,12 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine.FileName := P_InterimSalesLine.FileName;
         L_InterimSalesLine.Weight := P_InterimSalesLine.Weight;
         L_InterimSalesLine."Channel Order ID" := P_InterimSalesLine."Channel Order ID";//Sofyan
+        L_InterimSalesLine."Currency Code" := P_InterimSalesLine."Currency Code";
 
         //L_InterimSalesLine."Discount %" := P_Discountper; //code for discount
 
-        L_InterimSalesLine."Shipment Date" := P_InterimSalesLine."Shipment Date"; //Shubham
-                                                                                  //L_InterimSalesLine."Discount %" := P_Discountper; code for discount
+        L_InterimSalesLine."Shipment Date" := P_InterimSalesLine."Shipment Date";
+        //L_InterimSalesLine."Discount %" := P_Discountper; code for discount
 
         //L_InterimSalesLine.Discount := Round(((L_InterimSalesLine.Amount * P_Discountper)/100),0.01);
         L_InterimSalesLine.Discount := P_InterimSalesLine.Discount; //RK 17-05-2022

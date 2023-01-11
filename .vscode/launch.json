@@ -13,8 +13,8 @@
             "startupObjectId": 22,
             "environmentType": "Sandbox",
             "schemaUpdateMode": "ForceSync",
-            //"environmentName": "UAT",
-            "environmentName": "PROD_RESTORE",
+            "environmentName": "ProdCopy141222",
+            // "environmentName": "PROD_RESTORE",
             //"environmentName": "Demo",
             "tenant": "7bac1391-1bbb-46cf-ae0d-ad536338587c"
         }

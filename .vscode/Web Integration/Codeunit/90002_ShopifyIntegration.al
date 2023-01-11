@@ -67,7 +67,6 @@ codeunit 90002 "Shopify Integration"
     procedure GetJsonToken(var JsonObject: JsonObject; TokenKey: text) JsonToken: JsonToken;
     begin
         if not JsonObject.Get(TokenKey, JsonToken) then;
-
     end;
 
     procedure GetJsonvalue(var aJsonObject: JsonObject; TokenKey: text) aJsonValue: JsonValue;
@@ -79,6 +78,20 @@ codeunit 90002 "Shopify Integration"
         Else
             aJsonValue := aJsonToken.AsValue();
     end;
+
+    procedure GetCredentials("ChannelCode": Code[20])
+    var
+        TradePartner: Record "Trade Partner";
+    begin
+        TradePartner.RESET;
+        if TradePartner.Get(ChannelCode) then begin
+            AccessKeyId := TradePartner.AccessKeyId;
+            LocationId := TradePartner.MarketplaceId;
+            SecretAccessKey := TradePartner.SecretAccessKey;
+            ServiceURL := TradePartner."Sevice/API URL";
+            LastOrderSync := TradePartner."Last Order Sync";
+        End;
+    End;
 
     procedure GetShopifyOrder(ChannelCode: Code[20]; NextURL: Text)
     var
@@ -110,7 +123,6 @@ codeunit 90002 "Shopify Integration"
         BillingAddr: Boolean;
         custBoolean: Boolean;
         checkChar: Text;
-        testid: Code[50];
         index: Integer;
         LinkHeaderBool: Boolean;
         LinkHeaderValue: array[2] of Text;
@@ -163,7 +175,10 @@ codeunit 90002 "Shopify Integration"
                     Clear(ShippingAddr);
                     Clear(BillingAddr);
                     Clear(custBoolean);
-                    // If InterimSalesHeader.FindSet then;
+                    Clear(OrderHeader);
+                    Clear(ShippingAddress);
+                    Clear(BillingAddress);
+                    Clear(CustomerDetails);
 
                     JsonObjectInArray.Get(i, orderHeareToken);
                     OrderHeader := orderHeareToken.AsObject();
@@ -174,7 +189,6 @@ codeunit 90002 "Shopify Integration"
                     total_shipping_price_set := checkChar.Contains('total_shipping_price_set');
 
                     custBoolean := checkChar.Contains('customer');
-                    testid := GetJsonvalue(OrderHeader, 'id').AsCode();
                     ChannelOrderID := GetJsonvalue(OrderHeader, 'name').AsCode();
 
                     if ShippingAddr = true then begin
@@ -188,6 +202,7 @@ codeunit 90002 "Shopify Integration"
                     if custBoolean = true then begin
                         CustomerDetails := GetJsonToken(OrderHeader, 'customer').AsObject();
                     end;
+
                     if total_shipping_price_set = true then begin
                         Clear(G_ShippingPrice);
                         totalshippingpricesetobject := GetJsonToken(OrderHeader, 'total_shipping_price_set').AsObject();
@@ -201,7 +216,7 @@ codeunit 90002 "Shopify Integration"
                     end;
 
                     InsertIntSalesHeader(ChannelOrderID, OrderHeader, ChannelCode, InterimSalesHeader, ShippingAddr, BillingAddr, custBoolean, PaymentDetails);
-                    InsertInterimSalesLine(InterimSalesHeader, OrderHeader, InterimSalesLine, totalshippingpricesetSubobject);
+                    InsertInterimSalesLine(InterimSalesHeader, OrderHeader, InterimSalesLine, totalshippingpricesetSubobject, PaymentDetails);
                     CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
                     Commit();
                 End;
@@ -235,42 +250,12 @@ codeunit 90002 "Shopify Integration"
         //Code to Get Next URL From Response Header--
     End;
 
-    procedure GetCredentials("ChannelCode": Code[20])
-    var
-        TradePartner: Record "Trade Partner";
-    begin
-        TradePartner.RESET;
-        if TradePartner.Get(ChannelCode) then begin
-            AccessKeyId := TradePartner.AccessKeyId;
-            LocationId := TradePartner.MarketplaceId;
-            SecretAccessKey := TradePartner.SecretAccessKey;
-            ServiceURL := TradePartner."Sevice/API URL";
-            LastOrderSync := TradePartner."Last Order Sync";
-        End;
-    End;
-
-    procedure CreateBasicAuth(UserName: Text; Password: Text): Text
-    var
-        CUTempBlob: Codeunit "Temp Blob";
-        Base64Convert: Codeunit "Base64 Convert";
-        OutStm: OutStream;
-        InStrm: InStream;
-        tempText: Text;
-    begin
-        tempText := StrSubstNo('%1:%2', UserName, Password);
-        CUTempBlob.CreateOutStream(OutStm, TextEncoding::UTF8);
-        OutStm.WriteText(StrSubstNo('%1:%2', UserName, Password));
-        CUTempBlob.CreateInStream(InStrm);
-        exit(StrSubstNo('Basic %1', Base64Convert.ToBase64(InStrm)));
-    end;
-
 
     local procedure InsertIntSalesHeader(ChannelOrderId: Text; HeaderObject: JsonObject; ChannelCode: Code[20]; var InterimSalesHeader: Record "Interim Sales Header" temporary; ShippingAddr: Boolean; BillingAddr: Boolean; custBoolean: Boolean; var PaymentDetails: Record "Channel Media" temporary)
     var
         AddressLenght: Integer;
         BigAddress: Text[200];
         TotalWeight: Decimal;
-        CountryCode: Code[20];
         FulfillmentChannel: Text[250];
         TradePartner1: Record "Trade Partner";
         CountyRegionCode: Record "Country/Region";
@@ -284,7 +269,18 @@ codeunit 90002 "Shopify Integration"
         i: Integer;
         NoOfRecs: Integer;
         JToken: JsonToken;
+        CurrencyCode: Text;
+        TotalDiscountSet: JsonObject;
+        PresentmentMoneyDiscObject: JsonObject;
+        DiscountAmountText: Text;
+        DiscountAmount: Decimal;
+        TotalPriceSet: JsonObject;
+        PresentmentMoneyObject: JsonObject;
+        TotalPriceText: Text;
+        TotalPrice: Decimal;
     begin
+        InterimSalesHeader.Reset();
+        InterimSalesHeader.Init();
         InterimSalesHeader."Trade Partner Code" := ChannelCode;
         InterimSalesHeader."Channel Order ID" := ChannelOrderId;
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
@@ -296,12 +292,17 @@ codeunit 90002 "Shopify Integration"
             if GetJsonvalue(BillingAddress, 'name').IsNull = false then begin
                 InterimSalesHeader."Bill- to Name" := CopyStr(GetJsonToken(BillingAddress, 'name').AsValue().AsText(), 1, 50);
             end;
-        end;//Robo
+
+            If GetJsonvalue(BillingAddress, 'country').IsNull = false then begin
+                InterimSalesHeader."Bill-to County" := CopyStr(GetJsonvalue(BillingAddress, 'country').AsText(), 1, 30);
+            end;
+        end;
 
         if GetJsonvalue(HeaderObject, 'total_weight').IsNull = false then begin
             TotalWeight := GetJsonvalue(HeaderObject, 'total_weight').AsDecimal() / 1000;
             InterimSalesHeader."Total Weight" := TotalWeight;
         end;
+
         if ShippingLinebool = true then begin
             if GetJsonvalue(ShippinglineObject, 'title').IsNull = false then begin
                 InterimSalesHeader."Web Shipment Method" := GetJsonToken(ShippinglineObject, 'title').AsValue().AsCode(); // NumOrderId
@@ -319,10 +320,6 @@ codeunit 90002 "Shopify Integration"
         if GetJsonvalue(HeaderObject, 'created_at').IsNull = false then begin
             InterimSalesHeader."Document Date" := DT2Date(GetJsonToken(HeaderObject, 'created_at').AsValue().AsDateTime());
         end;
-        if GetJsonvalue(HeaderObject, 'total_discounts').IsNull = false then begin
-            InterimSalesHeader."Order Discount Amount" := GetJsonToken(HeaderObject, 'total_discounts').AsValue().AsDecimal();
-        end;
-
 
         TradePartner1.Reset();
         if TradePartner1.Get(ChannelCode) then begin
@@ -345,39 +342,24 @@ codeunit 90002 "Shopify Integration"
                 InterimSalesHeader."Payment Method" := CopyStr(GetJsonToken(OrderHeader, 'gateway').AsValue.AsCode(), 1, 20);
         end;
 
-
         if GetJsonvalue(OrderHeader, 'email').IsNull = false then begin
             InterimSalesHeader."Email (Location)" := GetJsonToken(OrderHeader, 'email').AsValue.AsText();
         end;
 
+        Clear(InterimSalesHeader."Ship-to Phone");
         if GetJsonvalue(OrderHeader, 'phone').IsNull = false then begin
             InterimSalesHeader."Ship-to Phone" := GetJsonToken(OrderHeader, 'phone').AsValue().AsCode();
         end;
 
-        if BillingAddr = true then begin
-            If GetJsonvalue(BillingAddress, 'country').IsNull = false then begin
-                CountryCode := GetJsonvalue(BillingAddress, 'country').AsText();
-            end;
-        end;
-
-        CountyRegionCode.Reset();
-        CountyRegionCode.SetRange(Name, CountryCode);
-        if CountyRegionCode.FindFirst() then begin
-            InterimSalesHeader."Ship-to Country/Region Code" := CountyRegionCode.Code;
-        end;
         if ShippingAddr = true then begin
             If GetJsonvalue(ShippingAddress, 'zip').IsNull = false then begin
                 InterimSalesHeader."Post Code" := GetJsonToken(ShippingAddress, 'zip').AsValue().AsText();
             end;
-        end;
 
-        if ShippingAddr = true then begin
             If GetJsonvalue(ShippingAddress, 'city').IsNull = false then begin
                 InterimSalesHeader.City := GetJsonToken(ShippingAddress, 'city').AsValue().AsText();
             end;
-        end;
 
-        if ShippingAddr = true then begin
             If GetJsonvalue(ShippingAddress, 'address1').IsNull = false then begin
                 AddressLenght := StrLen(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText());
                 if AddressLenght > 100 then begin
@@ -398,6 +380,7 @@ codeunit 90002 "Shopify Integration"
             InterimSalesHeader."Buyer Email" := Copystr(GetJsonToken(OrderHeader, 'email').AsValue().AsText(), 1, 50);
             InterimSalesHeader."Ship-to Email" := Copystr(GetJsonToken(OrderHeader, 'email').AsValue().AsText(), 1, 80);
         end;
+
         if ShippingAddr = true then begin
             if GetJsonvalue(ShippingAddress, 'address1').IsNull = false then begin
                 InterimSalesHeader."Ship-to Address" := CopyStr(GetJsonToken(ShippingAddress, 'address1').AsValue().AsText(), 1, 50);
@@ -419,6 +402,7 @@ codeunit 90002 "Shopify Integration"
                 InterimSalesHeader."Ship-to Name" := GetJsonToken(ShippingAddress, 'name').AsValue().AsText();
             end;
 
+            Clear(InterimSalesHeader."Ship-to Phone");
             if GetJsonvalue(ShippingAddress, 'phone').IsNull = false then begin
                 InterimSalesHeader."Ship-to Phone" := CopyStr(GetJsonToken(ShippingAddress, 'phone').AsValue().AsText(), 1, 20);
             end;
@@ -431,13 +415,6 @@ codeunit 90002 "Shopify Integration"
                 InterimSalesHeader."Ship-to Country/Region Code" := GetJsonToken(ShippingAddress, 'country_code').AsValue().AsCode();
             end;
         end;
-        if GetJsonvalue(OrderHeader, 'total_price').IsNull = false then begin
-            InterimSalesHeader.Validate("Order Amount", GetJsonvalue(OrderHeader, 'total_price').AsDecimal());
-        end;
-
-        // InterimSalesHeader.VALIDATE("Pickup Date", TODAY + 1);
-        // InterimSalesHeader.VALIDATE("Pickup Time", 170000T);
-        //InterimSalesHeader.VALIDATE("No. Of Parcels", 1);
 
         //Payment Details++
         if WebOrderMgmt.CheckOrderNotExist(ChannelCode, ChannelOrderId) then begin
@@ -501,8 +478,70 @@ codeunit 90002 "Shopify Integration"
         end;
         //Payment Details--
 
+        //Inserting Amount Details Initially if it doesn't go into Payment Details Conditions++
+        if GetJsonvalue(HeaderObject, 'total_price').IsNull = false then begin
+            InterimSalesHeader."Order Amount" := GetJsonvalue(HeaderObject, 'total_price').AsDecimal();
+        end;
+
+        if GetJsonvalue(HeaderObject, 'total_discounts').IsNull = false then begin
+            InterimSalesHeader."Order Discount Amount" := GetJsonToken(HeaderObject, 'total_discounts').AsValue().AsDecimal();
+        end;
+        //Inserting Amount Details Initially if it doesn't go into Payment Details Conditions--
+
         if PaymentDetails.FindFirst() then
             InterimSalesHeader."Payment Method" := PaymentDetails."Payment Method";
+
+        Clear(CurrencyCode);
+        Clear(DiscountAmounttext);
+        Clear(DiscountAmount);
+        Clear(TotalPriceText);
+        Clear(TotalPrice);
+        Clear(InterimSalesHeader."Currency Code");
+        if PaymentDetails.FindSet() then begin
+            repeat
+                if PaymentDetails."Payment Method" = 'paypal' then begin
+                    if custBoolean = true then begin
+                        if GetJsonvalue(CustomerDetails, 'currency').IsNull = false then begin
+                            CurrencyCode := GetJsonvalue(CustomerDetails, 'currency').AsText();
+
+                            //Clearing Previously Assigned Values for Order Amount and Order Discount Amount
+                            if CurrencyCode <> 'GBP' then begin
+                                Clear(InterimSalesHeader."Order Amount");
+                                Clear(InterimSalesHeader."Order Discount Amount");
+
+                                InterimSalesHeader."Currency Code" := CopyStr(CurrencyCode, 1, 10);
+
+                                if HeaderObject.Contains('total_price_set') then begin
+                                    TotalPriceSet := GetJsonToken(HeaderObject, 'total_price_set').AsObject();
+                                    PresentmentMoneyObject := GetJsonToken(TotalPriceSet, 'presentment_money').AsObject();
+
+                                    if GetJsonvalue(PresentmentMoneyObject, 'amount').IsNull = false then begin
+                                        TotalPriceText := GetJsonvalue(PresentmentMoneyObject, 'amount').AsText();
+                                    end;
+                                    if TotalPriceText <> '' then begin
+                                        Evaluate(TotalPrice, TotalPriceText);
+                                    end;
+                                    InterimSalesHeader."Order Amount" := TotalPrice;
+                                end;
+
+                                if HeaderObject.Contains('total_discounts_set') then begin
+                                    TotalDiscountSet := GetJsonToken(HeaderObject, 'total_discounts_set').AsObject();
+                                    PresentmentMoneyDiscObject := GetJsonToken(TotalDiscountSet, 'presentment_money').AsObject();
+
+                                    if GetJsonvalue(PresentmentMoneyDiscObject, 'amount').IsNull = false then begin
+                                        DiscountAmountText := GetJsonvalue(PresentmentMoneyDiscObject, 'amount').AsText();
+                                    end;
+                                    if DiscountAmountText <> '' then begin
+                                        Evaluate(DiscountAmount, DiscountAmountText);
+                                    end;
+                                    InterimSalesHeader."Order Discount Amount" := DiscountAmount;
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+            until PaymentDetails.Next() = 0;
+        end;
 
         InterimSalesHeader.Insert();
     end;
@@ -539,24 +578,28 @@ codeunit 90002 "Shopify Integration"
     end;
 
 
-    local procedure InsertInterimSalesLine(var InterimSalesHeader: Record "Interim Sales Header" temporary; jsonMainReq: JsonObject; var InterimSalesLine: Record "Interim Sales Line" temporary; ShippingPriceObject: JsonObject)
+    local procedure InsertInterimSalesLine(var InterimSalesHeader: Record "Interim Sales Header" temporary; jsonMainReq: JsonObject; var InterimSalesLine: Record "Interim Sales Line" temporary; ShippingPriceObject: JsonObject; var PaymentDetails: Record "Channel Media" temporary)
     var
         p: Integer;
         DiscountArray: JsonArray;
-        DiscountJsonobejt: JsonObject;
-        Disconttoken: JsonToken;
+        DiscountJsonObject: JsonObject;
+        DiscountToken: JsonToken;
         ItemArray: JsonArray;
         cnt: Integer;
-        i: Integer;
-        j: Integer;
         k: Integer;
         LineObject: JsonObject;
         WebLineToken: JsonToken;
-        DiscontCount: Integer;
+        DiscountCount: Integer;
         TotalItemQty: Integer;
         DisCountAmount: Decimal;
         ItemWeight: Decimal;
         GiftJsonToken: JsonToken;
+        PriceSetObject: JsonObject;
+        PresentmentMoneyObject: JsonObject;
+        PriceText: Text;
+        Price: Decimal;
+        AmountSetObject: JsonObject;
+        DiscountPresentmentObj: JsonObject;
     begin
         TotalItemQty := 0;
         ItemArray := GetJsonToken(jsonMainReq, 'line_items').AsArray();
@@ -584,11 +627,80 @@ codeunit 90002 "Shopify Integration"
 
                 if GetJsonvalue(LineObject, 'product_id').IsNull = false then begin
                     InterimSalesLine."Channel Item Id" := GetJsonvalue(LineObject, 'product_id').AsText();
-
                 end;
+
+                Clear(InterimSalesLine."Unit Price");
+                Clear(InterimSalesLine.Discount);
 
                 if GetJsonvalue(LineObject, 'price').IsNull = false then begin
                     InterimSalesLine."Unit Price" := GetJsonvalue(LineObject, 'price').AsDecimal();
+                end;
+
+                Clear(DisCountAmount);
+                Clear(DiscountCount);
+                Clear(DiscountArray);
+                Clear(DiscountToken);
+                Clear(DiscountJsonObject);
+                DiscountArray := GetJsonToken(LineObject, 'discount_allocations').AsArray();
+                DiscountCount := DiscountArray.Count;
+                if DiscountCount <> 0 then begin
+                    DiscountArray.Get(p, DiscountToken);
+                    DiscountJsonObject := DiscountToken.AsObject;
+                    if GetJsonvalue(DiscountJsonObject, 'amount').IsNull = false then begin
+                        DisCountAmount := GetJsonvalue(DiscountJsonObject, 'amount').AsDecimal();
+                    end;
+                End;
+                InterimSalesLine.Discount := DisCountAmount;
+
+                Clear(InterimSalesLine."Currency Code");
+                if PaymentDetails.FindSet() then begin
+                    repeat
+                        if PaymentDetails."Payment Method" = 'paypal' then begin
+                            if (InterimSalesHeader."Currency Code" <> '') and (InterimSalesHeader."Currency Code" <> 'GBP') then begin
+                                Clear(InterimSalesLine."Unit Price");
+                                Clear(InterimSalesLine.Discount);
+
+                                InterimSalesLine."Currency Code" := InterimSalesHeader."Currency Code";
+
+                                Clear(PriceSetObject);
+                                Clear(PresentmentMoneyObject);
+                                Clear(PriceText);
+                                Clear(Price);
+                                if LineObject.Contains('price_set') then begin
+                                    PriceSetObject := GetJsonToken(LineObject, 'price_set').AsObject();
+                                    PresentmentMoneyObject := GetJsonToken(PriceSetObject, 'presentment_money').AsObject();
+
+                                    if GetJsonvalue(PresentmentMoneyObject, 'amount').IsNull = false then begin
+                                        PriceText := GetJsonvalue(PresentmentMoneyObject, 'amount').AsText();
+                                    end;
+                                    if PriceText <> '' then begin
+                                        Evaluate(Price, PriceText);
+                                    end;
+                                    InterimSalesLine."Unit Price" := Price;
+                                end;
+
+                                Clear(DisCountAmount);
+                                Clear(DiscountCount);
+                                Clear(DiscountArray);
+                                Clear(DiscountToken);
+                                Clear(DiscountJsonObject);
+                                Clear(AmountSetObject);
+                                Clear(DiscountPresentmentObj);
+                                DiscountArray := GetJsonToken(LineObject, 'discount_allocations').AsArray();
+                                DiscountCount := DiscountArray.Count;
+                                if DiscountCount <> 0 then begin
+                                    DiscountArray.Get(p, DiscountToken);
+                                    DiscountJsonObject := DiscountToken.AsObject;
+                                    AmountSetObject := GetJsonToken(DiscountJsonObject, 'amount_set').AsObject();
+                                    DiscountPresentmentObj := GetJsonToken(AmountSetObject, 'presentment_money').AsObject();
+                                    if GetJsonvalue(DiscountPresentmentObj, 'amount').IsNull = false then begin
+                                        DisCountAmount := GetJsonvalue(DiscountPresentmentObj, 'amount').AsDecimal();
+                                    end;
+                                End;
+                                InterimSalesLine.Discount := DisCountAmount;
+                            end;
+                        end;
+                    until PaymentDetails.Next() = 0;
                 end;
 
                 InterimSalesLine.Amount := Round(InterimSalesLine."Unit Price" * InterimSalesLine.Quantity);
@@ -596,18 +708,7 @@ codeunit 90002 "Shopify Integration"
                 if GetJsonvalue(LineObject, 'title').IsNull = false then begin
                     InterimSalesLine.Description := Copystr(GetJsonvalue(LineObject, 'title').AsText(), 1, 100);
                 end;
-                Clear(DisCountAmount);
-                DiscountArray := GetJsonToken(LineObject, 'discount_allocations').AsArray();
-                DiscontCount := DiscountArray.Count;
-                if DiscontCount <> 0 then begin
-                    DiscountArray.Get(p, Disconttoken);
-                    DiscountJsonobejt := Disconttoken.AsObject;
-                    if GetJsonvalue(DiscountJsonobejt, 'amount').IsNull = false then begin
-                        DisCountAmount := GetJsonvalue(DiscountJsonobejt, 'amount').AsDecimal();
-                    end;
-                End;
 
-                InterimSalesLine.Validate(Discount, DisCountAmount);
                 //addedbyPavanSingh
                 Clear(G_ShippingPrice);
                 if GetJsonvalue(ShippingPriceObject, 'amount').IsNull = false then begin
@@ -631,16 +732,13 @@ codeunit 90002 "Shopify Integration"
                     InterimSalesLine.Weight := ItemWeight;
                 end;
 
-
                 if LineObject.Contains('gift_card') then
                     if GetJsonvalue(LineObject, 'gift_card').AsBoolean() = true then
                         InterimSalesLine."Gift Card" := true
                     else
                         InterimSalesLine."Gift Card" := false;
 
-                //InterimSalesLine.Weight := 1;
                 InterimSalesLine.Insert();
-
             End;
         end;
         InterimSalesHeader."No. of Items" := TotalItemQty;
@@ -1522,8 +1620,13 @@ codeunit 90002 "Shopify Integration"
             repeat
                 if Item.Get(ChannelItemListing."Item No.") then begin
                     if Item."Production Item" = true then begin
-                        ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
-                        ChannelItemListing."Inventory Synced" := false;
+                        if ChannelItemListing."Channel Inventory" <> GeneralSetup."Production Item Inventory" then begin
+                            ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
+                            ChannelItemListing."Inventory Synced" := false;
+                        end
+                        else begin
+                            ChannelItemListing."Inventory Synced" := true;
+                        end;
                     end
                     else begin
                         ItemCategory.Reset();
@@ -1547,7 +1650,7 @@ codeunit 90002 "Shopify Integration"
 
                                         ItemQuery.OPEN;
                                         IF ItemQuery.READ THEN begin
-                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order + ItemQuery.Qty__on_Assembly_Order);
                                         END;
                                         ItemQuery.CLOSE;
 
@@ -1848,6 +1951,22 @@ codeunit 90002 "Shopify Integration"
                     //         end;
                 end;
             end;
+    end;
+
+
+    procedure CreateBasicAuth(UserName: Text; Password: Text): Text
+    var
+        CUTempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        OutStm: OutStream;
+        InStrm: InStream;
+        tempText: Text;
+    begin
+        tempText := StrSubstNo('%1:%2', UserName, Password);
+        CUTempBlob.CreateOutStream(OutStm, TextEncoding::UTF8);
+        OutStm.WriteText(StrSubstNo('%1:%2', UserName, Password));
+        CUTempBlob.CreateInStream(InStrm);
+        exit(StrSubstNo('Basic %1', Base64Convert.ToBase64(InStrm)));
     end;
 
 

@@ -198,6 +198,7 @@ page 90034 "New Despatch Scan"
                     PartiallyDespatchScanCount: Integer;
                     P_DispatchHeader: Record "Despatch Scan Header";
                     HISH: Record "Handled Interim Sales Header";
+                    WarehouseShipmentHeader: Record "Warehouse Shipment Header";
                 begin
 
                     Clear(PartiallyDespatchScanCount);
@@ -224,6 +225,14 @@ page 90034 "New Despatch Scan"
                                 end;
 
                             until WarehouseShipmentLine.Next() = 0;
+
+                            WarehouseShipmentHeader.Reset();
+                            WarehouseShipmentHeader.SetRange("No.", WarehouseShipmentLine."No.");
+                            if WarehouseShipmentHeader.FindFirst() then begin
+                                WarehouseShipmentHeader.Validate("Posting Date", WorkDate());
+                                WarehouseShipmentHeader.Modify();
+                            end;
+
                             P_DispatchHeader.SetRange("Trolley No", G_TrolleyNo);
                             P_DispatchHeader.SetRange("User ID", UserId);
                             if P_DispatchHeader.FindFirst() then begin
@@ -397,6 +406,7 @@ page 90034 "New Despatch Scan"
         WSL: Record "Warehouse Shipment Line";
         WSL2: Record "Warehouse Shipment Line";
         WS: Record "Warehouse Shipment Line";
+        v: Record "Warehouse Shipment Header" temporary;
     begin
         if P_OrderNo <> '' then begin
             if CheckOrderScanCompleted(P_OrderNo) = false then begin
@@ -580,6 +590,7 @@ page 90034 "New Despatch Scan"
         HISH: Record "Handled Interim Sales Header";
         HISH2: Record "Handled Interim Sales Header";
         HISL: Record "Handled Interim Sales Line";
+        WarehouseShipmentHeader: Record "Warehouse Shipment Header";
     begin
         CLEAR(OrderLnneCount);
         CLEAR(DespatchCount);
@@ -648,6 +659,14 @@ page 90034 "New Despatch Scan"
                             end;
                         //MarkDispatchOnWeb--
                         until WSL1.Next() = 0;
+
+                        WarehouseShipmentHeader.Reset();
+                        WarehouseShipmentHeader.SetRange("No.", WSL1."No.");
+                        if WarehouseShipmentHeader.FindFirst() then begin
+                            WarehouseShipmentHeader.Validate("Posting Date", WorkDate());
+                            WarehouseShipmentHeader.Modify();
+                        end;
+
                         IF GUIALLOWED THEN
                             Window.CLOSE;
                         P_DispatchHeader.SetRange("Trolley No", G_TrolleyNo);

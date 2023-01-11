@@ -451,10 +451,9 @@ codeunit 90015 VisualSoft
                 end;
 
                 if (OrderStatus = 'Payment Received') or (OrderStatus = 'Processing Order') or (OrderStatus = 'Pre Order') or (OrderStatus = 'Payment Received from Paypal') or (OrderStatus = 'Order Partially Refunded') then begin
+
                     InsertIntrimSalesHeader(WebOrderXLMList3, ChannelCode, InterimSalesHeader, PaymentDetails);
-
                     InsertInInterimSalesLine(WebOrderXLMList3, ChannelCode, InterimSalesHeader, InterimSalesLine);
-
                     CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
 
                     Sleep(1000);
@@ -513,7 +512,7 @@ codeunit 90015 VisualSoft
         ShipToCountryRegionCode: Code[10];
         PaymentAmtText: Text;
         i: Integer;
-
+        CurrencyCode: Text;
     begin
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
         InterimSalesHeader."Trade Partner Code" := ChannelCode;
@@ -753,6 +752,7 @@ codeunit 90015 VisualSoft
         //Customer Node List
 
         //Payment Node List++
+        Clear(PaymentMethod);
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(TransactionNodeList);
@@ -812,6 +812,7 @@ codeunit 90015 VisualSoft
                     GenericElement := GenericNode.AsXmlElement();
                     PaymentDetails."Payment Method" := CopyStr(GenericElement.InnerText(), 1, 50);
                     InterimSalesHeader."Payment Method" := CopyStr(GenericElement.InnerText(), 1, 10);
+                    PaymentMethod[i] := GenericElement.InnerText();
                 end;
 
                 Clear(GenericNode);
@@ -831,6 +832,22 @@ codeunit 90015 VisualSoft
         end;
         //Payment Node List--
 
+        //If Payment method is Paypal Express and Currency Code is not GBP then must map Currency Code in Web Order
+        Clear(InterimSalesHeader."Currency Code");
+        for i := 1 to 5 do begin
+            if PaymentMethod[i] = 'PayPal Express' then begin
+                Clear(GenericNode);
+                Clear(GenericElement);
+                Clear(CurrencyCode);
+                if OrderNodeList.Get(28, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    CurrencyCode := GenericElement.InnerText();
+                    if CurrencyCode <> 'GBP' then
+                        InterimSalesHeader."Currency Code" := CurrencyCode;
+                end;
+            end;
+        end;
+
         InterimSalesHeader.Insert();
     end;
 
@@ -841,6 +858,7 @@ codeunit 90015 VisualSoft
         itemlistNode: XmlNode;
         ItemlistXLMlist: XmlNodeList;
         itemlistelement: XmlElement;
+        i: Integer;
         j: Integer;
         UnitPriceTxt: Text;
         UnitPrice: Decimal;
@@ -872,8 +890,6 @@ codeunit 90015 VisualSoft
             CountLine := OrderItemNodeList.Count;
             if CountLine > 0 then begin
                 for j := 1 to CountLine do begin
-
-
                     Clear(G_CountLine);
                     if CountLine > 1 then
                         G_CountLine := j;
@@ -893,14 +909,12 @@ codeunit 90015 VisualSoft
                     end;
 
                     if ProductStatus = 'Y' then begin
-
                         InterimSalesLine.Init;
                         InterimSalesLine."Line No." := j;
                         InterimSalesLine."Document Type" := InterimSalesLine."Document Type"::Order;
                         InterimSalesLine.Type := InterimSalesLine.type::Item;
                         InterimSalesLine."Document No" := InterimSalesHeader."No.";
                         InterimSalesLine."Channel Order ID" := InterimSalesHeader."Channel Order ID";
-
 
                         Clear(GenericNode);
                         Clear(GenericElement);
@@ -993,12 +1007,20 @@ codeunit 90015 VisualSoft
                             InterimSalesLine."Unit Price" := UnitPrice;
                         end;
 
-
                         if j = 1 then begin
                             if G_ShippingPrice > 0 then
                                 InterimSalesLine."Shipping Price" := G_ShippingPrice;
                         end;
                         //Shipping Price
+
+                        //Adding Currency Code on Line Level
+                        Clear(InterimSalesLine."Currency Code");
+                        for i := 1 to 5 do begin
+                            if PaymentMethod[i] = 'PayPal Express' then begin
+                                if (InterimSalesHeader."Currency Code" <> '') and (InterimSalesHeader."Currency Code" <> 'GBP') then
+                                    InterimSalesLine."Currency Code" := InterimSalesHeader."Currency Code";
+                            end;
+                        end;
 
                         InterimSalesLine.Insert();
                     end;
@@ -1691,7 +1713,7 @@ codeunit 90015 VisualSoft
                 end;
                 ChannelItemListing.Modify();
                 Commit();
-                Sleep(1000);
+                Sleep(2000);
             UNTIL ChannelItemListing.NEXT = 0;
         end;
     End;
@@ -1756,8 +1778,13 @@ codeunit 90015 VisualSoft
             repeat
                 if Item.Get(ChannelItemListing."Item No.") then begin
                     if Item."Production Item" = true then begin
-                        ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
-                        ChannelItemListing."Inventory Synced" := false;
+                        if ChannelItemListing."Channel Inventory" <> GeneralSetup."Production Item Inventory" then begin
+                            ChannelItemListing."Channel Inventory" := GeneralSetup."Production Item Inventory";
+                            ChannelItemListing."Inventory Synced" := false;
+                        end
+                        else begin
+                            ChannelItemListing."Inventory Synced" := true;
+                        end;
                     end
                     else begin
                         ItemCategory.Reset();
@@ -1781,7 +1808,7 @@ codeunit 90015 VisualSoft
 
                                         ItemQuery.OPEN;
                                         IF ItemQuery.READ THEN begin
-                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order);
+                                            AvailableInventory := (ItemQuery.Inventory_Qty_) - (ItemQuery.Qty_on_Sales_Order + ItemQuery.Qty_on_Web_Order + ItemQuery.Qty__on_Assembly_Order);
                                         END;
                                         ItemQuery.CLOSE;
 
@@ -2147,4 +2174,5 @@ codeunit 90015 VisualSoft
         OrderAmount: Decimal;
         TradePartner: Record "Trade Partner";
         IsError: Boolean;
+        PaymentMethod: array[5] of Text;
 }

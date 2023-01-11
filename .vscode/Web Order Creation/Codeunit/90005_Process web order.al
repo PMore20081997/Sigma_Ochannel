@@ -561,6 +561,7 @@ codeunit 90005 "Process Web Order"
             totalWeight := item."Net Weight" * Qty;
         END;
 
+        L_SalesL.Validate("Currency Code", L_IntrimSalesLine."Currency Code");
 
         IF L_SalesL.Type <> L_SalesL.Type::" " THEN BEGIN
             ItemLineNo := L_SalesL."Line No.";
@@ -573,8 +574,12 @@ codeunit 90005 "Process Web Order"
             //  L_SalesL.VALIDATE("Amount Including VAT",L_IntrimSalesLine."Amount Including VAT");
         END;
 
-        IF (L_IntrimSalesLine.Discount > 0) THEN
-            L_SalesL.VALIDATE("Line Discount Amount", L_IntrimSalesLine.Discount);//khan++
+        IF (L_IntrimSalesLine.Discount > 0) THEN begin
+            L_SalesL.Validate("Line Discount %", Round(
+               L_IntrimSalesLine.Discount / Round((L_IntrimSalesLine.Quantity * L_IntrimSalesLine."Unit Price") + L_IntrimSalesLine."VAT amount", 0.01) * 100,
+               0.01));
+        end;
+        //L_SalesL.VALIDATE("Line Discount Amount", L_IntrimSalesLine.Discount);//khan++
 
         L_SalesL.Validate("Channel Order ID", L_IntrimSalesLine."Channel Order ID");
         L_SalesL.Validate("Channel Code", L_IntrimSalesLine."Trade Partner Code");
