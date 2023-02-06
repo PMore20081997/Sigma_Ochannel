@@ -1,4 +1,4 @@
-codeunit 90079 "Generate Shipment"
+codeunit 90020 "Generate Shipment"
 {
     var
         Temp_SalesHeader: Record "Sales Header" temporary;
