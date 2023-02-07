@@ -10,7 +10,26 @@
   "help": "",
   "url": "",
   "logo": "",
-  "dependencies": [],
+  "dependencies": [
+    {
+      "id": "a5727ce6-368c-49e2-84cb-1a6052f0551c",
+      "publisher": "Tasklet Factory",
+      "name": "Mobile WMS",
+      "version": "5.34.190.214"
+    },
+    {
+      "id": "b0c8bcc7-2924-4cd2-8562-4e71ebd07323",
+      "publisher": "Insight Works",
+      "name": "Insight Works PrintNode Connector",
+      "version": "2.2.7873.8"
+    },
+    {
+      "id": "ba1776ba-1198-4b4c-a61e-c4612f1880d5",
+      "publisher": "Insight Works",
+      "name": "IWorks Common",
+      "version": "2.7.8118.0"
+    }
+  ],
   "screenshots": [],
   "platform": "20.0.0.0",
   "application": "20.0.0.0",

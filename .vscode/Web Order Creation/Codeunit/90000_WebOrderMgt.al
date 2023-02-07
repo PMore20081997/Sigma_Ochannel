@@ -2048,9 +2048,9 @@ codeunit 90000 "Web Order Mgt"
     procedure SendDirectPrintRequest(P_No: Code[20]; P_ReportID: Integer; PrintType: Text[3])
     var
         L_PrinterSelection: Record "Printer Selection";
-        //IWXPrintNodePrinter: Record 23044334;
+        IWXPrintNodePrinter: Record 23044334;
         L_ShipmentTracking: Record "Shipment Tracking";
-        //penumPrintType: Enum "IWX PrintNode Print Type";
+        penumPrintType: Enum "IWX PrintNode Print Type";
         L_Instream: InStream;
         L_PrintText: Text;
         Base64Convert: Codeunit "Base64 Convert";
@@ -2067,56 +2067,56 @@ codeunit 90000 "Web Order Mgt"
         L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
         L_ShipmentTracking.SetRange("Document No.", P_No);
         // if L_ShipmentTracking.FindFirst() then begin
-        //if L_ShipmentTracking.FindSet() then begin
-        //repeat
-        //if L_ShipmentTracking."RAW Text" <> '' then begin
-        //         // if L_ShipmentTracking.Label.HasValue() then begin
-        //             L_ShipmentTracking.CalcFields(Label);
-        //             L_ShipmentTracking.Label.CreateInStream(L_Instream);
+        if L_ShipmentTracking.FindSet() then begin
+            repeat
+                //if L_ShipmentTracking."RAW Text" <> '' then begin
+                if L_ShipmentTracking.Label.HasValue() then begin
+                    L_ShipmentTracking.CalcFields(Label);
+                    L_ShipmentTracking.Label.CreateInStream(L_Instream);
 
 
-        //             //Message(EPLCommands);
-        //             L_PrinterSelection.Reset();
-        //             L_PrinterSelection.SetRange("Report ID", P_ReportID);
-        //             L_PrinterSelection.SetRange("User ID", UserId);
-        //             if L_PrinterSelection.FindFirst() then begin
-        //                 //IWXPrintNodePrinter.Reset();
-        //                 //IWXPrintNodePrinter.SetRange(Name, L_PrinterSelection."Printer Name");
-        //                 //if IWXPrintNodePrinter.FindFirst() then begin
-        //                     // if PrintType = 'PDF' then begin
-        //                     //     DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::PDF, L_Instream, 1);// Instream function
-        //                     // end;
-        //                     // if PrintType = 'RAW' then begin
-        //                     //     L_Instream.ReadText(L_PrintText);
-        //                     //     EPLCommands := Base64Convert.FromBase64(L_PrintText);
-        //                     //     DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::RAW, EPLCommands, 1);// RAW Text function
-        //                     // end;
-        //                     //  DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::PDF, L_Instrem, 1);// Instream function
+                    //Message(EPLCommands);
+                    L_PrinterSelection.Reset();
+                    L_PrinterSelection.SetRange("Report ID", P_ReportID);
+                    L_PrinterSelection.SetRange("User ID", UserId);
+                    if L_PrinterSelection.FindFirst() then begin
+                        IWXPrintNodePrinter.Reset();
+                        IWXPrintNodePrinter.SetRange(Name, L_PrinterSelection."Printer Name");
+                        if IWXPrintNodePrinter.FindFirst() then begin
+                            if PrintType = 'PDF' then begin
+                                DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::PDF, L_Instream, 1);// Instream function
+                            end;
+                            if PrintType = 'RAW' then begin
+                                L_Instream.ReadText(L_PrintText);
+                                EPLCommands := Base64Convert.FromBase64(L_PrintText);
+                                DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::RAW, EPLCommands, 1);// RAW Text function
+                            end;
+                            //  DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::PDF, L_Instrem, 1);// Instream function
 
 
-        //                 end;
-        //             end;
-        //         end;
-        //     until L_ShipmentTracking.Next() = 0;
-        //     Message('Completed');
-        // end;
+                        end;
+                    end;
+                end;
+            until L_ShipmentTracking.Next() = 0;
+            Message('Completed');
+        end;
     end;
 
-    // local procedure DirectPrint(piPrinterID: Integer; psPrintJobTitle: Text; penumPrintType: Enum "IWX PrintNode Print Type"; psPrintJobText: Text;
-    //                                                                                              piPrintJobQty: Integer)
-    // var
-    //     //L_PrintNodeApiMgt: Codeunit "IWX PrintNode API Mgt.";
-    // begin
-    //     //L_PrintNodeApiMgt.PrintDirect(piPrinterID, psPrintJobTitle, penumPrintType, psPrintJobText, piPrintJobQty);
-    // end;
+    local procedure DirectPrint(piPrinterID: Integer; psPrintJobTitle: Text; penumPrintType: Enum "IWX PrintNode Print Type"; psPrintJobText: Text;
+                                                                                                 piPrintJobQty: Integer)
+    var
+        L_PrintNodeApiMgt: Codeunit "IWX PrintNode API Mgt.";
+    begin
+        L_PrintNodeApiMgt.PrintDirect(piPrinterID, psPrintJobTitle, penumPrintType, psPrintJobText, piPrintJobQty);
+    end;
 
-    // local procedure DirectPrint(piPrinterID: Integer; psPrintJobTitle: Text; penumPrintType: Enum "IWX PrintNode Print Type"; psPrintJobText: InStream;
-    //                                                                                              piPrintJobQty: Integer)
-    // var
-    //     //L_PrintNodeApiMgt: Codeunit "IWX PrintNode API Mgt.";
-    // begin
-    //     //L_PrintNodeApiMgt.PrintDirect(piPrinterID, psPrintJobTitle, penumPrintType, psPrintJobText, piPrintJobQty);
-    // end;
+    local procedure DirectPrint(piPrinterID: Integer; psPrintJobTitle: Text; penumPrintType: Enum "IWX PrintNode Print Type"; psPrintJobText: InStream;
+                                                                                                 piPrintJobQty: Integer)
+    var
+        L_PrintNodeApiMgt: Codeunit "IWX PrintNode API Mgt.";
+    begin
+        L_PrintNodeApiMgt.PrintDirect(piPrinterID, psPrintJobTitle, penumPrintType, psPrintJobText, piPrintJobQty);
+    end;
     //DirectPrintingLabel--
     local procedure CreateAssemblyOrderForCushionItems(var P_InterimHeader: Record "Interim Sales Header"; var P_InterimLine: Record "Interim Sales Line")
     var
