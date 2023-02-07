@@ -13,11 +13,10 @@
             "startupObjectId": 22,
             "environmentType": "Sandbox",
             "schemaUpdateMode": "ForceSync",
-            //"environmentName": "ProdCopy141222",
+            "environmentName": "ProdCopy141222",
             // "environmentName": "PROD_RESTORE",
             //"environmentName": "Demo",
-            "environmentName": "Sandbox_09012023",
-            "tenant": "46653dce-a69d-4000-8b55-96da200b3a0e",
+            "tenant": "7bac1391-1bbb-46cf-ae0d-ad536338587c"
         }
     ]
 }

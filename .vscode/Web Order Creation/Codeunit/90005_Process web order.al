@@ -1275,26 +1275,26 @@ codeunit 90005 "Process Web Order"
     end;
 
     //Display SO No.++
-    // [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine', '', false, false)]
-    // procedure OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine(_WhseActLineTake: Record "Warehouse Activity Line"; var _BaseOrderLineElement: Record "MOB Ns BaseDataModel Element")
-    // var
-    //     L_WareActLine: Record "Warehouse Activity Line";
-    // begin
-    //     //   with _BaseOrderLineElement do begin
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine', '', false, false)]
+    procedure OnGetPickOrderLines_OnAfterSetFromWarehouseActivityLine(_WhseActLineTake: Record "Warehouse Activity Line"; var _BaseOrderLineElement: Record "MOB Ns BaseDataModel Element")
+    var
+        L_WareActLine: Record "Warehouse Activity Line";
+    begin
+        //   with _BaseOrderLineElement do begin
 
-    //     L_WareActLine.Reset();
-    //     L_WareActLine.SetRange("Activity Type", L_WareActLine."Activity Type"::Pick);
-    //     L_WareActLine.SetRange("No.", _WhseActLineTake."No.");
-    //     L_WareActLine.SetRange("Line No.", _WhseActLineTake."Line No.");
-    //     if L_WareActLine.FindFirst() then begin
-    //         if L_WareActLine."Source Document" = L_WareActLine."Source Document"::" " then
-    //             _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Channel Order ID"))
-    //         else
-    //             if L_WareActLine."Source Document" = L_WareActLine."Source Document"::"Sales Order" then
-    //                 _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Source No."))
-    //     end;
+        L_WareActLine.Reset();
+        L_WareActLine.SetRange("Activity Type", L_WareActLine."Activity Type"::Pick);
+        L_WareActLine.SetRange("No.", _WhseActLineTake."No.");
+        L_WareActLine.SetRange("Line No.", _WhseActLineTake."Line No.");
+        if L_WareActLine.FindFirst() then begin
+            if L_WareActLine."Source Document" = L_WareActLine."Source Document"::" " then
+                _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Channel Order ID"))
+            else
+                if L_WareActLine."Source Document" = L_WareActLine."Source Document"::"Sales Order" then
+                    _BaseOrderLineElement.Set_DisplayLine4(StrSubstNo('Order No : %1', L_WareActLine."Source No."))
+        end;
 
-    // end;
+    end;
     //Display SO No. --
 
     procedure "OndeleteW/HPick"(var WSH: Record 7333)
