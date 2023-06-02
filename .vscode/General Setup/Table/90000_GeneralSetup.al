@@ -229,6 +229,11 @@ table 90000 "General Setup - Channels"
 
         }
 
+        field(40; "AutoReserve"; Boolean)
+        {
+
+        }
+
     }
 
 }

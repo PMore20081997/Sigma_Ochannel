@@ -92,6 +92,7 @@ page 90005 "Handled Web Order List"
                 field("Invoice No."; Rec."Invoice No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Financial Entry Posted"; Rec."Financial Entry Posted")
                 {
@@ -101,16 +102,32 @@ page 90005 "Handled Web Order List"
                 field(Reconciled; Rec.Reconciled)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Order Amount"; Rec."Order Amount")
                 {
                     ApplicationArea = All;
+                    Visible = true;
                 }
-
+                field("Order Amount 2"; Rec."Order Amount 2")
+                {
+                    Caption = 'Order Amount 2';
+                    ApplicationArea = All;
+                    Visible = false;
+                }
                 field("Order Discount Amount"; Rec."Order Discount Amount")
                 {
                     ApplicationArea = All;
+                    Visible = true;
                 }
+                field("Order Discount Amount 2"; Rec."Order Discount Amount 2")
+                {
+                    Caption = 'Order Discount Amount 2';
+                    ApplicationArea = all;
+                    Visible = false;
+                }
+
+
                 field("Gift Order Amount"; Rec."Gift Order Amount")
                 {
                     ApplicationArea = All;
@@ -132,12 +149,21 @@ page 90005 "Handled Web Order List"
                 field(Remarks; Rec.Remarks)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 //Paarth D Dave - 8197-4 - Adding Boolean for Assembly Order ---- Start
                 field("Assembly Order Created"; Rec."Assembly Order Created")
                 {
                     Editable = false;
                     ApplicationArea = All;
+                }
+
+                field(ReservedFlag; Rec.ReservedFlag)
+                {
+                    Editable = false;
+                    ApplicationArea = All;
+                    Caption = 'Reserved';
+                    Visible = false;
                 }
 
                 field("Posted Assembly Order"; Rec."Pstd. Assembly Order")
@@ -149,6 +175,7 @@ page 90005 "Handled Web Order List"
 
                 field("Assemply Order"; Rec."Assemply Order")
                 {
+                    Caption = 'Assembly Order';
                     Editable = false;
                     ApplicationArea = All;
                 }
@@ -168,6 +195,48 @@ page 90005 "Handled Web Order List"
     {
         area(processing)
         {
+            // action(BulkDelete)
+
+            // {
+
+            //     ApplicationArea = All;
+
+            //     Caption = 'Bulk Delete';
+
+
+
+
+            //     trigger OnAction()
+
+            //     var
+
+            //         InterimSalesHeader: Record "Handled Interim Sales Header";
+
+            //         InterimSalesLine: Record "Handled Interim Sales Line";
+
+            //     begin
+
+            //         Clear(InterimSalesHeader);
+
+            //         CurrPage.SetSelectionFilter(InterimSalesHeader);
+
+            //         if InterimSalesHeader.FindSet() then
+            //             repeat
+
+            //                 InterimSalesLine.Reset();
+
+            //                 InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+
+            //                 if InterimSalesLine.FindSet() then
+            //                     InterimSalesLine.DeleteAll(true);
+
+            //                 InterimSalesHeader.Delete(true);
+
+            //             until InterimSalesHeader.Next() = 0;
+
+            //     end;
+
+            // }
             action("Direct Printing Label")
             {
                 ApplicationArea = All;

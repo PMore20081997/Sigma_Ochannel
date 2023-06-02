@@ -8,18 +8,40 @@ codeunit 90095 "Shipment Tracking JobQueue"
         ShipmentTracking: record "Shipment Tracking";
         ShippingRule: Record "Shipping Rule";
         Rec_ShippingAgent: Record "Shipping Agent";
+        L_ChannelPartner: Record "Trade Partner";
+        SecretSales: Codeunit "B&Q";
     begin
-
+        L_InterimSalesHeader.Reset();
         L_InterimSalesHeader.SetRange("No of Error", 0);
+        L_InterimSalesHeader.SetRange(ReservedFlag, true);
         L_InterimSalesHeader.SetFilter("Trade Partner Code", Rec."Parameter String");
         if L_InterimSalesHeader.FindSet() then begin
             repeat
                 ShipmentTracking.Reset();
+
                 ShipmentTracking.SetRange("Document No.", L_InterimSalesHeader."No.");
+
                 if not ShipmentTracking.FindFirst() then begin
+
                     Temp_SalesHeader.DeleteAll();
+
                     if Rec_ShippingAgent.Get(L_InterimSalesHeader."Shipping Agent Code") then begin
+
                         CreateTempSalesHeaderAndLine(L_InterimSalesHeader);
+
+                        L_ChannelPartner.Reset();
+
+                        L_ChannelPartner.SetRange(Code, L_InterimSalesHeader."Trade Partner Code");
+
+                        if L_ChannelPartner.FindFirst() then begin
+
+                            if L_ChannelPartner."Update Tracking Information" = true then begin
+
+                                L_InterimSalesHeader.CalcFields("Tracking No.");
+
+                                SecretSales.SendTrackingInformation(L_InterimSalesHeader."Shipping Agent Code", L_InterimSalesHeader."Tracking No.", L_InterimSalesHeader."Channel Order ID", L_InterimSalesHeader."Trade Partner Code");
+                            end;
+                        end;
                     end;
                 end;
             until L_InterimSalesHeader.Next() = 0;

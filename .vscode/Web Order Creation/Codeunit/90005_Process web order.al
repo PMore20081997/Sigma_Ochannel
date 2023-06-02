@@ -1,7 +1,7 @@
 codeunit 90005 "Process Web Order"
 {
     TableNo = "Interim Sales Header";
-    Permissions = tabledata "Sales Shipment Header" = RIMD;
+    Permissions = tabledata "Sales Shipment Header" = RIMD, tabledata "Bank Account" = R;
 
     trigger OnRun()
     begin
@@ -31,6 +31,7 @@ codeunit 90005 "Process Web Order"
     end;
 
     var
+        InvDiscountAmount: Decimal;
         NoSeriesManagement: Codeunit 396;
         HeaderNo: Code[20];
         LineNo: Integer;
@@ -48,6 +49,7 @@ codeunit 90005 "Process Web Order"
         Window: Dialog;
         CurrRec: Integer;
         NoOfRecs: Integer;
+        ApplyDiscount: Boolean;
 
     local procedure CreatePickHeader(var InterimSalesLine: Record "Interim Sales Line"; i: Integer): Code[20]
     var
@@ -514,12 +516,28 @@ codeunit 90005 "Process Web Order"
         WebPayment.Reset();
         WebPayment.SetRange("Channel Code", InterimSalesHeader."Trade Partner Code");
         WebPayment.SetRange("Web Payment Method", InterimSalesHeader."Payment Method");
+        WebPayment.SetRange("Currency Code", InterimSalesHeader."Currency Code");
         if WebPayment.FindFirst() then
-            L_SalesH."Payment Method Code" := WebPayment."NAV Payment Method 2";
+            L_SalesH.Validate("Payment Method Code", WebPayment."NAV Payment Method 2");
+        // L_SalesH."Payment Method Code" := WebPayment."NAV Payment Method 2";
         //L_SalesH.INSERT(TRUE); //Ranjit 12082019 commented
         L_SalesH.Validate("Currency Code", InterimSalesHeader."Currency Code");
-        L_SalesH.MODIFY;
+        L_SalesH.Validate("Customer Posting Group", InterimSalesHeader."Customer Posting Group");
 
+        if InterimSalesHeader."Customer Posting Group" = 'FOREIGN' then begin// Unique to ILW 
+            L_SalesH.Validate("VAT Bus. Posting Group", 'EXPORT');
+            L_SalesH.Validate("Gen. Bus. Posting Group", 'EXPORT');
+        end
+        else begin
+            L_SalesH.Validate("VAT Bus. Posting Group", InterimSalesHeader."Customer Posting Group");
+            L_SalesH.Validate("Gen. Bus. Posting Group", InterimSalesHeader."Customer Posting Group");
+
+        end;
+        L_SalesH."Order Date" := InterimSalesHeader."Document Date";
+        L_SalesH."Document Date" := InterimSalesHeader."Document Date";
+        L_SalesH."Posting Date" := InterimSalesHeader."Document Date";
+        L_SalesH."VAT Reporting Date" := InterimSalesHeader."Document Date";
+        L_SalesH.MODIFY;
         EXIT(L_SalesH."No.");
 
     end;
@@ -538,6 +556,9 @@ codeunit 90005 "Process Web Order"
         ItemLineNo: Integer;
         L_SalesH: Record "Sales Header";
         InterimSalesHeader: Record "Interim Sales Header";
+        DiscountExVat: Decimal;
+        L_GeneralSetup: Record "General Setup - Channels";
+        LineCount: Integer;
     begin
         CLEAR(line);
         CLEAR(totalWeight);
@@ -574,7 +595,7 @@ codeunit 90005 "Process Web Order"
             //  L_SalesL.VALIDATE("Amount Including VAT",L_IntrimSalesLine."Amount Including VAT");
         END;
 
-        IF (L_IntrimSalesLine.Discount > 0) THEN begin
+        IF ((L_IntrimSalesLine.Discount > 0) and (L_IntrimSalesLine.Quantity > 0) and (L_IntrimSalesLine."Unit Price" > 0)) THEN begin
             L_SalesL.Validate("Line Discount %", Round(
                L_IntrimSalesLine.Discount / Round((L_IntrimSalesLine.Quantity * L_IntrimSalesLine."Unit Price") + L_IntrimSalesLine."VAT amount", 0.01) * 100,
                0.01));
@@ -585,9 +606,16 @@ codeunit 90005 "Process Web Order"
         L_SalesL.Validate("Channel Code", L_IntrimSalesLine."Trade Partner Code");
         if L_IntrimSalesLine.Weight > 0 then
             L_SalesL.Validate("Net Weight", L_IntrimSalesLine.Weight);
+        L_SalesL.Validate("VAT Bus. Posting Group", L_IntrimSalesLine."VAT Bus. Posting Group");
+
+        L_SalesL.Validate("VAT Prod. Posting Group", L_IntrimSalesLine."VAT Prod. Posting Group");
         L_SalesL.INSERT(TRUE);
-        // IF L_SalesL.Type=L_SalesL.Type::Item THEN  //Chandan
-        //     L_SalesL.AutoReserveFromActiveOffer(L_SalesL);
+        L_GeneralSetup.Get();
+        if L_GeneralSetup.AutoReserve = true then begin
+            IF L_SalesL.Type = L_SalesL.Type::Item THEN
+                L_SalesL.AutoReserve();
+        end;
+
 
         //  IF L_SalesL.Type <> L_SalesL.Type::" " THEN BEGIN
         //    L_ChargeSetup.RESET;
@@ -607,6 +635,54 @@ codeunit 90005 "Process Web Order"
             L_SalesL.VALIDATE("Shortcut Dimension 1 Code", L_SalesH."Shortcut Dimension 1 Code"); //Ranjit 16082019
             L_SalesL.MODIFY(TRUE);
         END;
+
+        //Bug 12386
+        Clear(LineCount);
+        ISL.reset();
+        ISL.SetFilter(Type, '%1', ISL.Type::Item);
+        ISL.SetFilter("Document No", L_IntrimSalesLine."Document No");
+        if ISL.FindSet() then begin
+            isl.CalcSums(Discount);
+            LineCount := ISL.Count;
+        end;
+
+        if ApplyDiscount then begin // Check if line requires discount of order using global boolean, get discount on lines and reduce total discount then remianing add to line as invoice discount
+            InterimSalesHeader.reset();
+            if InterimSalesHeader.get(L_IntrimSalesLine."Document Type", L_IntrimSalesLine."Document No") then begin
+                //if (L_SalesL.Amount - isl.Discount) >= (InterimSalesHeader."Order Discount Amount" - isl.Discount) then begin
+                if (InterimSalesHeader."Order Discount Amount" - isl.Discount) > 0 then begin
+                    DiscountExVat := (InterimSalesHeader."Order Discount Amount" - isl.Discount) / ((L_SalesL."VAT %" / 100) + 1);
+                    if (DiscountExVat > 0) and (LineCount > 0) then
+                        InvDiscountAmount := DiscountExVat / LineCount;
+                    if L_SalesL.Type = L_SalesL.Type::Item then begin
+                        if L_SalesL."Unit Price" > InvDiscountAmount then begin
+                            L_SalesL."Inv. Discount Amount" := Round(InvDiscountAmount, 0.01, '>');
+                        end
+                        else begin
+                            L_SalesL.Validate("Inv. Discount Amount", 0);
+                            ApplyDiscount := false;
+                        end;
+                    end;
+                end;
+            end;
+            L_SalesL.MODIFY(TRUE);
+        end
+        else begin
+            L_SalesL.Validate("Inv. Discount Amount", 0);
+            L_SalesL.Modify(true);
+            InterimSalesHeader.reset();
+            if InterimSalesHeader.get(L_IntrimSalesLine."Document Type", L_IntrimSalesLine."Document No") then begin
+                if (InterimSalesHeader."Order Discount Amount" - isl.Discount) > 0 then begin
+                    DiscountExVat := (InterimSalesHeader."Order Discount Amount" - isl.Discount) / ((L_SalesL."VAT %" / 100) + 1);
+                    if L_SalesL.Type = L_SalesL.Type::"G/L Account" then begin
+                        L_SalesL."Inv. Discount Amount" := Round(DiscountExVat, 0.01, '>');
+                    end;
+                end;
+            end;
+            L_SalesL.MODIFY(TRUE);
+        end;
+        //Bug 12386
+
 
         EXIT(L_SalesL."Line No.");
 
@@ -726,19 +802,40 @@ codeunit 90005 "Process Web Order"
         Customer: Record "Customer";
         ShipmentTracking: Record "Shipment Tracking";
         GeneralSetup: Record "General Setup - Channels";
+        L_SalesLine: Record "Sales Line";
     begin
         GeneralSetup.Get();
         CLEAR(HeaderNo);
         ISL.RESET;
         ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
         ISL.SETRANGE("Document No", Rec."No.");
+        ApplyDiscount := true;
         IF ISL.FINDSET THEN BEGIN
             HeaderNo := NewCreateSalesHeader(ISL);
+            Clear(InvDiscountAmount);
             REPEAT
                 CLEAR(LineNo);
                 LineNo := NewCreateSalesLine(HeaderNo, ISL);
                 UpdateSONo(ISL, Rec);
+
             UNTIL ISL.NEXT = 0;
+
+            //Bug 12386
+            if ApplyDiscount = false then begin
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document No.", HeaderNo);
+                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                if L_SalesLine.FindSet() then begin
+                    repeat
+                        if L_SalesLine.Type = L_SalesLine.Type::Item then begin
+                            L_SalesLine.Validate("Inv. Discount Amount", 0);
+                            L_SalesLine.Modify();
+                        end;
+                    until L_SalesLine.Next() = 0;
+                end;
+            end;
+            //Bug 12386
+
             if GeneralSetup."Auto Release Sales Orders" = true then
                 UpdateStatusOnSalesOrder(HeaderNo);//Sofyan
             //Message('Web Order Processed Successfully'); //Sofyan//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
@@ -2183,7 +2280,7 @@ codeunit 90005 "Process Web Order"
                     IF ItemQuery1.READ THEN BEGIN
                         CLEAR(QuantityForReservedKit);
 
-                        AvailableQuantity := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order);
+                        AvailableQuantity := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Resv_Order);
                     END;
                     ItemQuery1.CLOSE;
 

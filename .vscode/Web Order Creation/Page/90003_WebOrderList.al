@@ -6,7 +6,7 @@ page 90003 "Web Order List"
     CaptionML = ENU = 'Web Orders',
                 ENG = 'Web Orders';
     CardPageID = "Web Order Header";
-    DeleteAllowed = true;
+    DeleteAllowed = false;
     UsageCategory = Lists;
     Editable = false;
     PageType = List;
@@ -15,6 +15,8 @@ page 90003 "Web Order List"
     SourceTable = "Interim Sales Header";
     SourceTableView = WHERE("Document Type" = CONST(Order));
     InsertAllowed = false;
+    Permissions = tabledata "Bank Account" = R;
+
     layout
     {
         area(content)
@@ -98,10 +100,12 @@ page 90003 "Web Order List"
                 {
 
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field(Rec; Rec."Destination Doc No.")
                 {
                     ApplicationArea = all;
+                    Visible = false;
                     trigger OnDrillDown()
                     begin
                         OpenDestinationDocument(Rec);
@@ -184,8 +188,50 @@ page 90003 "Web Order List"
 
     actions
     {
-        area(processing)
-        {
+         area(processing)
+         {
+        //     action(BulkDelete)
+
+        //     {
+
+        //         ApplicationArea = All;
+
+        //         Caption = 'Bulk Delete';
+
+
+
+
+        //         trigger OnAction()
+
+        //         var
+
+        //             InterimSalesHeader: Record "Interim Sales Header";
+
+        //             InterimSalesLine: Record "Interim Sales Line";
+
+        //         begin
+
+        //             Clear(InterimSalesHeader);
+
+        //             CurrPage.SetSelectionFilter(InterimSalesHeader);
+
+        //             if InterimSalesHeader.FindSet() then
+        //                 repeat
+
+        //                     InterimSalesLine.Reset();
+
+        //                     InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+
+        //                     if InterimSalesLine.FindSet() then
+        //                         InterimSalesLine.DeleteAll(true);
+
+        //                     InterimSalesHeader.Delete(true);
+
+        //                 until InterimSalesHeader.Next() = 0;
+
+        //         end;
+
+        //     }
             action(Process)
             {
                 Caption = 'Process';
@@ -205,6 +251,8 @@ page 90003 "Web Order List"
                     InterimSalesHeader.CopyFilters(Rec);
                     R90000.SetTotalNoOfOrders(Rec.Count);
                     R90000.SetTableView(InterimSalesHeader);
+                    if Rec."Trade Partner Code" = 'B&Q' then
+                        R90000.SetBnQChannel(Rec."Trade Partner Code");
                     R90000.UseRequestPage(true);
                     R90000.Run();
                 end;
@@ -224,14 +272,27 @@ page 90003 "Web Order List"
                     Rec_ShippingAgent: Record "Shipping Agent";
                     ShipmentTracking: Record "Shipment Tracking";
                     ProcessLabel: Codeunit "Auto Generate Shipment";
+                    L_ChannelPartner: Record "Trade Partner";
+                    SecretSales: Codeunit "B&Q";
                 begin
                     Clear(L_InterimSalesHeader);
                     L_InterimSalesHeader := Rec;
                     CurrPage.SetSelectionFilter(L_InterimSalesHeader);
+
                     L_InterimSalesHeader.SetRange("No of Error", 0);
+                    L_InterimSalesHeader.SetRange(ReservedFlag, true);
                     if L_InterimSalesHeader.FindSet() then begin
                         repeat
                             ProcessLabel.GenerateLabel(L_InterimSalesHeader);
+
+                            L_ChannelPartner.Reset();
+                            L_ChannelPartner.SetRange(Code, L_InterimSalesHeader."Trade Partner Code");
+                            if L_ChannelPartner.FindFirst() then begin
+                                if L_ChannelPartner."Update Tracking Information" = true then begin
+                                    L_InterimSalesHeader.CalcFields("Tracking No.");
+                                    SecretSales.SendTrackingInformation(L_InterimSalesHeader."Shipping Agent Code", L_InterimSalesHeader."Tracking No.", L_InterimSalesHeader.order_id, L_InterimSalesHeader."Trade Partner Code");
+                                end;
+                            end;
                         until L_InterimSalesHeader.Next() = 0;
                         Message('Generate Shipment Process Completed.Please check Error Text in Order if label not generated.');
                     end;
@@ -505,10 +566,14 @@ page 90003 "Web Order List"
                     RecInterimSalesLine: Record "Interim Sales Line";
                     L_InterimSalesLine: Record "Interim Sales Line"; //Prathamesh
                     UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";//Prathamesh
+                    InterimSalesHeader: Record "Interim Sales Header";
                 begin
                     if Not (Rec.status in [rec.status::Confirmed, rec.status::"In Progress", rec.status::Cancelled]) then
                         Error('Order Status must be either Confirmed or In progress.');
-                    WebOrdMngt.CancelOrder(Rec);
+                    Clear(InterimSalesHeader);
+                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if InterimSalesHeader.FindFirst() then
+                        WebOrdMngt.CancelOrder(InterimSalesHeader);
                 end;
             }
         }

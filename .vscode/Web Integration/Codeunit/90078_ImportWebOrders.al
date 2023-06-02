@@ -38,6 +38,9 @@ codeunit 90078 ImportWebOrder
         HeaderCreated: Boolean;
         C_InterimHeader: Record "Interim Sales Header";
         DuplicateChannID: Boolean;
+        Customer: Record Customer;
+        Item: Record Item;
+        ItemErrorMessage: Text;
     begin
         Clear(HeaderCreated);
         Clear(DuplicateChannID);
@@ -97,6 +100,7 @@ codeunit 90078 ImportWebOrder
                 end;
 
                 L_TradePartner.Get(ChannelCode);
+                Customer.Get(L_TradePartner."Customer No.");
                 Clear(L_No);
                 L_InterimHeader.Reset();
                 L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
@@ -109,6 +113,7 @@ codeunit 90078 ImportWebOrder
                 L_InterimHeader."No." := L_No;
                 L_InterimHeader.Validate("Trade Partner Code", ChannelCode);
                 L_InterimHeader.Validate("Sell-to Customer No.", L_TradePartner."Customer No.");
+                L_InterimHeader.Validate("Customer Posting Group", Customer."Customer Posting Group");
                 L_InterimHeader.Validate("File Name", FileName);
                 L_InterimHeader.Validate("Document Date", WorkDate);
                 L_InterimHeader.Validate("Channel Order ID", GetValueAtIndex(2, 4));
@@ -122,6 +127,7 @@ codeunit 90078 ImportWebOrder
 
         // end;
         Clear(LineNo);
+        Clear(ItemErrorMessage);
         if HeaderCreated = true then begin
             for RowNo := 2 to Rows do begin
                 //Creating Lines++
@@ -134,30 +140,40 @@ codeunit 90078 ImportWebOrder
                 // end else begin
                 //     LineNo := L_InterimLine."Line No." + 10000;
                 // end;
-                LineNo += 10000;  // Irshad
-                L_InterimLine.Init();
-                L_InterimLine."Document Type" := L_InterimLine."Document Type"::Order;
-                L_InterimLine."Document No" := L_InterimHeader."No.";
-                L_InterimLine."Line No." := LineNo;
-                L_InterimLine.Validate("Trade Partner Code", ChannelCode);
-                L_InterimLine.Validate("Channel Order ID", L_InterimHeader."Channel Order ID");
-                L_InterimLine.Validate("Channel SKU", GetValueAtIndex(RowNo, 1));
-                L_InterimLine.Validate("No.", GetValueAtIndex(RowNo, 1));
-                L_InterimLine.Insert(true);
-                //Creating Lines--
+                if Item.Get(GetValueAtIndex(RowNo, 1)) then begin
+                    LineNo += 10000;  // Irshad
+                    L_InterimLine.Init();
+                    L_InterimLine."Document Type" := L_InterimLine."Document Type"::Order;
+                    L_InterimLine."Document No" := L_InterimHeader."No.";
+                    L_InterimLine."Line No." := LineNo;
+                    L_InterimLine.Validate("Trade Partner Code", ChannelCode);
+                    L_InterimLine.Validate("Channel Order ID", L_InterimHeader."Channel Order ID");
+                    L_InterimLine.Validate("Channel SKU", GetValueAtIndex(RowNo, 1));
+                    L_InterimLine.Validate("No.", GetValueAtIndex(RowNo, 1));
+                    L_InterimLine.Validate("VAT Bus. Posting Group", Customer."Customer Posting Group");
+                    L_InterimLine.Validate("VAT Prod. Posting Group", Item."VAT Prod. Posting Group");
+                    L_InterimLine.Insert(true);
+                    //Creating Lines--
 
-                if (GetValueAtIndex(RowNo, 2)) <> '' then begin
-                    Evaluate(ExcelQtyEvaulate, GetValueAtIndex(RowNo, 2));
-                    L_InterimLine.Quantity := ExcelQtyEvaulate;
-                    L_InterimLine.Modify();
-                end;
+                    if (GetValueAtIndex(RowNo, 2)) <> '' then begin
+                        Evaluate(ExcelQtyEvaulate, GetValueAtIndex(RowNo, 2));
+                        L_InterimLine.Quantity := ExcelQtyEvaulate;
+                        L_InterimLine.Modify();
+                    end;
 
-                if (GetValueAtIndex(RowNo, 3)) <> '' then begin
-                    Evaluate(ExcelPriceEvaulate, GetValueAtIndex(RowNo, 3));
-                    L_InterimLine."Unit Price" := ExcelPriceEvaulate;
-                    L_InterimLine.Modify();
+                    if (GetValueAtIndex(RowNo, 3)) <> '' then begin
+                        Evaluate(ExcelPriceEvaulate, GetValueAtIndex(RowNo, 3));
+                        L_InterimLine."Unit Price" := ExcelPriceEvaulate;
+                        L_InterimLine.Modify();
+                    end;
+                end
+                else begin
+                    ItemErrorMessage += GetValueAtIndex(RowNo, 1) + ',';
                 end;
             end;
+            ItemErrorMessage := ItemErrorMessage.TrimEnd(',');
+            if ItemErrorMessage <> '' then
+                Error('Items does not exist - ' + ItemErrorMessage);
         end;
 
         //Creating Web order From Temp++

@@ -7,7 +7,14 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
             DataClassification = ToBeClassified;
 
         }
+        field(60006; SalesOrderReturnNo; Code[20])
+        {
+            Caption = 'Sales Order Return No.';
+            Editable = false;
+            DataClassification = ToBeClassified;
+        }
     }
+
 
     trigger OnDelete()
     var

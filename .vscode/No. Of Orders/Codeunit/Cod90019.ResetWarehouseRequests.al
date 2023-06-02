@@ -20,10 +20,11 @@ codeunit 90019 ResetWarehouseRequests
         SalesOrders: Record "Sales Header";
         WarehouseShipmentLines: Record "Warehouse Shipment Line";
         SalesCode: Codeunit "Whse.-Sales Release";
+        SaleOrder: Record "Sales Header";
     begin
         SalesOrders.Reset();
         SalesOrders.SetRange("Completely Shipped", false);
-
+        SalesOrders.LoadFields("No.","Document Type");
         if SalesOrders.FindSet() then begin
             repeat
                 WarehouseShipmentLines.Reset();
@@ -36,6 +37,7 @@ codeunit 90019 ResetWarehouseRequests
                     WarehouseRequestsList.SetFilter("Source No.", SalesOrders."No.");
 
                     If WarehouseRequestsList.IsEmpty then begin
+                        if SaleOrder.Get(SalesOrders."Document Type",SalesOrders."No.") then
                         SalesCode.Release(SalesOrders);
                     end;
                     if WarehouseRequestsList.FindSet() then begin

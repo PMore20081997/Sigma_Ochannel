@@ -21,11 +21,13 @@ reportextension 90002 "Ext Whse. Shipment Create Pick" extends "Whse.-Shipment -
                 end;
 
 
-                If (Format(G_SalesHeader."No.") = Format("Warehouse Shipment Line"."Source No.")) and (G_ShippingRule.Count = 1) then Begin
+                // If (Format(G_SalesHeader."No.") = Format("Warehouse Shipment Line"."Source No.")) and (G_ShippingRule.Count = 1) then Begin
+                If (Format(G_SalesHeader."No.") = Format("Warehouse Shipment Line"."Source No.")) then Begin
                     "Warehouse Shipment Line"."Bay No." := G_BayNo;
                     "Warehouse Shipment Line".Modify();
                 end Else
-                    if (Format(G_SalesHeader."No.") <> Format("Warehouse Shipment Line"."Source No.")) and (G_ShippingRule.Count = 1) then begin
+                    // if (Format(G_SalesHeader."No.") <> Format("Warehouse Shipment Line"."Source No.")) and (G_ShippingRule.Count = 1) then begin
+                    if ((Format(G_SalesHeader."No.") <> Format("Warehouse Shipment Line"."Source No.")) and (G_ShippingRule."Shipping Agent" <> '')) then begin
                         G_SalesHeader.Reset();
                         G_SalesHeader.SetFilter("No.", "Warehouse Shipment Line"."Source No.");
                         If G_SalesHeader.FindFirst() then;
@@ -58,6 +60,7 @@ reportextension 90002 "Ext Whse. Shipment Create Pick" extends "Whse.-Shipment -
                 end;
             end;
         }
+
     }
     requestpage
     {
@@ -79,6 +82,7 @@ reportextension 90002 "Ext Whse. Shipment Create Pick" extends "Whse.-Shipment -
         }
 
     }
+
     local procedure UpdateTrolleyNo(P_TrolleyNo: Code[20]; P_PickNo: Code[20])
     var
         WSH: Record "Warehouse Shipment Header";

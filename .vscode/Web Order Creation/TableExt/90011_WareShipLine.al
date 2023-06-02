@@ -76,10 +76,11 @@ tableextension 90011 "Warehouse Ship Line Ext" extends "Warehouse Shipment Line"
         }
 
     }
-    // trigger OnBeforeDelete()
-    // var
-    //     NoofOrders: Codeunit NoOfOrders;
-    // begin
-    //     NoofOrders.UpdateWarehouseRequestOnDeleteWhseShipmentLines(Rec, false);
-    // end;
+    trigger OnDelete()
+    var
+        NoofOrders: Codeunit NoOfOrders;
+    
+    begin
+        NoofOrders.UpdateWarehouseRequestOnDeleteWhseShipmentLines(Rec, false);
+    end;
 }

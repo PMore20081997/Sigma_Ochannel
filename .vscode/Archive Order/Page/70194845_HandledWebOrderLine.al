@@ -30,6 +30,7 @@ page 90020 "Handled Web Order Line"
                 field("NAV Variant code"; Rec."NAV Variant code")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Line No."; Rec."Line No.")
                 {
@@ -132,6 +133,7 @@ page 90020 "Handled Web Order Line"
                 field(Status; Rec."Ordser Status")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Line Status"; Rec."Line Status")
                 {
@@ -141,6 +143,7 @@ page 90020 "Handled Web Order Line"
                 field("Scanned Date"; Rec."Scanned Date")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 //Paarth D Dave - 8418-2 - Adding Posted Assembly Order No ---- Start
                 field("Assembly Order"; Rec."Auto Assembly Order")

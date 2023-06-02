@@ -311,8 +311,12 @@ table 90006 "Handled Interim Sales Line"
         field(50029; Reserved; Boolean)
         {
             DataClassification = ToBeClassified;
-            ObsoleteState = Removed;
-            ObsoleteReason = 'Column is not required';
+            // ObsoleteState = Removed;
+            //ObsoleteReason = 'Column is not required';
+        }
+        field(90022; "Reserved Qty"; Decimal)
+        {
+
         }
         field(50030; "Old Item No."; Code[20])
         {
@@ -328,14 +332,14 @@ table 90006 "Handled Interim Sales Line"
         field(50033; "Document Date"; Date)
         {
             FieldClass = FlowField;
-            CalcFormula = Lookup("Interim Sales Header"."Document Date" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
+            CalcFormula = Lookup("Handled Interim Sales Header"."Document Date" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
 
 
         }
         field(50034; "Location Code"; Code[20])
         {
             FieldClass = FlowField;
-            CalcFormula = Lookup("Interim Sales Header"."Location Code" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
+            CalcFormula = Lookup("Handled Interim Sales Header"."Location Code" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
         }
         field(50036; "Scanned Date"; DateTime)
         {
@@ -465,6 +469,10 @@ table 90006 "Handled Interim Sales Line"
 
         }
         //Paarth D Dave - 8197-6 - Adding Posted Assembly Order No ---- End
+        field(90032; order_line_id; Text[250])
+        {
+
+        }
 
     }
 

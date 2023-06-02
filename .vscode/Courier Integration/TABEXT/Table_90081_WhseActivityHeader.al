@@ -34,7 +34,7 @@ tableextension 90081 "Warehouse Activity Header Ext" extends "Warehouse Activity
         //Ochannel++
         field(90001; "Trolley No."; Code[20])
         {
-            Editable = false;
+            Editable = true;
         }
         field(50007; "Created Date"; Date)
         {
@@ -61,6 +61,7 @@ tableextension 90081 "Warehouse Activity Header Ext" extends "Warehouse Activity
         field(90004; "Total Outstanding Qty"; Decimal)
         {
             FieldClass = FlowField;
+            Caption = 'Total No of Items';
             CalcFormula = sum("Warehouse Activity Line"."Qty. Outstanding" WHERE("Activity Type" = FIELD(Type),
                                                                 "Action Type" = filter(Take),
                                                                  "No." = FIELD("No."),

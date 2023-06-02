@@ -38,29 +38,54 @@ page 90034 "New Despatch Scan"
                                 Rec."Trolley No" := G_TrolleyNo;
                                 Rec.Modify();
                             end;
-                            //if Rec."User ID" = UserId then begin
-                            //end;
-                            G_ScanText := 'SCAN ITEM BARCODE';
+                            if CheckBayInTrolley(G_TrolleyNo) then
+                                G_ScanText := 'SCAN BAY NO.'
+                            else
+                                G_ScanText := 'SCAN ITEM BARCODE';
                             G_Scan := '';
                         end
                         else
-                            if G_ScanText = 'SCAN ITEM BARCODE' then begin
-                                Rec.Reset();
-                                Rec.SetRange("User ID", UserId);
-                                Rec.SetRange("Trolley No", G_TrolleyNo);
-                                IF Rec.FINDFIRST THEN
-                                    UpdateLine(Rec."Order No");
-                                CurrPage.UPDATE(FALSE);
+                            //Scan BayNo++
+                            if CheckBayInTrolley(G_TrolleyNo) then begin
+                                if G_ScanText = 'SCAN BAY NO.' then begin
+                                    Rec.Reset();
+                                    Rec.SetRange("User ID", UserId);
+                                    Rec.SetRange("Trolley No", G_TrolleyNo);
+                                    IF Rec.FINDFIRST THEN
+                                        UpdateLinesInBay(Rec."Order No");
+                                    CurrPage.UPDATE(FALSE);
+                                    if G_Scan <> '' then begin
+                                        CheckTrolleyScanCompleted(Rec."Order No", true);
+                                        PostWarehouseShipment(G_TrolleyNo);
+                                        CheckAndCloseDispatchScan(Rec."Trolley No");
+                                    end;
+                                    CurrPage.UPDATE(false);
+                                    if G_TrolleyNo = '' then
+                                        G_ScanText := 'SCAN TROLLEY NO.'
+                                    else
+                                        G_ScanText := 'SCAN BAY NO.';
+                                    G_Scan := '';
+                                end;
+                            end else begin
+                                //Scan BayNo--
+                                if G_ScanText = 'SCAN ITEM BARCODE' then begin
+                                    Rec.Reset();
+                                    Rec.SetRange("User ID", UserId);
+                                    Rec.SetRange("Trolley No", G_TrolleyNo);
+                                    IF Rec.FINDFIRST THEN
+                                        UpdateLine(Rec."Order No");
+                                    CurrPage.UPDATE(FALSE);
 
-                                CheckTrolleyScanCompleted(Rec."Order No");
-                                PostWarehouseShipment(G_TrolleyNo);
-                                CheckAndCloseDispatchScan(Rec."Trolley No");
-                                CurrPage.UPDATE(false);
-                                if G_TrolleyNo = '' then
-                                    G_ScanText := 'SCAN TROLLEY NO.'
-                                else
-                                    G_ScanText := 'SCAN ITEM BARCODE';
-                                G_Scan := '';
+                                    CheckTrolleyScanCompleted(Rec."Order No", true);
+                                    PostWarehouseShipment(G_TrolleyNo);
+                                    CheckAndCloseDispatchScan(Rec."Trolley No");
+                                    CurrPage.UPDATE(false);
+                                    if G_TrolleyNo = '' then
+                                        G_ScanText := 'SCAN TROLLEY NO.'
+                                    else
+                                        G_ScanText := 'SCAN ITEM BARCODE';
+                                    G_Scan := '';
+                                end;
                             end;
                     end;
                 }
@@ -111,7 +136,7 @@ page 90034 "New Despatch Scan"
                 var
                     P_DispatchHeader: Record "Despatch Scan Header";
                 begin
-                    CheckTrolleyScanCompleted(Rec."Order No");
+                    CheckTrolleyScanCompleted(Rec."Order No", false);
                     PostWarehouseShipment(G_TrolleyNo);
                     P_DispatchHeader.Reset();
                     P_DispatchHeader.SetRange("Trolley No", G_TrolleyNo);
@@ -572,7 +597,7 @@ page 90034 "New Despatch Scan"
         Commit();
     end;
 
-    local procedure CheckTrolleyScanCompleted(P_OrderNo: Code[20])
+    local procedure CheckTrolleyScanCompleted(P_OrderNo: Code[20]; CallFrom: Boolean)
     var
         OrderLnneCount: Integer;
         DespatchCount: Integer;
@@ -623,7 +648,8 @@ page 90034 "New Despatch Scan"
                         HISH.SetRange("Document Type", HISH."Document Type"::Order);
                         HISH.SetRange("Channel Order ID", P_OrderNo);
                         if HISH.FindFirst() then
-                            PrintPartiallyDespatchReport(HISH."No.");
+                            if CallFrom = true then
+                                PrintPartiallyDespatchReport(HISH."No.");
                         NoOfRecs := WSL1.COUNT;
                         repeat
                             WSL1.Validate("Qty. to Ship", WSL1."Scanned Quantity");
@@ -644,6 +670,8 @@ page 90034 "New Despatch Scan"
                                 HISH2.SetRange("No.", WSL1."Source No.");
                                 if HISH2.FindFirst() then begin
                                     HISH2.Validate(status, HISH2.status::Dispatched);
+                                    HISH2.Validate("Scanned Date", WSL1."Scanned Date");
+                                    HISH2.Validate("Scanned By", WSL1."Scanned By");
                                     HISH2.Modify(true);
                                     HISL.Reset();
                                     HISL.SetRange("Document Type", HISL."Document Type"::Order);
@@ -836,6 +864,7 @@ page 90034 "New Despatch Scan"
         L_WarehouseShipmentLines: Record "Warehouse Shipment Line";
         L_LinesCount: Integer;
         L_ScanLineCount: Integer;
+        DispatchHeader: Record "Despatch Scan Header";
     begin
         Clear(L_LinesCount);
         L_WarehouseShipmentLines.Reset();
@@ -858,8 +887,225 @@ page 90034 "New Despatch Scan"
 
 
         if L_LinesCount > 0 then
-            if L_ScanLineCount = L_LinesCount then
-                CODEUNIT.Run(CODEUNIT::"Whse.-Post Shipment", L_WarehouseShipmentLines)
+            if L_ScanLineCount = L_LinesCount then begin
+                CODEUNIT.Run(CODEUNIT::"Whse.-Post Shipment", L_WarehouseShipmentLines);
+                DispatchHeader.Reset();
+                DispatchHeader.SetRange("Trolley No", G_TrolleyNo);
+                DispatchHeader.SetRange("User ID", UserId);
+                if DispatchHeader.FindFirst() then begin
+                    DispatchHeader.Delete();
+                    //CurrPage.Close();
+                end;
+            end;
 
+
+    end;
+
+    local procedure CheckBayInTrolley(P_TrolleyNo: Code[20]): Boolean
+    var
+        L_WSL: Record "Warehouse Shipment Line";
+        L_WSH: Record "Warehouse Shipment Header";
+    begin
+        L_WSH.Reset();
+        L_WSH.SetRange("Trolley No.", P_TrolleyNo);
+        L_WSH.SetRange("Shipping Agent Code", 'ROYALMAIL');//Check for Sample Item
+        if L_WSH.FindFirst() then begin
+            L_WSL.Reset();
+            L_WSL.SetRange("No.", L_WSH."No.");
+            L_WSL.SetFilter("Bay No.", '<>%1', '');
+            if L_WSL.FindFirst() then
+                exit(true);
+        end;
+
+    end;
+
+    local procedure UpdateLinesInBay(P_OrderNo: Code[20])
+    var
+        L_DespatchH: Record "Despatch Scan Header";
+        WSL: Record "Warehouse Shipment Line";
+        WSL2: Record "Warehouse Shipment Line";
+        WS: Record "Warehouse Shipment Line";
+        v: Record "Warehouse Shipment Header" temporary;
+    begin
+        if G_Scan <> '' then begin
+            if P_OrderNo <> '' then begin
+                if CheckOrderScanCompleted(P_OrderNo) = false then begin
+                    G_WarehouseShipmentLine.Reset();
+                    G_WarehouseShipmentLine.SetRange("Trolley No.", G_TrolleyNo);
+                    if G_Scan <> '' then
+                        G_WarehouseShipmentLine.SetRange("Bay No.", G_Scan);
+                    G_WarehouseShipmentLine.SetRange("Dispatch Scan", false);
+                    G_WarehouseShipmentLine.SetFilter("Scan Status", '<>%1', G_WarehouseShipmentLine."Scan Status"::Cancelled);
+                    G_WarehouseShipmentLine.SetRange("Channel Order ID", P_OrderNo);
+                    if G_WarehouseShipmentLine.FindSet() then begin
+                        repeat
+                            L_DespatchH.Reset();
+                            L_DespatchH.SetRange("Trolley No", G_TrolleyNo);
+                            L_DespatchH.SetRange("User ID", UserId);
+                            if L_DespatchH.FindFirst() then begin
+                                Rec."Order No" := G_WarehouseShipmentLine."Channel Order ID";
+                                Rec.Modify();
+                            end;
+                            WS.Reset();
+                            WS.SetRange("Trolley No.", G_WarehouseShipmentLine."Trolley No.");
+                            WS.SetRange("Channel Order ID", G_WarehouseShipmentLine."Channel Order ID");
+                            WS.SetFilter("Scan Status", '<>%1&<>%2', WS."Scan Status"::Cancelled, WS."Scan Status"::Scanned);
+                            if WS.FindSet() then begin
+                                repeat
+                                    WS."User ID" := UserId;
+
+                                    if WS."Scan Status" = WS."Scan Status"::Parked then
+                                        WS."Scan Status" := WS."Scan Status"::" ";
+
+                                    if WS.Parked = true then
+                                        WS.Parked := false;
+
+
+                                    if WS."Item No." = G_WarehouseShipmentLine."Item No." then begin
+                                        if WS."Qty. Picked" > WS."Scanned Quantity" then begin
+                                            CurrPage."Despatch Lines".Page.Setfilter(G_TrolleyNo, UserId, WS."Channel Order ID");
+                                            if WS."Bay No." <> '' then
+                                                WS.Validate("Scanned Quantity", WS."Qty. Picked")
+                                            else
+                                                WS.Validate("Scanned Quantity", WS."Scanned Quantity" + 1);
+                                            WS.Validate("Scanned By", UserId);
+                                            if WS."Qty. Picked" = WS."Scanned Quantity" then begin
+                                                WS."Scan Station" := Format(Rec."Entry No.");
+                                                WS.Validate("Scan Status", WS."Scan Status"::Scanned);
+                                                WS.Validate("Scanned Date", CurrentDateTime);
+                                            end;
+
+                                        end else
+                                            Error('Item is completely scanned');
+                                    end;
+                                    WS.Modify();
+                                until WS.Next() = 0;
+                                CurrPage."Despatch Lines".Page.Setfilter(G_TrolleyNo, UserId, WS."Channel Order ID");
+                                CurrPage.Update();
+                            end;
+                        until G_WarehouseShipmentLine.Next() = 0;
+                    end else
+                        Error('Scanned Bay does not belong the Order %1', P_OrderNo);
+                end else begin
+                    G_WarehouseShipmentLine.Reset();
+                    G_WarehouseShipmentLine.SetCurrentKey("Channel Order ID");
+                    G_WarehouseShipmentLine.SetAscending("Channel Order ID", true);
+                    G_WarehouseShipmentLine.SetRange("Trolley No.", G_TrolleyNo);
+                    if G_Scan <> '' then
+                        G_WarehouseShipmentLine.SetRange("Bay No.", G_Scan);
+                    G_WarehouseShipmentLine.SetRange("Dispatch Scan", false);
+                    G_WarehouseShipmentLine.SetFilter("Scan Status", '<>%1&<>%2', G_WarehouseShipmentLine."Scan Status"::Cancelled, G_WarehouseShipmentLine."Scan Status"::Scanned);
+                    if G_WarehouseShipmentLine.FindSet() then begin
+                        repeat
+                            L_DespatchH.Reset();
+                            L_DespatchH.SetRange("Trolley No", G_TrolleyNo);
+                            L_DespatchH.SetRange("User ID", UserId);
+                            if L_DespatchH.FindFirst() then begin
+                                Rec."Order No" := G_WarehouseShipmentLine."Channel Order ID";
+                                Rec.Modify();
+                            end;
+                            WS.Reset();
+                            WS.SetRange("Trolley No.", G_WarehouseShipmentLine."Trolley No.");
+                            WS.SetRange("Channel Order ID", G_WarehouseShipmentLine."Channel Order ID");
+                            WS.SetFilter("Scan Status", '<>%1&<>%2', WS."Scan Status"::Cancelled, WS."Scan Status"::Scanned);
+                            if WS.FindSet() then begin
+                                repeat
+                                    WS."User ID" := UserId;
+
+                                    if WS."Scan Status" = WS."Scan Status"::Parked then
+                                        WS."Scan Status" := WS."Scan Status"::" ";
+
+                                    if WS.Parked = true then
+                                        WS.Parked := false;
+
+
+                                    if WS."Item No." = G_WarehouseShipmentLine."Item No." then begin
+                                        if WS."Qty. Picked" > WS."Scanned Quantity" then begin
+                                            CurrPage."Despatch Lines".Page.Setfilter(G_TrolleyNo, UserId, WS."Channel Order ID");
+                                            if WS."Bay No." <> '' then
+                                                WS.Validate("Scanned Quantity", WS."Qty. Picked")
+                                            else
+                                                WS.Validate("Scanned Quantity", WS."Scanned Quantity" + 1);
+                                            WS.Validate("Scanned By", UserId);
+                                            if WS."Qty. Picked" = WS."Scanned Quantity" then begin
+                                                WS."Scan Station" := Format(Rec."Entry No.");
+                                                WS.Validate("Scan Status", WS."Scan Status"::Scanned);
+                                                WS.Validate("Scanned Date", CurrentDateTime);
+                                            end;
+
+                                        end else
+                                            Error('Item is completely scanned');
+                                    end;
+                                    WS.Modify();
+                                until WS.Next() = 0;
+                                CurrPage."Despatch Lines".Page.Setfilter(G_TrolleyNo, UserId, WS."Channel Order ID");
+                                CurrPage.Update();
+                            end;
+
+                        until G_WarehouseShipmentLine.Next() = 0;
+                    end else
+                        Error('Scanned Bay does not belong to the below Order');
+                end;
+                //Error('Please Post and Print the Order %1', P_OrderNo);
+            end else begin
+                G_WarehouseShipmentLine.Reset();
+                G_WarehouseShipmentLine.SetCurrentKey("Channel Order ID");
+                G_WarehouseShipmentLine.SetAscending("Channel Order ID", true);
+                G_WarehouseShipmentLine.SetRange("Trolley No.", G_TrolleyNo);
+                if G_Scan <> '' then
+                    G_WarehouseShipmentLine.SetRange("Bay No.", G_Scan);
+                G_WarehouseShipmentLine.SetRange("Dispatch Scan", false);
+                G_WarehouseShipmentLine.SetFilter("Scan Status", '<>%1', G_WarehouseShipmentLine."Scan Status"::Cancelled);
+                if G_WarehouseShipmentLine.FindSet() then begin
+                    repeat
+                        L_DespatchH.Reset();
+                        L_DespatchH.SetRange("Trolley No", G_TrolleyNo);
+                        L_DespatchH.SetRange("User ID", UserId);
+                        if L_DespatchH.FindFirst() then begin
+                            Rec."Order No" := G_WarehouseShipmentLine."Channel Order ID";
+                            Rec.Modify();
+                        end;
+                        WS.Reset();
+                        WS.SetRange("Trolley No.", G_WarehouseShipmentLine."Trolley No.");
+                        WS.SetRange("Channel Order ID", G_WarehouseShipmentLine."Channel Order ID");
+                        WS.SetFilter("Scan Status", '<>%1', WS."Scan Status"::Cancelled);
+                        if WS.FindSet() then begin
+                            repeat
+                                WS."User ID" := UserId;
+
+                                if WS."Scan Status" = WS."Scan Status"::Parked then
+                                    WS."Scan Status" := WS."Scan Status"::" ";
+
+                                if WS.Parked = true then
+                                    WS.Parked := false;
+
+                                if WS."Item No." = G_WarehouseShipmentLine."Item No." then begin
+                                    if WS."Qty. Picked" > WS."Scanned Quantity" then begin
+                                        CurrPage."Despatch Lines".Page.Setfilter(G_TrolleyNo, UserId, WS."Channel Order ID");
+                                        if WS."Bay No." <> '' then
+                                            WS.Validate("Scanned Quantity", WS."Qty. Picked")
+                                        else
+                                            WS.Validate("Scanned Quantity", WS."Scanned Quantity" + 1);
+                                        WS.Validate("Scanned By", UserId);
+                                        if WS."Qty. Picked" = WS."Scanned Quantity" then begin
+                                            WS."Scan Station" := Format(Rec."Entry No.");
+                                            WS.Validate("Scan Status", WS."Scan Status"::Scanned);
+                                            WS.Validate("Scanned Date", CurrentDateTime);
+                                        end;
+
+                                    end else
+                                        Error('Item is completely scanned');
+                                end;
+                                WS.Modify();
+                            until WS.Next() = 0;
+
+                        end;
+
+                    until G_WarehouseShipmentLine.Next() = 0;
+                end else
+                    Error('Scanned Bay does not belong to the below Order');
+            end;
+            Commit();
+        end;
     end;
 }

@@ -193,6 +193,12 @@ page 90000 "General Setup - Channels"
                     ApplicationArea = All;
                 }
 
+                field(AutoReserve; Rec.AutoReserve)
+                {
+                    Caption = 'Auto Reserve';
+                    ApplicationArea = All;
+                }
+
             }
             group(Despatch)
             {

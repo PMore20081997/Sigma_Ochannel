@@ -49,6 +49,7 @@ page 90036 "Despatch Lines"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Bay No. field.';
+                    StyleExpr = Styletext;
                 }
 
                 field(Quantity; Rec.Quantity)
@@ -127,7 +128,8 @@ page 90036 "Despatch Lines"
 
     begin
         Rec.RESET;
-        //  Rec.ASCENDING(FALSE);
+        Rec.SetCurrentKey(SystemModifiedAt);
+        Rec.ASCENDING(FALSE);
         Rec.SETRANGE("Scanned By", P_UserID);
         Rec.SetRange("Trolley No.", P_TrolleyNo);
         if P_OrderNo <> '' then

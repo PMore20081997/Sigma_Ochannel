@@ -48,6 +48,7 @@ page 90037 "WH Shipment Lines"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Bay No. field.';
+                    StyleExpr = Styletext;
                 }
 
                 field(Quantity; Rec.Quantity)

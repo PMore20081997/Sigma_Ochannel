@@ -13,6 +13,7 @@ pageextension 90048 ExtendNavigationArea extends "Order Processor Role Center"
             {
                 Caption = 'O-Channel Activities';
                 ApplicationArea = All;
+                Visible = False;
             }
 
         }

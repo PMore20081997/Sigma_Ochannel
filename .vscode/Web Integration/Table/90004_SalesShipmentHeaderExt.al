@@ -10,5 +10,10 @@ tableextension 90004 "Sales Shipment Header Ext" extends "Sales Shipment Header"
         {
             Editable = false;
         }
+        field(90030; "Scanned Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+            Editable = false;
+        }
     }
 }

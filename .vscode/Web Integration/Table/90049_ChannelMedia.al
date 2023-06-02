@@ -78,6 +78,10 @@ table 90014 "Channel Media"
         {
 
         }
+        field(21; "Parent Transaction ID"; Code[50])
+        {
+
+        }
     }
 
     keys

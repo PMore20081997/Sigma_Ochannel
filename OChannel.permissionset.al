@@ -138,7 +138,7 @@ permissionset 90000 "O-Channel"
         codeunit "Process Web Order"=X,
         codeunit "RM Click & Drop"=X,
         codeunit "Royal Mail"=X,
-        codeunit "Secret Sales"=X,
+        codeunit "B&Q"=X,
         codeunit "Shipment Tracking Insertion"=X,
         codeunit "Shipment Tracking JobQueue"=X,
         codeunit "Shop Direct Courier"=X,
@@ -224,5 +224,10 @@ permissionset 90000 "O-Channel"
         query "Return Order Screen Query"=X,
         query "Total No Orders By Trolley"=X,
         query "Validate Interim Sales Return"=X,
-        query "Validate Return Order Screen"=X;
+        query "Validate Return Order Screen"=X,
+        tabledata "Interim Product Details"=RIMD,
+        table "Interim Product Details"=X,
+        codeunit ResetWarehouseRequests=X,
+        codeunit TransferAssemblyCommentsToPick=X,
+        page "Interim Product Details"=X;
 }

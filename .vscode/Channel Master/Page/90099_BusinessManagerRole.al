@@ -113,12 +113,14 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                         RunObject = page "Scanned Entries";
                         ApplicationArea = all;
                         Caption = 'Scanned Lines Entries';
+                        Visible = false;
                     }
                     action("Handled Scanned Entries")
                     {
                         RunObject = page "Archived Scanned Entries";
                         ApplicationArea = all;
                         Caption = 'Handled Scanned Entries';
+                        Visible = false;
                     }
                     action("Ochannel Return Order")
                     {
@@ -184,6 +186,20 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                 }
 
             }
+        }
+    }
+}
+pageextension 90088 "Ext O365" extends "O365 Activities"
+{
+    layout
+    {
+        modify("Ongoing Sales")
+        {
+            Visible = false;
+        }
+        modify("Ongoing Purchases")
+        {
+            Visible = false;
         }
     }
 }

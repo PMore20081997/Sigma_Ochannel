@@ -7,7 +7,7 @@ page 90017 "Web Order Header"
     SourceTable = "Interim Sales Header";
     PageType = Document;
     RefreshOnActivate = true;
-    DeleteAllowed = true;
+    DeleteAllowed = false;
     InsertAllowed = false;
 
     layout
@@ -79,7 +79,6 @@ page 90017 "Web Order Header"
                 {
                     ApplicationArea = All;
                     TableRelation = "Customer Posting Group".Code;
-                    Editable = false;
                 }
                 //8862--
                 field("Order Date"; rec."Order Date")
@@ -170,10 +169,12 @@ page 90017 "Web Order Header"
                 {
                     ApplicationArea = all;
                     Editable = false;
+                    Visible = false;
                 }
                 field(Rec; Rec."Destination Doc No.")
                 {
                     ApplicationArea = all;
+                    Visible = false;
                     Editable = false;
                     trigger OnDrillDown()
                     begin
@@ -201,6 +202,7 @@ page 90017 "Web Order Header"
                 {
                     Editable = false;
                     ApplicationArea = All;
+                    Caption = 'Assembly Order';
                 }
                 field("Gift Card"; Rec."Gift Card")
                 {
@@ -209,6 +211,14 @@ page 90017 "Web Order Header"
                     ToolTip = 'Specifies the value of the Gift Card field.';
                 }
                 //Paarth D Dave - 8197-5 - Adding Assembly Order Exist Field ---- End
+
+                field(ReservedFlag; Rec.ReservedFlag)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Reserved';
+                    ToolTip = 'This will be enable if all the web lines have Reserved Quantity';
+                }
 
                 group("Shipping Details")
                 {
@@ -461,7 +471,9 @@ page 90017 "Web Order Header"
                     Clear(L_InterimSalesHeader);
                     L_InterimSalesHeader := Rec;
                     CurrPage.SetSelectionFilter(L_InterimSalesHeader);
+
                     L_InterimSalesHeader.SetRange("No of Error", 0);
+                    L_InterimSalesHeader.SetRange(ReservedFlag, true);
                     if L_InterimSalesHeader.FindSet() then begin
                         repeat
                             ProcessLabel.GenerateLabel(L_InterimSalesHeader);
@@ -488,6 +500,28 @@ page 90017 "Web Order Header"
                                 WebOrdMngt.OrderValidations(InterimSalesHeader);
                             UNTIL InterimSalesHeader.NEXT = 0;
                     end;
+                end;
+            }
+            action("MarkAsZeroPrice")
+            {
+                Caption = 'Mark As Zero Price';
+                Image = PriceAdjustment;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedOnly = true;
+                PromotedIsBig = true;
+                ApplicationArea = all;
+                trigger OnAction()
+                var
+                    InterimSalesLine: Record "Interim Sales Line";
+                begin
+                    InterimSalesLine.Reset();
+                    InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
+                    InterimSalesLine.SetRange("Document No", Rec."No.");
+                    if InterimSalesLine.FindSet() then begin
+                        InterimSalesLine.ModifyAll("Gift Wrap", true);
+                    end;
+
                 end;
             }
             action("Authorize price")
@@ -627,10 +661,14 @@ page 90017 "Web Order Header"
                     RecInterimSalesLine: Record "Interim Sales Line";
                     L_InterimSalesLine: Record "Interim Sales Line"; //Prathamesh
                     UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";//Prathamesh
+                    InterimSalesHeader: Record "Interim Sales Header";
                 begin
                     if Not (Rec.status in [rec.status::Confirmed, rec.status::"In Progress", rec.status::Cancelled]) then
                         Error('Order Status must be either Confirmed or In progress.');
-                    WebOrdMngt.CancelOrder(Rec);
+                    Clear(InterimSalesHeader);
+                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if InterimSalesHeader.FindFirst() then
+                        WebOrdMngt.CancelOrder(InterimSalesHeader);
 
 
                 end;

@@ -412,6 +412,20 @@ table 90001 "Trade Partner"
             DataClassification = ToBeClassified;
         }
 
+        field(50066; "Update Tracking Information"; Boolean)
+
+        {
+
+            DataClassification = ToBeClassified;
+
+        }
+
+        field(50068; "Alternative Credentials"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+
+
     }
     keys
     {

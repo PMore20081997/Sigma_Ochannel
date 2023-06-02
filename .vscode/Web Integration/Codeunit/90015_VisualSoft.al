@@ -11,8 +11,9 @@ codeunit 90015 VisualSoft
         CASE RunType OF
             SyncOrderLabel:
                 BEGIN
-                    GetOrdersCredentials(StartParameter);
+                    //GetOrdersCredentials(StartParameter);
                     //GetOrders(StartParameter);
+                    GetNewOrders(StartParameter);
 
                     if IsError = true then begin
                         Message('Some error has found while syncing process.\Please contact system administrator.');
@@ -398,7 +399,8 @@ codeunit 90015 VisualSoft
         P_Response := CU_XMLDOMMgmt.RemoveNamespaces(P_Response);
         XmlDocument.ReadFrom(P_Response, L_XmlDocument);
 
-        L_NavOrderResultList := L_XmlDocument.GetDescendantElements('GetOrdersByDateRangeResponse');
+        L_NavOrderResultList := L_XmlDocument.GetDescendantElements('GetNewOrdersResponse');
+        //L_NavOrderResultList := L_XmlDocument.GetDescendantElements('GetOrdersByDateRangeResponse');
 
         if L_NavOrderResultList.Get(1, L_StatusNode) then
             L_StatusElement := L_StatusNode.AsXmlElement();
@@ -513,6 +515,7 @@ codeunit 90015 VisualSoft
         PaymentAmtText: Text;
         i: Integer;
         CurrencyCode: Text;
+        BillingMobileElementFound: Boolean;
     begin
         InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
         InterimSalesHeader."Trade Partner Code" := ChannelCode;
@@ -642,13 +645,30 @@ codeunit 90015 VisualSoft
             InterimSalesHeader."Post Code" := Copystr(GenericElement.InnerText(), 1, 50);
         end;
 
+        //BILLING_EMAIL
+        BillingMobileElementFound := false;
         Clear(GenericNode);
         Clear(GenericElement);
         if CustomerNodeList.Get(15, GenericNode) then begin
             GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Email" := CopyStr(GenericElement.InnerText(), 1, 80);
-            InterimSalesHeader."Buyer Email" := CopyStr(GenericElement.InnerText(), 1, 50);
+            //Adding this Condition if on 15th Position Billing Mobile Doesn't Come
+            //then add the data into Email and in else Take 16th Position Email Details if it is BillingMobile
+            if GenericElement.Name <> 'BILLING_MOBILE' then begin
+                InterimSalesHeader."Ship-to Email" := CopyStr(GenericElement.InnerText(), 1, 80);
+                InterimSalesHeader."Buyer Email" := CopyStr(GenericElement.InnerText(), 1, 50);
+            end
+            else begin
+                BillingMobileElementFound := true;
+                Clear(GenericNode);
+                Clear(GenericElement);
+                if CustomerNodeList.Get(16, GenericNode) then begin
+                    GenericElement := GenericNode.AsXmlElement();
+                    InterimSalesHeader."Ship-to Email" := CopyStr(GenericElement.InnerText(), 1, 80);
+                    InterimSalesHeader."Buyer Email" := CopyStr(GenericElement.InnerText(), 1, 50);
+                end;
+            end;
         end;
+        //BILLING_EMAIL
 
         Clear(GenericNode);
         Clear(GenericElement);
@@ -665,83 +685,176 @@ codeunit 90015 VisualSoft
             Evaluate(TotalDiscountIn, GenericElement.InnerText());
             InterimSalesHeader."Order Discount Amount" := TotalDiscountIn;
         end;
+
+        //DELIVERY_FIRSTNAME and DELIVERY_LASTNAME
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(FirstName);
-        if CustomerNodeList.Get(18, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            FirstName := Copystr(GenericElement.InnerText(), 1, 30);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(18, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(19, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        FirstName := Copystr(GenericElement.InnerText(), 1, 30);
 
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(LastName);
-        if CustomerNodeList.Get(19, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            LastName := Copystr(GenericElement.InnerText(), 1, 30);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(19, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(20, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        LastName := Copystr(GenericElement.InnerText(), 1, 30);
 
         Clear(FullName);
         FullName := FirstName + ' ' + LastName;
         InterimSalesHeader."Ship-to Name" := CopyStr(FullName, 1, 50);
+        //DELIVERY_FIRSTNAME and DELIVERY_LASTNAME
 
+        //DELIVERY_ADDRESS1
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(20, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Address" := Copystr(GenericElement.InnerText(), 1, 50);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(20, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(21, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        InterimSalesHeader."Ship-to Address" := Copystr(GenericElement.InnerText(), 1, 50);
+        //DELIVERY_ADDRESS1
 
+        //DELIVERY_ADDRESS2
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(21, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Address 2" := Copystr(GenericElement.InnerText(), 1, 50);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(21, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(22, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        InterimSalesHeader."Ship-to Address 2" := Copystr(GenericElement.InnerText(), 1, 50);
+        //DELIVERY_ADDRESS2
 
+        //DELIVERY_TOWN
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(22, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to City" := Copystr(GenericElement.InnerText(), 1, 30);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(22, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(23, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        InterimSalesHeader."Ship-to City" := Copystr(GenericElement.InnerText(), 1, 30);
+        //DELIVERY_TOWN
 
+        //DELIVERY_COUNTY
+        Clear(GenericNode);
+        Clear(GenericElement);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(23, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(24, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end;
+        InterimSalesHeader."Ship-to County" := Copystr(GenericElement.InnerText(), 1, 30);
+        //DELIVERY_COUNTY
+
+        //DELIVERY_COUNTRY_CODE
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(ShipToCountryRegionCode);
-        if CustomerNodeList.Get(26, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            ShipToCountryRegionCode := Copystr(GenericElement.InnerText(), 1, 10);
-            if ShipToCountryRegionCode = 'UNITED KIN' then begin
-                InterimSalesHeader."Ship-to Country/Region Code" := 'GB';
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(26, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
             end;
-            if ShipToCountryRegionCode = 'NORTHERN I' then begin
-                InterimSalesHeader."Ship-to Country/Region Code" := 'NI';
-            end;
-            if ((ShipToCountryRegionCode <> 'NORTHERN I') and (ShipToCountryRegionCode <> 'UNITED KIN')) then begin
-                InterimSalesHeader."Ship-to Country/Region Code" := ShipToCountryRegionCode;
+        end
+        else begin
+            if CustomerNodeList.Get(27, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
             end;
         end;
 
-        if CustomerNodeList.Get(23, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to County" := Copystr(GenericElement.InnerText(), 1, 30);
-        end;
+        ShipToCountryRegionCode := Copystr(GenericElement.InnerText(), 1, 10);
 
+        if ShipToCountryRegionCode = 'UNITED KIN' then begin
+            InterimSalesHeader."Ship-to Country/Region Code" := 'GB';
+        end;
+        if ShipToCountryRegionCode = 'NORTHERN I' then begin
+            InterimSalesHeader."Ship-to Country/Region Code" := 'NI';
+        end;
+        if ((ShipToCountryRegionCode <> 'NORTHERN I') and (ShipToCountryRegionCode <> 'UNITED KIN')) then begin
+            InterimSalesHeader."Ship-to Country/Region Code" := ShipToCountryRegionCode;
+        end;
+        //DELIVERY_COUNTRY_CODE
+
+        //DELIVERY_POSTCODE
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(27, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Post Code" := Copystr(GenericElement.InnerText(), 1, 20);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(27, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(28, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
         end;
+        InterimSalesHeader."Ship-to Post Code" := Copystr(GenericElement.InnerText(), 1, 20);
+        //DELIVERY_POSTCODE
 
+        //DELIVERY_TELEPHONE
         Clear(GenericNode);
         Clear(GenericElement);
-        if CustomerNodeList.Get(28, GenericNode) then begin
-            GenericElement := GenericNode.AsXmlElement();
-            InterimSalesHeader."Ship-to Phone" := Copystr(GenericElement.InnerText(), 1, 20);
+        if BillingMobileElementFound = false then begin
+            if CustomerNodeList.Get(28, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+            end;
+        end
+        else begin
+            if CustomerNodeList.Get(29, GenericNode) then begin
+                GenericElement := GenericNode.AsXmlElement();
+                //DELIVERY_MOBILE
+                if GenericElement.InnerText() = '' then begin
+                    Clear(GenericNode);
+                    Clear(GenericElement);
+                    if CustomerNodeList.Get(30, GenericNode) then begin
+                        if GenericElement.Name = 'DELIVERY_MOBILE' then
+                            GenericElement := GenericNode.AsXmlElement();
+                    end;
+                end;
+                //DELIVERY_MOBILE
+            end;
         end;
-
+        InterimSalesHeader."Ship-to Phone" := Copystr(GenericElement.InnerText(), 1, 20);
+        //DELIVERY_TELEPHONE
 
         TradePartner1.Reset();
         if TradePartner1.Get(ChannelCode) then begin
@@ -756,6 +869,7 @@ codeunit 90015 VisualSoft
         Clear(GenericNode);
         Clear(GenericElement);
         Clear(TransactionNodeList);
+        Clear(InterimSalesHeader."Payment Method");
         if P_OrderDataNodeList.Get(5, GenericNode) then
             GenericElement := GenericNode.AsXmlElement();
         if not GenericElement.IsEmpty() and GenericElement.HasElements() then
@@ -1007,10 +1121,10 @@ codeunit 90015 VisualSoft
                             InterimSalesLine."Unit Price" := UnitPrice;
                         end;
 
-                        if j = 1 then begin
-                            if G_ShippingPrice > 0 then
-                                InterimSalesLine."Shipping Price" := G_ShippingPrice;
-                        end;
+                        // if j = 1 then begin
+                        //     if G_ShippingPrice > 0 then
+                        //         InterimSalesLine."Shipping Price" := G_ShippingPrice;
+                        // end;
                         //Shipping Price
 
                         //Adding Currency Code on Line Level
@@ -1025,6 +1139,15 @@ codeunit 90015 VisualSoft
                         InterimSalesLine.Insert();
                     end;
                 end;
+
+                //Shipping Price Bug 12066
+                if InterimSalesLine.FindFirst() then begin
+                    if G_ShippingPrice > 0 then begin
+                        InterimSalesLine."Shipping Price" := G_ShippingPrice;
+                        InterimSalesLine.Modify();
+                    end;
+                end;
+                //Shipping Price Bug 12066
             end;
         End;
     end;
@@ -1677,7 +1800,7 @@ codeunit 90015 VisualSoft
                 else begin
                     Clear(Stock);
                     Clear(ChannelSKU);
-                    Stock := format(ChannelItemListing."Channel Inventory");
+                    Stock := format(ChannelItemListing."Channel Inventory").Replace(',', '');
                     ChannelSKU := ChannelItemListing."Channel SKU";
                 end;
 
@@ -1804,7 +1927,7 @@ codeunit 90015 VisualSoft
                                         CLEAR(ItemQuery);
                                         ItemQuery.SETRANGE(ItemQuery.No, BOMComponent."No.");
                                         ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
-                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUT AWAY|PUTPICK|PICK');
 
                                         ItemQuery.OPEN;
                                         IF ItemQuery.READ THEN begin
@@ -1840,7 +1963,7 @@ codeunit 90015 VisualSoft
                             CLEAR(ItemQuery);
                             ItemQuery.SETRANGE(ItemQuery.No, ChannelItemListing."Item No.");
                             ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
-                            ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+                            ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUT AWAY|PUTPICK|PICK');
 
                             ItemQuery.OPEN;
                             IF ItemQuery.READ THEN begin
@@ -2131,6 +2254,51 @@ codeunit 90015 VisualSoft
             end;
         end;
         exit(Convertdate);
+    end;
+
+    local procedure GetNewOrders(ChannelCode: Code[20])
+    var
+        RequestBody: Text;
+        Client: HttpClient;
+        RequestMessage: HttpRequestMessage;
+        ResponseMessage: HttpResponseMessage;
+        Headers: HttpHeaders;
+        Content: HttpContent;
+        Response: Text;
+        URL: Text;
+        j: Integer;
+        TradePartner: Record "Trade Partner";
+    begin
+        GetCredentials(ChannelCode);
+        RequestBody := '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="' + ServiceURL + '"><soapenv:Header><VSAuth><ClientID>' + MarketplaceId + '</ClientID><Username>' + AccessKeyId + '</Username><Password>' + SecretAccessKey + '</Password></VSAuth></soapenv:Header><soapenv:Body><ns1:GetNewOrders><auto_update>false</auto_update></ns1:GetNewOrders></soapenv:Body></soapenv:Envelope>';
+
+        URL := ServiceURL;
+        //SoapAction := SoapActionUrl + '/6#GetOrdersByDateRange';
+        RequestMessage.SetRequestUri(URL);
+        RequestMessage.Method('POST');
+        Content.WriteFrom(RequestBody);
+        Headers := Client.DefaultRequestHeaders;
+        Headers.Add('Authorization', CreateBasicAuth(AccessKeyId, BasicAuthPassword, MarketplaceId));
+        Content.GetHeaders(Headers);
+        Headers.Remove('Content-Type');
+        Headers.Add('Content-Type', 'text/xml;charset=utf-8');
+        // Headers.Add('soapAction', 'https://demo.visualsoft.co.uk/api/soap/service/5#GetOrdersByDateRange');
+        //Headers.Add('soapAction', SoapAction);
+        RequestMessage.Content := Content;
+
+        IsError := false;
+        if Client.Send(RequestMessage, ResponseMessage) then begin
+            ResponseMessage.Content().ReadAs(Response);
+            if ResponseMessage.HttpStatusCode = 200 then begin
+                InsertXMLResponse(Response, ChannelCode);
+            end
+            else begin
+                Error(StrSubstNo('Status Code - "%1" and Error Message - %2', ResponseMessage.HttpStatusCode, Response));
+            end;
+        end
+        else begin
+            IsError := true;
+        end;
     end;
 
     var

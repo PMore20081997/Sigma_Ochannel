@@ -542,6 +542,7 @@ table 90003 "Interim Sales Header"
 
         field(90032; "Assemply Order"; Boolean)
         {
+            Caption = 'Assembly Order';
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = exist("Interim Sales Line" where("Document No" = field("No."), "Auto Assembly Order" = filter(true)));
@@ -568,6 +569,12 @@ table 90003 "Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
+
+        field(90044; order_id; Text[250])
+        {
+            DataClassification = ToBeClassified;
+        }
+        
     }
 
 

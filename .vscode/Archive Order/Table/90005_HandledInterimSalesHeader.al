@@ -317,6 +317,16 @@ table 90005 "Handled Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
+
+        field(77; "Order Amount 2"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Handled Interim Sales Line"."Amount Including VAT" where("Document No" = field("No."), "Document Type" = field("Document Type")));
+        }
+
+
+
+
         field(50010; "Pickup Name"; Text[50])
         {
             Description = 'Channel Integration';
@@ -419,6 +429,8 @@ table 90005 "Handled Interim Sales Header"
         field(50081; "No. of Items"; Integer)
         {
         }
+
+
         field(50085; "Stock Posted"; Boolean)
         {
         }
@@ -433,6 +445,8 @@ table 90005 "Handled Interim Sales Header"
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = - Exist("Interim Sales Line" WHERE("Document Type" = FIELD("Document Type"), "Document No" = FIELD("No."), Reserved = FILTER(false)));
+            ObsoleteState = Removed;
+            ObsoleteReason = 'We are using field id 50102';
         }
         field(50090; "User ID"; Code[50])
         {
@@ -454,9 +468,9 @@ table 90005 "Handled Interim Sales Header"
         field(50097; "Destination Doc Type"; Option)
         {
             DataClassification = ToBeClassified;
-            OptionMembers = ,"Sales Order","Internal Pick";
-            OptionCaptionML = ENU = ' ,Sales Order,Internal Pick',
-                              ENG = ' ,Sales Order,Internal Pick';
+            OptionMembers = ,"Sales Order","Internal Pick","Return Order";
+            OptionCaptionML = ENU = ' ,Sales Order,Internal Pick ,Return Order',
+                              ENG = ' ,Sales Order,Internal Pick, Return Order';
         }
         field(50098; "Destination Doc No."; Code[20])
         {
@@ -473,6 +487,11 @@ table 90005 "Handled Interim Sales Header"
         field(50101; "File Name"; Text[100])
         {
             DataClassification = ToBeClassified;
+        }
+
+        field(50102; ReservedFlag; Boolean)
+        {
+            Caption = 'Reserved';
         }
         field(50105; "Process Date"; date)
         {
@@ -515,6 +534,13 @@ table 90005 "Handled Interim Sales Header"
         {
             Caption = 'Web Sales Invoice No.';
             FieldClass = FlowFilter;
+        }
+
+        field(50113; "Total Weight 2"; Decimal)
+        {
+            Caption = 'Total Weight';
+            FieldClass = FlowField;
+            CalcFormula = sum("Handled Interim Sales Line".Weight where("Document No" = field("No."), "Document Type" = field("Document Type")));
         }
         //CAS-27945-M1R5J2.MH <--
         field(90022; "Order Discount Amount"; Decimal)
@@ -563,6 +589,7 @@ table 90005 "Handled Interim Sales Header"
 
         field(90032; "Assemply Order"; Boolean)
         {
+
             Caption = 'Assembly Order';
             Editable = false;
             FieldClass = FlowField;
@@ -591,6 +618,59 @@ table 90005 "Handled Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
+
+        field(90038; "Order Discount Amount 2"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Handled Interim Sales Line".Discount where("Document No" = field("No."), "Document Type" = field("Document Type")));
+
+        }
+
+        field(90039; "No of Item Lines"; Integer)
+        {
+            FieldClass = FlowField;
+            CalcFormula = Count("Handled Interim Sales Line" where(Type = const(Item), "Document No" = field("No.")));
+        }
+
+        field(90040; "Total Number Of Items 2"; Integer)
+        {
+            FieldClass = FlowField;
+            CalcFormula = COunt("Handled Interim Sales Line" where("Document No" = field("No.")));
+        }
+        field(90041; "Calculated Weight"; Integer)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Handled Interim Sales Line".Weight where("Document No" = field("No."), "Document Type" = field("Document Type")));
+        }
+
+        field(90042; WarehouseShipmentNo; Code[20])
+        {
+            Caption = 'Warehouse Shipment No.';
+            Editable = false;
+            DataClassification = ToBeClassified;
+
+        }
+        field(90043; WarehousePick; Code[20])
+        {
+            Caption = 'Warehouse Pick No.';
+            Editable = false;
+            DataClassification = ToBeClassified;
+        }
+
+
+
+
+        field(90044; order_id; Text[250])
+        {
+            DataClassification = ToBeClassified;
+        }
+
+        field(90045;UpdatedDispatchedOnPortal; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+
+
     }
 
 

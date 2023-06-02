@@ -127,6 +127,21 @@ page 90006 "Handled Web Order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+
+                }
+
+                field("Reserved Qty"; Rec."Reserved Qty")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+
+                field(Reserved; Rec.Reserved)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
                 }
                 field("VAT Bus. Posting Group"; Rec."VAT Bus. Posting Group")
                 {
@@ -154,6 +169,7 @@ page 90006 "Handled Web Order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Scanned Date"; Rec."Scanned Date")
                 {

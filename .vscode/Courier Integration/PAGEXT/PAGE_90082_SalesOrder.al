@@ -1,5 +1,28 @@
 pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
 {
+    layout
+    {
+        modify("Customer Posting Group")
+        {
+            Editable = true;
+        }
+        modify("VAT Reporting Date")
+        {
+            Editable = false;
+        }
+        modify("Posting Date")
+        {
+            Editable = false;
+        }
+        modify("Order Date")
+        {
+            Editable = false;
+        }
+        modify("Document Date")
+        {
+            Editable = false;
+        }
+    }
 
     actions
     {
@@ -261,6 +284,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
         TotalNoOfItem: Integer;
         NoOfItems: Integer;
         GiftOrderAmount: Decimal;
+        L_SalesHeader: Record "Sales Header";
     begin
         Clear(OrderAmount);
         Clear(OrderDiscountAmount);
@@ -291,7 +315,14 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 until HandledInterimSalesLine.Next() = 0;
 
             HandledInterimSalesHeader."Order Amount" := OrderAmount;
-            HandledInterimSalesHeader."Order Discount Amount" := OrderDiscountAmount;
+
+            L_SalesHeader.Reset();
+            L_SalesHeader.SetRange("No.", SalesLine."Document No.");
+            if L_SalesHeader.FindFirst() then begin
+                L_SalesHeader.CalcFields("Invoice Discount Amount");
+            end;
+
+            HandledInterimSalesHeader."Order Discount Amount" := OrderDiscountAmount + L_SalesHeader."Invoice Discount Amount";
             HandledInterimSalesHeader."Total No. of Items" := TotalNoOfItem;
             HandledInterimSalesHeader."No. of Items" := NoOfItems;
             HandledInterimSalesHeader."Total Weight" := TotalWeight;

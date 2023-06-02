@@ -17,9 +17,15 @@ query 90100 ItemQuery
             column(Qty_on_Web_Order; "Qty. on Web Order")
             {
             }
-
+            column(Qty_on_Web_Resv_Order; "Qty. on Resv Web Order")
+            {
+            }
             column(W_H_Inventory; "W/H Inventory")
             {
+            }
+            column(Ship_Bin_Inventory; "Ship Bin Inventory")
+            {
+
             }
             column(Inventory_Qty_; "Inventory Qty.")
             {

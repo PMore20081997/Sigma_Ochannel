@@ -9,6 +9,9 @@ codeunit 90090 "DPD Courier"
     var
         ILWUsername: Text;
         ILWPassword: Text;
+
+        LANUsername: Text;
+        LANPassword: Text;
         SHOPIFYUsername: Text;
         SHOPIFYPassword: Text;
         ServiceURL: Text;
@@ -30,7 +33,10 @@ codeunit 90090 "DPD Courier"
             ServiceURL := ShippingAgent."API URL";
             SHOPIFYUsername := ShippingAgent."Client Id";
             SHOPIFYPassword := ShippingAgent."Client Secret";
+            LANUsername := ShippingAgent."Access Token";
+            LANPassword := ShippingAgent."Refresh Token";
             LabelServiceURL := ShippingAgent."Internet Address";
+
         End;
     end;
 
@@ -57,9 +63,13 @@ codeunit 90090 "DPD Courier"
             if TradePartner."DPD Setup" = true then begin
                 auth := CreateBasicAuth(ILWUsername, ILWPassword);
             end
-            else begin
-                auth := CreateBasicAuth(SHOPIFYUsername, SHOPIFYPassword);
-            end;
+            else
+                if TradePartner."Alternative Credentials" = true then begin
+                    auth := CreateBasicAuth(LANUsername, LANPassword);
+                end
+                else begin
+                    auth := CreateBasicAuth(SHOPIFYUsername, SHOPIFYPassword);
+                end;
         end;
 
         HttpHeader := HttpClients.DefaultRequestHeaders;
@@ -165,8 +175,7 @@ codeunit 90090 "DPD Courier"
         else
             CollectionDate := Format(Temp_SalesHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>T00:00:00');
 
-        if ((Temp_SalesHeader."Ship-to Address" <> '') and (Temp_SalesHeader."Ship-to Country/Region Code" <> '') and
-         (Temp_SalesHeader."Ship-to Post Code" <> '') and (Temp_SalesHeader."Ship-to City" <> '') and
+        if ((Temp_SalesHeader."Ship-to Address" <> '') and (Temp_SalesHeader."Ship-to Country/Region Code" <> '') and (Temp_SalesHeader."Ship-to City" <> '') and
          (Temp_SalesHeader."Shipping Agent Service Code" <> '') and (Temp_SalesHeader."Ship-to Name" <> '')) then begin
 
             // Clear(NumberofParcels);
@@ -179,6 +188,11 @@ codeunit 90090 "DPD Courier"
             //         NumberofParcels := Round(Temp_SalesHeader."Currency Factor" / ShippingRule.Weight, 1, '>');
             //     end;
             // end;
+
+            //Bug 12674++
+            if Temp_SalesHeader."Ship-to Address" = Temp_SalesHeader."Ship-to Address 2" then
+                Temp_SalesHeader."Ship-to Address 2" := '';
+            //Bug 12674--
 
             if Temp_SalesHeader."Ship-to Country/Region Code" <> 'GB' then begin
                 Clear(ParcelProduct);
@@ -233,22 +247,23 @@ codeunit 90090 "DPD Courier"
                         '"invoice": {"invoiceExportReason": "01","invoiceTermsOfDelivery": "DAP","invoiceType": 1,' +
                         '"invoiceShipperDetails": {"address": {"organisation": "%1","countryCode": "%2","postcode": "%3",' +
                         '"street": "%4","town": "%5"},"eoriNumber": "GB721821949000"},' +
-                        '"invoiceDeliveryDetails": {"valueAddedTaxNumber": "GB721821949","eoriNumber": "XI721821949000",' +
+                        '"invoiceDeliveryDetails": {"valueAddedTaxNumber": "","eoriNumber": "",' +
                         '"pidNumber": ""}},"collectionDate": "%6","consolidate": false,"consignment": [{' +
                         '"consignmentNumber": "%7","consignmentRef": null,"parcel": [%8],' +
                         '"collectionDetails": {"address": {"organisation": "%9","countryCode": "%10","postcode": "%11","street": "%12",' +
                         '"town": "%13"}},"deliveryDetails": {"contactDetails": {"contactName": "%14","telephone": "1234"' +
                         '},"address": {"organisation": "%15","countryCode": "%16","postcode": "%17","street": "%18",' +
-                        '"town": "%19"},"notificationDetails": {"email": "test@gmail.com","mobile": "1234"}},"networkCode": "%20",' +
+                        '"locality": "%25","town": "%19"},"notificationDetails": {"email": "test@gmail.com","mobile": "1234"}},"networkCode": "%20",' +
                         '"numberOfParcels":%21,"totalWeight": %22,"customsValue": %23,"shippingRef1": "%24",' +
-                        '"liabilityValue": null,"parcelDescription": "Wallpaper for Decorative Purposes","liability": false,"vatPaid": "Y"}]}',
+                        '"liabilityValue": null,"parcelDescription": "Wallpaper for Decorative Purposes","liability": false,"shippersDestinationTaxId": "IM3720008430","vatPaid": "Y"}]}',
                         CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code", CompanyInfo."Post Code",
                         CopyStr(CompanyInfo.Address, 1, 35), CompanyInfo.City, CollectionDate, Temp_SalesHeader."Applies-to ID",
                         ParcelProduct, CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code",
                         CompanyInfo."Post Code", CopyStr(CompanyInfo.Address, 1, 35), CompanyInfo.City,
                         CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Ship-to Country/Region Code",
                         InternationalPostCode, CopyStr(Temp_SalesHeader."Ship-to Address", 1, 35), Temp_SalesHeader."Ship-to City",
-                        Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID");
+                        Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID",
+                        CopyStr(Temp_SalesHeader."Ship-to Address 2", 1, 35));
                         //Test Request--
                     end
                     else begin
@@ -257,14 +272,14 @@ codeunit 90090 "DPD Courier"
                         '"invoice": {"invoiceExportReason": "01","invoiceTermsOfDelivery": "DAP","invoiceType": 1,' +
                         '"invoiceShipperDetails": {"address": {"organisation": "%1","countryCode": "%2","postcode": "%3",' +
                         '"street": "%4","town": "%5"},"eoriNumber": "GB721821949000"},' +
-                        '"invoiceDeliveryDetails": {"valueAddedTaxNumber": "GB721821949","eoriNumber": "XI721821949000",' +
+                        '"invoiceDeliveryDetails": {"valueAddedTaxNumber": "","eoriNumber": "",' +
                         '"pidNumber": ""}},"collectionDate": "%6","consolidate": false,"consignment": [{' +
                         '"consignmentNumber": "%7","consignmentRef": null,"parcel": [%8],' +
                         '"collectionDetails": {"address": {"organisation": "%9","countryCode": "%10","postcode": "%11","street": "%12",' +
                         '"town": "%13"}},"deliveryDetails": {"contactDetails": {"contactName": "%14","telephone": "%15"' +
                         '},"address": {"organisation": "%16","countryCode": "%17","postcode": "%18","street": "%19",' +
-                        '"town": "%20"},"notificationDetails": {"email": "%21","mobile": "%22"}},"networkCode": "%23",' +
-                        '"numberOfParcels":%24,"totalWeight": %25,"customsValue": %26,"shippingRef1": "%27","liabilityValue": null,"parcelDescription": "Wallpaper for Decorative Purposes","liability": false,"vatPaid": "Y"}]}',
+                        '"locality": "%28","town": "%20"},"notificationDetails": {"email": "%21","mobile": "%22"}},"networkCode": "%23",' +
+                        '"numberOfParcels":%24,"totalWeight": %25,"customsValue": %26,"shippingRef1": "%27","liabilityValue": null,"parcelDescription": "Wallpaper for Decorative Purposes","liability": false,"shippersDestinationTaxId": "IM3720008430","vatPaid": "Y"}]}',
                         CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code", CompanyInfo."Post Code",
                         CopyStr(CompanyInfo.Address, 1, 35), CompanyInfo.City, CollectionDate, Temp_SalesHeader."Applies-to ID",
                         ParcelProduct, CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code",
@@ -272,7 +287,8 @@ codeunit 90090 "DPD Courier"
                         CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Sell-to Phone No.", CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Ship-to Country/Region Code",
                         InternationalPostCode, CopyStr(Temp_SalesHeader."Ship-to Address", 1, 35), Temp_SalesHeader."Ship-to City",
                         Temp_SalesHeader."Sell-to E-Mail", Temp_SalesHeader."Sell-to Phone No.", Temp_SalesHeader."Shipping Agent Service Code",
-                        Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID");
+                        Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID",
+                        CopyStr(Temp_SalesHeader."Ship-to Address 2", 1, 35));
                         //Live Request--
                     end;
                 end;
@@ -283,13 +299,13 @@ codeunit 90090 "DPD Courier"
                     TextRequest := StrSubstNo('{"jobId":null,"collectionOnDelivery":false,"invoice":null,"collectionDate":"%1",' +
                                                 '"consolidate":false,"consignment":[{"consignmentNumber":"' + Temp_SalesHeader."Applies-to ID" + '","consignmentRef":null,"parcel":[],' +
                                                 '"collectionDetails":{"contactDetails":{"contactName":"%2","telephone":"12334"},"address":{"organisation":"%3","countryCode":"%4","postcode":"%5","street":"%6","town":"%7","county":"%8"}},' +
-                                                '"deliveryDetails":{"contactDetails":{"contactName":"%9","telephone":"12334"},"address":{"organisation":"%10","countryCode":"%11","postcode":"%12","street":"%13","town":"%14","county":"%15"},' +
+                                                '"deliveryDetails":{"contactDetails":{"contactName":"%9","telephone":"12334"},"address":{"organisation":"%10","countryCode":"%11","postcode":"%12","street":"%13","locality": "%21","town":"%14","county":"%15"},' +
                                                 '"notificationDetails":{"email":"test@gmail.com","mobile":"12334"}},"networkCode":"%16","numberOfParcels":%17,"totalWeight":%18,"customsValue": %19,"shippingRef1": "%20","liabilityValue":null,"liability":false}]}',
                                                 CollectionDate, CopyStr(CompanyInfo."Contact Name", 1, 35), CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code", CompanyInfo."Post Code",
                                                 CopyStr(CompanyInfo.Address, 1, 35), CompanyInfo.City, CompanyInfo.County,
                                                 CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Ship-to Country/Region Code",
                                                 Temp_SalesHeader."Ship-to Post Code", CopyStr(Temp_SalesHeader."Ship-to Address", 1, 35), Temp_SalesHeader."Ship-to City", Temp_SalesHeader."Ship-to County",
-                                                 Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID");
+                                                 Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID", CopyStr(Temp_SalesHeader."Ship-to Address 2", 1, 35));
                     //Test Request--
                 end
                 else begin
@@ -297,13 +313,13 @@ codeunit 90090 "DPD Courier"
                     TextRequest := StrSubstNo('{"jobId":null,"collectionOnDelivery":false,"invoice":null,"collectionDate":"%1",' +
                                 '"consolidate":false,"consignment":[{"consignmentNumber":"' + Temp_SalesHeader."Applies-to ID" + '","consignmentRef":null,"parcel":[],' +
                                 '"collectionDetails":{"contactDetails":{"contactName":"%2","telephone":"%3"},"address":{"organisation":"%4","countryCode":"%5","postcode":"%6","street":"%7","town":"%8","county":"%9"}},' +
-                                '"deliveryDetails":{"contactDetails":{"contactName":"%10","telephone":"%11"},"address":{"organisation":"%12","countryCode":"%13","postcode":"%14","street":"%15","town":"%16","county":"%17"},' +
+                                '"deliveryDetails":{"contactDetails":{"contactName":"%10","telephone":"%11"},"address":{"organisation":"%12","countryCode":"%13","postcode":"%14","street":"%15","locality": "%25","town":"%16","county":"%17"},' +
                                 '"notificationDetails":{"email":"%18","mobile":"%19"}},"networkCode":"%20","numberOfParcels":%21,"totalWeight":%22,"customsValue": %23,"shippingRef1": "%24","liabilityValue":null,"liability":false}]}',
                                 CollectionDate, CopyStr(CompanyInfo."Contact Name", 1, 35), CompanyInfo."Phone No.", CopyStr(CompanyInfo.Name, 1, 35), CompanyInfo."Country/Region Code", CompanyInfo."Post Code",
                                 CopyStr(CompanyInfo.Address, 1, 35), CompanyInfo.City, CompanyInfo.County,
                                 CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Sell-to Phone No.", CopyStr(Temp_SalesHeader."Ship-to Name", 1, 35), Temp_SalesHeader."Ship-to Country/Region Code",
                                 Temp_SalesHeader."Ship-to Post Code", CopyStr(Temp_SalesHeader."Ship-to Address", 1, 35), Temp_SalesHeader."Ship-to City", Temp_SalesHeader."Ship-to County",
-                                Temp_SalesHeader."Sell-to E-Mail", Temp_SalesHeader."Sell-to Phone No.", Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID");
+                                Temp_SalesHeader."Sell-to E-Mail", Temp_SalesHeader."Sell-to Phone No.", Temp_SalesHeader."Shipping Agent Service Code", Temp_SalesHeader."No. Printed", Temp_SalesHeader."Currency Factor", CustomsValue, Temp_SalesHeader."Applies-to ID", CopyStr(Temp_SalesHeader."Ship-to Address 2", 1, 35));
                     //Live Request--
                 end;
             end;
@@ -394,7 +410,7 @@ codeunit 90090 "DPD Courier"
         else begin
             if Temp_SalesHeader.FindFirst() then begin
                 Clear(ErroMessage);
-                ErroMessage := 'Please Check if Ship-to Name, Ship-to Address, Ship-to Country/Region, Ship-to Post Code, Ship-to City, and Shipping Agent Service Code is Populated or Not on Order ' + Temp_SalesHeader."No.";
+                ErroMessage := 'Please Check if Ship-to Name, Ship-to Address, Ship-to Country/Region, Ship-to City, and Shipping Agent Service Code is Populated or Not on Order ' + Temp_SalesHeader."No.";
 
                 L_InterimSalesHeader.Reset();
                 L_InterimSalesHeader.SetRange("No.", Temp_SalesHeader."No.");

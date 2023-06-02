@@ -287,7 +287,7 @@ page 90011 "Channel Item Listing"
                                                     CLEAR(ItemQuery);
                                                     ItemQuery.SETRANGE(ItemQuery.No, BOMComponent."No.");
                                                     ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
-                                                    ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+                                                    ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUT AWAY|PUTPICK|PICK');
 
                                                     ItemQuery.OPEN;
                                                     IF ItemQuery.READ THEN begin
@@ -323,7 +323,7 @@ page 90011 "Channel Item Listing"
                                         CLEAR(ItemQuery);
                                         ItemQuery.SETRANGE(ItemQuery.No, ChannelItemListing."Item No.");
                                         ItemQuery.SETRANGE(ItemQuery.Location_Filter, TradePartner.Location);
-                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUTAWAY|PUTPICK|PICK');
+                                        ItemQuery.SetFilter(ItemQuery.Bin_Type_Filter, 'PUT AWAY|PUTPICK|PICK');
 
                                         ItemQuery.OPEN;
                                         IF ItemQuery.READ THEN begin

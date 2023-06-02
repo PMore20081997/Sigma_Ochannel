@@ -8,12 +8,25 @@ tableextension 90094 "Item Ext Allocation" extends Item
             Editable = false;
             CalcFormula = Sum("Warehouse Entry"."Qty. (Base)" WHERE("Item No." = FIELD("No."), "Location Code" = FIELD("Location Filter"), "Bin Code" = FIELD("Bin Filter"), "Variant Code" = FIELD("Variant Filter"), "Lot No." = FIELD("Lot No. Filter"), "Serial No." = FIELD("Serial No. Filter"), "Bin Type Code" = filter('PUTPICK|PICK')));
         }
+        field(90001; "Ship Bin Inventory"; Decimal)
+        {
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = Sum("Warehouse Entry"."Qty. (Base)" WHERE("Item No." = FIELD("No."), "Location Code" = FIELD("Location Filter"), "Bin Code" = FIELD("Bin Filter"), "Variant Code" = FIELD("Variant Filter"), "Lot No." = FIELD("Lot No. Filter"), "Serial No." = FIELD("Serial No. Filter"), "Bin Type Code" = filter('SHIP')));
+        }
         field(90101; "Qty. on Web Order"; Decimal)
         {
             Caption = 'Qty. on Web Order(Reserved)';
             FieldClass = FlowField;
             Editable = false;
-            CalcFormula = Sum("Interim Sales Line".Quantity WHERE("Document Type" = CONST(Order), Type = CONST(Item), "No." = FIELD("No."), Reserved = CONST(true), "Destination Doc No." = FILTER(<> '')));
+            CalcFormula = Sum("Interim Sales Line".Quantity WHERE("Document Type" = CONST(Order), Type = CONST(Item), "No." = FIELD("No."), Reserved = CONST(true)));
+        }
+        field(90105; "Qty. on Resv Web Order"; Decimal)
+        {
+            Caption = 'Qty. on Web Order(Reserved)';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = Sum("Interim Sales Line"."Reserved Qty" WHERE("Document Type" = CONST(Order), Type = CONST(Item), "No." = FIELD("No."), Reserved = CONST(true)));
         }
         field(90000; "Production Item"; Boolean)
         {
@@ -30,8 +43,9 @@ tableextension 90094 "Item Ext Allocation" extends Item
         {
             FieldClass = FlowField;
             Editable = false;
-            CalcFormula = Sum("Warehouse Entry"."Qty. (Base)" WHERE("Item No." = FIELD("No."), "Location Code" = FIELD("Location Filter"), "Bin Code" = FIELD("Bin Filter"), "Variant Code" = FIELD("Variant Filter"), "Lot No." = FIELD("Lot No. Filter"), "Serial No." = FIELD("Serial No. Filter")));
+            CalcFormula = Sum("Warehouse Entry"."Qty. (Base)" WHERE("Item No." = FIELD("No."), "Location Code" = FIELD("Location Filter"), "Bin Type Code" = FIELD("Bin Type Filter"), "Variant Code" = FIELD("Variant Filter"), "Lot No." = FIELD("Lot No. Filter"), "Serial No." = FIELD("Serial No. Filter")));
         }
+
         field(90104; "Vendor Name"; Text[100])
         {
             FieldClass = FlowField;

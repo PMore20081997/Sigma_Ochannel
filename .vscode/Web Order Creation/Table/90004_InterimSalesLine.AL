@@ -561,6 +561,16 @@ table 90004 "Interim Sales Line"
         {
 
         }
+
+        field(90031; order_id; Text[250])
+        {
+
+        }
+
+        field(90032; order_line_id; Text[250])
+        {
+
+        }
     }
 
     keys
@@ -672,8 +682,8 @@ table 90004 "Interim Sales Line"
         CLEAR(UnitVatAmount);
         L_VatProdPostingSetup.RESET;
         IF L_VatProdPostingSetup.GET(P_ISL."VAT Bus. Posting Group", P_ISL."VAT Prod. Posting Group") THEN BEGIN
-            // if L_VatProdPostingSetup."VAT Calculation Type" = L_VatProdPostingSetup."VAT Calculation Type"::"Reverse Charge VAT" then
-            //     L_VatProdPostingSetup."VAT %" := 0;  //Commented Bug-8862
+            if L_VatProdPostingSetup."VAT Calculation Type" = L_VatProdPostingSetup."VAT Calculation Type"::"Reverse Charge VAT" then
+                L_VatProdPostingSetup."VAT %" := 0;  //UnCommented Internal Bug-11752 29/03/2023
             IF L_TradePartner."Prices Including VAT" THEN BEGIN
                 P_ISL.Amount := (ROUND(((P_ISL."Channel Price" * P_ISL.Quantity) / ((L_VatProdPostingSetup."VAT %" / 100) + 1)), 0.01, '='));
                 P_ISL."Amount Including VAT" := round((P_ISL."Channel Price" * P_ISL.Quantity), 0.01, '=');

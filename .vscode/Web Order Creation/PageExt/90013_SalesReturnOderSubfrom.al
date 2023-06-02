@@ -9,6 +9,11 @@ pageextension 90013 "Sales Return Order Subform Ext" extends "Sales Return Order
             {
                 ApplicationArea = All;
             }
+
+            field("Channel Order ID"; Rec."Channel Order ID")
+            {
+                ApplicationArea = All;
+            }
         }
     }
 

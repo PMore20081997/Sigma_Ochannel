@@ -91,6 +91,10 @@ table 90075 "Interim Sales Return"
         {
             DataClassification = ToBeClassified;
         }
+        field(22; "Scanned Qty"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
         //Azhar--
     }
     keys

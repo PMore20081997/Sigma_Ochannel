@@ -10,6 +10,7 @@ codeunit 90091 "Hermes Courier"
         Username: Text;
         Password: Text;
         ServiceURL: Text;
+        WebServiceURL: Text;
         ClientId: Text;
         ClientName: Text;
         NextDayText: Text;
@@ -31,7 +32,7 @@ codeunit 90091 "Hermes Courier"
             Username := ShippingAgent."Access Key";
             Password := ShippingAgent."Secret Key";
             ServiceURL := ShippingAgent."Internet Address";
-            //ServiceURL := ShippingAgent."API URL";
+            WebServiceURL := ShippingAgent."API URL";
             ClientId := ShippingAgent."Client Id";
             ClientName := ShippingAgent."Client Secret";
         End;
@@ -183,7 +184,7 @@ codeunit 90091 "Hermes Courier"
                         '<deliveryRoutingRequestEntries>%5</deliveryRoutingRequestEntries></deliveryRoutingRequest>', ClientId, ClientName, ChildClientId, ChildClientName, deliveryRoutingRequestEntry);
 
         Clear(ReqeustBody);
-        ReqeustBody := StrSubstNo('{"RequestBody":"%1","Username": "%2","Password": "%3"}', body, Username, Password);
+        ReqeustBody := StrSubstNo('{"RequestBody":"%1","Username": "%2","Password": "%3","ServiceURL":"%4"}', body, Username, Password, WebServiceURL);
 
         // body := StrSubstNo('{"Username": "%1","Password": "%2","deliveryRoutingRequest": {"clientId": "%3",' +
         //         '"clientName": "%4","sourceOfRequest": "CLIENTWS","deliveryRoutingRequestEntries": {' +
@@ -324,6 +325,8 @@ codeunit 90091 "Hermes Courier"
         RoutingRequestEntry: Text;
         i: Integer;
         Street: Text;
+        CustomerAddressLine1: Text;
+        MobilePhone: Text;
         TypeHelper: Codeunit "Type Helper";
         CompanyInfo: Record "Company Information";
     begin
@@ -339,19 +342,35 @@ codeunit 90091 "Hermes Courier"
             if Street.Contains('"') then begin
                 Street := Street.Replace('"', '&quot;');
             end;
+
+            Clear(CustomerAddressLine1);
+            CustomerAddressLine1 := CopyStr(P_TempSalesHeader."Ship-to Address 2", 1, 32);
+            if CustomerAddressLine1.Contains('&') then begin
+                CustomerAddressLine1 := CustomerAddressLine1.Replace('&', '&amp;');
+            end;
+            if CustomerAddressLine1.Contains('"') then begin
+                CustomerAddressLine1 := CustomerAddressLine1.Replace('"', '&quot;');
+            end;
+
+            Clear(MobilePhone);
+            MobilePhone := P_TempSalesHeader."Sell-to Phone No.";
+            MobilePhone := MobilePhone.Replace(' ', '');
+            MobilePhone := MobilePhone.Trim();
+            MobilePhone := CopyStr(MobilePhone, 1, 15);
+
             RoutingRequestEntry += StrSubstNo('<deliveryRoutingRequestEntry><addressValidationRequired>false</addressValidationRequired>' +
                                     '<customer><address><firstName>%1</firstName><lastName>%2</lastName><streetName>%3</streetName>' +
-                                    '<city>%4</city><postCode>%5</postCode><countryCode>%6</countryCode></address>' +
-                                    '<customerReference1>%7</customerReference1></customer><parcel><weight>%8</weight>' +
+                                    '<addressLine1>%4</addressLine1><city>%5</city><postCode>%6</postCode><countryCode>%7</countryCode></address>' +
+                                    '<email>%8</email><customerReference1>%9</customerReference1><mobilePhoneNo>%10</mobilePhoneNo></customer><parcel><weight>%11</weight>' +
                                     '<length>50</length><width>50</width><depth>20</depth><girth>140</girth><combinedDimension>190</combinedDimension>' +
-                                    '<volume>40000</volume><currency>%9</currency><value>%10</value><numberOfItems>%11</numberOfItems>' +
-                                    '<description></description><originOfParcel></originOfParcel></parcel><services><nextDay>%12</nextDay>' +
-                                    '</services><senderAddress><addressLine1>%13</addressLine1><addressLine2>%14</addressLine2>' +
-                                    '<addressLine3>%15</addressLine3><addressLine4>%16</addressLine4></senderAddress>' +
-                                    '<expectedDespatchDate>%17</expectedDespatchDate><countryOfOrigin>%18</countryOfOrigin></deliveryRoutingRequestEntry>',
-                                    FirstName, LastName, Street,
-                                    P_TempSalesHeader."Ship-to City", P_TempSalesHeader."Ship-to Post Code", P_TempSalesHeader."Ship-to Country/Region Code", P_TempSalesHeader."Applies-to ID",
-                                    TotalWeightText, CurrencyCode, OrderAmount, NoOfItems, NextDayText, CompanyInfo.Address, CompanyInfo."Address 2",
+                                    '<volume>40000</volume><currency>%12</currency><value>%13</value><numberOfItems>%14</numberOfItems>' +
+                                    '<description></description><originOfParcel></originOfParcel></parcel><services><nextDay>%15</nextDay>' +
+                                    '</services><senderAddress><addressLine1>%16</addressLine1><addressLine2>%17</addressLine2>' +
+                                    '<addressLine3>%18</addressLine3><addressLine4>%19</addressLine4></senderAddress>' +
+                                    '<expectedDespatchDate>%20</expectedDespatchDate><countryOfOrigin>%21</countryOfOrigin></deliveryRoutingRequestEntry>',
+                                    FirstName, LastName, Street, CustomerAddressLine1,
+                                    P_TempSalesHeader."Ship-to City", P_TempSalesHeader."Ship-to Post Code", P_TempSalesHeader."Ship-to Country/Region Code", P_TempSalesHeader."Sell-to E-Mail", P_TempSalesHeader."Applies-to ID",
+                                    MobilePhone, TotalWeightText, CurrencyCode, OrderAmount, NoOfItems, NextDayText, CompanyInfo.Address, CompanyInfo."Address 2",
                                     CompanyInfo.City, CompanyInfo."Post Code", Format(P_TempSalesHeader."Shipment Date", 0, '20<Year>-<Month,2>-<Day,2>'), P_TempSalesHeader."Ship-to Country/Region Code");
         end;
         exit(RoutingRequestEntry);

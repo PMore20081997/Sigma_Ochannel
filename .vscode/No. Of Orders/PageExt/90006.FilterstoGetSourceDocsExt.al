@@ -17,7 +17,22 @@ pageextension 90006 FilterstoGetSourceDocsExt extends "Filters to Get Source Doc
                 trigger OnValidate()
                 begin
                     Rec."No. Of Orders to Process" := NoofOrderstoProcess;
+
+                    Rec.CheckNoOfOrdersValidationToCreateMultipleShipment(Rec);
+
                 end;
+            }
+            field("No of Document"; Rec."No of Document")
+            {
+                ApplicationArea = All;
+                ToolTip = 'Specifies the value of the No of Document field.';
+
+
+                trigger OnValidate()
+                begin
+                    Rec.CheckNoOfOrdersValidationToCreateMultipleShipment(Rec);
+                end;
+
             }
         }
 
@@ -26,6 +41,7 @@ pageextension 90006 FilterstoGetSourceDocsExt extends "Filters to Get Source Doc
     trigger OnAfterGetCurrRecord()
     var
         WarehouseRequest: Record "Warehouse Request";
+        WarehouseSourceFilter: Record "Warehouse Source Filter";
     begin
         Clear(TotalNoOfOrders);
         if Rec."Sales Orders" then Begin
@@ -38,14 +54,34 @@ pageextension 90006 FilterstoGetSourceDocsExt extends "Filters to Get Source Doc
                 WarehouseRequest.SetRange("Destination No.", Rec."Customer No. Filter");
             WarehouseRequest.SetFilter("Shipment Created", '%1', false);
             WarehouseRequest.SetRange("Document Status", WarehouseRequest."Document Status"::Released);
+            WarehouseRequest.SetRange("Source Document", WarehouseRequest."Source Document"::"Sales Order");
+            WarehouseRequest.SetRange("Completely Handled", false);
             If WarehouseRequest.FindSet() then begin
                 TotalNoOfOrders := WarehouseRequest.Count;
             end;
-            Rec."No. Of Orders to Process" := Rec."Default No. Of Orders";
-            NoofOrderstoProcess := Rec."Default No. Of Orders";
+            // Rec."No. Of Orders to Process" := Rec."Default No. Of Orders";
+
+            Rec."No. Of Orders to Process" := TotalNoOfOrders;
+            Rec."Default No. Of Orders" := TotalNoOfOrders;
+            Rec."No of Document" := 1;
+            // WarehouseSourceFilter.Reset();
+            // WarehouseSourceFilter.SetRange(Code, Rec.Code);
+            // if WarehouseSourceFilter.FindFirst() then begin
+            //     WarehouseSourceFilter."No. Of Orders to Process" := TotalNoOfOrders;
+            //     WarehouseSourceFilter."Default No. Of Orders" := TotalNoOfOrders;
+            //     WarehouseSourceFilter."No of Document" := 1;
+            //     WarehouseSourceFilter.Modify(false);
+            // end;
+
+            // NoofOrderstoProcess := Rec."Default No. Of Orders";
+            NoofOrderstoProcess := TotalNoOfOrders;
+
             CurrPage.Update(false);
         End
     end;
+
+
+
 
     var
         NoofOrderstoProcess: Integer;

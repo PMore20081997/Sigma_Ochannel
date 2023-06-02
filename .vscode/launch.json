@@ -10,12 +10,11 @@
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
             "startupObjectType": "Page",
-            "startupObjectId": 22,
+            "startupObjectId": 7339,
             "environmentType": "Sandbox",
             "schemaUpdateMode": "ForceSync",
-            "environmentName": "ProdCopy141222",
-            // "environmentName": "PROD_RESTORE",
-            //"environmentName": "Demo",
+            // "environmentName": "DEV",
+            "environmentName": "UAT",
             "tenant": "7bac1391-1bbb-46cf-ae0d-ad536338587c"
         }
     ]

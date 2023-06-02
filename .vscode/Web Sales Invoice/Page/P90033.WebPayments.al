@@ -22,6 +22,15 @@ page 90033 "Web Payments"
                 {
                     ApplicationArea = All;
                 }
+                field("Currency Code"; Rec."Currency Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("NAV Payment Method"; rec."NAV Payment Method")
+                {
+                    ApplicationArea = All;
+                    Caption = 'PK';
+                }
                 field("NAV Payment Method 2"; Rec."NAV Payment Method 2")
                 {
                     ApplicationArea = All;

@@ -9,6 +9,7 @@ page 90075 "Return Order Screen"
                       ORDER(Descending);
     UsageCategory = Administration;
     ApplicationArea = All;
+    Permissions = tabledata "Bank Account" = R;
 
     layout
     {
@@ -23,6 +24,7 @@ page 90075 "Return Order Screen"
                     ApplicationArea = All;
                     TableRelation = "Reason Code".Code;
                     QuickEntry = false;
+                    Visible = false;
                 }
 
                 field(G_ReturnReasonCode; G_ReturnReasonCode)
@@ -38,7 +40,11 @@ page 90075 "Return Order Screen"
                     ApplicationArea = All;
                     QuickEntry = true;
                 }
-
+                field(G_BulkScan; G_BulkScan)
+                {
+                    Caption = 'Quantity to return';
+                    ApplicationArea = All;
+                }
                 field(G_Barcode; G_Barcode)
                 {
                     Caption = 'Barcode';
@@ -48,11 +54,16 @@ page 90075 "Return Order Screen"
                     begin
                         if G_OrderNo = '' then
                             Error('Please enter an order no.');
-                        if G_ReasonCode = '' then
-                            Error('Please select a condition');
+                        // US 12005 ++
+                        // if G_ReasonCode = '' then
+                        //     Error('Please select a condition');
                         if G_ReturnReasonCode = '' then
                             Error('Please select return reason');
-                        if ((G_OrderNo <> '') AND (G_Barcode <> '') AND (G_ReasonCode <> '') AND (G_ReturnReasonCode <> '')) then begin
+
+                        IF G_BulkScan = 0 then
+                            Error('Please enter return quantity');
+                        // if ((G_OrderNo <> '') AND (G_Barcode <> '') AND (G_ReasonCode <> '') AND (G_ReturnReasonCode <> '')) then begin
+                        if ((G_OrderNo <> '') AND (G_Barcode <> '') AND (G_ReturnReasonCode <> '') AND (G_BulkScan <> 0)) then begin
                             Clear(G_ItemNo);
                             Clear(G_OrderNo2);
                             Clear(G_Barcode2);
@@ -61,7 +72,8 @@ page 90075 "Return Order Screen"
                             G_ItemNo := G_DespatchScanPage.FindItem(G_Barcode, 1);
                             FillReturnOrdersForScan(G_OrderNo2, G_ItemNo, G_Barcode);
                             FindHandledOrder(G_OrderNo2, G_Barcode);
-                            ValidateScannedQty(G_OrderNo2, G_ItemNo, G_Barcode2);
+                            Clear(G_BulkScan);
+                            // ValidateScannedQty(G_OrderNo2, G_ItemNo, G_Barcode2); IK++Already checking while inserting into retrurn line
                         end;
                     end;
                 }
@@ -95,6 +107,7 @@ page 90075 "Return Order Screen"
                 field("Variant Code"; Rec."Variant Code")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Description; rec.Description)
                 {
@@ -105,6 +118,11 @@ page 90075 "Return Order Screen"
                     ApplicationArea = All;
                 }
                 field("Quantity to Return"; rec."Quantity to Return")
+                {
+                    ApplicationArea = All;
+                }
+
+                field("Scanned Qty"; Rec."Scanned Qty")
                 {
                     ApplicationArea = All;
                 }
@@ -119,10 +137,12 @@ page 90075 "Return Order Screen"
                 field("Discount %"; rec."Discount %")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Condition; Rec.Condition)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Return Reason"; Rec."Return Reason")
                 {
@@ -175,11 +195,14 @@ page 90075 "Return Order Screen"
                     salesreturnlist: Page "Sales Return Order List";
                     salesreturncard: Page "Sales Return Order";
                     ReleaseSalesDoc: Codeunit "Release Sales Document";
+                    WebPayment: Record "Web Payment";
                     whseRecpt: Record "Warehouse Receipt Header";
                     whserecptpage: Page "Warehouse Receipt";
                     Createsourcedoc: Codeunit "Whse.-Create Source Document";
                     L_OrignalOrderid: Code[50];
                     L_OrignalOrderidLineWise: Code[50];
+                    SH2: Record "Sales Header";
+                    LineInvoiceDiscountAmount: Decimal;
                 begin
                     Clear(L_ChannelCode);
                     Clear(L_Flag);
@@ -210,7 +233,38 @@ page 90075 "Return Order Screen"
                                     SH.Validate("Sell-to Customer No.", HISH."Sell-to Customer No.");
                                     SH.Validate("Posting Date", Today);
                                     SH.Validate("Location Code", HISH."Location Code");
-                                    SH.Validate("External Document No.", HISH."Trade Partner Code" + '-' + format(WorkDate()));
+                                    // SH.Validate("External Document No.", HISH."Trade Partner Code" + '-' + format(WorkDate()));
+                                    SH.Validate("External Document No.", HISH."Channel Order ID");
+                                    SH.Validate("Customer Posting Group", HISH."Customer Posting Group");
+
+
+                                    if HISH."Customer Posting Group" = 'FOREIGN' then begin
+                                        SH.Validate("VAT Bus. Posting Group", 'EXPORT');
+                                        SH.Validate("Gen. Bus. Posting Group", 'EXPORT');
+                                    end else begin
+                                        SH.Validate("VAT Bus. Posting Group", HISH."Customer Posting Group");
+                                        SH.Validate("Gen. Bus. Posting Group", HISH."Customer Posting Group");
+                                    end;
+
+                                    WebPayment.Reset();
+                                    WebPayment.SetRange("Channel Code", L_Return."Channel Code");
+                                    WebPayment.SetRange("Web Payment Method", HISH."Payment Method");
+                                    WebPayment.SetRange("Currency Code", HISH."Currency Code");
+                                    if WebPayment.FindSet() then
+                                        SH.Validate("Payment Method Code", WebPayment."NAV Payment Method 2");
+
+                                    SH.Validate("Ship-to Name", HISH."Ship-to Name");
+                                    SH.Validate("Ship-to Address", HISH."Ship-to Address");
+                                    SH.Validate("Ship-to Address 2", HISH."Ship-to Address 2");
+                                    SH.Validate("Ship-to County", HISH."Ship-to County");
+                                    SH.Validate("Ship-to City", HISH."Ship-to City");
+                                    SH.Validate("Ship-to Post Code", HISH."Ship-to Post Code");
+                                    SH.Validate("Ship-to Country/Region Code", HISH."Ship-to Country/Region Code");
+                                    SH.Validate("Shipping Agent Code", HISH."Shipping Agent Code");
+                                    SH.Validate("Shipping Agent Service Code", HISH."Shipping Agent Service Code");
+
+                                    if HISH."Currency Code" <> '' then
+                                        SH.Validate("Currency Code", HISH."Currency Code");
                                     SH.Insert(true);
                                     TempSH.Init();
                                     TempSH."Document Type" := SH."Document Type";
@@ -218,7 +272,21 @@ page 90075 "Return Order Screen"
                                     TempSH."Location Code" := SH."Location Code";
                                     TempSH.Insert();
                                 END;
+
+
+
+
+
                                 L_OrderNo := SH."No.";
+                                SH2.Reset();
+                                SH2.SetRange("No.", HISH."Destination Doc No.");
+                                SH2.SetRange("Document Type", SH2."Document Type"::Order);
+                                if SH2.FindFirst() then begin
+                                    SH2.Validate(SalesOrderReturnNo, L_OrderNo);
+                                    SH2.Modify(true);
+                                    OnAfterCreateSalesReturn(HISH, L_OrderNo);
+                                end;
+
                                 L_ChannelCode := L_Return."Channel Code";
                                 // code to create web return order per channel order id
                                 IF L_OrignalOrderid <> L_Return."Web Order No." then begin
@@ -226,10 +294,48 @@ page 90075 "Return Order Screen"
                                     Return_HISH.Validate("Document Type", Return_HISH."Document Type"::"Return Order");
                                     Return_HISH.Validate("Sell-to Customer No.", HISH."Sell-to Customer No.");
                                     Return_HISH.Validate("Channel Order ID", HISH."Channel Order ID");
+                                    Return_HISH.Validate("Fullfillment Channel", HISH."Fullfillment Channel");
                                     Return_HISH.Validate(status, Return_HISH.status::Confirmed);
                                     Return_HISH.Validate("Trade Partner Code", HISH."Trade Partner Code");
                                     Return_HISH.Validate("Location Code", HISH."Location Code");
+                                    Return_HISH."Document Date" := Today;
+                                    Return_HISH.Validate("Scanned Date", L_Return."Scanned Date");
+                                    Return_HISH.Validate("Package Tracking No.", HISH."Package Tracking No.");
+                                    Return_HISH.Validate("Scanned By", HISH."Scanned By");
+                                    Return_HISH.Validate("Web Customer No.", HISH."Web Customer No.");
+                                    Return_HISH.Validate("Child Client ID", HISH."Child Client ID");
+                                    Return_HISH.Validate("Child Client Name", HISH."Child Client Name");
+                                    //shipping details
+                                    Return_HISH.Validate("Web Shipment Method", HISH."Web Shipment Method");
+                                    Return_HISH.Validate("Shipment Method Code", HISH."Shipment Method Code");
+                                    Return_HISH.Validate("Shipping Agent Code", HISH."Shipping Agent Code");
+                                    Return_HISH.Validate("Shipping Agent Service Code", HISH."Shipping Agent Service Code");
+                                    Return_HISH.Validate("Shipment Date", HISH."Shipment Date");
+
+                                    Return_HISH."Payment Method" := WebPayment."Web Payment Method";
+                                    //    Return_HISH.Validate("Tracking No.", HISH."Tracking No.");
+                                    Return_HISH.Validate("Ship-to Name", HISH."Ship-to Name");
+                                    Return_HISH.Validate("Buyer Name", HISH."Buyer Name");
+                                    Return_HISH.Validate("Ship-to Address", HISH."Ship-to Address");
+                                    Return_HISH.Validate("Ship-to Address 2", HISH."Ship-to Address 2");
+                                    Return_HISH.Validate("Ship-to City", HISH."Ship-to City");
+                                    Return_HISH.Validate("Ship-to Post Code", HISH."Ship-to Post Code");
+                                    Return_HISH.Validate("Ship-to Country", HISH."Ship-to Country");
+                                    Return_HISH.Validate("Ship-to Country/Region Code", HISH."Ship-to Country/Region Code");
+                                    Return_HISH.Validate("Ship-to Email", HISH."Ship-to Email");
+                                    Return_HISH.Validate("Buyer Email", HISH."Buyer Email");
+                                    Return_HISH.Validate("Earliest Delivery date", HISH."Earliest Delivery date");
+                                    Return_HISH.Validate("Earliest Ship Date", HISH."Earliest Ship Date");
+                                    Return_HISH.Validate("Customer Posting Group", HISH."Customer Posting Group");
+
+                                    if HISH."Currency Code" <> '' then
+                                        Return_HISH.Validate("Currency Code", HISH."Currency Code");
+
+                                    Return_HISH.Validate("External Document No.", HISH."No.");
+                                    Return_HISH.Validate("Scanned By", UserId);
                                     Return_HISH."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
+                                    Return_HISH.Validate("Destination Doc Type", Return_HISH."Destination Doc Type"::"Return Order");
+                                    Return_HISH.Validate("Destination Doc No.", SH."No.");
                                     Return_HISH.Insert(true);
                                     L_ReturnOrderNo := Return_HISH."No.";
                                 end;
@@ -243,28 +349,11 @@ page 90075 "Return Order Screen"
                                 //CreateReturnHISH++
                                 Return_HISH.Reset();
                                 Return_HISH.Init();
-                                Return_HISH.Validate("Document Type", Return_HISH."Document Type"::"Return Order");
-                                Return_HISH.Validate("Sell-to Customer No.", HISH."Sell-to Customer No.");
-                                Return_HISH.Validate("Channel Order ID", HISH."Channel Order ID");
-                                //   Return_HISH.Validate("Fullfillment Channel", HISH."Fullfillment Channel");
+                                
+                                //   
                                 //  Return_HISH.Validate("Order Amount", HISH."Order Amount");
                                 Return_HISH.Validate(status, Return_HISH.status::Confirmed);
-                                //   Return_HISH.Validate("Document Date", HISH."Document Date");
-                                //   Return_HISH.Validate("Web Shipment Method", HISH."Web Shipment Method");
-                                Return_HISH.Validate("Trade Partner Code", HISH."Trade Partner Code");
-                                //   Return_HISH.Validate("Shipping Agent Code", HISH."Shipping Agent Code");
-                                //    Return_HISH.Validate("Shipping Agent Service Code", HISH."Shipping Agent Service Code");
-                                //   Return_HISH.Validate("Total Weight", HISH."Total Weight");
-                                //   Return_HISH.Validate("Ship-to Name", HISH."Ship-to Name");
-                                // Return_HISH.Validate("Buyer Name", HISH."Buyer Name");
-                                //  Return_HISH.Validate("Ship-to Address", HISH."Ship-to Address");
-                                //  Return_HISH.Validate("Ship-to City", HISH."Ship-to City");
-                                //   Return_HISH.Validate("Ship-to Post Code", HISH."Ship-to Post Code");
-                                Return_HISH.Validate("Location Code", HISH."Location Code");
-                                //  Return_HISH.Validate("Web Customer No.", HISH."Web Customer No.");
-                                Return_HISH."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
-                                //  Return_HISH.Validate("External Document No.", SH."No.");
-                                Return_HISH.Insert(true);
+                               
                                 L_ReturnOrderNo := Return_HISH."No.";
                                 //CreateReturnHISH--
 
@@ -282,7 +371,8 @@ page 90075 "Return Order Screen"
                                     HandledLineNo := HandledLineNo + 10000
                                 else
                                     HandledLineNo := 10000;
-                                CreateHandledReturnOrder(Return_HISH, HISL, L_ReturnOrderNo, L_Return, HandledLineNo);
+
+
                                 //end;
 
                                 //CreateReturnHISL--
@@ -329,15 +419,33 @@ page 90075 "Return Order Screen"
                                 if L_Return.Type = L_Return.Type::" " then
                                     SL.Description := L_Return.Description;
                                 SL.Validate(Quantity, L_Return."Quantity to Return");
-                                SL.Validate("Unit of Measure Code", HISL."Unit of Measure Code");
+                                if HISL."Unit of Measure Code" = 'ROLL' then
+                                    SL.Validate("Unit of Measure Code", 'PCS')
+                                else
+                                    SL.Validate("Unit of Measure Code", HISL."Unit of Measure Code");
                                 SL.Validate("Unit Price", L_Return."Unit Price");
                                 //HISL."Unit Price");bloked by ak
-                                sl.Validate("Line Discount %", L_Return."Discount %");
+                                //SL.Validate("Line Discount %", L_Return."Discount %");
                                 SL.Validate("Return Reason Code", L_Return."Return Reason");
                                 SL.Validate("Item Reference Type No.", L_Return.Condition);
                                 SL."Shipping Agent Service Code" := L_Return."Bay No.";
                                 SL."Scanned Date" := L_Return."Scanned Date";
+                                SL."Channel Order ID" := HISL."Channel Order ID";
+                                IF ((HISL.Discount > 0) and (HISL.Quantity > 0) and (HISL."Unit Price" > 0)) THEN begin
+                                    SL.Validate("Line Discount %", Round(
+                                       HISL.Discount / Round((HISL.Quantity * HISL."Unit Price") + HISL."VAT amount", 0.01) * 100,
+                                       0.01));
+                                end;
+
+                                // LineInvoiceDiscountAmount := CalculateLineInvoiceDiscountAmount(HISL, SL, HISH, L_Return);
+                                // if SL.Type = SL.Type::Item then begin
+                                //     SL.Validate("Inv. Discount Amount", LineInvoiceDiscountAmount);
+                                // end;
+
                                 SL.Insert(true);
+                                CreateHandledReturnOrder(Return_HISH, HISL, L_ReturnOrderNo, L_Return, HandledLineNo, SL);
+
+
                                 L_Return.Delete();
                             end;
                             //end;
@@ -347,6 +455,13 @@ page 90075 "Return Order Screen"
                             DiagProgress.UPDATE(1, L_Return."Web Order No.");
 
                         until L_Return.Next() = 0;
+
+                        Return_HISH.CalcFields("Order Amount 2", "Order Discount Amount 2");
+                        Return_HISH."Order Amount" := Return_HISH."Order Amount 2";
+                        SH.CalcFields("Invoice Discount Amount");
+                        Return_HISH."Order Discount Amount" := Return_HISH."Order Discount Amount 2" + SH."Invoice Discount Amount";
+                        Return_HISH.Modify(true);
+
                         if TempSH.FindFirst() then
                             repeat
                                 if SH.get(TempSh."Document Type", TempSh."No.") then begin
@@ -370,7 +485,7 @@ page 90075 "Return Order Screen"
                                 if SL.FindFirst() then
                                     repeat
                                         Createsourcedoc.SalesLine2ReceiptLine(whseRecpt, SL)
-             until SL.Next() = 0;
+                                    until SL.Next() = 0;
                             until SH.Next() = 0;
                         Clear(salesreturnlist);
                         Clear(salesreturncard);
@@ -400,6 +515,8 @@ page 90075 "Return Order Screen"
     var
         L_Return: Record "Interim Sales Return";
     begin
+        // G_BulkScan := true;
+        Clear(G_BulkScan);
         CLEAR(G_Barcode);
         Clear(scancount);
         BayNo := '000';
@@ -440,6 +557,7 @@ page 90075 "Return Order Screen"
         G_OrderNo: Code[20];
         G_ReasonCode: Code[10];
         G_ReturnReasonCode: code[10];
+        G_BulkScan: Integer;
         Q_ValidateReturnOrder: Query "Validate Return Order Screen";
         TempReturnedStock: Record "Lot Bin Buffer" temporary;
         G_ItemNo: Code[20];
@@ -518,6 +636,7 @@ page 90075 "Return Order Screen"
     local procedure InsertLineIntoDespatchTable(P_HandledInterimSalesLine: Record "Handled Interim Sales Line")
     var
         L_Return: Record "Interim Sales Return";
+        L_ReturnQty: Decimal;
         i: Integer;
         GeneralSetgup: record "General Setup - Channels";
         P_HandledInterimSalesHeader: Record "Handled Interim Sales Header";//Azhar
@@ -540,7 +659,7 @@ page 90075 "Return Order Screen"
         L_Return.RESET;
         L_Return.SETRANGE("Web Order No.", P_HandledInterimSalesLine."Document No");
         L_Return.SetRange("Item No.", P_HandledInterimSalesLine."No.");
-        if L_Return."Variant Code" <> '' then
+        if P_HandledInterimSalesLine."NAV Variant code" <> '' then
             L_Return.SetRange("Variant Code", P_HandledInterimSalesLine."NAV Variant code");
         if NOT L_Return.FindFirst() then begin
 
@@ -558,29 +677,46 @@ page 90075 "Return Order Screen"
             L_Return."Channel Order id" := P_HandledInterimSalesLine."Channel Order ID";
             L_Return."Order Quantity" := P_HandledInterimSalesLine.Quantity;
             L_Return."Item Unit of Measure" := P_HandledInterimSalesLine."Unit of Measure Code";
-            L_Return."Quantity to Return" := 1;
+            // L_Return."Quantity to Return" := P_HandledInterimSalesLine.Quantity - L_ReturnQty;
+            L_Return."Quantity to Return" := G_BulkScan;
+
+            GetScannedQuantity(L_ReturnQty, P_HandledInterimSalesLine."Channel Order ID", P_HandledInterimSalesLine."No.", P_HandledInterimSalesLine."NAV Variant code");
+            L_Return."Scanned Qty" := L_ReturnQty;
+            if (L_Return."Quantity to Return" + L_ReturnQty) > L_Return."Order Quantity" then
+                Error('Return quantity should not be more than order quantity.');
+
             L_Return.Condition := G_ReasonCode;
             L_Return."Return Reason" := G_ReturnReasonCode;
             L_Return."Source Line No." := P_HandledInterimSalesLine."Line No.";
             L_Return."Unit Price" := P_HandledInterimSalesLine."Unit Price";
             L_Return."Bay No." := BayNo;
-            L_Return."Discount %" := P_HandledInterimSalesLine."Discount %";
+            //L_Return."Discount %" := P_HandledInterimSalesLine."Discount %";
+            L_Return."Scanned Date" := CurrentDateTime();
             //Azhar++
-            P_HandledInterimSalesHeader.Reset();
-            P_HandledInterimSalesHeader.SetRange("No.", P_HandledInterimSalesLine."Document No");
-            if P_HandledInterimSalesHeader.FindFirst() then begin
-                L_Return."Scanned Date" := P_HandledInterimSalesHeader."Scanned Date";
-            end;
+            // P_HandledInterimSalesHeader.Reset();
+            // P_HandledInterimSalesHeader.SetRange("No.", P_HandledInterimSalesLine."Document No");
+            // if P_HandledInterimSalesHeader.FindFirst() then begin
+            //     L_Return."Scanned Date" := P_HandledInterimSalesHeader."Scanned Date";
+            // end;
             //Azhar--
             L_Return.Insert();
         end else begin
-            L_Return."Quantity to Return" += 1;
-            if L_Return."Quantity to Return" > L_Return."Order Quantity" then begin
-                Clear(G_OrderNo);
-                Clear(G_Barcode);
+            L_Return."Quantity to Return" += G_BulkScan;
+            GetScannedQuantity(L_ReturnQty, P_HandledInterimSalesLine."Channel Order ID", P_HandledInterimSalesLine."No.", P_HandledInterimSalesLine."NAV Variant code");
+            if (L_Return."Quantity to Return" + L_ReturnQty) > L_Return."Order Quantity" then begin
                 Message('Return quantity should not be more than order quantity.');
             end else
                 L_Return.Modify();
+
+            //IK ++ Aplly above logic for the validation
+            // if L_Return."Quantity to Return" > L_Return."Order Quantity" then begin
+            //     Clear(G_OrderNo);
+            //     Clear(G_Barcode);
+            //     Message('Return quantity should not be more than order quantity.');
+            // end else
+            //     L_Return.Modify();
+            // IK--
+
         end;
         if GeneralSetgup."Enable Carriage credit" then
             if checkifallorderitemlinesreturned(P_HandledInterimSalesLine) then
@@ -669,7 +805,7 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
                 L_Return."Return Reason" := G_ReturnReasonCode;
                 L_Return."Source Line No." := L_HandledInterimSalesLine."Line No.";
                 L_Return."Unit Price" := L_HandledInterimSalesLine."Unit Price";
-                L_Return."Discount %" := L_HandledInterimSalesLine."Discount %";
+                //L_Return."Discount %" := L_HandledInterimSalesLine."Discount %";
                 //Azhar++
                 L_HandledInterimSaleshdr.Reset();
                 L_HandledInterimSaleshdr.SetRange("No.", L_HandledInterimSalesLine."Document No");
@@ -707,7 +843,7 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
         ERROR('Item not find');
     end;
 
-    local procedure CreateHandledReturnOrder(Return_HISH: Record "Handled Interim Sales Header"; P_HISL: Record "Handled Interim Sales Line"; P_DocNo: Code[20]; P_Return: Record "Interim Sales Return"; P_LineNo: Integer)
+    local procedure CreateHandledReturnOrder(Return_HISH: Record "Handled Interim Sales Header"; P_HISL: Record "Handled Interim Sales Line"; P_DocNo: Code[20]; P_Return: Record "Interim Sales Return"; P_LineNo: Integer; P_SL: Record "Sales Line")
     var
         L_HandledInterSalesLine: Record "Handled Interim Sales Line";
     begin
@@ -716,12 +852,19 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
         L_HandledInterSalesLine.Validate("Document Type", L_HandledInterSalesLine."Document Type"::"Return Order");
         L_HandledInterSalesLine.Validate("Document No", P_DocNo);
         L_HandledInterSalesLine.Validate("Line No.", P_LineNo);
-        L_HandledInterSalesLine.Validate(Type, P_HISL.Type);
-        L_HandledInterSalesLine.Validate("No.", P_HISL."No.");
-        L_HandledInterSalesLine.Validate(Description, P_HISL.Description);
-        L_HandledInterSalesLine.Validate("Unit Price", P_HISL."Unit Price");
-        L_HandledInterSalesLine.Validate("Discount %", P_HISL."Discount %");
-        L_HandledInterSalesLine.Validate(Amount, P_HISL.Amount);
+        L_HandledInterSalesLine.Validate(Type, P_SL.Type);
+        L_HandledInterSalesLine.Validate("No.", P_SL."No.");
+        L_HandledInterSalesLine.Validate(Description, P_SL.Description);
+        L_HandledInterSalesLine.Validate("Channel Price", P_HISL."Channel Price");
+        L_HandledInterSalesLine.Validate("Unit Price", P_SL."Unit Price");
+        //L_HandledInterSalesLine.Validate("Discount %", P_SL."Line Discount %");
+        L_HandledInterSalesLine.Validate(Discount, P_SL."Line Discount Amount");
+        L_HandledInterSalesLine.Validate(Amount, P_SL.Amount + P_SL."Line Discount Amount");
+        L_HandledInterSalesLine.Validate("Amount Including VAT", P_SL."Amount Including VAT" + P_SL."Line Discount Amount");
+        L_HandledInterSalesLine.Validate("VAT amount", (P_SL."Amount Including VAT" - P_Sl.Amount));
+        L_HandledInterSalesLine.Validate("VAT Bus. Posting Group", P_HISL."VAT Bus. Posting Group");
+        L_HandledInterSalesLine.Validate("VAT Prod. Posting Group", P_HISL."VAT Prod. Posting Group");
+        L_HandledInterSalesLine.Validate("Scanned Date", P_Return."Scanned Date");
         L_HandledInterSalesLine.Validate("Channel SKU", P_HISL."Channel SKU");
         L_HandledInterSalesLine.Validate(Quantity, P_Return."Quantity to Return");
         L_HandledInterSalesLine.Validate("Channel Item Id", P_HISL."Channel Item Id");
@@ -731,7 +874,7 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
         L_HandledInterSalesLine.Validate("NAV Variant code", P_HISL."NAV Variant code");
         L_HandledInterSalesLine.Validate("Trade Partner Code", P_HISL."Trade Partner Code");
         L_HandledInterSalesLine.Validate("Ordser Status", L_HandledInterSalesLine."Ordser Status"::Confirmed);
-        L_HandledInterSalesLine.Validate("Unit of Measure Code", L_HandledInterSalesLine."Unit of Measure Code");
+        L_HandledInterSalesLine.Validate("Unit of Measure Code", P_SL."Unit of Measure Code");
         L_HandledInterSalesLine.Validate("Order No.", L_HandledInterSalesLine."Document No");
         L_HandledInterSalesLine.Validate("Order Line No.", L_HandledInterSalesLine."Line No.");
         L_HandledInterSalesLine.Insert(true);
@@ -777,6 +920,7 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
         L_ReturnedCount: Record "Interim Sales Return";
         L_CrossReference: Record "Item Reference";
         L_VariantCode: Code[20];
+        HandledInterimSalesLine: Record "Handled Interim Sales Line";
     begin
         TempReturnedStock.RESET;
         TempReturnedStock.SETRANGE("Item No.", P_ItemNo);
@@ -804,6 +948,7 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
             ERROR('Order is already scanned');
 
     end;
+
 
     local procedure FindNotesInHandledOrder(P_OrderNo: Code[20]; P_EntryNo: Integer)
     var
@@ -853,6 +998,51 @@ until L_OrderHandledInterimSalesLine.Next() = 0;
             L_Return.Insert();
         end;
     end;
+
+    local procedure CalculateLineInvoiceDiscountAmount(P_HISL: Record "Handled Interim Sales Line"; P_SL: Record "Sales Line"; P_HISH: Record "Handled Interim Sales Header"; P_Return: Record "Interim Sales Return"): Decimal
+    var
+        L_DiscountExVat: Decimal;
+        L_Return: Record "Interim Sales Return";
+        LineCount: Integer;
+        InvDiscountAmount: Decimal;
+        L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
+    begin
+        Clear(LineCount);
+
+        L_Return.Reset();
+        L_Return.SetRange("Web Order No.", P_Return."Web Order No.");
+        L_Return.SetFilter(Type, '%1', L_Return.Type::Item);
+        LineCount := L_Return.Count();
+        if P_HISH."Order Discount Amount" - P_HISL.Discount > 0 then begin
+            L_DiscountExVat := (P_HISH."Order Discount Amount" - P_HISL.Discount) / (P_SL."VAT %" / 100 + 1);
+            if (L_DiscountExVat > 0) and (LineCount > 0) then
+                InvDiscountAmount := L_DiscountExVat / LineCount;
+        end;
+        exit(InvDiscountAmount);
+    end;
+
+    local procedure GetScannedQuantity(var L_ReturnQty: Decimal; P_ChannelOrderID: Code[50]; P_ItemNo: Code[20]; L_VariantCode: Code[20])
+    var
+        HandledInterimSalesLine: Record "Handled Interim Sales Line";
+    begin
+        Clear(L_ReturnQty);
+        HandledInterimSalesLine.Reset();
+        HandledInterimSalesLine.SetRange("Document Type", HandledInterimSalesLine."Document Type"::"Return Order");
+        HandledInterimSalesLine.SetRange("Channel Order ID", P_ChannelOrderID);
+        HandledInterimSalesLine.SetRange("No.", P_ItemNo);
+        HandledInterimSalesLine.SetRange("NAV Variant code", L_VariantCode);
+        if HandledInterimSalesLine.FindSet() then
+            repeat
+                L_ReturnQty += HandledInterimSalesLine.Quantity;
+            until HandledInterimSalesLine.Next() = 0;
+    end;
+
+    [IntegrationEvent(false, false)]
+    procedure OnAfterCreateSalesReturn(P_HISH: Record "Handled Interim Sales Header"; P_OrderNo: Code[20])
+    begin
+    end;
+
+
 
 }
 

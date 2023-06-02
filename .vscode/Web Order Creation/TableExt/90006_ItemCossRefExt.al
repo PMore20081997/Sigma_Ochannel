@@ -8,6 +8,12 @@ tableextension 90006 ItemCrossRefExt extends "Item Reference"
             ObsoleteState = Removed;
             ObsoleteReason = 'Not in use';
         }
+
+        field(50001; "Offer SKU";CODE[20])
+        {
+            DataClassification = ToBeClassified;
+            
+        }
     }
 
     var

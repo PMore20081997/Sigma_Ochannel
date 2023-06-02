@@ -31,6 +31,7 @@ page 90018 "Web Order Line List"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Document Date"; rec."Document Date")
                 {
@@ -63,6 +64,7 @@ page 90018 "Web Order Line List"
                 field("NAV Variant code"; rec."NAV Variant code")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Quantity; Rec.Quantity)
                 {
@@ -80,6 +82,7 @@ page 90018 "Web Order Line List"
                 field("Trolley No."; rec."Trolley No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Shipping Price"; Rec."Shipping Price")
                 {
@@ -130,6 +133,7 @@ page 90018 "Web Order Line List"
                 field("VAT%"; Rec."VAT%")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Trade Partner Code"; Rec."Trade Partner Code")
                 {
@@ -138,10 +142,12 @@ page 90018 "Web Order Line List"
                 field("Destination Doc Type"; Rec."Destination Doc Type")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Destination Doc No."; Rec."Destination Doc No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 //Paarth D Dave - 8197-3 - Adding Assembly Order No. ---- Start
                 field("Assembly Order"; Rec."Auto Assembly Order")

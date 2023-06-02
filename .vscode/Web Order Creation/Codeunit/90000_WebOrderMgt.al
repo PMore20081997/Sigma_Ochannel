@@ -82,7 +82,7 @@ CalledFrom: OrderValidations.
 */
 codeunit 90000 "Web Order Mgt"
 {
-    Permissions = tabledata "Registered Whse. Activity Hdr." = RIMD;
+    Permissions = tabledata "Registered Whse. Activity Hdr." = RIMD, tabledata "Sales Shipment Header" = RIMD;
     trigger OnRun()
     begin
 
@@ -106,6 +106,7 @@ codeunit 90000 "Web Order Mgt"
         CountriesRegion: Record "Country/Region";
         L_PaymentDetails: Record "Channel Media";
         ShipmentTracking: Record "Shipment Tracking";
+        Regex: Codeunit Regex;
     Begin
         If CheckOrderNotExist(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Channel Order ID") then begin
 
@@ -129,11 +130,20 @@ codeunit 90000 "Web Order Mgt"
                         SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
                 End;
                 L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
-                L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
-                L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
-                L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
-                L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
-                L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
+                if P_InterimSalesHeader."Trade Partner Code" = 'B&Q' then begin
+                    L_InterimSalesHeader.VALIDATE(Address, P_InterimSalesHeader.Address);
+                    L_InterimSalesHeader.VALIDATE("Address 2", P_InterimSalesHeader."Address 2");
+                    L_InterimSalesHeader.VALIDATE(City, P_InterimSalesHeader.City);
+                    L_InterimSalesHeader.VALIDATE("Post Code", P_InterimSalesHeader."Post Code");
+                    L_InterimSalesHeader.VALIDATE("Sell to Country", P_InterimSalesHeader."Bill-to County");
+                end else begin
+                    L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
+                    L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
+                    L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
+                    L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
+                    L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
+                end;
+
                 //L_InterimSalesHeader.Validate("Sell to County", SellToCustomer.County);
                 if SellToCustomer."Location Code" <> '' then
                     L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code")
@@ -153,7 +163,15 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.VALIDATE("Ship-to Post Code", P_InterimSalesHeader."Ship-to Post Code");
             IF L_InterimSalesHeader."Ship-to Country/Region Code" = '' THEN
                 L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
-            L_InterimSalesHeader.VALIDATE("Ship-to Phone", P_InterimSalesHeader."Ship-to Phone");
+
+            if P_InterimSalesHeader."Ship-to Phone" <> '' then begin
+                L_InterimSalesHeader.VALIDATE("Ship-to Phone", Regex.Replace(P_InterimSalesHeader."Ship-to Phone", '[^0-9+]', ''));
+                //L_InterimSalesHeader.VALIDATE("Ship-to Phone", P_InterimSalesHeader."Ship-to Phone");
+            end
+            else begin
+                L_InterimSalesHeader.Validate("Ship-to Phone", '00000000000');  //US-12629
+            end;
+
             L_InterimSalesHeader.VALIDATE("Ship-to Email", P_InterimSalesHeader."Ship-to Email");
 
             //8862++
@@ -208,6 +226,7 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.Validate("Fullfillment Channel", P_InterimSalesHeader."Fullfillment Channel");
             L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
             L_InterimSalesHeader.Validate("Order Status", P_InterimSalesHeader."Order Status");
+            L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
             L_InterimSalesHeader.Insert(True);
             If P_InterimSalesLine.FindFirst() then
                 repeat
@@ -260,7 +279,8 @@ codeunit 90000 "Web Order Mgt"
 
             //Channel Media Payment Details Insert Functionality
 
-
+            DeleteRefundPaymentDetails(P_PaymentDetail);
+            P_PaymentDetail.Reset();
             if P_PaymentDetail.FindSet() then begin
                 repeat
                     IsExist := CheckPaymentDetailsExist(P_PaymentDetail);
@@ -290,12 +310,26 @@ codeunit 90000 "Web Order Mgt"
             L_PaymentDetails.Reset();
             L_PaymentDetails.SetRange("Channel Code", P_PaymentDetail."Channel Code");
             L_PaymentDetails.SetRange("Channel Order ID", P_PaymentDetail."Channel Order ID");
-            L_PaymentDetails.SetRange("Payment Method", P_PaymentDetail."Payment Method");
+            //L_PaymentDetails.SetRange("Payment Method", P_PaymentDetail."Payment Method");  //Commented Bug 12050
             if L_PaymentDetails.Count > 1 then
                 Clear(L_InterimSalesHeader."Payment Method");
 
             L_InterimSalesHeader."Gift Order Amount" := GetGiftOrderAmount(L_InterimSalesHeader);
             L_InterimSalesHeader."Gift Card" := G_GiftBool;
+
+            //Issue 12004
+            if G_GiftBool = true then begin
+                L_InterimSalesLine.Reset();
+                L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+                L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+                if L_InterimSalesLine.Count = 1 then begin
+                    if L_InterimSalesLine.FindFirst() then begin
+                        if (L_InterimSalesLine.Type = L_InterimSalesLine.Type::"G/L Account") and (L_InterimSalesLine."Gift Card" = true) then
+                            L_InterimSalesHeader."Ship-to Country/Region Code" := 'GB';
+                    end;
+                end;
+            end;
+            //Issue 12004
 
             if UpdateTrackingNoForOnlyGiftCardGlLines(L_InterimSalesHeader) then begin
                 L_InterimSalesHeader."Package Tracking No." := L_InterimSalesHeader."Channel Order ID";
@@ -314,7 +348,7 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
-            L_InterimSalesHeader.Modify();
+            L_InterimSalesHeader.Modify(true);
 
             //UpdateShippingAgentOnLines++
             L_InterimSalesLine.Reset();
@@ -352,6 +386,7 @@ codeunit 90000 "Web Order Mgt"
         L_PaymentDetails.Validate("Transaction Date", P_PaymentDetail."Transaction Date");
         L_PaymentDetails.Validate("Payment Status", P_PaymentDetail."Payment Status");
         L_PaymentDetails.Validate("Gift Card", P_PaymentDetail."Gift Card");
+        L_PaymentDetails.Validate("Currency Code", P_InterimSalesHeader."Currency Code");
         L_PaymentDetails.Insert(true);
 
         // Insert negative GL line for Gift payment 
@@ -1078,12 +1113,23 @@ codeunit 90000 "Web Order Mgt"
             If L_ErrorRecorded then begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
                 P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+
                 // P_InterimSalesHeader.Modify();
             end Else begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
                 P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+
                 //P_InterimSalesHeader.Modify();
             end;
+
+            L_InterimSalesLine.RESET;
+            L_InterimSalesLine.SETRANGE("Document No", P_InterimSalesHeader."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+            L_InterimSalesLine.SetRange(Reserved, false);
+            IF not L_InterimSalesLine.FindFirst() THEN begin
+                P_InterimSalesHeader.ReservedFlag := true;
+            end;
+
             P_InterimSalesHeader.Modify();
             //Paarth D Dave - 8197 - On Status In progress create Assembly Order ---- Start
             P_InterimSalesHeader.CalcFields("Assemply Order", "Pstd. Assembly Order", "Assembly Order Created");
@@ -1192,6 +1238,7 @@ codeunit 90000 "Web Order Mgt"
         RequiredQuantity: Decimal;
         L_ItemCategory: Record "Item Category";
         Rec_Item: Record Item;
+        L_WeightMeasure: Text;
     begin
         If L_Item.Get(P_InterimSalesLine."No.") then begin
             If L_Item.Blocked then begin
@@ -1255,7 +1302,16 @@ codeunit 90000 "Web Order Mgt"
 
 
             IF P_InterimSalesLine.Weight = 0 THEN BEGIN
-                P_InterimSalesLine.Weight := (GetWeightFromItemUoM(P_InterimSalesLine."No.", P_InterimSalesLine."Unit of Measure Code") * P_InterimSalesLine.Quantity);
+                if P_InterimSalesLine."Trade Partner Code" = 'B&Q' then begin
+                    L_WeightMeasure := 'kg';
+                    P_InterimSalesLine.Weight := GetWeightFromItemUoM(P_InterimSalesLine."No.", P_InterimSalesLine."Unit of Measure Code", L_WeightMeasure);
+                end
+                else begin
+                    L_WeightMeasure := 'g';
+                    P_InterimSalesLine.Weight := (GetWeightFromItemUoM(P_InterimSalesLine."No.", P_InterimSalesLine."Unit of Measure Code", L_WeightMeasure) * P_InterimSalesLine.Quantity);
+                end;
+
+
 
                 if P_InterimSalesLine.Weight = 0 then begin
                     InsertErrorLog(STRSUBSTNO('Weight is not defined on item unit of measure for %1.', P_InterimSalesLine."No."), P_InterimSalesHeader);
@@ -1279,7 +1335,7 @@ codeunit 90000 "Web Order Mgt"
 
             //Code to Check Available Item Inventory++
             GeneralSetupChannel.Get();
-            if GeneralSetupChannel."Allocate Web Orders" = true then begin
+            if (GeneralSetupChannel."Allocate Web Orders" = true) AND NOT (P_InterimSalesLine.Reserved) then begin
                 CLEAR(AvailableInventory);
                 Clear(LowestQuantity);
                 Counter := 0;
@@ -1287,8 +1343,8 @@ codeunit 90000 "Web Order Mgt"
                 L_ItemCategory.Reset();
                 L_ItemCategory.SetRange(Code, L_Item."Item Category Code");
                 if L_ItemCategory.FindFirst() then;
-
-                if L_ItemCategory."Auto Assembly Order" = true then begin
+                P_InterimSalesLine.CalcFields("Pstd. Ass. Order No ");
+                if (L_ItemCategory."Auto Assembly Order" = true) and (P_InterimSalesLine."Pstd. Ass. Order No " = '') then begin
                     BOMComponent.Reset();
                     BOMComponent.SetRange("Parent Item No.", P_InterimSalesLine."No.");
                     BOMComponent.SetRange(Type, BOMComponent.Type::Item);
@@ -1301,7 +1357,8 @@ codeunit 90000 "Web Order Mgt"
                                 RequiredQuantity := BOMComponent."Quantity per" * P_InterimSalesLine.Quantity;
 
                                 if RequiredQuantity > Rec_Item."W/H Inventory" then begin
-                                    InsertErrorLog('Insufficient Stock for Item ' + BOMComponent."No.", P_InterimSalesHeader);
+                                    //InsertErrorLog('Insufficient Stock for Item ' + BOMComponent."No.", P_InterimSalesHeader);
+                                    InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', BOMComponent."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
                                     L_ErrorRecorded := true;
                                 end;
                             end;
@@ -1316,18 +1373,25 @@ codeunit 90000 "Web Order Mgt"
 
                     ItemQuery1.OPEN;
                     IF ItemQuery1.READ THEN begin
-                        AvailableInventory := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order);
+                        AvailableInventory := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order) + ItemQuery1.Ship_Bin_Inventory;
                     END;
                     ItemQuery1.CLOSE;
 
                     if AvailableInventory > 0 then begin
                         if P_InterimSalesLine.Quantity > AvailableInventory then begin //only error if greather than
-                            InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                                                                                       //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                            InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
                             L_ErrorRecorded := true;
+                        end
+                        else begin
+                            P_InterimSalesLine."Reserved Qty" := P_InterimSalesLine.Quantity;
+                            P_InterimSalesLine.Reserved := true;
+                            P_InterimSalesLine.MODIFY;
                         end;
                     end
                     else begin
-                        InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                        //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                        InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
                         L_ErrorRecorded := true;
                     end;
                 end
@@ -1346,12 +1410,19 @@ codeunit 90000 "Web Order Mgt"
 
                     if AvailableInventory > 0 then begin
                         if P_InterimSalesLine.Quantity > AvailableInventory then begin
-                            InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                            //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                            InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
                             L_ErrorRecorded := true;
+                        end
+                        else begin
+                            P_InterimSalesLine."Reserved Qty" := P_InterimSalesLine.Quantity;
+                            P_InterimSalesLine.Reserved := true;
+                            P_InterimSalesLine.MODIFY;
                         end;
                     end
                     else begin
-                        InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                        //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
+                        InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
                         L_ErrorRecorded := true;
                     end;
                 end;
@@ -1379,6 +1450,7 @@ codeunit 90000 "Web Order Mgt"
         L_Item: Record Item;
         L_ItemVariantCode: Code[20];
         L_ItemVariant: Record "Item Variant";
+        L_UnitofWeight: Text;
     begin
         If L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code") then;
 
@@ -1410,15 +1482,18 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    procedure GetWeightFromItemUoM(P_ItemNo: Code[20]; P_UoM: Code[10]): Decimal
+    procedure GetWeightFromItemUoM(P_ItemNo: Code[20]; P_UoM: Code[10]; P_WeightMeasure: text): Decimal
     var
         L_ItemUnitofMeasure: Record "Item Unit of Measure";
     Begin
         L_ItemUnitofMeasure.RESET;
         L_ItemUnitofMeasure.SETRANGE("Item No.", P_ItemNo);
         L_ItemUnitofMeasure.SETRANGE(Code, P_UoM);
-        IF L_ItemUnitofMeasure.FINDFIRST THEN
-            EXIT(L_ItemUnitofMeasure.Weight / 1000);
+        IF L_ItemUnitofMeasure.FINDFIRST THEN begin
+            if P_WeightMeasure = 'g' then
+                EXIT(L_ItemUnitofMeasure.Weight / 1000);
+            EXIT(L_ItemUnitofMeasure.Weight)
+        end;
     End;
 
     procedure ItemLinePrice(VAR P_InterimSalesLine: Record "Interim Sales Line"; CalledFromInsert: Boolean)
@@ -2184,7 +2259,8 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine.Type := L_InterimSalesLine.Type::"G/L Account";
         L_InterimSalesLine.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
         L_InterimSalesLine.VALIDATE("No.", ChannelPartner."GiftWrap G/L No.");
-        L_InterimSalesLine.VALIDATE(Quantity, 1);
+        //L_InterimSalesLine.VALIDATE(Quantity, 1);
+        L_InterimSalesLine.VALIDATE(Quantity, P_InterimSalesLine.Quantity);  //Bug 12743
         L_InterimSalesLine.VALIDATE("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
         L_InterimSalesLine.Validate("Unit Price", P_InterimSalesLine."Unit Price");
         L_InterimSalesLine.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
@@ -2227,6 +2303,37 @@ codeunit 90000 "Web Order Mgt"
                 end;
             until G_InterimSalesLine.Next() = 0;
             exit(GiftCard)
+        end;
+    end;
+
+    local procedure DeleteRefundPaymentDetails(var PaymentDetail: Record "Channel Media" temporary)
+    var
+        TempPaymentDetail: Record "Channel Media" temporary;
+    begin
+        TempPaymentDetail.DeleteAll();
+        if PaymentDetail.FindSet() then
+            repeat
+                TempPaymentDetail.Init();
+                TempPaymentDetail.Copy(PaymentDetail);
+                TempPaymentDetail.Insert();
+            until PaymentDetail.Next() = 0;
+
+        TempPaymentDetail.Reset();
+        TempPaymentDetail.SetFilter("Parent Transaction ID", '<>%1', '');
+        if TempPaymentDetail.FindSet() then begin
+            repeat
+                PaymentDetail.Reset();
+                PaymentDetail.SetRange("Transaction ID", TempPaymentDetail."Parent Transaction ID");
+                if PaymentDetail.FindFirst() then
+                    PaymentDetail.Delete(true);
+            until TempPaymentDetail.Next() = 0;
+
+            PaymentDetail.Reset();
+            PaymentDetail.SetFilter("Parent Transaction ID", '<>%1', '');
+            if PaymentDetail.FindSet() then
+                repeat
+                    PaymentDetail.Delete();
+                until PaymentDetail.Next() = 0;
         end;
     end;
 
@@ -2319,6 +2426,97 @@ codeunit 90000 "Web Order Mgt"
             end;
         end;
     end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Post Shipment", 'OnAfterSalesPost', '', false, false)]
+    local procedure OnAfterSalesPost(var WarehouseShipmentLine: Record "Warehouse Shipment Line"; SalesHeader: Record "Sales Header"; Invoice: Boolean)
+    var
+        L_SalesShipmentHeader: Record "Sales Shipment Header";
+    begin
+        L_SalesShipmentHeader.Reset();
+        L_SalesShipmentHeader.SetRange("Order No.", WarehouseShipmentLine."Source No.");
+        if L_SalesShipmentHeader.FindFirst() then begin
+            L_SalesShipmentHeader."Scanned Date" := DT2Date(WarehouseShipmentLine."Scanned Date");
+            L_SalesShipmentHeader.Modify(true);
+        end;
+
+        //Bug 12564++
+        SalesHeader."Document Date" := SalesHeader."Order Date";
+        SalesHeader."Posting Date" := SalesHeader."Order Date";
+        SalesHeader."VAT Reporting Date" := SalesHeader."Order Date";
+        SalesHeader.Modify();
+        //Bug 12564--
+    end;
+
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnBeforeGetMessageForUnhandledQtyDueToBinProcedure', '', false, false)]
+
+    local procedure OnBeforeGetMessageForUnhandledQtyDueToBinProcedure(var BinIsForPick: Boolean; var BinIsForReplenishment: Boolean; var IsMoveWksh: Boolean; var AvailableQtyBase: Decimal; FromBinContent: Record "Bin Content"; var Result: Text; var IsHandled: Boolean)
+    begin
+        IsHandled := true;
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Release Sales Document", 'OnAfterManualReleaseSalesDoc', '', false, false)]
+    local procedure OnAfterManualReleaseSalesDoc(PreviewMode: Boolean; var SalesHeader: Record "Sales Header")
+    var
+        L_SalesLine: Record "Sales Line";
+    begin
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document No.", SalesHeader."No.");
+        L_SalesLine.SetRange("Document Type", SalesHeader."Document Type");
+        if L_SalesLine.FindSet() then begin
+            repeat
+                if L_SalesLine.Type = L_SalesLine.Type::"G/L Account" then begin
+                    L_SalesLine.Validate("Inv. Discount Amount", 0);
+                    L_SalesLine.Modify();
+                end;
+            until L_SalesLine.Next() = 0;
+        end;
+    end;
+    //Trolley No.++
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrderLines_OnAddStepsToAnyHeader', '', true, true)]
+
+    local procedure MyOnGetPickOrderLines_OnAddStepsToAnyHeader(_RecRef: RecordRef; var _StepsElement: Record "MOB Steps Element")
+
+    begin
+        _StepsElement.Create_TextStep(1, 'TrolleyNo');
+        _StepsElement.Set_header('Trolley No.');
+        _StepsElement.Set_label('Trolley No.:');
+        _StepsElement.Set_helpLabel('Scan Trolley no.');
+
+    end;
+
+    //Trolley No.++
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforePostAnyOrder', '', true, true)]
+
+    local procedure OnPostPickOrder_OnBeforePostAnyOrder(var _RecRef: RecordRef; var _OrderValues: Record "MOB Common Element")
+    var
+        L_WareActHdr: Record "Warehouse Activity Header";
+        L_WarehouseActivityLine: Record "Warehouse Activity Line";
+        L_WarehouseShipmentHeader: Record "Warehouse Shipment Header";
+        L_WarehouseShipmentLine: Record "Warehouse Shipment Line";
+    begin
+        _RecRef.SetTable(L_WareActHdr);
+        L_WareActHdr."Trolley No." := _OrderValues.GetValue('TrolleyNo', true);
+        L_WareActHdr.Modify();
+        L_WarehouseActivityLine.Reset();
+        L_WarehouseActivityLine.SetRange("No.", L_WareActHdr."No.");
+        L_WarehouseActivityLine.SetRange("Whse. Document Type", L_WarehouseActivityLine."Whse. Document Type"::Shipment);
+        if L_WarehouseActivityLine.FindFirst() then begin
+            L_WarehouseShipmentHeader.Reset();
+            L_WarehouseShipmentHeader.SetRange("No.", L_WarehouseActivityLine."Whse. Document No.");
+            if L_WarehouseShipmentHeader.FindFirst() then begin
+                L_WarehouseShipmentHeader.Validate("Trolley No.", L_WareActHdr."Trolley No.");
+                L_WarehouseShipmentHeader.Modify();
+                L_WarehouseShipmentLine.Reset();
+                L_WarehouseShipmentLine.SetRange("No.", L_WarehouseShipmentHeader."No.");
+                if L_WarehouseShipmentLine.FindSet() then begin
+                    L_WarehouseShipmentLine.ModifyAll("Trolley No.", L_WarehouseShipmentHeader."Trolley No.");
+                end;
+            end;
+        end;
+    end;
+    //Trolley No.--
 
     var
         bool: Boolean;

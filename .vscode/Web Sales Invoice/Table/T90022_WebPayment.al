@@ -18,7 +18,6 @@ table 90022 "Web Payment"
         field(3; "NAV Payment Method"; code[10])
         {
             DataClassification = ToBeClassified;
-            TableRelation = "Payment Method";
         }
         field(4; Commission; Decimal)
         {
@@ -32,6 +31,10 @@ table 90022 "Web Payment"
         {
             DataClassification = ToBeClassified;
             TableRelation = "Payment Method";
+        }
+        field(7; "Currency Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
         }
 
     }

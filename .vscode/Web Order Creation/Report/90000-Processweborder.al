@@ -1,6 +1,7 @@
 report 90000 "Process Web Orders"
 {
     ProcessingOnly = true;
+    Permissions = tabledata "Bank Account" = R;
 
     dataset
     {
@@ -25,6 +26,8 @@ report 90000 "Process Web Orders"
                 trigger OnAfterGetRecord()
                 var
                     CreateOrderErrror: Text;
+                    WebOrderMgt: Codeunit "Web Order Mgt";
+                    GenSetup: Record "General Setup - Channels";
                 begin
                     i := i + 1;
                     COMMIT;
@@ -56,17 +59,25 @@ report 90000 "Process Web Orders"
                             END;
                         "Trade Partner"."Process Order Type"::"Single Order":
                             BEGIN
-                                CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
-                                IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
-                                    CreateOrderErrror := GETLASTERRORTEXT();
-                                    InsertErrorlog(STRSUBSTNO(CreateOrderErrror, InterimSH."Channel Order ID"), InterimSH);
-                                    InterimSH.MODIFY();
-                                END ELSE BEGIN
-                                    // InsertIntoTempHeader(InterimSH."Sales Order No.");
-                                    LastOrderNo := InterimSH."No.";
-                                    PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
-                                END;
+                                GenSetup.Get();
+                                if GenSetup."Allocate Web Orders" = true then begin
+                                    WebOrderMgt.OrderValidations(InterimSH);
+                                    Commit();
+                                end;
 
+                                if InterimSH.status = InterimSH.status::"In Progress" then begin
+                                    CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
+                                    IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
+                                        CreateOrderErrror := GETLASTERRORTEXT();
+                                        InsertErrorlog(STRSUBSTNO(CreateOrderErrror, InterimSH."Channel Order ID"), InterimSH);
+                                        InterimSH.MODIFY();
+                                    END ELSE BEGIN
+                                        // InsertIntoTempHeader(InterimSH."Sales Order No.");
+                                        Commit();
+                                        LastOrderNo := InterimSH."No.";
+                                        PickCreated := true;//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
+                                    END;
+                                end;
                             END;
                         "Trade Partner"."Process Order Type"::"Consolidate Order":
                             BEGIN
@@ -89,7 +100,6 @@ report 90000 "Process Web Orders"
                                 END;
 
                             END;
-
                     END;
 
 
@@ -147,9 +157,10 @@ report 90000 "Process Web Orders"
                     if "Trade Partner"."Tracking No Valid. Required" then
                         InterimSH.SetFilter("Tracking No.", '<>%1', '');
 
-                    //code to filter reserved order only if allocate web order feature is enable                    
-                    if L_OchannelGenSetup."Allocate Web Orders" then
-                        InterimSH.SetRange(ReservedFlag, true);
+                    //IK++
+                    // if L_OchannelGenSetup."Allocate Web Orders" then 
+                    //     InterimSH.SetRange(ReservedFlag, true);
+                    // IK--
 
                     Window.OPEN('Processing... @1@@@@@@@@@@');
                     if "Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick" then begin
@@ -177,8 +188,6 @@ report 90000 "Process Web Orders"
                                 end;
                         end;
                     end;
-
-
                     NoOfRecs := InterimSH.COUNT;
 
                 end;
@@ -193,26 +202,28 @@ report 90000 "Process Web Orders"
                 ResetFirstOrder;
 
                 // code for Allocate WebOrder feature ++
-                GenSetup.Get();
-                if GenSetup."Allocate Web Orders" = true then begin
-                    if (("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick") OR ("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Single Order")) then begin
-                        Clear(TotalOrderToProcess);
-                        L_InterimHeader.Reset();
-                        L_InterimHeader.CopyFilters(InterimSH);
-                        L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
-                        L_InterimHeader.SetRange("Trade Partner Code", "Trade Partner".Code);
-                        L_InterimHeader.SetRange(status, L_InterimHeader.status::"In Progress");
-                        if NoOfItems = NoOfItems::Multiple then
-                            L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
-                        if NoOfItems = NoOfItems::Single then
-                            InterimSH.SETFILTER("No. of Items", '%1', 1);
-                        if L_InterimHeader.FindSet() then begin
-                            TotalOrderToProcess := L_InterimHeader.Count;
-                            CreateConsollidatedOrder.AllocateWebOrderWithAvailableQty2(L_InterimHeader, TotalOrderToProcess);
-                        end;
-                    end;
-                end;
+                #region we will check the reservation at the time of creating sales order.(code added from line 61 to 65)
+                // GenSetup.Get();
+                // if GenSetup."Allocate Web Orders" = true then begin
+                //     if (("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick") OR ("Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Single Order")) then begin
+                //         Clear(TotalOrderToProcess);
+                //         L_InterimHeader.Reset();
+                //         L_InterimHeader.CopyFilters(InterimSH);
+                //         L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
+                //         L_InterimHeader.SetRange("Trade Partner Code", "Trade Partner".Code);
+                //         L_InterimHeader.SetRange(status, L_InterimHeader.status::"In Progress");
+                //         if NoOfItems = NoOfItems::Multiple then
+                //             L_InterimHeader.SETFILTER("No. of Items", '>%1', 1);
+                //         if NoOfItems = NoOfItems::Single then
+                //             InterimSH.SETFILTER("No. of Items", '%1', 1);
+                //         if L_InterimHeader.FindSet() then begin
+                //             TotalOrderToProcess := L_InterimHeader.Count;
+                //             CreateConsollidatedOrder.AllocateWebOrderWithAvailableQty2(L_InterimHeader, TotalOrderToProcess);
+                //         end;
+                //     end;
+                // end;
                 //AllocateWebOrder--
+                #endregion
             end;
 
             trigger OnPreDataItem()
@@ -298,7 +309,10 @@ report 90000 "Process Web Orders"
         begin
             NoOfItems := NoOfItems::Everything;
             if InterimSH.GetFilter("Trade Partner Code") <> '' then
-                "Trade Partner".SetRange(Code, InterimSH.GetFilter("Trade Partner Code"));
+                if G_BnQChannelCode <> '' then
+                    "Trade Partner".SetRange(Code, 'B&Q')
+                else
+                    "Trade Partner".SetRange(Code, InterimSH.GetFilter("Trade Partner Code"));
         end;
     }
 
@@ -330,6 +344,12 @@ report 90000 "Process Web Orders"
         end;
     end;
 
+    procedure SetBnQChannel(P_ChannelCode: Code[20])
+    begin
+        G_BnQChannelCode := P_ChannelCode;
+    end;
+
+
     var
         InterimSHGlobal: Record "Interim Sales Header";
         InterimSH2: Record "Interim Sales Header";
@@ -359,6 +379,8 @@ report 90000 "Process Web Orders"
         UseAllocationboolean: Boolean;
         CreateConsollidatedOrder: Codeunit "Process Web Order";
         G_ChannelCode: Code[20];
+
+        G_BnQChannelCode: Code[20];
         G_TotalQty: Decimal;
         InterimsalesHeader: Record "Interim Sales Header" temporary;
         PickCreated: Boolean; //NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")

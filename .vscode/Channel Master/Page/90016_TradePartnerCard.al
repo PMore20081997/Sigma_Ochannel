@@ -288,6 +288,12 @@ page 90016 "Trade Partner card"
                 field(MyField; Rec."Tracking No Valid. Required")
                 {
                     ApplicationArea = All;
+
+                }
+
+                field("Update Tracking Information"; Rec."Update Tracking Information")
+                {
+                    ApplicationArea = All;
                 }
                 field("Print Return Note"; Rec."Print Return Note")
                 {
@@ -298,6 +304,12 @@ page 90016 "Trade Partner card"
                 //True - Will use ILW/VISUALSOFT Credentials For DPD.
                 //False - Will Use SHOPIFY Credentials for DPD.
                 field("DPD Setup"; Rec."DPD Setup")
+                {
+                    ApplicationArea = All;
+                }
+
+                //LAN setup field for dpd credentials for Lucie Anabel
+                field("Alternative Credentials"; Rec."Alternative Credentials")
                 {
                     ApplicationArea = All;
                 }

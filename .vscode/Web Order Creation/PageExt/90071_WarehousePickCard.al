@@ -5,6 +5,42 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
     {
         addafter("Sorting Method")
         {
+            field("Trolley No."; Rec."Trolley No.")
+            {
+                ApplicationArea = all;
+                trigger OnValidate()
+                var
+                    L_PickLine: Record "Warehouse Activity Line";
+                    L_ShipmentLine: Record "Warehouse Shipment Line";
+                    L_ShipmentHeader: Record "Warehouse Shipment Header";
+                begin
+                    L_PickLine.Reset();
+                    L_PickLine.SetRange("No.", Rec."No.");
+                    if L_PickLine.FindSet() then begin
+                        repeat
+                            if L_PickLine."Whse. Document Type" = L_PickLine."Whse. Document Type"::Shipment then begin
+                                L_PickLine.Validate("Trolley No.", Rec."Trolley No.");
+                                L_PickLine.Modify(true);
+                                L_ShipmentHeader.Reset();
+                                L_ShipmentHeader.SetRange("No.", L_PickLine."Whse. Document No.");
+                                if L_ShipmentHeader.FindFirst() then begin
+                                    L_ShipmentHeader.Validate("Trolley No.", L_PickLine."Trolley No.");
+                                    L_ShipmentHeader.Modify(true);
+                                    L_ShipmentLine.Reset();
+                                    L_ShipmentLine.SetRange("No.", L_ShipmentHeader."No.");
+                                    if L_ShipmentLine.FindSet() then begin
+                                        repeat
+                                            L_ShipmentLine.Validate("Trolley No.", L_ShipmentHeader."Trolley No.");
+                                            L_ShipmentLine.Modify(true);
+                                        until L_ShipmentLine.Next() = 0;
+                                    end;
+                                end;
+                            end;
+                        until L_PickLine.Next() = 0;
+                        Message('Trolley Number Updated Successfully');
+                    end;
+                end;
+            }
             field("Shipping Agent Code"; Rec."Shipping Agent Code")
             {
                 ApplicationArea = all;
@@ -80,6 +116,7 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
 
          }
      }*/
+
 
     trigger OnDeleteRecord(): Boolean
     begin

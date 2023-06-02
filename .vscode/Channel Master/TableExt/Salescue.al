@@ -94,3 +94,6 @@ tableextension 90002 "Sales Cue Ext" extends "Sales Cue"
         Rec.Modify();
     end;
 }
+
+
+

@@ -118,24 +118,25 @@ codeunit 90079 "Generate Shipment"
                 Temp_SalesHeader."Shipping Agent Code" := CopyStr(P_InterimSalesHeader."Shipping Agent Code", 1, 10);
                 Temp_SalesHeader."Shipping Agent Service Code" := CopyStr(P_InterimSalesHeader."Shipping Agent Service Code", 1, 10);
 
-                Temp_SalesHeader."Ship-to Name" := P_InterimSalesHeader."Ship-to Name";
+                Temp_SalesHeader."Ship-to Name" := P_InterimSalesHeader."Ship-to Name".Replace('’', '');
+
                 if P_InterimSalesHeader."Ship-to Address" <> '' then begin
-                    Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address";
+                    Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address".Replace('’', '');
                 end
                 else begin
                     if P_InterimSalesHeader."Ship-to Address 2" <> '' then
-                        Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address 2";
+                        Temp_SalesHeader."Ship-to Address" := P_InterimSalesHeader."Ship-to Address 2".Replace('’', '');
                 end;
-                Temp_SalesHeader."Ship-to Address 2" := P_InterimSalesHeader."Ship-to Address 2";
-                Temp_SalesHeader."Ship-to City" := P_InterimSalesHeader."Ship-to City";
+                Temp_SalesHeader."Ship-to Address 2" := P_InterimSalesHeader."Ship-to Address 2".Replace('’', '');
+                Temp_SalesHeader."Ship-to City" := P_InterimSalesHeader."Ship-to City".Replace('’', '');
                 Temp_SalesHeader."Ship-to Country/Region Code" := CopyStr(P_InterimSalesHeader."Ship-to Country/Region Code", 1, 10);
                 Temp_SalesHeader."Ship-to Post Code" := P_InterimSalesHeader."Ship-to Post Code";
 
-                Temp_SalesHeader."Bill-to Name" := P_InterimSalesHeader."Bill- to Name";
-                Temp_SalesHeader."Bill-to Address" := P_InterimSalesHeader.Address;
-                Temp_SalesHeader."Bill-to Address 2" := CopyStr(P_InterimSalesHeader."Address 2", 1, 50);
-                Temp_SalesHeader."Bill-to City" := CopyStr(P_InterimSalesHeader.City, 1, 30);
-                Temp_SalesHeader."Bill-to County" := P_InterimSalesHeader."Bill-to County";
+                Temp_SalesHeader."Bill-to Name" := P_InterimSalesHeader."Bill- to Name".Replace('’', '');
+                Temp_SalesHeader."Bill-to Address" := P_InterimSalesHeader.Address.Replace('’', '');
+                Temp_SalesHeader."Bill-to Address 2" := CopyStr(P_InterimSalesHeader."Address 2", 1, 50).Replace('’', '');
+                Temp_SalesHeader."Bill-to City" := CopyStr(P_InterimSalesHeader.City, 1, 30).Replace('’', '');
+                Temp_SalesHeader."Bill-to County" := P_InterimSalesHeader."Bill-to County".Replace('’', '');
                 Temp_SalesHeader."Bill-to Post Code" := CopyStr(P_InterimSalesHeader."Post Code", 1, 20);
                 Temp_SalesHeader."Bill-to Country/Region Code" := CopyStr(P_InterimSalesHeader."Sell to Country", 1, 10);
 

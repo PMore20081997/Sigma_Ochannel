@@ -158,6 +158,7 @@ page 90004 "Web order Subpage"
                 field("Shelf No."; Rec."Shelf No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Description; Rec.Description)
                 {
@@ -261,10 +262,13 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = ALl;
                     Editable = false;
+                    Visible = true;
                 }
                 field(Reserved; Rec.Reserved)
                 {
                     ApplicationArea = All;
+                    Visible = true;
+                    Editable = false;
                 }
                 field("Unit of Measure Code"; Rec."Unit of Measure Code")
                 {
@@ -319,6 +323,7 @@ page 90004 "Web order Subpage"
                 field("Quantity Handeled"; Rec."Trolley closed Quantity")
                 {
                     ApplicationArea = All;
+                    Visible = false;
 
                 }
                 field("Shipping Price"; Rec."Shipping Price")
@@ -457,6 +462,7 @@ page 90004 "Web order Subpage"
                 field("NAV Variant code"; Rec."NAV Variant code")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Location Code"; Rec."Location Code")
                 {
@@ -468,7 +474,7 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     Editable = true;
                     Enabled = true;
-                    CaptionML = ENU = 'Gift', ENG = 'Gift';
+                    CaptionML = ENU = 'Zero Price', ENG = 'Zero Price';
                 }
                 field("Channel Identifier"; Rec."Channel Identifier")
                 {
@@ -484,15 +490,18 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Bay No."; Rec."Bay No.")
                 {
                     ApplicationArea = All;
                     //Editable = false;
+                    Visible = false;
                 }
                 field("Scanned Date"; rec."Scanned Date")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 //Paarth D Dave - 8197 - Assembly Order ---- Start
                 field("Assembly Order No."; Rec."Assembly Order No.")
