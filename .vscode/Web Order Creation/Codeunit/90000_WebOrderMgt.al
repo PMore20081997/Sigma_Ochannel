@@ -725,25 +725,6 @@ codeunit 90000 "Web Order Mgt"
             if Rec_Item.FindFirst() then
                 L_InterimSalesLine.Validate(Description, Rec_Item.Description);
         end;
-        //Paarth D Dave - 8197-1 - Auto Assembly Order boolean ---- Start
-        Rec_Item.Reset();
-        Rec_Item.SetRange("No.", L_ItemNo);
-        if Rec_Item.FindFirst() then begin
-            L_ItemCategory.Reset();
-            L_ItemCategory.SetRange("Code", Rec_Item."Item Category Code");
-            if L_ItemCategory.FindFirst() then begin
-                if L_ItemCategory."Auto Assembly Order" then begin
-                    L_InterimSalesLine."Auto Assembly Order" := true;
-                    // L_IntrimSalesHeader.Reset();
-                    // L_IntrimSalesHeader.SetRange("No.", P_InterimSalesHeader."No.");
-                    // if L_IntrimSalesHeader.FindFirst() then begin
-                    //     L_IntrimSalesHeader."Assemply Order" := true;
-                    //     L_IntrimSalesHeader.Modify();
-                    // end;
-                end;
-            end;
-        end;
-        //Paarth D Dave - 8197-1 - Auto Assembly Order boolean ---- End
 
         if P_InterimSalesLine."Gift Card" then
             L_InterimSalesLine."Gift Card" := true;
@@ -758,12 +739,7 @@ codeunit 90000 "Web Order Mgt"
         ChannelItemListing: Record "Channel Item Listing";
         ItemCrossReference: Record "Item Reference";
     begin
-        /* ChannelItemListing.Reset();
-         ChannelItemListing.SetRange("Channel SKU", ChannelSKU);
-         ChannelItemListing.SetRange("Channel Code", P_ChannelPartner.Code);
-         if ChannelItemListing.FindFirst() then begin
-             exit(ChannelItemListing."NAV Variant");
-         end;*/
+
         IF P_ChannelPartner."Order Item By" IN [P_ChannelPartner."Order Item By"::ASIN, P_ChannelPartner."Order Item By"::"Channel SKU"] Then begin
             ChannelItemListing.SetRange("Channel Code", P_ChannelPartner.Code);
             CASE P_ChannelPartner."Order Item By" OF
@@ -803,88 +779,13 @@ codeunit 90000 "Web Order Mgt"
         ToInterimSalesLine: Record "Interim Sales Line";
         ComponentAmount: Decimal;
         BoMItem: Record Item;
+        IsHandled: Boolean;
     begin
-        If P_InterimSalesLine.Type <> P_InterimSalesLine.Type::Item then
+        OnBeforeExplodeBoM(P_InterimSalesLine, IsHandled);
+        if IsHandled then
             exit;
 
-        If P_InterimSalesLine."Item Type" = P_InterimSalesLine."Item Type"::Component then
-            exit;
-
-        If L_TradePartner.Get(P_InterimSalesLine."Trade Partner Code") then begin
-            If L_TradePartner."Explode Bom" then begin
-                IF KitItem.GET(P_InterimSalesLine."No.") THEN;
-                KitItem.CALCFIELDS("Assembly BOM");
-
-                IF KitItem."Assembly BOM" = TRUE THEN BEGIN
-
-                    CLEAR(CountRec);
-                    CLEAR(NoOfBOMComp);
-                    CLEAR(TotalAmount);
-                    LineSpacing := 1000;
-                    NextLineNo := P_InterimSalesLine."Line No.";
-                    FromBOMComp.RESET;
-                    FromBOMComp.SETRANGE("Parent Item No.", P_InterimSalesLine."No.");
-                    FromBOMComp.FINDSET;
-                    NoOfBOMComp := FromBOMComp.COUNT;
-                    REPEAT
-                        IF FromBOMComp."Quantity per" > 0 THEN BEGIN
-                            ToInterimSalesLine.INIT;
-                            NextLineNo := NextLineNo + LineSpacing;
-                            ToInterimSalesLine."Line No." := NextLineNo;
-                            ToInterimSalesLine."Document No" := P_InterimSalesLine."Document No";
-                            ToInterimSalesLine."Document Type" := P_InterimSalesLine."Document Type";
-                            ToInterimSalesLine."Trade Partner Code" := P_InterimSalesLine."Trade Partner Code";
-                            CASE FromBOMComp.Type OF
-                                FromBOMComp.Type::" ":
-                                    ToInterimSalesLine.Type := ToInterimSalesLine.Type::" ";
-                                FromBOMComp.Type::Item:
-                                    ToInterimSalesLine.Type := ToInterimSalesLine.Type::Item;
-                                FromBOMComp.Type::Resource:
-                                    ToInterimSalesLine.Type := ToInterimSalesLine.Type::Resource;
-                            END;
-                            IF ToInterimSalesLine.Type <> ToInterimSalesLine.Type::" " THEN BEGIN
-                                FromBOMComp.TESTFIELD("No.");
-                                ToInterimSalesLine.VALIDATE("No.", FromBOMComp."No.");
-                                IF ToInterimSalesLine.Type = ToInterimSalesLine.Type::Item THEN BEGIN
-                                    BoMItem.GET(FromBOMComp."No.");
-                                    ToInterimSalesLine.VALIDATE("Unit of Measure Code", FromBOMComp."Unit of Measure Code");
-                                    ToInterimSalesLine.VALIDATE(Quantity, ROUND(P_InterimSalesLine.Quantity * FromBOMComp."Quantity per"));
-                                END ELSE
-                                    ToInterimSalesLine.VALIDATE(Quantity, P_InterimSalesLine.Quantity * FromBOMComp."Quantity per");
-
-                                ToInterimSalesLine.VALIDATE("Shipment Date", P_InterimSalesLine."Shipment Date");
-                                CountRec += 1;
-                                IF CountRec = NoOfBOMComp THEN BEGIN
-                                    ToInterimSalesLine.Amount := P_InterimSalesLine.Amount - TotalAmount;
-                                    ToInterimSalesLine."Amount Including VAT" := ToInterimSalesLine.Amount;
-                                    ToInterimSalesLine."Unit Price" := (ToInterimSalesLine.Amount / ToInterimSalesLine.Quantity);
-                                END
-                                ELSE BEGIN
-                                    ComponentAmount := ROUND(P_InterimSalesLine.Amount / NoOfBOMComp, 1, '=');
-                                    TotalAmount := TotalAmount + ComponentAmount;
-                                    ToInterimSalesLine.Amount := ComponentAmount;
-                                    ToInterimSalesLine."Amount Including VAT" := ToInterimSalesLine.Amount;
-                                    ToInterimSalesLine."Unit Price" := (ToInterimSalesLine.Amount / ToInterimSalesLine.Quantity);
-                                END;
-
-                            END;
-                            ToInterimSalesLine.Description := BoMItem.Description;
-                            ToInterimSalesLine."Bom Item No." := P_InterimSalesLine."No.";
-                            ToInterimSalesLine."Item Type" := ToInterimSalesLine."Item Type"::Component;
-                            ToInterimSalesLine."Sell-to Customer No." := P_InterimSalesLine."Sell-to Customer No.";
-                            ToInterimSalesLine.INSERT;
-                        END;
-                    UNTIL FromBOMComp.NEXT = 0;
-                    P_InterimSalesLine."Item Type" := P_InterimSalesLine."Item Type"::Assembly;
-                    P_InterimSalesLine.MODIFY;
-                END ELSE BEGIN
-                    P_InterimSalesLine."Item Type" := P_InterimSalesLine."Item Type"::Single;
-                    P_InterimSalesLine.MODIFY;
-                END;
-
-            end;
-        end;
-
+        OnAfterExplodeBoM(P_InterimSalesLine);
     end;
 
 
@@ -923,6 +824,8 @@ codeunit 90000 "Web Order Mgt"
         TotalItems: Integer;
         ShippingAgent: Record "Shipping Agent";
         Countries: Record "Country/Region";
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -957,6 +860,27 @@ codeunit 90000 "Web Order Mgt"
                 InsertErrorLog('Location must not be blank', P_InterimSalesHeader);
                 L_ErrorRecorded := TRUE;
             end;
+
+            //Code to Check if Order is Repeated or not in System, if Repeated Update Error Message
+            L_HandledInterimSalesHeader.RESET;
+            L_HandledInterimSalesHeader.SETRANGE("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+            L_HandledInterimSalesHeader.SETRANGE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
+            IF not L_HandledInterimSalesHeader.FindFirst() THEN BEGIN
+                L_InterimSalesHeader.RESET;
+                L_InterimSalesHeader.SETRANGE("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+                L_InterimSalesHeader.SETRANGE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
+                IF L_InterimSalesHeader.FindSet() THEN BEGIN
+                    if L_InterimSalesHeader.Count > 1 then begin
+                        InsertErrorLog('Order is Repeated For Order No - ' + P_InterimSalesHeader."Channel Order ID", P_InterimSalesHeader);
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            END
+            else begin
+                InsertErrorLog('Order is Repeated For Order No - ' + P_InterimSalesHeader."Channel Order ID", P_InterimSalesHeader);
+                L_ErrorRecorded := TRUE;
+            end;
+            //Code to Check if Order is Repeated or not in System, if Repeated Update Error Message
 
             TotalItems := 0;
             L_InterimSalesLine.Reset();
@@ -994,10 +918,7 @@ codeunit 90000 "Web Order Mgt"
                     //If Available on Shipping Rule Child Id and Name Get map For Hermes US-8196++
                     //if ((P_InterimSalesHeader."Child Client ID" = '') or (P_InterimSalesHeader."Child Client Name" = '')) then begin
                     GetNavShippingAgentFromWebShipping(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Web Shipping Agent", P_InterimSalesHeader."Web Shipment Method", L_shippingRule);
-                    P_InterimSalesHeader."Child Client ID" := L_ShippingRule."Child Client Id";
-                    P_InterimSalesHeader."Child Client Name" := L_ShippingRule."Child Client Name";
-                    //end;
-                    //If Available on Shipping Rule Child Id and Name Get map For Hermes US-8196--
+
 
                     //Calculating Number of Parcels For Shipment
                     if P_InterimSalesHeader."No. Of Parcels" = 0 then
@@ -1016,13 +937,7 @@ codeunit 90000 "Web Order Mgt"
                         // end;
                     end;
 
-                    //If Available on Shipping Rule Child Id and Name Get map For Hermes US-8196++
-                    if ((P_InterimSalesHeader."Child Client ID" = '') or (P_InterimSalesHeader."Child Client Name" = '')) then begin
-                        GetNavShippingAgentFromWebShipping(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Web Shipping Agent", P_InterimSalesHeader."Web Shipment Method", L_shippingRule);
-                        P_InterimSalesHeader."Child Client ID" := L_ShippingRule."Child Client Id";
-                        P_InterimSalesHeader."Child Client Name" := L_ShippingRule."Child Client Name";
-                    end;
-                    //If Available on Shipping Rule Child Id and Name Get map For Hermes US-8196--
+
 
                     //Calculating Number of Parcels For Shipment
                     if P_InterimSalesHeader."No. Of Parcels" = 0 then
@@ -1131,12 +1046,7 @@ codeunit 90000 "Web Order Mgt"
             end;
 
             P_InterimSalesHeader.Modify();
-            //Paarth D Dave - 8197 - On Status In progress create Assembly Order ---- Start
-            P_InterimSalesHeader.CalcFields("Assemply Order", "Pstd. Assembly Order", "Assembly Order Created");
-            If (P_InterimSalesHeader."Assemply Order" = true) and (P_InterimSalesHeader."Pstd. Assembly Order" = false) then begin
-                CreateAssemblyOrderForCushionItems(P_InterimSalesHeader, L_InterimSalesLine);
-            end;
-            //Paarth D Dave - 8197 - On Status In progress create Assembly Order ---- End
+
         end;
     end;
 
@@ -1333,101 +1243,7 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
-            //Code to Check Available Item Inventory++
-            GeneralSetupChannel.Get();
-            if (GeneralSetupChannel."Allocate Web Orders" = true) AND NOT (P_InterimSalesLine.Reserved) then begin
-                CLEAR(AvailableInventory);
-                Clear(LowestQuantity);
-                Counter := 0;
 
-                L_ItemCategory.Reset();
-                L_ItemCategory.SetRange(Code, L_Item."Item Category Code");
-                if L_ItemCategory.FindFirst() then;
-                P_InterimSalesLine.CalcFields("Pstd. Ass. Order No ");
-                if (L_ItemCategory."Auto Assembly Order" = true) and (P_InterimSalesLine."Pstd. Ass. Order No " = '') then begin
-                    BOMComponent.Reset();
-                    BOMComponent.SetRange("Parent Item No.", P_InterimSalesLine."No.");
-                    BOMComponent.SetRange(Type, BOMComponent.Type::Item);
-                    if BOMComponent.FindSet() then begin
-                        repeat
-                            if Rec_Item.Get(BOMComponent."No.") then begin
-                                Rec_Item.CalcFields("W/H Inventory");
-                                Clear(RequiredQuantity);
-
-                                RequiredQuantity := BOMComponent."Quantity per" * P_InterimSalesLine.Quantity;
-
-                                if RequiredQuantity > Rec_Item."W/H Inventory" then begin
-                                    //InsertErrorLog('Insufficient Stock for Item ' + BOMComponent."No.", P_InterimSalesHeader);
-                                    InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', BOMComponent."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
-                                    L_ErrorRecorded := true;
-                                end;
-                            end;
-                        until BOMComponent.Next() = 0;
-                    end;
-
-                    P_InterimSalesLine.CALCFIELDS("Location Code");
-                    CLEAR(ItemQuery1);
-                    ItemQuery1.SETRANGE(ItemQuery1.No, P_InterimSalesLine."No.");
-                    ItemQuery1.SETRANGE(ItemQuery1.Location_Filter, P_InterimSalesLine."Location Code");
-                    ItemQuery1.SetFilter(ItemQuery1.Bin_Type_Filter, 'PUTPICK|PICK');
-
-                    ItemQuery1.OPEN;
-                    IF ItemQuery1.READ THEN begin
-                        AvailableInventory := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order) + ItemQuery1.Ship_Bin_Inventory;
-                    END;
-                    ItemQuery1.CLOSE;
-
-                    if AvailableInventory > 0 then begin
-                        if P_InterimSalesLine.Quantity > AvailableInventory then begin //only error if greather than
-                                                                                       //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
-                            InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
-                            L_ErrorRecorded := true;
-                        end
-                        else begin
-                            P_InterimSalesLine."Reserved Qty" := P_InterimSalesLine.Quantity;
-                            P_InterimSalesLine.Reserved := true;
-                            P_InterimSalesLine.MODIFY;
-                        end;
-                    end
-                    else begin
-                        //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
-                        InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
-                        L_ErrorRecorded := true;
-                    end;
-                end
-                else begin
-                    P_InterimSalesLine.CALCFIELDS("Location Code");
-                    CLEAR(ItemQuery1);
-                    ItemQuery1.SETRANGE(ItemQuery1.No, P_InterimSalesLine."No.");
-                    ItemQuery1.SETRANGE(ItemQuery1.Location_Filter, P_InterimSalesLine."Location Code");
-                    ItemQuery1.SetFilter(ItemQuery1.Bin_Type_Filter, 'PUTPICK|PICK');
-
-                    ItemQuery1.OPEN;
-                    IF ItemQuery1.READ THEN begin
-                        AvailableInventory := (ItemQuery1.W_H_Inventory) - (ItemQuery1.Qty_on_Sales_Order + ItemQuery1.Qty_on_Web_Order);
-                    END;
-                    ItemQuery1.CLOSE;
-
-                    if AvailableInventory > 0 then begin
-                        if P_InterimSalesLine.Quantity > AvailableInventory then begin
-                            //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
-                            InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
-                            L_ErrorRecorded := true;
-                        end
-                        else begin
-                            P_InterimSalesLine."Reserved Qty" := P_InterimSalesLine.Quantity;
-                            P_InterimSalesLine.Reserved := true;
-                            P_InterimSalesLine.MODIFY;
-                        end;
-                    end
-                    else begin
-                        //InsertErrorLog('Insufficient Stock for Item ' + P_InterimSalesLine."No.", P_InterimSalesHeader);
-                        InsertErrorLog(StrSubstNo('Insufficient Stock for Item %1 contains %2 quantity on the web sales line.', P_InterimSalesLine."No.", P_InterimSalesLine.Quantity), P_InterimSalesHeader);
-                        L_ErrorRecorded := true;
-                    end;
-                end;
-            end;
-            //Code to Check Available Item Inventory--
 
             ItemCrossRfef.RESET;
             ItemCrossRfef.SETRANGE("Reference Type", ItemCrossRfef."Reference Type"::Customer);
@@ -1653,11 +1469,6 @@ codeunit 90000 "Web Order Mgt"
         If L_ISH.FindSet() then
             L_ISH.DeleteAll(true);
 
-        // CLEAR(R80020);
-        // R80020.SETTABLEVIEW(P_InterimSalesHeader);
-        // R80020.USEREQUESTPAGE(FALSE);
-        // R80020.SetChannelpartner(P_InterimSalesHeader."Trade Partner Code");
-        // R80020.RUNMODAL();
     end;
 
     // procedure InsertInShipmentTracking(ISH: Record "Interim Sales Header"; Base64String: BigText)
@@ -1665,9 +1476,7 @@ codeunit 90000 "Web Order Mgt"
     var
         ShipmentTrack: Record "Shipment Tracking";
         RecShipmentTracking: Record "Shipment Tracking";
-    //  bytearray: Byte;
-    // memoryStr: DotNet System.IO.FileStream.'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089';
-    //Ostream: dotnet System .Io
+
     begin
 
 
@@ -1685,12 +1494,7 @@ codeunit 90000 "Web Order Mgt"
         ELSE
             ShipmentTrack."Entry No." := 1;
 
-        // IF (Base64String.LENGTH > 0) THEN BEGIN
-        //     bytearray := Convert.FromBase64String(Base64String);
-        //     memoryStr := memoryStr.MemoryStream(bytearray);
-        //     ShipmentTrack.Label.CREATEOUTSTREAM(Ostream);
-        //     memoryStr.WriteTo(Ostream);
-        // END;
+
 
 
 
@@ -1906,69 +1710,6 @@ codeunit 90000 "Web Order Mgt"
         InterimCustomer.DeleteAll(true);
     end;
 
-    procedure RemoveDestinationDocReference(P_InterimSalesHeader: Record "Interim Sales Header"; NeedWIPValidation: Boolean)
-    var
-        L_InterimSalesLine: Record "Interim Sales Line";
-    begin
-        L_InterimSalesLine.RESET;
-        L_InterimSalesLine.SETRANGE("Document No", P_InterimSalesHeader."No.");
-        L_InterimSalesLine.SETRANGE("Document Type", P_InterimSalesHeader."Document Type");
-        L_InterimSalesLine.SETRANGE("Dispatch Scan", FALSE);//ak 241120 added filter
-        L_InterimSalesLine.SETRANGE("Scanned Date", 0DT);//ak 241120
-        IF L_InterimSalesLine.FINDSET THEN
-            UnAllocateWebOrderOnDeleteNew(L_InterimSalesLine, TRUE);
-    end;
-
-    procedure UnAllocateWebOrderOnDeleteNew(VAR RecInterimSalesLine: Record "Interim Sales Line"; NeedWIPValidation: Boolean)
-    var
-        L_WIPL: Record "Whse. Internal Pick Line";
-        WSHList: Page "Warehouse Shipment List";
-        filterText: Text;
-        RecInterimSalesHeader: Record "Interim Sales Header";
-    begin
-        IF RecInterimSalesLine.FINDSET THEN
-            REPEAT
-                IF NeedWIPValidation THEN BEGIN
-                    L_WIPL.RESET;
-                    L_WIPL.SETRANGE("No.", RecInterimSalesLine."Destination Doc No.");
-                    L_WIPL.SETRANGE("Item No.", RecInterimSalesLine."No.");
-                    L_WIPL.SetRange("Variant Code", RecInterimSalesLine."NAV Variant code");
-                    IF L_WIPL.FINDFIRST THEN
-                        ERROR(STRSUBSTNO('You can not remove internal pick %1 from web order %2 because internal pick is exist in system.', L_WIPL."No.", RecInterimSalesLine."Document No"));
-
-                    IF RecInterimSalesLine."Trolley No." <> '' THEN
-                        CheckTrolleyIsClosed(RecInterimSalesLine);
-                END;
-                CLEAR(RecInterimSalesLine."Destination Doc. Line No");
-                CLEAR(RecInterimSalesLine."Destination Doc No.");
-                CLEAR(RecInterimSalesLine."Destination Doc Type");
-                CLEAR(RecInterimSalesLine."Trolley No.");
-
-                RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
-                RecInterimSalesLine.Reserved := FALSE;
-
-                RecInterimSalesLine.MODIFY;
-                // WSHList.AddToFilterText2(filterText, '|', '', RecInterimSalesLine."Document No");code blocked by alok
-                if RecInterimSalesHeader.Get(RecInterimSalesLine."Document Type", RecInterimSalesLine."Document No") then
-                    RecInterimSalesHeader.Mark(true);
-            UNTIL RecInterimSalesLine.NEXT = 0;
-
-        /*RecInterimSalesHeader.RESET;code blocked by alok
-        RecInterimSalesHeader.SETRANGE("Document Type", RecInterimSalesLine."Document Type");
-        RecInterimSalesHeader.SETFILTER("No.", filterText);*/
-        RecInterimSalesHeader.MarkedOnly(true);
-        IF RecInterimSalesHeader.FINDSET THEN
-            REPEAT
-                IF NOT CheckIfLineExistsWithDocNo(RecInterimSalesHeader) THEN BEGIN
-                    CLEAR(RecInterimSalesHeader."Destination Doc No.");
-                    CLEAR(RecInterimSalesHeader."Destination Doc Type");
-                    IF NOT (RecInterimSalesHeader.Status IN [RecInterimSalesHeader.Status::"No Stock", RecInterimSalesHeader.Status::Cancelled]) THEN
-                        RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
-                    RecInterimSalesHeader.ReservedFlag := FALSE;
-                    RecInterimSalesHeader.MODIFY;
-                END;
-            UNTIL RecInterimSalesHeader.NEXT = 0;
-    end;
 
     local procedure CheckIfLineExistsWithDocNo(P_InterimSalesHeader: Record "Interim Sales Header"): Boolean
     var
@@ -1986,28 +1727,6 @@ codeunit 90000 "Web Order Mgt"
     end;
 
 
-
-    local procedure CheckTrolleyIsClosed(P_InterimSalesLine: Record "Interim Sales Line")
-    var
-        RegisteredWhseActivityHdr: record "Registered Whse. Activity Hdr.";
-        RegisteredWhseActivityLine: Record "Registered Whse. Activity Line";
-    begin
-        RegisteredWhseActivityLine.RESET;
-        RegisteredWhseActivityLine.SETRANGE("Activity Type", RegisteredWhseActivityLine."Activity Type"::Pick);
-        RegisteredWhseActivityLine.SETRANGE("Source Type", 7334);
-        RegisteredWhseActivityLine.SETRANGE("Source No.", P_InterimSalesLine."Destination Doc No.");
-        RegisteredWhseActivityLine.SETRANGE("Item No.", P_InterimSalesLine."No.");
-        RegisteredWhseActivityLine.SETRANGE("Trolley No.", P_InterimSalesLine."Trolley No.");
-        IF RegisteredWhseActivityLine.FINDFIRST THEN BEGIN
-            RegisteredWhseActivityHdr.RESET;
-            RegisteredWhseActivityHdr.SETRANGE(Type, RegisteredWhseActivityHdr.Type::Pick);
-            RegisteredWhseActivityHdr.SETRANGE("No.", RegisteredWhseActivityLine."No.");
-            IF RegisteredWhseActivityHdr.FINDFIRST THEN
-                IF NOT RegisteredWhseActivityHdr."Trolley Closed" THEN
-                    ERROR(STRSUBSTNO('You can not remove internal pick %1 from web order %2 because open trolley exists in system for Registered Pick %3.', P_InterimSalesLine."Destination Doc No.", P_InterimSalesLine."Document No", RegisteredWhseActivityHdr."No."))
-        END;
-
-    end;
     //below function is use to upload any file from BC to azure blob
     procedure UploadFilefromBCTOAzureBlob(P_FileInstream: InStream; P_FileName: Text; P_apiEndPoint: Text; P_containerName: Text; P_sasToken: Text; Showmessage: Boolean)
     var
@@ -2055,66 +1774,21 @@ codeunit 90000 "Web Order Mgt"
         end;
         //Upload--
     end;
-    //below code is required to flow Bay no from Whse. Internal pick to warehouse poick
-    [EventSubscriber(ObjectType::Table, Database::"Warehouse Activity Line", 'OnAfterTransferFromIntPickLine', '', false, false)]
-    local procedure OnAfterTransferFromIntPickLine(var WarehouseActivityLine: Record "Warehouse Activity Line"; WhseInternalPickLine: Record "Whse. Internal Pick Line");
-    begin
 
-        WarehouseActivityLine."Bay No." := WhseInternalPickLine."Bay No.";
-
-    end;
-
-
-    //Below code is to stop warehouse internal pick header deletion after posting a pick
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnBeforeUpdateWhseDocHeader', '', false, false)]
-    local procedure OnBeforeUpdateWhseDocHeader(var WarehouseActivityLine: Record "Warehouse Activity Line"; var IsHandled: Boolean);
-    var
-        WhseInternalPickHeader: record "Whse. Internal Pick Header";
-        WhseInternalPickLine: Record "Whse. Internal Pick Line";
-    begin
-        if ((WarehouseActivityLine."Activity Type" = WarehouseActivityLine."Activity Type"::Pick) AND (WarehouseActivityLine."Action Type" = WarehouseActivityLine."Action Type"::Place)) AND (WarehouseActivityLine."Source Type" = 7334) then begin
-            IsHandled := true;
-            WhseInternalPickHeader.Get(WarehouseActivityLine."Whse. Document No.");
-            WhseInternalPickLine.Reset();
-            WhseInternalPickLine.SetRange("No.", WarehouseActivityLine."Whse. Document No.");
-            if WhseInternalPickLine.FindFirst then begin
-                WhseInternalPickHeader."Document Status" := WhseInternalPickHeader.GetDocumentStatus(0);
-                WhseInternalPickHeader.Modify();
-            end;
-        end;
-    end;
-
-    //Below code is to stop warehouse internal pick Line deletion after posting a pick
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnBeforeUpdateWhseSourceDocLine', '', false, false)]
-    local procedure OnBeforeUpdateWhseSourceDocLine(var WarehouseActivityLine: Record "Warehouse Activity Line"; var IsHandled: Boolean);
-    var
-        WhseInternalPickLine: Record "Whse. Internal Pick Line";
-    begin
-        if ((WarehouseActivityLine."Activity Type" = WarehouseActivityLine."Activity Type"::Pick) AND (WarehouseActivityLine."Action Type" = WarehouseActivityLine."Action Type"::Place)) AND (WarehouseActivityLine."Source Type" = 7334) then begin
-            IsHandled := true;
-            begin
-                WhseInternalPickLine.Get(WarehouseActivityLine."Whse. Document No.", WarehouseActivityLine."Whse. Document Line No.");
-                WhseInternalPickLine."Qty. Picked (Base)" :=
-                   WhseInternalPickLine."Qty. Picked (Base)" + WarehouseActivityLine."Qty. to Handle (Base)";
-                if WarehouseActivityLine."Qty. per Unit of Measure" = WhseInternalPickLine."Qty. per Unit of Measure" then
-                    WhseInternalPickLine."Qty. Picked" :=
-                      WhseInternalPickLine."Qty. Picked" + WarehouseActivityLine."Qty. to Handle"
-                else
-                    WhseInternalPickLine."Qty. Picked" :=
-                        Round(
-                            WhseInternalPickLine."Qty. Picked" + WarehouseActivityLine."Qty. to Handle (Base)" / WarehouseActivityLine."Qty. per Unit of Measure");
-                WhseInternalPickLine.Validate(
-                  "Qty. Outstanding", WhseInternalPickLine."Qty. Outstanding" - WarehouseActivityLine."Qty. to Handle");
-                WhseInternalPickLine.Status := WhseInternalPickLine.CalcStatusPickLine;
-                WhseInternalPickLine.Modify();
-
-            end;
-        end;
-    end;
 
     //Irshad 11052022
     [IntegrationEvent(false, false)]
     local procedure OnAfterInsertInterimSalesHeader(var L_InterimSalesHeader: Record "Interim Sales Header")
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeExplodeBoM(var P_InterimSalesLine: Record "Interim Sales Line"; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterExplodeBoM(var P_InterimSalesLine: Record "Interim Sales Line")
     begin
     end;
 
@@ -2193,58 +1867,7 @@ codeunit 90000 "Web Order Mgt"
         L_PrintNodeApiMgt.PrintDirect(piPrinterID, psPrintJobTitle, penumPrintType, psPrintJobText, piPrintJobQty);
     end;
     //DirectPrintingLabel--
-    local procedure CreateAssemblyOrderForCushionItems(var P_InterimHeader: Record "Interim Sales Header"; var P_InterimLine: Record "Interim Sales Line")
-    var
-        AssemblyHeader: Record "Assembly Header";
-        AssemblyHeader2: Record "Assembly Header";
-        AseemblyLine: Record "Assembly Line";
-        Item: Record Item;
-        ItemCategory: Record "Item Category";
-        AssemblySetup: Record "Assembly Setup";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
-        RecItem: Record Item;
-    begin
-        //Paarth D Dave - 8197-1 - Checking for Duplicate Assembly Order for Web Order  ---- Start
-        //P_InterimLine.SetRange(Type, P_InterimLine.Type::Item);
-        AssemblySetup.Get();
-        If P_InterimLine.FindSet() then begin
-            REPEAT
-                AssemblyHeader.reset;
-                AssemblyHeader.SetFilter("Description 2", '%1', P_InterimHeader."Channel Order ID");
-                AssemblyHeader.SetFilter("Item No.", '%1', P_InterimLine."No.");
-                AssemblyHeader.SetFilter("Channel Order Line No.", '%1', P_InterimLine."Line No.");
-                If Not AssemblyHeader.FindFirst() then begin
-                    AssemblyHeader2.Reset; //Paarth D Dave - 8197-1 - Checking for Duplicate Assembly Order for Web Order ---- End
-                    Item.Reset();
-                    Item.SetRange("No.", P_InterimLine."No.");
-                    if Item.FindFirst() then begin
-                        ItemCategory.Reset();
-                        ItemCategory.SetRange(Code, Item."Item Category Code");
-                        if ItemCategory.FindFirst() then begin
-                            if ItemCategory."Auto Assembly Order" = true then begin
-                                AssemblyHeader2.Init();
-                                AssemblyHeader2."No." := NoSeriesManagement.GetNextNo(AssemblySetup."Assembly Order Nos.", Today, true);
-                                AssemblyHeader2.Validate("Document Type", AssemblyHeader2."Document Type"::Order);
-                                AssemblyHeader2.Validate("Posting Date", Today);
-                                AssemblyHeader2.Validate(Status, AssemblyHeader2.Status::Open);
-                                AssemblyHeader2.Insert(true);
-                                AssemblyHeader2.Validate("Item No.", P_InterimLine."No.");
-                                AssemblyHeader2.Validate(Quantity, P_InterimLine.Quantity);
-                                AssemblyHeader2."Description 2" := P_InterimLine."Channel Order ID";
-                                AssemblyHeader2."Channel Order Line No." := P_InterimLine."Line No.";
-                                AssemblyHeader2.Validate(Status, AssemblyHeader2.Status::Open); //Commented Paarth D Dave - 8197 
-                                AssemblyHeader2.Modify(true);
 
-                                //Paarth D Dave - 8197-1 - Release through Codeunit ---- Start
-                                Codeunit.Run(Codeunit::"Release Assembly Document", AssemblyHeader2);
-                                //Paarth D Dave - 8197-1 - Release through Codeunit ---- End  
-                            end;
-                        end;
-                    end;
-                end;
-            UNTIL P_InterimLine.Next = 0;
-        end;
-    end;
 
     local procedure InsertGiftGlLine(var P_InterimSalesLine: Record "Interim Sales Line" temporary; P_InterimSalesHeader: Record "Interim Sales Header")
     var
@@ -2338,42 +1961,8 @@ codeunit 90000 "Web Order Mgt"
     end;
 
 
-    //Irshad++
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnBeforeWhseActivHeaderInsert', '', false, false)]
-    local procedure OnBeforeWhseActivHeaderInsert(var WarehouseActivityHeader: Record "Warehouse Activity Header")
-    begin
-        WarehouseActivityHeader."Created Date" := WorkDate();
-    end;
-    //Irshad++
 
-    //Code to block to create pick for cancel line++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnAfterCreateWhseDocLine', '', false, false)]
-    local procedure OnAfterCreateWhseDocLine(var WarehouseActivityLine: Record "Warehouse Activity Line")
-    var
-        WIPL: Record "Whse. Internal Pick Line";
-        WAH: Record "Warehouse Activity Header";
-    begin
-        if WarehouseActivityLine.FindSet() then
-            repeat
-                WIPL.Reset();
-                WIPL.SetRange("No.", WarehouseActivityLine."Source No.");
-                WIPL.SetRange("Line No.", WarehouseActivityLine."Source Line No.");
-                if WIPL.FindFirst() then begin
-                    if WIPL."Line Status" = WIPL."Line Status"::Cancelled then
-                        WarehouseActivityLine.Delete();
-                end;
-            until WarehouseActivityLine.Next() = 0;
-        WAH.Reset();
-        WAH.SetRange("No.", WarehouseActivityLine."No.");
-        if WAH.FindFirst() then begin
-            WAH.CalcFields("No. of Lines");
-            if WAH."No. of Lines" = 0 then
-                WAH.Delete();
-        end;
-
-    end;
-    //Code to block to create pick for cancel line--
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnAfterWhseShptLineModify', '', true, true)]
     local procedure OnAfterWhseShptLineModify(var WarehouseShipmentLine: Record "Warehouse Shipment Line")
     begin
@@ -2397,25 +1986,13 @@ codeunit 90000 "Web Order Mgt"
     end;
 
 
-    [EventSubscriber(ObjectType::Codeunit, CodeUnit::"Sales-Post", 'OnAfterCopyToTempLines', '', false, false)]
-    local procedure OnAfterCopyToTempLines(var TempSalesLine: Record "Sales Line" temporary)
-    begin
-        if TempSalesLine.FindSet() then
-            repeat
-                if (TempSalesLine.Type = TempSalesLine.Type::"G/L Account") And (TempSalesLine."Quantity Shipped" < TempSalesLine.Quantity) And (TempSalesLine."Channel Order ID" <> '') then begin
-                    TempSalesLine.Validate("Qty. to Ship", TempSalesLine.Quantity - TempSalesLine."Quantity Shipped");
-                    TempSalesLine.Modify();
-                end;
-            until TempSalesLine.Next() = 0;
-    end;
+
 
     [EventSubscriber(ObjectType::Report, Report::"Get Source Documents", 'OnBeforeCreateActivityFromSalesLine2ShptLine', '', false, false)]
     local procedure OnBeforeCreateActivityFromSalesLine2ShptLine(WhseShptHeader: Record "Warehouse Shipment Header"; SalesLine: Record "Sales Line"; var IsHandled: Boolean)
     var
         WarehouseShipmentHeader: Record "Warehouse Shipment Header";
     begin
-        // clEAR(WarehouseShipmentHeader);
-        // WarehouseShipmentHeader := WhseShptHeader;
         WarehouseShipmentHeader.Reset();
         WarehouseShipmentHeader.SetRange("No.", WhseShptHeader."No.");
         if WarehouseShipmentHeader.FindFirst() then begin
@@ -2427,96 +2004,7 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Post Shipment", 'OnAfterSalesPost', '', false, false)]
-    local procedure OnAfterSalesPost(var WarehouseShipmentLine: Record "Warehouse Shipment Line"; SalesHeader: Record "Sales Header"; Invoice: Boolean)
-    var
-        L_SalesShipmentHeader: Record "Sales Shipment Header";
-    begin
-        L_SalesShipmentHeader.Reset();
-        L_SalesShipmentHeader.SetRange("Order No.", WarehouseShipmentLine."Source No.");
-        if L_SalesShipmentHeader.FindFirst() then begin
-            L_SalesShipmentHeader."Scanned Date" := DT2Date(WarehouseShipmentLine."Scanned Date");
-            L_SalesShipmentHeader.Modify(true);
-        end;
 
-        //Bug 12564++
-        SalesHeader."Document Date" := SalesHeader."Order Date";
-        SalesHeader."Posting Date" := SalesHeader."Order Date";
-        SalesHeader."VAT Reporting Date" := SalesHeader."Order Date";
-        SalesHeader.Modify();
-        //Bug 12564--
-    end;
-
-
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Create Pick", 'OnBeforeGetMessageForUnhandledQtyDueToBinProcedure', '', false, false)]
-
-    local procedure OnBeforeGetMessageForUnhandledQtyDueToBinProcedure(var BinIsForPick: Boolean; var BinIsForReplenishment: Boolean; var IsMoveWksh: Boolean; var AvailableQtyBase: Decimal; FromBinContent: Record "Bin Content"; var Result: Text; var IsHandled: Boolean)
-    begin
-        IsHandled := true;
-    end;
-
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Release Sales Document", 'OnAfterManualReleaseSalesDoc', '', false, false)]
-    local procedure OnAfterManualReleaseSalesDoc(PreviewMode: Boolean; var SalesHeader: Record "Sales Header")
-    var
-        L_SalesLine: Record "Sales Line";
-    begin
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document No.", SalesHeader."No.");
-        L_SalesLine.SetRange("Document Type", SalesHeader."Document Type");
-        if L_SalesLine.FindSet() then begin
-            repeat
-                if L_SalesLine.Type = L_SalesLine.Type::"G/L Account" then begin
-                    L_SalesLine.Validate("Inv. Discount Amount", 0);
-                    L_SalesLine.Modify();
-                end;
-            until L_SalesLine.Next() = 0;
-        end;
-    end;
-    //Trolley No.++
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnGetPickOrderLines_OnAddStepsToAnyHeader', '', true, true)]
-
-    local procedure MyOnGetPickOrderLines_OnAddStepsToAnyHeader(_RecRef: RecordRef; var _StepsElement: Record "MOB Steps Element")
-
-    begin
-        _StepsElement.Create_TextStep(1, 'TrolleyNo');
-        _StepsElement.Set_header('Trolley No.');
-        _StepsElement.Set_label('Trolley No.:');
-        _StepsElement.Set_helpLabel('Scan Trolley no.');
-
-    end;
-
-    //Trolley No.++
-
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"MOB WMS Pick", 'OnPostPickOrder_OnBeforePostAnyOrder', '', true, true)]
-
-    local procedure OnPostPickOrder_OnBeforePostAnyOrder(var _RecRef: RecordRef; var _OrderValues: Record "MOB Common Element")
-    var
-        L_WareActHdr: Record "Warehouse Activity Header";
-        L_WarehouseActivityLine: Record "Warehouse Activity Line";
-        L_WarehouseShipmentHeader: Record "Warehouse Shipment Header";
-        L_WarehouseShipmentLine: Record "Warehouse Shipment Line";
-    begin
-        _RecRef.SetTable(L_WareActHdr);
-        L_WareActHdr."Trolley No." := _OrderValues.GetValue('TrolleyNo', true);
-        L_WareActHdr.Modify();
-        L_WarehouseActivityLine.Reset();
-        L_WarehouseActivityLine.SetRange("No.", L_WareActHdr."No.");
-        L_WarehouseActivityLine.SetRange("Whse. Document Type", L_WarehouseActivityLine."Whse. Document Type"::Shipment);
-        if L_WarehouseActivityLine.FindFirst() then begin
-            L_WarehouseShipmentHeader.Reset();
-            L_WarehouseShipmentHeader.SetRange("No.", L_WarehouseActivityLine."Whse. Document No.");
-            if L_WarehouseShipmentHeader.FindFirst() then begin
-                L_WarehouseShipmentHeader.Validate("Trolley No.", L_WareActHdr."Trolley No.");
-                L_WarehouseShipmentHeader.Modify();
-                L_WarehouseShipmentLine.Reset();
-                L_WarehouseShipmentLine.SetRange("No.", L_WarehouseShipmentHeader."No.");
-                if L_WarehouseShipmentLine.FindSet() then begin
-                    L_WarehouseShipmentLine.ModifyAll("Trolley No.", L_WarehouseShipmentHeader."Trolley No.");
-                end;
-            end;
-        end;
-    end;
-    //Trolley No.--
 
     var
         bool: Boolean;

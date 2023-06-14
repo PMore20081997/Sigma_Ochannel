@@ -1,8 +1,8 @@
 {
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
-  "name": "Robosol-Ochannel",
+  "name": "Ochannel 2.0",
   "publisher": "Robosol",
-  "version": "20.0.0.46",
+  "version": "22.0.0.0",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -31,8 +31,8 @@
     }
   ],
   "screenshots": [],
-  "platform": "20.0.0.0",
-  "application": "20.0.0.0",
+  "platform": "22.0.0.0",
+  "application": "22.0.0.0",
   "idRanges": [
     {
       "from": 90000,
@@ -40,6 +40,6 @@
     }
   ],
   "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",
-  "runtime": "9.0"
+  "runtime": "11.0"
   
 }

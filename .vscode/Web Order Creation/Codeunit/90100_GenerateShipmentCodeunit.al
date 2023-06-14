@@ -1,32 +1,34 @@
 codeunit 90100 "Auto Generate Shipment"
 {
+    TableNo = "Job Queue Entry";
+
     var
         Temp_SalesHeader: Record "Sales Header" temporary;
         ISH: Record "Interim Sales Header";
 
     trigger OnRun()
     begin
-        GenerateLabelJobQueue(ISH);
+        GenerateLabelJobQueue(Rec);
     end;
 
-    procedure GenerateLabelJobQueue(P_ISH: Record "Interim Sales Header")
+    procedure GenerateLabelJobQueue(var JobQueueEntry: Record "Job Queue Entry")
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         Rec_ShippingAgent: Record "Shipping Agent";
         ShipmentTracking: Record "Shipment Tracking";
         CU_WebOrderMgmt: Codeunit "Web Order Mgt";
-        L_ChannelPartner: Record "Trade Partner";
-        BnQ:Codeunit "B&Q";
+        OrderCheck: Boolean;
     begin
         Clear(L_InterimSalesHeader);
         L_InterimSalesHeader.Reset();
         L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
         L_InterimSalesHeader.SetRange("No of Error", 0);
         L_InterimSalesHeader.SetFilter("Package Tracking No.", '%1', '');
-        if P_ISH."No." <> '' then
-            L_InterimSalesHeader.SetRange("No.", P_ISH."No.");
+        if JobQueueEntry."Parameter String" <> '' then
+            L_InterimSalesHeader.SetFilter("Trade Partner Code", JobQueueEntry."Parameter String");
         if L_InterimSalesHeader.FindSet() then begin
             repeat
+
                 ShipmentTracking.Reset();
                 ShipmentTracking.SetRange("Document No.", L_InterimSalesHeader."No.");
                 if ShipmentTracking.FindSet() then begin
@@ -40,19 +42,6 @@ codeunit 90100 "Auto Generate Shipment"
                         Rec_ShippingAgent.SetRange(Code, L_InterimSalesHeader."Shipping Agent Code");
                         if Rec_ShippingAgent.FindFirst() then begin
                             CreateTempSalesHeaderAndLine(L_InterimSalesHeader);
-                            L_ChannelPartner.Reset();
-
-                            L_ChannelPartner.SetRange(Code, L_InterimSalesHeader."Trade Partner Code");
-
-                            if L_ChannelPartner.FindFirst() then begin
-
-                                if L_ChannelPartner."Update Tracking Information" = true then begin
-
-                                    L_InterimSalesHeader.CalcFields("Tracking No.");
-
-                                    BnQ.SendTrackingInformation(L_InterimSalesHeader."Shipping Agent Code", L_InterimSalesHeader."Tracking No.", L_InterimSalesHeader."Channel Order ID", L_InterimSalesHeader."Trade Partner Code");
-                                end;
-                            end;
                         end;
                     end;
                 end
@@ -67,6 +56,7 @@ codeunit 90100 "Auto Generate Shipment"
                         CU_WebOrderMgmt.InsertErrorLog('Shipping Agent is missing in order', L_InterimSalesHeader);
                     end;
                 end;
+
             until L_InterimSalesHeader.Next() = 0;
         end;
     end;

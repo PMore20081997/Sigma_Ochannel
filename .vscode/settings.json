@@ -2,5 +2,6 @@
     "al.assemblyProbingPaths": [
         "./.netpackages",
         "E:\\Pavan\\Local Repos\\Robosol_O Channel\\Robosol-Ochannel\\.alpackages"
-    ]
+    ],
+    "al-test-runner.sendDebugTelemetry": false
 }
