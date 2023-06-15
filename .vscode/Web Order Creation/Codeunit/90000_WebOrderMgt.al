@@ -238,46 +238,11 @@ codeunit 90000 "Web Order Mgt"
                 //CreateAssemblyOrderForCushionItems(L_InterimSalesHeader, P_InterimSalesLine);//Sofyan
                 until P_InterimSalesLine.Next() = 0;
 
-            /* Query_OrderAmt.SetRange(Query_OrderAmt.Document_Type, L_InterimSalesHeader."Document Type");
-             Query_OrderAmt.SetRange(Query_OrderAmt.Document_No, L_InterimSalesHeader."No.");
-             Query_OrderAmt.Open();
-             while Query_OrderAmt.Read() do begin
-                 L_InterimSalesHeader."Total Order Item Amount" := Query_OrderAmt.Amount_Including_VAT;
-                 //L_InterimSalesHeader.Modify();            
-             end;
-
-             if L_InterimSalesHeader."Order Discount Amount" <> 0 then begin
-                 if L_InterimSalesHeader."Total Order Item Amount" <> 0 then
-                     Discountperscent := Round(((L_InterimSalesHeader."Order Discount Amount" / L_InterimSalesHeader."Total Order Item Amount") * 100), 0.01);
-                 //Round(((L_InterimSalesHeader."Order Discount Amount" / (L_InterimSalesHeader."Total Order Item Amount" + L_InterimSalesHeader."Order Discount Amount")) * 100), 0.01);
-                 L_InterimSalesLine.Reset();
-                 L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-                 L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-                 L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-                 if L_InterimSalesLine.FindSet() then
-                     repeat
-                         L_InterimSalesLine."Discount %" := Discountperscent;
-                         L_InterimSalesLine.Modify();
-                     until L_InterimSalesLine.Next() = 0;
-             end;*/
 
 
-            // Irshad Khan  Modifying shle No. to sorting by Shelf No. in WIP
-            L_InterimSalesLine.Reset();
-            L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-            L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-            if L_InterimSalesLine.FindSet() then
-                repeat
-                    L_InterimSalesHeader."Shelf No." := L_InterimSalesLine."Shelf No.";
-                until L_InterimSalesLine.Next() = 0;
-            // Irshad Khan
 
             CreateGLLines(L_InterimSalesHeader);
-            //CreateShippment
-            //  InsertInShipmentTracking(L_InterimSalesHeader);
 
-            //Channel Media Payment Details Insert Functionality
 
             DeleteRefundPaymentDetails(P_PaymentDetail);
             P_PaymentDetail.Reset();
@@ -317,36 +282,9 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader."Gift Order Amount" := GetGiftOrderAmount(L_InterimSalesHeader);
             L_InterimSalesHeader."Gift Card" := G_GiftBool;
 
-            //Issue 12004
-            if G_GiftBool = true then begin
-                L_InterimSalesLine.Reset();
-                L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-                L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-                if L_InterimSalesLine.Count = 1 then begin
-                    if L_InterimSalesLine.FindFirst() then begin
-                        if (L_InterimSalesLine.Type = L_InterimSalesLine.Type::"G/L Account") and (L_InterimSalesLine."Gift Card" = true) then
-                            L_InterimSalesHeader."Ship-to Country/Region Code" := 'GB';
-                    end;
-                end;
-            end;
-            //Issue 12004
 
-            if UpdateTrackingNoForOnlyGiftCardGlLines(L_InterimSalesHeader) then begin
-                L_InterimSalesHeader."Package Tracking No." := L_InterimSalesHeader."Channel Order ID";
-                ShipmentTracking.Reset();
-                ShipmentTracking.SetRange("Document Type", ShipmentTracking."Document Type"::Order);
-                ShipmentTracking.SetRange("Document No.", P_InterimSalesHeader."No.");
-                if not ShipmentTracking.FindFirst() then begin
-                    ShipmentTracking.Init();
-                    ShipmentTracking."Document Type" := ShipmentTracking."Document Type"::Order;
-                    ShipmentTracking."Document No." := L_InterimSalesHeader."No.";
-                    ShipmentTracking."Tracking No." := L_InterimSalesHeader."Channel Order ID";
-                    ShipmentTracking."Shipping Agent Code" := L_InterimSalesHeader."Shipping Agent Code";
-                    ShipmentTracking."Shipping Agent Service Code" := L_InterimSalesHeader."Shipping Agent Service Code";
-                    ShipmentTracking."Entry Created" := Today;
-                    ShipmentTracking.Insert(true);
-                end;
-            end;
+
+
 
             L_InterimSalesHeader.Modify(true);
 

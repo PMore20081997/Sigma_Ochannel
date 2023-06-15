@@ -16,12 +16,10 @@ table 90004 "Interim Sales Line"
             DataClassification = ToBeClassified;
 
         }
-        field(3; Type; Option)
+        field(3; Type; Enum "Sales Line Type")
         {
-            OptionMembers = " ","G/L Account",Item,Resource,"Fixed Asset","Cross reference","Common Item No.";
+            Caption = 'Type';
             DataClassification = ToBeClassified;
-            OptionCaptionML = ENU = ',G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.',
-            ENG = ' ,G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.';
 
         }
         field(4; "No."; Code[20])

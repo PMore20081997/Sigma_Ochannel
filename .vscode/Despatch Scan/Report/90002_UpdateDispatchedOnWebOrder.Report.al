@@ -186,10 +186,7 @@ report 90002 "Update Dispatched On Web Order"
                         P_ISL."Line Status" := P_ISL."Line Status"::"No Stock";
                         AddOrderNotoTemp(P_ISL."Document No");
                     END;
-                    IF NOT CheckifScanned(P_ISL."Trolley No.", P_ISL."Document No", P_ISL."No.", P_ISL."NAV Variant code") THEN BEGIN//ak 211120 check if line is already scanned
-                        CLEAR(P_ISL."Trolley No.");
-                        P_ISL.MODIFY;
-                    END;
+
                     CurrRec += 1;
                     IF GUIALLOWED THEN BEGIN
                         IF NoOfRecs <= 100 THEN
@@ -203,8 +200,21 @@ report 90002 "Update Dispatched On Web Order"
         IF GUIALLOWED THEN
             Window.CLOSE;
 
-        IF UpdateOutOfStock THEN
-            UpdateRemovedOnHeader;
+    end;
+
+    local procedure CheckifInDispatchTable(P_Trolley: Code[10]; P_WebOrderNo: Code[20]; P_ItemNo: Code[20]): Boolean
+    var
+        L_Despatch: Record "Despatch Scan Header";
+    begin
+        IF NOT CalledFromDispatch THEN BEGIN
+            L_Despatch.RESET;
+            L_Despatch.SETRANGE(L_Despatch."Trolley No", P_Trolley);
+            IF L_Despatch.FINDFIRST THEN
+                EXIT(TRUE)
+            ELSE
+                EXIT(FALSE);
+        END ELSE
+            EXIT(FALSE);
     end;
 
     var

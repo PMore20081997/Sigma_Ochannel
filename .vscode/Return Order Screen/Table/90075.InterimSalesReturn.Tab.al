@@ -78,12 +78,10 @@ table 90075 "Interim Sales Return"
         {
             DataClassification = ToBeClassified;
         }
-        field(20; Type; Option)
+        field(20; Type; Enum "Sales Line Type")
         {
-            OptionMembers = " ","G/L Account",Item,Resource,"Fixed Asset","Cross reference","Common Item No.";
             DataClassification = ToBeClassified;
-            OptionCaptionML = ENU = ',G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.',
-            ENG = ' ,G/L Account,Item,Resource,Fixed Asset,Cross reference,Common Item No.';
+
 
         }
         //Azhar++

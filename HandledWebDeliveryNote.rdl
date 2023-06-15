@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="DataSource">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:SecurityType>None</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <Height>2in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Code>Public Function BlankZero(ByVal Value As Decimal)
+    if Value = 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankPos(ByVal Value As Decimal)
+    if Value &gt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankZeroAndPos(ByVal Value As Decimal)
+    if Value &gt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNeg(ByVal Value As Decimal)
+    if Value &lt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNegAndZero(ByVal Value As Decimal)
+    if Value &lt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+</Code>
+  <Language>=User!Language</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>0eeb6585-38ae-40f1-885b-8d50088d51b4</rd:ReportID>
+  <DataSets>
+    <DataSet Name="DataSet_Result">
+      <Fields>
+        <Field Name="FirstItem">
+          <DataField>FirstItem</DataField>
+        </Field>
+        <Field Name="FirstItemDescription">
+          <DataField>FirstItemDescription</DataField>
+        </Field>
+        <Field Name="OrderDate_InterimSalesHeader">
+          <DataField>OrderDate_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="No_InterimSalesHeader">
+          <DataField>No_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="BilltoName_InterimSalesHeader">
+          <DataField>BilltoName_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="WebShipmentMethod_InterimSalesHeader">
+          <DataField>WebShipmentMethod_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="ShiptoName_InterimSalesHeader">
+          <DataField>ShiptoName_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="ShiptoAddress_InterimSalesHeader">
+          <DataField>ShiptoAddress_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="ShiptoAddress2_InterimSalesHeader">
+          <DataField>ShiptoAddress2_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="ShiptoCity_InterimSalesHeader">
+          <DataField>ShiptoCity_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="ShiptoPostCode_InterimSalesHeader">
+          <DataField>ShiptoPostCode_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="Logo">
+          <DataField>Logo</DataField>
+        </Field>
+        <Field Name="Cust_Email">
+          <DataField>Cust_Email</DataField>
+        </Field>
+        <Field Name="Cust_HomePage">
+          <DataField>Cust_HomePage</DataField>
+        </Field>
+        <Field Name="TradePartnerCode_InterimSalesHeader">
+          <DataField>TradePartnerCode_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="Var1">
+          <DataField>Var1</DataField>
+        </Field>
+        <Field Name="Var2">
+          <DataField>Var2</DataField>
+        </Field>
+        <Field Name="Var3">
+          <DataField>Var3</DataField>
+        </Field>
+        <Field Name="Var4">
+          <DataField>Var4</DataField>
+        </Field>
+        <Field Name="ChannelOrderID_InterimSalesHeader">
+          <DataField>ChannelOrderID_InterimSalesHeader</DataField>
+        </Field>
+        <Field Name="recTmpBlob2">
+          <DataField>recTmpBlob2</DataField>
+        </Field>
+        <Field Name="Flag">
+          <DataField>Flag</DataField>
+        </Field>
+        <Field Name="BarcodeText1">
+          <DataField>BarcodeText1</DataField>
+        </Field>
+        <Field Name="DocumentNo_InterimSalesLine">
+          <DataField>DocumentNo_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="LineNo_InterimSalesLine">
+          <DataField>LineNo_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="No_InterimSalesLine">
+          <DataField>No_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="SKU_InterimSalesLine">
+          <DataField>SKU_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="Description_InterimSalesLine">
+          <DataField>Description_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="Quantity_InterimSalesLine">
+          <DataField>Quantity_InterimSalesLine</DataField>
+        </Field>
+        <Field Name="Quantity_InterimSalesLineFormat">
+          <DataField>Quantity_InterimSalesLineFormat</DataField>
+        </Field>
+        <Field Name="Unit_Price">
+          <DataField>Unit_Price</DataField>
+        </Field>
+        <Field Name="Unit_PriceFormat">
+          <DataField>Unit_PriceFormat</DataField>
+        </Field>
+        <Field Name="CompanyLogo">
+          <DataField>CompanyLogo</DataField>
+        </Field>
+        <Field Name="recTmpBlob1_Blob">
+          <DataField>recTmpBlob1_Blob</DataField>
+        </Field>
+        <Field Name="BarcodeText">
+          <DataField>BarcodeText</DataField>
+        </Field>
+        <Field Name="G_LineCount">
+          <DataField>G_LineCount</DataField>
+        </Field>
+        <Field Name="RowCount">
+          <DataField>RowCount</DataField>
+        </Field>
+        <Field Name="EntryNo">
+          <DataField>EntryNo</DataField>
+        </Field>
+        <Field Name="Label_ShipmentTracking">
+          <DataField>Label_ShipmentTracking</DataField>
+        </Field>
+        <Field Name="A6_Label1">
+          <DataField>A6_Label1</DataField>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource</DataSourceName>
+        <CommandText />
+      </Query>
+    </DataSet>
+  </DataSets>
+</Report>

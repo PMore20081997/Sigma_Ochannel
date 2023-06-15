@@ -12,12 +12,6 @@
   "logo": "",
   "dependencies": [
     {
-      "id": "a5727ce6-368c-49e2-84cb-1a6052f0551c",
-      "publisher": "Tasklet Factory",
-      "name": "Mobile WMS",
-      "version": "5.34.190.214"
-    },
-    {
       "id": "b0c8bcc7-2924-4cd2-8562-4e71ebd07323",
       "publisher": "Insight Works",
       "name": "Insight Works PrintNode Connector",
