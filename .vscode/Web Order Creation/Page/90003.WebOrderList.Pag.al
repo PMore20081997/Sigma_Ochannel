@@ -64,6 +64,7 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Order Status field.';
+                    Visible = false;
                 }
 
                 field("Order Date"; Rec."Order Date")
@@ -71,11 +72,7 @@ page 90003 "Web Order List"
                     ApplicationArea = all;
                 }
 
-                // field("Process Date"; Rec."Process Date")
-                // {
-                //     CaptionML = ENU = 'Process Date', ENG = 'Process Date';
-                //     ApplicationArea = All;
-                // }
+
                 field("Document Date"; Rec."Document Date")
                 {
                     CaptionML = ENU = 'Document Date', ENG = 'Document Date';
@@ -137,15 +134,18 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Card field.';
+                    Visible = false;
                 }
                 field("Gift Order Amount"; Rec."Gift Order Amount")
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Order Amount field.';
+                    Visible = false;
                 }
                 field("Payment Method"; Rec."Payment Method")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
 
             }
@@ -156,7 +156,28 @@ page 90003 "Web Order List"
     {
         area(processing)
         {
+            action(BulkDelete)
+            {
+                ApplicationArea = All;
+                Caption = 'Bulk Delete';
+                trigger OnAction()
+                var
+                    InterimSalesHeader: Record "Interim Sales Header";
+                    InterimSalesLine: Record "Interim Sales Line";
+                begin
+                    Clear(InterimSalesHeader);
+                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if InterimSalesHeader.FindSet() then
+                        repeat
+                            InterimSalesLine.Reset();
+                            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+                            if InterimSalesLine.FindSet() then
+                                InterimSalesLine.DeleteAll(true);
+                            InterimSalesHeader.Delete(true);
+                        until InterimSalesHeader.Next() = 0;
+                end;
 
+            }
             action(Process)
             {
                 Caption = 'Process';

@@ -74,13 +74,6 @@ page 90017 "Web Order Header"
                     Caption = 'County';
                     ApplicationArea = all;
                 }
-                //8862++
-                field("Customer Posting Group"; Rec."Customer Posting Group")
-                {
-                    ApplicationArea = All;
-                    TableRelation = "Customer Posting Group".Code;
-                }
-                //8862--
                 field("Order Date"; rec."Order Date")
                 {
                     Editable = false;
@@ -141,6 +134,7 @@ page 90017 "Web Order Header"
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Order Amount field.';
                     Editable = false;
+                    Visible = false;
                 }
 
                 field("Gift Message"; rec."Gift Message")
@@ -159,11 +153,13 @@ page 90017 "Web Order Header"
                 {
                     Editable = false;
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("MultiLine Order No."; Rec."MultiLine Order No.")
                 {
                     Editable = false;
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("Destination Doc Type"; Rec."Destination Doc Type")
                 {
@@ -187,6 +183,7 @@ page 90017 "Web Order Header"
                     Editable = false;
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Card field.';
+                    Visible = false;
                 }
 
 
@@ -196,6 +193,7 @@ page 90017 "Web Order Header"
                     Editable = false;
                     Caption = 'Reserved';
                     ToolTip = 'This will be enable if all the web lines have Reserved Quantity';
+                    Visible = false;
                 }
 
                 group("Shipping Details")

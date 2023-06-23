@@ -425,6 +425,7 @@ page 90016 "Trade Partner card"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 var
                     myInt: Integer;
@@ -454,7 +455,7 @@ page 90016 "Trade Partner card"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
-
+                Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 var
                     ItemChannelCode: Code[10];
@@ -542,6 +543,7 @@ page 90016 "Trade Partner card"
                 Image = CreateInteraction;
                 Visible = false;
                 ApplicationArea = All;
+                Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 begin
                     Clear(TradePartnerList);

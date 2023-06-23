@@ -196,6 +196,7 @@ page 90001 "Trade Partner List"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Enabled = Rec.SyncPrice;
                 trigger OnAction()
                 var
                     myInt: Integer;
@@ -226,7 +227,7 @@ page 90001 "Trade Partner List"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
-
+                Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 var
                     ItemChannelCode: Code[10];
@@ -313,6 +314,7 @@ page 90001 "Trade Partner List"
                 Caption = 'Sync Location';
                 Image = CreateInteraction;
                 ApplicationArea = All;
+                Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 begin
                     Clear(TradePartnerList);
