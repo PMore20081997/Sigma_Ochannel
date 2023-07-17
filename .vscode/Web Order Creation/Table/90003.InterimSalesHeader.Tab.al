@@ -491,6 +491,16 @@ table 90003 "Interim Sales Header"
         {
 
         }
+        //US-13166++
+        field(90028; "Shipping Price"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90029; "Net Order Amount"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        //US-13166--
         field(90033; "Total No. of Items"; Integer)
         {
 
@@ -662,15 +672,20 @@ table 90003 "Interim Sales Header"
         InterimSalesHeader: Record "Interim Sales Header";
         ChannelMedia: Record "Channel Media";
         ErrorLog: Record "Incoming/Outgoing Error Log";
-        dt: Date;
         Text031: Label 'You have modified %1.\\Do you want to update the lines?';
-        Text028: Label 'cannot change the %1 when the %2 has been filled in.';
-        Text063: Label 'Reservations exist for this order. These reservations will be canceled if a date conflict is caused by this change.\\Do you want to continue?';
 
+    //US-13166++
     trigger OnInsert()
+    var
+        GeneralSetup: record "General Setup - Channels";
+        NoSeriesManagement: Codeunit NoSeriesManagement;
     begin
-
+        GeneralSetup.Get();
+        GeneralSetup.TestField("Web Order Nos");
+        if "No." = '' then
+            "No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
     end;
+    //US-13166--
 
     trigger OnModify()
     begin

@@ -481,6 +481,14 @@ table 90005 "Handled Interim Sales Header"
         {
 
         }
+        field(90028; "Shipping Price"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90029; "Net Order Amount"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
         field(90033; "Total No. of Items"; Integer)
         {
 

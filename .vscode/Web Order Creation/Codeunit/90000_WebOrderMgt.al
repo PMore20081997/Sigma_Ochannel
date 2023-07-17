@@ -503,7 +503,7 @@ codeunit 90000 "Web Order Mgt"
     var
         L_InterimSalesLine: Record "Interim Sales Line";
         L_ShippingPrice: Decimal;
-        L_shippingRule: Record "OCHANNEL Shipping Rule";
+        L_shippingRule: Record "Shipping Rule";
         GeneralSetup: Record "General Setup - Channels";
         ChannelPartner: Record "Trade Partner";
     begin

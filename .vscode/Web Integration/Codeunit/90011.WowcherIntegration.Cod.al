@@ -220,12 +220,9 @@ codeunit 90011 "Wowcher Integration"
         itemCount: Integer;
         OrderAmount: Decimal;
         LineNo: Integer;
-
-
         k: Integer;
         LineObject: JsonObject;
         WebLineToken: JsonToken;
-        ShippingRule: Record "OCHANNEL Shipping Rule";
         CourierIntegration: Codeunit "Courier Integration";
     begin
         ItemArray := GetJsonToken(WebHeaderObject, 'items').AsArray();

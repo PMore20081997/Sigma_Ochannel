@@ -433,7 +433,7 @@ codeunit 90069 "Amazon Testing"
         itemObject: JsonObject;
         LineObject: JsonObject;
         WebLineToken: JsonToken;
-        ShippingRule: Record "OCHANNEL Shipping Rule";
+        ShippingRule: Record "Shipping Rule";
         CourierIntegration: Codeunit "Courier Integration";
     begin
         if jObject.Keys.Count <> 0 then begin
@@ -500,7 +500,7 @@ codeunit 90069 "Amazon Testing"
                     InterimSalesHeader."Web Shipping Agent" := ShippingRule."Shipping Agent";
                     InterimSalesHeader."Shipping Agent Service Code" := ShippingRule."Shipping Agent Service";
                     InterimSalesHeader."Shipping Agent Code" := ShippingRule."Shipping Agent";
-                    InterimSalesHeader."Shipment Method Code" := ShippingRule."NAV Shipment Method";
+                    InterimSalesHeader."Shipment Method Code" := ShippingRule."BC Shipment Method";
                     InterimSalesHeader.MODIFY;
                 end;
             end;

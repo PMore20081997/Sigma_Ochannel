@@ -29,7 +29,7 @@ codeunit 90006 "Courier Integration"
         ShipmentTracking.Insert(True);
     end;
 
-    PROCEDURE GetNavShippingAgentFromWebShipping(P_ChannelCode: Code[20]; P_WebShippingAgent: Text[50]; P_WebSipmentMethod: Code[50]; VAR P_ShippingRule: Record "OCHANNEL Shipping Rule");
+    PROCEDURE GetNavShippingAgentFromWebShipping(P_ChannelCode: Code[20]; P_WebShippingAgent: Text[50]; P_WebSipmentMethod: Code[50]; VAR P_ShippingRule: Record "Shipping Rule");
     var
     BEGIN
         P_ShippingRule.RESET;

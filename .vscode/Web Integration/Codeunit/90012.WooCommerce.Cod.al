@@ -247,7 +247,7 @@ codeunit 90012 "Woo Commerce"
         TradePartner2: Record "Trade Partner";
         Couier: Text;
         LineCount: Integer;
-        ShippingRule: Record "OCHANNEL Shipping Rule";
+        ShippingRule: Record "Shipping Rule";
 
     begin
         ItemArray := GetJsonToken(orderHeaderObject, 'line_items').AsArray();

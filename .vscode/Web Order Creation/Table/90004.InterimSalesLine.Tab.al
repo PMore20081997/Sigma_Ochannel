@@ -461,8 +461,12 @@ table 90004 "Interim Sales Line"
         {
 
         }
-
-
+        //US-13166++
+        field(90023; "Header Id"; Guid)
+        {
+            TableRelation = "Interim Sales Header".SystemId;
+        }
+        //US-13166--
         field(90030; "Gift Card"; Boolean)
         {
 

@@ -11,8 +11,10 @@
             "enableSqlInformationDebugger": true,
             "environmentType": "Sandbox",
             "schemaUpdateMode":"Synchronize",
-            "environmentName": "DEV",
-            "tenant": "751fed02-0567-4c4f-8c94-7594ea5e6fb3"
+            "startupObjectType": "Page",
+            "startupObjectId": 22,
+            "environmentName": "Sigma_MAIN",
+            "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3"
         }
     ]
 }
