@@ -972,7 +972,7 @@ codeunit 90005 "Process Web Order"
                         WAH.SetRange(Type, WAH.Type::Pick);
                         if WAH.FindFirst() then begin
                             WAH.Validate("Trolley No.", WSL."Trolley No.");
-                            WAH.Validate(Comments, WarShipmentHeader.Comments);
+                            //WAH.Validate(Comments, WarShipmentHeader.Comments);
                             WAH.Validate("Shipping Agent Code", WarShipmentHeader."Shipping Agent Code");
                             WAH.Validate("Shipping Agent Service Code", WarShipmentHeader."Shipping Agent Service Code");
                             WAH.Modify();

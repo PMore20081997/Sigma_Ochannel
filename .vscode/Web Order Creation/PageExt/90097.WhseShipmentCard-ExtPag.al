@@ -14,13 +14,13 @@ pageextension 90097 "Whse. Shipment Card" extends "Warehouse Shipment"
                 Editable = false;
             }
         }
-        addbefore(WhseShptLines)
-        {
-            field(Comments; Rec.Comments)
-            {
-                ApplicationArea = All;
-                ToolTip = 'Specifies the value of the Comments field.';
-            }
-        }
+        // addbefore(WhseShptLines)
+        // {
+        //     field(Comments; Rec.Comments)
+        //     {
+        //         ApplicationArea = All;
+        //         ToolTip = 'Specifies the value of the Comments field.';
+        //     }
+        // }
     }
 }

@@ -14,10 +14,10 @@ tableextension 90012 "Warehouse Ship Header Ext" extends "Warehouse Shipment Hea
         {
 
         }
-        field(90003; "Comments"; Text[250])
-        {
-            DataClassification = CustomerContent;
-        }
+        // field(90003; "Comments"; Text[250])
+        // {
+        //     DataClassification = CustomerContent;
+        // }
         field(90004; "Pick Remarks"; Text[250])
         {
 
