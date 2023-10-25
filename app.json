@@ -22,7 +22,14 @@
       "publisher": "Insight Works",
       "name": "IWorks Common",
       "version": "2.7.8118.0"
+    },
+    {
+      "id": "89b2d3ff-cff9-4506-9a14-597a5b6d370f",
+      "name": "Interim WMS BC Customisation",
+      "publisher": "Robosol",
+      "version": "1.0.0.1"
     }
+
   ],
   "screenshots": [],
   "platform": "22.0.0.0",

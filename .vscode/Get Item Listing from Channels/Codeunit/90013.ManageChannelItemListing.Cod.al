@@ -47,6 +47,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                         ChannelItemListing.Validate("NAV Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
+                                        ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                         ChannelItemListing.MODIFY(TRUE);
                                     END
                                     ELSE BEGIN
@@ -57,6 +58,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                         ChannelItemListing.Validate("NAV Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
+                                        ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                         ChannelItemListing.INSERT;
                                     END;
                                 until L_Variant.Next() = 0;
@@ -67,6 +69,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                 IF ChannelItemListing.FINDFIRST THEN BEGIN
                                     ChannelItemListing.VALIDATE("Item No.", P_Item."No.");
                                     ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
+                                    ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                     ChannelItemListing.MODIFY(TRUE);
                                 END
                                 ELSE BEGIN
@@ -75,6 +78,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                     ChannelItemListing.VALIDATE("Item No.", P_Item."No.");
                                     ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
                                     ChannelItemListing.Validate("Channel SKU", P_Item."No.");
+                                    ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                     ChannelItemListing.INSERT;
                                 END;
                             end;

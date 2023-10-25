@@ -305,6 +305,10 @@ table 90011 "Channel Item Listing"
         {
             DataClassification = ToBeClassified;
         }
+        field(50012; "Pack Size"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
 
 
     }
