@@ -7,7 +7,7 @@ page 90017 "Web Order Header"
     SourceTable = "Interim Sales Header";
     PageType = Document;
     RefreshOnActivate = true;
-    DeleteAllowed = false;
+    DeleteAllowed = true;
     InsertAllowed = false;
 
     layout
@@ -148,6 +148,12 @@ page 90017 "Web Order Header"
                 {
                     Editable = false;
                     ApplicationArea = all;
+                }
+                field(order_id; Rec.order_id)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Order Response';
+                    Editable = false;
                 }
                 field("Order Status"; Rec."Order Status")
                 {

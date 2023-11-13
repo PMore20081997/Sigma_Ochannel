@@ -302,7 +302,7 @@ codeunit 90000 "Web Order Mgt"
             //UpdateShippingAgentOnLines--
 
             //Code to Validate order
-            OrderValidations(L_InterimSalesHeader);
+            //OrderValidations(L_InterimSalesHeader);
 
             OnAfterInsertInterimSalesHeader(L_InterimSalesHeader);  //Irshad 11052022
         end;

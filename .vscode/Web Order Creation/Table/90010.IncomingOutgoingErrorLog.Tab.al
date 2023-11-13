@@ -31,6 +31,9 @@ table 90010 "Incoming/Outgoing Error Log"
         field(9; "Error Text2"; Text[250])
         {
         }
+        field(10; "Item No."; Code[20])
+        {
+        }
     }
 
     keys

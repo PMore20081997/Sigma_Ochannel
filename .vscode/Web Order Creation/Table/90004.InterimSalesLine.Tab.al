@@ -253,7 +253,7 @@ table 90004 "Interim Sales Line"
         {
             Editable = false;
             FieldClass = FlowField;
-            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No")));
+            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No"),"Item No."=field("No.")));
 
         }
         field(48; "Order Status"; Option)

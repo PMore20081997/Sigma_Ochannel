@@ -588,6 +588,16 @@ page 90004 "Web order Subpage"
                         CurrPage.Update();
                     end;
                 }
+                field("No of Error"; Rec."No of Error")
+                {
+                    ApplicationArea = All;
+                }
+                field(order_line_id; Rec.order_line_id)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Product Response';
+                    Editable = false;
+                }
 
             }
         }
@@ -620,7 +630,7 @@ page 90004 "Web order Subpage"
     }
 
 
-   
+
     trigger OnDeleteRecord(): Boolean
     var
         L_InterimSalesLine: Record "Interim Sales Line";

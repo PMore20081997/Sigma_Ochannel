@@ -53,6 +53,16 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         ApplicationArea = all;
                         Visible = true;
                     }
+                    action("Order Response")
+                    {
+                        RunObject = page "Order Response";
+                        ApplicationArea = all;
+                    }
+                    action("Product Response")
+                    {
+                        RunObject = page "Product Response";
+                        ApplicationArea = all;
+                    }
                 }
                 group(Orders)
                 {

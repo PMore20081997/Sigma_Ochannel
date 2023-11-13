@@ -28,6 +28,7 @@ tableextension 90009 "CustomerAdd" extends Customer
 
     }
 
+
     var
         myInt: Integer;
 }

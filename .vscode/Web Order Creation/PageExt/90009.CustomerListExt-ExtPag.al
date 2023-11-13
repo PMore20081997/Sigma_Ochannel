@@ -17,6 +17,7 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
 
     actions
     {
+
         // Add changes to page actions here
         addlast(processing)
         {
@@ -35,6 +36,21 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
                     CurrPage.SETSELECTIONFILTER(G_Customer);
                     ManageCustomerListing.CreateChannelCustomerlistingForMultipleSelection(G_Customer);
                 end;
+            }
+        }
+        addafter(ApplyTemplate)
+        {
+            action("Customer Re&ferences")
+            {
+                AccessByPermission = tabledata "Customer Reference" = R;
+                ApplicationArea = All;
+                Caption = 'Customer Re&ferences';
+                Image = Change;
+                RunObject = Page "Customer Reference";
+                RunPageLink = "Customer No." = FIELD("No.");
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
             }
         }
     }
