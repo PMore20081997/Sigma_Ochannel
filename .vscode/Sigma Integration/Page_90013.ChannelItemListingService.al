@@ -1,11 +1,8 @@
 page 90013 "Channel Item Listing Service"
 {
     Editable = true;
-    //CaptionML = ENU = 'Channel Item Listing';
     UsageCategory = Lists;
     SourceTable = "Channel Item Listing";
-    //SourceTableView = SORTING("Channel Code", "Channel SKU", "ASIN No")
-    //ORDER(Ascending);
     PageType = List;
     RefreshOnActivate = true;
     ApplicationArea = All;
@@ -21,11 +18,23 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = ALL;
                 }
-                field("Item No."; REC."Item No.")
+                field("Channel SKU"; Rec."Channel SKU")
                 {
-                    ApplicationArea = ALL;
+                    ApplicationArea = All;
                 }
-                field("Channel Variant"; rec."Channel Variant")
+                field("ASIN No"; Rec."ASIN No")
+                {
+                    ApplicationArea = All;
+                }
+                field(Status; Rec.Status)
+                {
+                    ApplicationArea = All;
+                }
+                field("Listing Status"; Rec."Listing Status")
+                {
+                    ApplicationArea = All;
+                }
+                field("BC Item No."; Rec."Item No.")
                 {
                     ApplicationArea = ALL;
                 }
@@ -33,29 +42,26 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = ALL;
                 }
-                field("Pack Size"; rec."Pack Size")
-                {
-                    ApplicationArea = all;
-                }
-                field("Trade Price"; rec."Unit Price")
+                field("BC Variant Code"; Rec."NAV Variant")
                 {
                     ApplicationArea = ALL;
-                    Caption = 'Trade Price';
-                }
-                field("BC Inventory"; rec."Channel Inventory")
-                {
-                    ApplicationArea = ALL;
-                    Caption = 'BC Inventory';
                 }
                 field("Item Category Code"; rec."Item Category Code")
                 {
                     ApplicationArea = ALL;
                 }
-                field("Inventory Synced"; rec."Inventory Synced")
+                field("Pack Size"; rec."Pack Size")
+                {
+                    ApplicationArea = all;
+                }
+                field("BC Inventory"; rec."Channel Inventory")
                 {
                     ApplicationArea = ALL;
                 }
-
+                field("Inventory Synced"; Rec."Inventory Synced")
+                {
+                    ApplicationArea = ALL;
+                }
 
             }
         }

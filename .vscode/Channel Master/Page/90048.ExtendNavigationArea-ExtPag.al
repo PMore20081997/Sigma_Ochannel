@@ -32,7 +32,6 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                     action("Web Customer")
                     {
                         Caption = 'Customers';
-                        Visible = false;
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }

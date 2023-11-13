@@ -33,7 +33,6 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                     action("Web Customer")
                     {
                         Caption = 'Customers';
-                        Visible = false;
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }

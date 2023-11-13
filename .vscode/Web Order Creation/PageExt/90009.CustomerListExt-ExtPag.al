@@ -18,6 +18,25 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
     actions
     {
         // Add changes to page actions here
+        addlast(processing)
+        {
+            action("Add to Channel Customer List")
+            {
+                ApplicationArea = All;
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Process;
+                trigger OnAction()
+                var
+                    G_Customer: Record Customer;
+                    ManageCustomerListing: Codeunit "Manage Channel Customer List";
+                begin
+                    G_Customer := Rec;
+                    CurrPage.SETSELECTIONFILTER(G_Customer);
+                    ManageCustomerListing.CreateChannelCustomerlistingForMultipleSelection(G_Customer);
+                end;
+            }
+        }
     }
 
     var

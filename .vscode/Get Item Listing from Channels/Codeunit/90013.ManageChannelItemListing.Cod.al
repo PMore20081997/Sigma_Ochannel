@@ -16,6 +16,7 @@ codeunit 90013 "Manage Channel Item Listing"
         TradePartner2: Record "Trade Partner";
         ChannelItemListing: Record "Channel Item Listing";
         L_Variant: Record "Item Variant";
+        L_Item: Record Item;
     begin
         TradePartner.RESET;
         TradePartner.SETRANGE("Partner Type", TradePartner."Partner Type"::Channel);
@@ -48,6 +49,17 @@ codeunit 90013 "Manage Channel Item Listing"
                                         ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
+
+                                        //Update Invetory++
+                                        //For Sigma Channel Inventory := BC Inventory++
+                                        L_Item.Reset();
+                                        L_Item.SetRange("No.", P_Item."No.");
+                                        L_Item.SetRange("Variant Filter", L_Variant.Code);
+                                        if L_Item.FindFirst() then begin
+                                            L_Item.CalcFields(Inventory);
+                                            ChannelItemListing.Validate("Channel Inventory", L_Item.Inventory);
+                                        end;
+
                                         ChannelItemListing.MODIFY(TRUE);
                                     END
                                     ELSE BEGIN
@@ -59,6 +71,15 @@ codeunit 90013 "Manage Channel Item Listing"
                                         ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
+                                        //Update Invetory++
+                                        //For Sigma Channel Inventory := BC Inventory++
+                                        L_Item.Reset();
+                                        L_Item.SetRange("No.", P_Item."No.");
+                                        L_Item.SetRange("Variant Filter", L_Variant.Code);
+                                        if L_Item.FindFirst() then begin
+                                            L_Item.CalcFields(Inventory);
+                                            ChannelItemListing.Validate("Channel Inventory", L_Item.Inventory);
+                                        end;
                                         ChannelItemListing.INSERT;
                                     END;
                                 until L_Variant.Next() = 0;
@@ -70,6 +91,9 @@ codeunit 90013 "Manage Channel Item Listing"
                                     ChannelItemListing.VALIDATE("Item No.", P_Item."No.");
                                     ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
                                     ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
+
+                                    P_Item.CalcFields(Inventory);
+                                    ChannelItemListing.Validate("Channel Inventory", P_Item.Inventory);
                                     ChannelItemListing.MODIFY(TRUE);
                                 END
                                 ELSE BEGIN
@@ -79,6 +103,8 @@ codeunit 90013 "Manage Channel Item Listing"
                                     ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
                                     ChannelItemListing.Validate("Channel SKU", P_Item."No.");
                                     ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
+                                    P_Item.CalcFields(Inventory);
+                                    ChannelItemListing.Validate("Channel Inventory", P_Item.Inventory);
                                     ChannelItemListing.INSERT;
                                 END;
                             end;

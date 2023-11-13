@@ -110,7 +110,7 @@ table 90002 "Interim Customer"
                     InterimCustomer.VALIDATE("Customer Posting Group", Customer."Customer Posting Group");
                     InterimCustomer.VALIDATE("Gen. Bus. Posting Group", Customer."Gen. Bus. Posting Group");
                     InterimCustomer.VALIDATE("VAT Bus. Posting Group", Customer."VAT Bus. Posting Group");
-                    Rec.MODIFY;
+                    //Rec.MODIFY;
                 END
                 ELSE BEGIN
 
@@ -242,6 +242,38 @@ table 90002 "Interim Customer"
         {
             DataClassification = ToBeClassified;
             Caption = 'Shipping Country Name';
+        }
+        field(42; "Bill to Customer No."; Code[20])
+        {
+            DataClassification = ToBeClassified;
+
+        }
+        field(43; "Bill to Customer Name"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+
+        }
+        field(45; "Listing Status"; Option)
+        {
+            DataClassification = ToBeClassified;
+            CaptionML = ENU = 'Listing Status', ENG = 'Listing Status';
+            OptionMembers = "Not Listed",Listed;
+            OptionCaptionML = ENU = 'Not Listed,Listed', ENG = 'Not Listed,Listed';
+        }
+        field(46; "Customer Price Group 1"; Code[10])
+        {
+            Caption = 'Customer Price Group 2';
+            TableRelation = "Customer Price Group";
+        }
+        field(47; "Customer Price Group 2"; Code[10])
+        {
+            Caption = 'Customer Price Group 2';
+            TableRelation = "Customer Price Group";
+        }
+        field(48; "Customer Price Group 3"; Code[10])
+        {
+            Caption = 'Customer Price Group 3';
+            TableRelation = "Customer Price Group";
         }
 
     }

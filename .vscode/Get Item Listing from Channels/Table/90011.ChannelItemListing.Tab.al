@@ -124,7 +124,11 @@ table 90011 "Channel Item Listing"
         }
         field(10; "Channel Inventory"; Decimal)
         {
-
+            trigger OnValidate()
+            begin
+                IF xRec."Channel Inventory" <> Rec."Channel Inventory" THEN
+                    Rec.VALIDATE("Inventory Synced", FALSE);
+            end;
         }
 
         field(11; "Channel Description"; Text[250])

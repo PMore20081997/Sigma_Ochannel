@@ -34,7 +34,7 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     CaptionML = ENU = 'ASIN/Unique ID',
                            ENG = 'ASIN/Unique ID';
-                    Visible = True;
+                    Visible = false;
 
                 }
                 field("Channel Variant"; Rec."Channel Variant")
@@ -60,11 +60,19 @@ page 90011 "Channel Item Listing"
                 field("NAV Variant"; Rec."NAV Variant")
                 {
                     ApplicationArea = All;
-                    Visible = false;
+                }
+                field("Item Category Code"; Rec."Item Category Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Pack Size"; Rec."Pack Size")
+                {
+                    ApplicationArea = All;
                 }
                 field("Channel Title"; Rec."Channel Title")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel Description"; Rec."Channel Description")
                 {
@@ -75,6 +83,7 @@ page 90011 "Channel Item Listing"
                 field("Channel Inventory"; Rec."Channel Inventory")
                 {
                     ApplicationArea = All;
+                    Caption = 'BC Inventory';
                     trigger OnValidate()
                     var
                         ItemInv: Record Item;
@@ -214,11 +223,7 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     Visible = false;
                 }
-                field("Item Category Code"; Rec."Item Category Code")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
+
             }
         }
     }

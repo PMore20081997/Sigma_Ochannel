@@ -4,6 +4,7 @@ page 90015 "Customer Price Service"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = 7001;
+    SourceTableView = where(Status = filter(Active));
 
     layout
     {
@@ -11,28 +12,31 @@ page 90015 "Customer Price Service"
         {
             group(GroupName)
             {
-                field("Item No."; rec."Product No.")
+
+                field("Source Type"; Rec."Source Type")
                 {
                     ApplicationArea = All;
-                    Caption = 'Item No.';
                 }
-                field("Variant Code"; rec."Variant Code")
+                field("Source No."; Rec."Source No.")
                 {
                     ApplicationArea = all;
                 }
-                field("Source No."; rec."Source No.")
+                field("Item No."; Rec."Product No.")
+                {
+                    ApplicationArea = All;
+                }
+                field(Description; Rec.Description)
+                {
+                    ApplicationArea = All;
+                }
+                field("Variant Code"; Rec."Variant Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = all;
                 }
-                field("Unit Price"; rec."Unit Price")
-                {
-                    ApplicationArea = all;
-                }
-                field(Status; rec.Status)
-                {
-                    ApplicationArea = all;
-                }
-
             }
         }
     }

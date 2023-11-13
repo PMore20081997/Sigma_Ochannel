@@ -2,8 +2,8 @@ page 90002 "Web Customer"
 {
     PageType = List;
     ApplicationArea = All;
-    //UsageCategory = Lists;
-    UsageCategory = Documents;
+    UsageCategory = Lists;
+    //UsageCategory = Documents;
     SourceTable = "Interim Customer";
 
 
@@ -19,12 +19,11 @@ page 90002 "Web Customer"
                     Caption = 'Channel Code';
 
                 }
-
-
                 field("No."; Rec."No.")
                 {
                     ApplicationArea = All;
                     Caption = 'No.';
+                    Visible = false;
                 }
                 field("Customer No."; Rec."Customer No.")
                 {
@@ -36,11 +35,13 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Process';
+                    Visible = false;
                 }
                 field("Company Name"; Rec."Company Name")
                 {
                     ApplicationArea = All;
                     Caption = 'Company Name';
+                    Visible = false;
                 }
                 field(Name; Rec.Name)
                 {
@@ -86,6 +87,7 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'Status';
+                    Visible = false;
                 }
                 field("Gen. Bus. Posting Group"; Rec."Gen. Bus. Posting Group")
                 {
@@ -102,22 +104,45 @@ page 90002 "Web Customer"
                     ApplicationArea = All;
                     Caption = 'Customer Posting Group';
                 }
+                field("Bill to Customer No."; Rec."Bill to Customer No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Bill to Customer Name"; Rec."Bill to Customer Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 1"; Rec."Customer Price Group 1")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 2"; Rec."Customer Price Group 2")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 3"; Rec."Customer Price Group 3")
+                {
+                    ApplicationArea = All;
+                }
 
 
                 field("Responsibility Center"; Rec."Responsibility Center")
                 {
                     ApplicationArea = All;
                     Caption = 'Responsibility Center';
+                    Visible = false;
                 }
                 field("Credit Limit (LCY)"; Rec."Credit Limit (LCY)")
                 {
                     ApplicationArea = All;
                     Caption = 'Credit Limit (LCY)';
+                    Visible = false;
                 }
                 field("VAT No"; Rec."VAT No")
                 {
                     ApplicationArea = All;
                     Caption = 'VAT No';
+                    Visible = false;
                 }
                 field("Shipping Address"; Rec."Shipping Address")
                 {
@@ -158,12 +183,19 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Caption = 'AccountNo';
+                    Visible = false;
                 }
                 field("Job Title"; Rec."Job Title")
                 {
                     ApplicationArea = All;
                     Caption = 'Job Title';
+                    Visible = false;
                 }
+                field("Listing Status"; Rec."Listing Status")
+                {
+                    ApplicationArea = All;
+                }
+
 
             }
         }
