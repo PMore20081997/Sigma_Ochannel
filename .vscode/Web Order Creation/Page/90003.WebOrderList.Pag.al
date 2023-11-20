@@ -163,7 +163,7 @@ page 90003 "Web Order List"
 
                 trigger OnAction()
                 var
-                    L_Codeunit: Codeunit "Drug Comparison API";
+                    L_Codeunit: Codeunit "Get Order Request API";
                 begin
                     L_Codeunit.Run();
                 end;

@@ -16,6 +16,10 @@ page 90009 "Product Response"
                     ApplicationArea = All;
                     Caption = 'Sequence No.';
                 }
+                field("Error Code"; Rec."Error Code")
+                {
+                    ApplicationArea = All;
+                }
                 field(Reason; Rec.Reason)
                 {
                     ApplicationArea = All;
@@ -25,6 +29,7 @@ page 90009 "Product Response"
                 {
                     ApplicationArea = All;
                 }
+
             }
         }
 

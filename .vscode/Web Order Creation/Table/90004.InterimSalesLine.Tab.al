@@ -253,7 +253,7 @@ table 90004 "Interim Sales Line"
         {
             Editable = false;
             FieldClass = FlowField;
-            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No"),"Item No."=field("No.")));
+            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No"), "Item No." = field("No.")));
 
         }
         field(48; "Order Status"; Option)
@@ -480,6 +480,14 @@ table 90004 "Interim Sales Line"
         field(90032; order_line_id; Text[250])
         {
 
+        }
+        field(90046; "Reason Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90045; "Reason Message"; Text[250])
+        {
+            DataClassification = ToBeClassified;
         }
     }
 

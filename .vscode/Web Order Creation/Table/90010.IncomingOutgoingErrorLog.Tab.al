@@ -34,6 +34,14 @@ table 90010 "Incoming/Outgoing Error Log"
         field(10; "Item No."; Code[20])
         {
         }
+        field(11; "Error Code"; Code[20])
+        {
+
+        }
+        field(13; "Sequence No."; Integer)
+        {
+
+        }
     }
 
     keys

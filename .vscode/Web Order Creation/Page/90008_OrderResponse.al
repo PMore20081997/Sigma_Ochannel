@@ -16,6 +16,10 @@ page 90008 "Order Response"
                     ApplicationArea = All;
                     Caption = 'Sequence No.';
                 }
+                field("Error Code"; Rec."Error Code")
+                {
+                    ApplicationArea = All;
+                }
                 field(Reason; Rec.Reason)
                 {
                     ApplicationArea = All;

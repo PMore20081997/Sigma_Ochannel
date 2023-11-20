@@ -149,12 +149,23 @@ page 90017 "Web Order Header"
                     Editable = false;
                     ApplicationArea = all;
                 }
-                field(order_id; Rec.order_id)
+                // field(order_id; Rec.order_id)
+                // {
+                //     ApplicationArea = All;
+                //     Caption = 'Order Response';
+                //     Editable = false;
+                // }
+                field("Reason Code"; Rec."Reason Code")
                 {
                     ApplicationArea = All;
-                    Caption = 'Order Response';
                     Editable = false;
                 }
+                field("Reason Message"; Rec."Reason Message")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
                 field("Order Status"; Rec."Order Status")
                 {
                     Editable = false;

@@ -14,6 +14,21 @@ table 90012 "Order Level Response"
         {
 
         }
+        field(4; "Error Code"; Code[20])
+        {
+            trigger OnValidate()
+            var
+                L_OrderLevelResponse: Record "Order Level Response";
+            begin
+                if Rec."Error Code" <> '' then begin
+                    L_OrderLevelResponse.Reset();
+                    L_OrderLevelResponse.SetRange("Error Code", Rec."Error Code");
+                    if L_OrderLevelResponse.FindFirst() then
+                        Error('Error Code %1 already exist', Rec."Error Code");
+                end;
+
+            end;
+        }
     }
     keys
     {

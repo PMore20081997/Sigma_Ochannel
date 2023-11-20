@@ -527,6 +527,15 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
         }
 
+        field(90046; "Reason Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90045; "Reason Message"; Text[250])
+        {
+            DataClassification = ToBeClassified;
+        }
+
     }
 
 

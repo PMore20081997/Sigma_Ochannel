@@ -258,6 +258,16 @@ page 90004 "Web order Subpage"
                     end;
                     // Editable = false;  // Irshad 13052022
                 }
+                field("Reason Code"; Rec."Reason Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Reason Message"; Rec."Reason Message")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Reserved Qty"; Rec."Reserved Qty")
                 {
                     ApplicationArea = ALl;

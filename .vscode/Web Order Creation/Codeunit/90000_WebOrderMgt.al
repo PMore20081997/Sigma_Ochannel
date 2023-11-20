@@ -302,7 +302,7 @@ codeunit 90000 "Web Order Mgt"
             //UpdateShippingAgentOnLines--
 
             //Code to Validate order
-            //OrderValidations(L_InterimSalesHeader);
+            Sigma_OrderValidations(L_InterimSalesHeader);
 
             OnAfterInsertInterimSalesHeader(L_InterimSalesHeader);  //Irshad 11052022
         end;
@@ -750,6 +750,77 @@ codeunit 90000 "Web Order Mgt"
         EXIT(TRUE);
     end;
 
+    procedure Sigma_OrderValidations(var P_InterimSalesHeader: Record "Interim Sales Header")
+    var
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_ErrorRecorded: Boolean;
+        L_Cust: Record Customer;
+        L_ShippingRule: Record "Shipping Rule";
+        L_InterimSalesLine: Record "Interim Sales Line";
+        Item: Record Item;
+        L_TradePartner: Record "Trade Partner";
+        TotalItems: Integer;
+        ShippingAgent: Record "Shipping Agent";
+        Countries: Record "Country/Region";
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+    begin
+        IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
+
+            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
+                exit;
+
+            PartnerErrorLog.RESET;
+            PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
+            IF PartnerErrorLog.FindSet() THEN
+                PartnerErrorLog.DeleteAll();
+
+            CLEAR(L_ErrorRecorded);
+            IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
+                Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, 'SEQ5');
+                L_ErrorRecorded := TRUE;
+            END ELSE
+                IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
+                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ5');
+                    L_ErrorRecorded := TRUE;
+                END Else begin
+                    If L_Cust.Blocked <> L_Cust.Blocked::" " then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is blocked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ6');
+                        L_ErrorRecorded := TRUE;
+                    end else begin
+                        L_Cust.CalcFields("Balance (LCY)");
+                        if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
+                            Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ9');
+                            L_ErrorRecorded := TRUE;
+                        end;
+                    end;
+                end;
+
+            //Start Line Validations
+            L_InterimSalesLine.RESET;
+            L_InterimSalesLine.SETRANGE("Document No", P_InterimSalesHeader."No.");
+            IF L_InterimSalesLine.FINDSET THEN
+                REPEAT
+                    if L_InterimSalesLine."No." = '' then begin
+                        InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader);
+                        L_ErrorRecorded := TRUE;
+
+                    end;
+
+                UNTIL L_InterimSalesLine.NEXT = 0;
+
+
+            If L_ErrorRecorded then begin
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+                P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+            end Else begin
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+                P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+            end;
+            P_InterimSalesHeader.Modify();
+        end;
+    end;
+
     procedure OrderValidations(var P_InterimSalesHeader: Record "Interim Sales Header")
     var
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
@@ -1006,16 +1077,48 @@ codeunit 90000 "Web Order Mgt"
         exit(TotalAmount);
     end;
 
-
     procedure InsertErrorLog(P_Text: Text; VAR P_InterimSalesHeader: Record "Interim Sales Header")
     var
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_OrderLevelResponse: Record "Order Level Response";
     begin
 
         PartnerErrorLog.INIT;
         PartnerErrorLog."Document No." := P_InterimSalesHeader."No.";
         PartnerErrorLog.Date := WORKDATE;
+
+        L_PartnerErrorLog.RESET;
+        L_PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
+        IF L_PartnerErrorLog.FINDLAST THEN
+            PartnerErrorLog."Line No." := L_PartnerErrorLog."Line No." + 10000
+        ELSE
+            PartnerErrorLog."Line No." := 10000;
+
+        PartnerErrorLog."Error Text" := CopyStr(P_Text, 1, 250);
+        PartnerErrorLog.INSERT;
+        if P_InterimSalesHeader.status <> P_InterimSalesHeader.status::Confirmed then begin
+            P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Confirmed;
+            P_InterimSalesHeader.MODIFY;
+        end;
+    end;
+
+    procedure Sigma_InsertErrorLog(P_Text: Text; VAR P_InterimSalesHeader: Record "Interim Sales Header"; _ErrorCode: Code[20])
+    var
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_OrderLevelResponse: Record "Order Level Response";
+    begin
+
+        PartnerErrorLog.INIT;
+        PartnerErrorLog."Document No." := P_InterimSalesHeader."No.";
+        PartnerErrorLog.Date := WORKDATE;
+        PartnerErrorLog."Error Code" := _ErrorCode;
+        L_OrderLevelResponse.Reset();
+        L_OrderLevelResponse.SetRange("Error Code", _ErrorCode);
+        if L_OrderLevelResponse.FindFirst() then begin
+            PartnerErrorLog."Sequence No." := L_OrderLevelResponse."Entry No.";
+        end;
 
         L_PartnerErrorLog.RESET;
         L_PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
