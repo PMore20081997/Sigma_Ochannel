@@ -8,6 +8,7 @@ codeunit 90019 "Manage Channel Customer List"
     var
         myInt: Integer;
 
+    //Manage Customers API++
     Procedure CreateChannelCustomerlistingForMultipleSelection(VAR _Customer: Record Customer)
     var
         SelectTradePartner: FilterPageBuilder;

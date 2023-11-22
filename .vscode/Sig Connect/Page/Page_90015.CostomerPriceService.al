@@ -37,22 +37,10 @@ page 90015 "Customer Price Service"
                 {
                     ApplicationArea = all;
                 }
-            }
-        }
-    }
-
-    actions
-    {
-        area(Processing)
-        {
-            action(ActionName)
-            {
-                ApplicationArea = All;
-
-                trigger OnAction()
-                begin
-
-                end;
+                field("Sync Price"; Rec."Sync Price")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }
