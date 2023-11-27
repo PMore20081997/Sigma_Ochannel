@@ -42,6 +42,10 @@ table 90010 "Incoming/Outgoing Error Log"
         {
 
         }
+        field(14; "Attribute"; Code[20])
+        {
+
+        }
     }
 
     keys

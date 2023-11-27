@@ -4,7 +4,7 @@ codeunit 90081 "Get Order Request API"
     var
         jsonText: JsonObject;
     begin
-        //Input('{"OrderReferenceNo": "Robosol_01","CustomerNo": "121PHAR","Lines": [{"LineNo": "1","ItemNo": "000-0002","Quantity": "1"},{"LineNo": "2","ItemNo": "000-1289","Quantity": "2"}]}');
+        Input('{"OrderReferenceNo": "Robosol_01","CustomerNo": "121PHAR","Lines": [{"LineNo": "1","ItemNo": "000-0002","Quantity": "1"},{"LineNo": "2","ItemNo": "000-1289","Quantity": "2"}]}');
     end;
 
     var
@@ -46,6 +46,7 @@ codeunit 90081 "Get Order Request API"
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_InsterimSalesLine: Record "Interim Sales Line";
         L_OrderLevelResponse: Record "Order Level Response";
+        L_ProductLevelResponse: Record "Product Level Response";
 
         JsonArrayLine: JsonArray;
         JsonTokenLine: JsonToken;
@@ -81,7 +82,7 @@ codeunit 90081 "Get Order Request API"
         InterimSalesHeader.Reset();
         InterimSalesLine.Reset();
         if InterimSalesHeader.Count > 0 then
-            CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+            CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
 
 
         //Update Interim header and Interim Line Response Code and Message++
@@ -94,7 +95,7 @@ codeunit 90081 "Get Order Request API"
             PartnerErrorLog.SETRANGE("Document No.", L_InterimSalesHeader."No.");
             PartnerErrorLog.SetFilter("Item No.", '%1', '');
             PartnerErrorLog.SetCurrentKey("Sequence No.");
-            PartnerErrorLog.Ascending(false);
+            PartnerErrorLog.Ascending(true);
             IF PartnerErrorLog.FindFirst() THEN begin
                 L_OrderLevelResponse.Reset();
                 L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
@@ -118,16 +119,23 @@ codeunit 90081 "Get Order Request API"
                 repeat
                     PartnerErrorLog.RESET;
                     PartnerErrorLog.SETRANGE("Document No.", L_InterimSalesHeader."No.");
-                    PartnerErrorLog.SetFilter("Item No.", '<>%1', '');
+                    //PartnerErrorLog.SetFilter("Item No.", '<>%1', '');
+                    PartnerErrorLog.SetFilter("Item No.", L_InsterimSalesLine."No.");
                     PartnerErrorLog.SetCurrentKey("Sequence No.");
-                    PartnerErrorLog.Ascending(false);
+                    PartnerErrorLog.Ascending(true);
                     IF PartnerErrorLog.FindFirst() THEN begin
-                        L_OrderLevelResponse.Reset();
-                        L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
-                        if L_OrderLevelResponse.FindFirst() then begin
-                            L_InsterimSalesLine."Reason Code" := L_OrderLevelResponse.Reason;
-                            L_InsterimSalesLine."Reason Message" := L_OrderLevelResponse.Message;
-                            L_InsterimSalesLine.Modify();
+                        L_ProductLevelResponse.Reset();
+                        L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+                        if L_ProductLevelResponse.FindFirst() then begin
+                            if L_ProductLevelResponse."Error Code" = 'SEQ13' then begin
+                                L_InsterimSalesLine."Reason Code" := L_ProductLevelResponse.Reason;
+                                L_InsterimSalesLine."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+                                L_InsterimSalesLine.Modify();
+                            end else begin
+                                L_InsterimSalesLine."Reason Code" := L_ProductLevelResponse.Reason;
+                                L_InsterimSalesLine."Reason Message" := L_ProductLevelResponse.Message;
+                                L_InsterimSalesLine.Modify();
+                            end;
                         end;
                     end else begin
                         L_InsterimSalesLine."Reason Code" := 'Order Line Created';
@@ -138,6 +146,30 @@ codeunit 90081 "Get Order Request API"
             end;
         end;
 
+        //Update Status in Interim Sales Header++
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
+        L_InterimSalesHeader.SetRange("Channel Order ID", L_OrderReferenceNo);
+        L_InterimSalesHeader.SetRange("Reason Message", 'Accepted');
+        if L_InterimSalesHeader.FindFirst() then begin
+            L_InsterimSalesLine.Reset();
+            L_InsterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+            L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+            L_InsterimSalesLine.SetFilter("Reason Message", '<>%1', 'Successful');
+            if L_InsterimSalesLine.FindFirst() then begin
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
+                L_InterimSalesHeader.Modify();
+            end else begin
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"In Progress";
+                L_InterimSalesHeader."Ready to process" := true;
+                L_InterimSalesHeader.Modify();
+            end;
+        end else begin
+            L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
+            L_InterimSalesHeader.Modify();
+        end;
+
+
 
         //Generate Response++
         Clear(_Response);
@@ -145,38 +177,61 @@ codeunit 90081 "Get Order Request API"
         L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
         L_InterimSalesHeader.SetRange("Channel Order ID", L_OrderReferenceNo);
         if L_InterimSalesHeader.FindFirst() then begin
-            PartnerErrorLog.Reset();
-            PartnerErrorLog.SetRange("Document No.", L_OrderReferenceNo);
-            if not PartnerErrorLog.IsEmpty then begin
-                //If Error++
-            end else begin
-                //if no error in order ++
+            //Header Response+++
+            Clear(JsonObject);
+            JsonObject.Add('OrderNo', L_InterimSalesHeader."No.");
+            JsonObject.Add('CustomerNo', L_InterimSalesHeader."Sell-to Customer No.");
+            JsonObject.Add('OrderResponse', L_InterimSalesHeader."Reason Message");
 
-                //Header Response+++
-                Clear(JsonObject);
-                JsonObject.Add('OrderNo', L_InterimSalesHeader."No.");
-                JsonObject.Add('CustomerNo', L_InterimSalesHeader."Sell-to Customer No.");
-                JsonObject.Add('OrderResponse', L_InterimSalesHeader."Reason Message");
-
-                //Linse Response++
-                Clear(JsonArrayLine);
-                //Clear(JsonObjectForLine);
-                L_InsterimSalesLine.Reset();
-                L_InsterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-                L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-                if L_InsterimSalesLine.FindSet() then begin
-                    JsonObject.Add('Lines', JsonArrayLine);
-                    repeat
-                        Clear(JsonObjectForLine);
-                        JsonObjectForLine.Add('LineNo', L_InsterimSalesLine."Line No.");
-                        JsonObjectForLine.Add('ItemNo', L_InsterimSalesLine."No.");
-                        JsonObjectForLine.Add('Quantity', L_InsterimSalesLine.Quantity);
-                        JsonObjectForLine.Add('ProductResponse', 'Test1');
-                        JsonArrayLine.Add(JsonObjectForLine);
-                    until L_InsterimSalesLine.Next() = 0;
-                end;
-                JsonObject.WriteTo(_Response);
+            //Linse Response++
+            Clear(JsonArrayLine);
+            L_InsterimSalesLine.Reset();
+            L_InsterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+            L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+            if L_InsterimSalesLine.FindSet() then begin
+                JsonObject.Add('Lines', JsonArrayLine);
+                repeat
+                    Clear(JsonObjectForLine);
+                    JsonObjectForLine.Add('LineNo', L_InsterimSalesLine."Line No.");
+                    JsonObjectForLine.Add('ItemNo', L_InsterimSalesLine."No.");
+                    JsonObjectForLine.Add('Quantity', L_InsterimSalesLine.Quantity);
+                    JsonObjectForLine.Add('ProductResponse', L_InsterimSalesLine."Reason Message");
+                    JsonArrayLine.Add(JsonObjectForLine);
+                until L_InsterimSalesLine.Next() = 0;
             end;
+            JsonObject.WriteTo(_Response);
+            // PartnerErrorLog.Reset();
+            // PartnerErrorLog.SetRange("Document No.", L_OrderReferenceNo);
+            // if not PartnerErrorLog.IsEmpty then begin
+            //     //If Error++
+            // end else begin
+            //     //if no error in order ++
+
+            //     //Header Response+++
+            //     Clear(JsonObject);
+            //     JsonObject.Add('OrderNo', L_InterimSalesHeader."No.");
+            //     JsonObject.Add('CustomerNo', L_InterimSalesHeader."Sell-to Customer No.");
+            //     JsonObject.Add('OrderResponse', L_InterimSalesHeader."Reason Message");
+
+            //     //Linse Response++
+            //     Clear(JsonArrayLine);
+            //     //Clear(JsonObjectForLine);
+            //     L_InsterimSalesLine.Reset();
+            //     L_InsterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+            //     L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+            //     if L_InsterimSalesLine.FindSet() then begin
+            //         JsonObject.Add('Lines', JsonArrayLine);
+            //         repeat
+            //             Clear(JsonObjectForLine);
+            //             JsonObjectForLine.Add('LineNo', L_InsterimSalesLine."Line No.");
+            //             JsonObjectForLine.Add('ItemNo', L_InsterimSalesLine."No.");
+            //             JsonObjectForLine.Add('Quantity', L_InsterimSalesLine.Quantity);
+            //             JsonObjectForLine.Add('ProductResponse', 'Test1');
+            //             JsonArrayLine.Add(JsonObjectForLine);
+            //         until L_InsterimSalesLine.Next() = 0;
+            //     end;
+            //     JsonObject.WriteTo(_Response);
+            // end;
         end else begin
             _Response := 'No Order Exist';
             exit(_Response);

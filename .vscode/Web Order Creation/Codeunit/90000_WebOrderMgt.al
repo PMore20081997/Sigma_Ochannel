@@ -88,6 +88,223 @@ codeunit 90000 "Web Order Mgt"
 
     end;
 
+    procedure Sigma_CreateWebOrder(var P_InterimSalesHeader: Record "Interim Sales Header" temporary; var P_InterimSalesLine: Record "Interim Sales Line" temporary; P_ShipmentTracking: Record "Shipment Tracking" temporary; var P_PaymentDetail: Record "Channel Media" temporary)
+    //Code to create a web Order and Line based on the data coming from diffrent channel integration code unit
+    var
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        GeneralSetup: record "General Setup - Channels";
+        NoSeriesManagement: Codeunit NoSeriesManagement;
+        SellToCustomer: Record Customer;
+        ChannelPartner: Record "Trade Partner";
+        ChannelItemList: Record "Channel Item Listing";
+        IsExist: Boolean;
+        Discountperscent: Decimal;
+        salesLine: record "Sales Line";
+        Query_OrderAmt: Query "Get Order item Amount";
+        L_InterimSalesLine: Record "Interim Sales Line";
+        L_Item: Record Item;
+        CountriesRegion: Record "Country/Region";
+        L_PaymentDetails: Record "Channel Media";
+        ShipmentTracking: Record "Shipment Tracking";
+        Regex: Codeunit Regex;
+        L_ShiptoAddress: Record "Ship-to Address";
+        BillToCustomer: Record Customer;
+    Begin
+        If CheckOrderNotExist(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Channel Order ID") then begin
+            ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
+            GeneralSetup.Get;
+            GeneralSetup.TestField("Web Order Nos");
+
+            L_InterimSalesHeader.INIT;
+            L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
+            L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
+            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::"In Progress");
+            L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+            L_InterimSalesHeader.validate("Document Date", WorkDate);
+            L_InterimSalesHeader.Validate("Order Date", WorkDate);
+
+            if (P_InterimSalesHeader."Sell-to Customer No." <> '') then begin
+                Case ChannelPartner."Customer Mapping" OF
+                    ChannelPartner."Customer Mapping"::"Default Customer":
+                        SellToCustomer.GET(ChannelPartner."Customer No.");
+                    ChannelPartner."Customer Mapping"::"Order Customer":
+                        SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
+                End;
+                L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
+                L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
+                L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
+                L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
+                L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
+                L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
+                if SellToCustomer."Location Code" <> '' then
+                    L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code")
+                else
+                    L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location);
+                L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
+            end;
+
+
+            L_ShiptoAddress.Reset();
+            L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
+            if L_ShiptoAddress.FindFirst() then begin
+                L_InterimSalesHeader.Validate("Ship-to Code", L_ShiptoAddress.Code);
+                L_InterimSalesHeader.VALIDATE("Ship-to Name", L_ShiptoAddress.Name);
+                L_InterimSalesHeader.VALIDATE("Ship-to Address", L_ShiptoAddress.Address);
+                L_InterimSalesHeader.VALIDATE("Ship-to Address 2", L_ShiptoAddress."Address 2");
+                L_InterimSalesHeader.VALIDATE("Ship-to City", L_ShiptoAddress.City);
+                L_InterimSalesHeader.VALIDATE("Ship-to County", L_ShiptoAddress.County);
+                L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", L_ShiptoAddress."Country/Region Code");
+                L_InterimSalesHeader.VALIDATE("Ship-to Post Code", L_ShiptoAddress."Post Code");
+                L_InterimSalesHeader.VALIDATE("Ship-to Phone", L_ShiptoAddress."Phone No.");
+                L_InterimSalesHeader.VALIDATE("Ship-to Email", L_ShiptoAddress."E-Mail");
+                L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+            end else begin
+                L_InterimSalesHeader.VALIDATE("Ship-to Name", SellToCustomer.Name);
+                L_InterimSalesHeader.VALIDATE("Ship-to Address", SellToCustomer.Address);
+                L_InterimSalesHeader.VALIDATE("Ship-to Address 2", SellToCustomer."Address 2");
+                L_InterimSalesHeader.VALIDATE("Ship-to City", SellToCustomer.City);
+                L_InterimSalesHeader.VALIDATE("Ship-to County", SellToCustomer.County);
+                L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
+                L_InterimSalesHeader.VALIDATE("Ship-to Post Code", SellToCustomer."Post Code");
+                L_InterimSalesHeader.VALIDATE("Ship-to Phone", SellToCustomer."Phone No.");
+                L_InterimSalesHeader.VALIDATE("Ship-to Email", SellToCustomer."E-Mail");
+                L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+
+            end;
+            // //8862++
+            // if P_InterimSalesHeader."Ship-to Country/Region Code" <> '' then begin
+            //     if P_InterimSalesHeader."Ship-to Country/Region Code" = 'GB' then begin
+            //         L_InterimSalesHeader."Customer Posting Group" := 'DOMESTIC';
+            //     end
+            //     else begin
+            //         if CountriesRegion.Get(P_InterimSalesHeader."Ship-to Country/Region Code") then begin
+            //             if CountriesRegion."EU Country/Region Code" <> '' then begin
+            //                 L_InterimSalesHeader."Customer Posting Group" := 'EU';
+            //             end
+            //             else begin
+            //                 L_InterimSalesHeader."Customer Posting Group" := 'FOREIGN';
+            //             end;
+            //         end;
+            //     end;
+            // end;
+            // //8862--
+
+            BillToCustomer.Reset();
+            BillToCustomer.SetRange("No.", SellToCustomer."Bill-to Customer No.");
+            if BillToCustomer.FindFirst() then begin
+                L_InterimSalesHeader."Bill-to Customer No." := BillToCustomer."No.";
+                L_InterimSalesHeader."Bill- to Name" := BillToCustomer.Name;
+                //L_InterimSalesHeader."Bill-to CompanyName" := P_InterimSalesHeader."Bill-to CompanyName";
+                L_InterimSalesHeader."Bill-to County" := P_InterimSalesHeader."Bill-to County";
+                L_InterimSalesHeader."Bill-to County" := BillToCustomer.County;
+            end;
+
+
+            L_InterimSalesHeader."Job Reference" := P_InterimSalesHeader."Job Reference";
+            L_InterimSalesHeader."Package Tracking No." := P_InterimSalesHeader."Package Tracking No.";
+            L_InterimSalesHeader."Web Shipping Agent" := P_InterimSalesHeader."Web Shipping Agent";
+            L_InterimSalesHeader."Web Shipment Method" := P_InterimSalesHeader."Web Shipment Method";
+
+            L_InterimSalesHeader."Shipment Method Code" := P_InterimSalesHeader."Shipment Method Code";
+            L_InterimSalesHeader."Shipping Agent Code" := P_InterimSalesHeader."Shipping Agent Code";
+            L_InterimSalesHeader."Shipping Agent Service Code" := P_InterimSalesHeader."Shipping Agent Service Code";
+            L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";  //Added By Shubham 05082022
+            L_InterimSalesHeader."Currency Code" := P_InterimSalesHeader."Currency Code";
+
+            L_InterimSalesHeader.VALIDATE("Buyer Email", P_InterimSalesHeader."Buyer Email");
+            L_InterimSalesHeader."Buyer Name" := P_InterimSalesHeader."Buyer Name";
+            L_InterimSalesHeader.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
+            L_InterimSalesHeader.VALIDATE("No. Of Parcels", P_InterimSalesHeader."No. Of Parcels");
+            L_InterimSalesHeader."Earliest Delivery date" := P_InterimSalesHeader."Earliest Delivery date";
+            L_InterimSalesHeader."Promised Delivery Date" := P_InterimSalesHeader."Promised Delivery Date";
+            L_InterimSalesHeader."Order Placed At" := CurrentDateTime;
+            L_InterimSalesHeader."Order Created On" := CurrentDateTime;
+            L_InterimSalesHeader."User ID" := UserId;
+            L_InterimSalesHeader."File Name" := P_InterimSalesHeader."File Name";
+            L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No."; //Added By Shubham 06052021
+            L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");  //Added By Shubham 19072021
+            L_InterimSalesHeader.Validate("Order Discount Amount", P_InterimSalesHeader."Order Discount Amount");
+            L_InterimSalesHeader.Validate("Shipment Date", P_InterimSalesHeader."Shipment Date");
+            L_InterimSalesHeader.Validate("Fullfillment Channel", P_InterimSalesHeader."Fullfillment Channel");
+            L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
+            L_InterimSalesHeader.Validate("Order Status", P_InterimSalesHeader."Order Status");
+            L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
+            L_InterimSalesHeader.Insert(True);
+
+            If P_InterimSalesLine.FindFirst() then
+                repeat
+                    if P_InterimSalesLine."Gift Card" = false then
+                        InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent)
+                    else
+                        InsertGiftGlLine(P_InterimSalesLine, L_InterimSalesHeader);
+                //Paarth D Dave - 8197 - 070922 - Commented here and called in OrderValidations Procedure  
+                //CreateAssemblyOrderForCushionItems(L_InterimSalesHeader, P_InterimSalesLine);//Sofyan
+                until P_InterimSalesLine.Next() = 0;
+
+
+
+            //Not Required Sigma Integration++++
+            //CreateGLLines(L_InterimSalesHeader);
+            //DeleteRefundPaymentDetails(P_PaymentDetail);
+            // P_PaymentDetail.Reset();
+            // if P_PaymentDetail.FindSet() then begin
+            //     repeat
+            //         IsExist := CheckPaymentDetailsExist(P_PaymentDetail);
+            //         if IsExist = false then begin
+            //             InsertInPaymentDetails(L_InterimSalesHeader, P_PaymentDetail);
+            //         end;
+            //     until P_PaymentDetail.Next() = 0;
+            // end;
+            //Not Required Sigma Integration+++++
+
+            //Shubham Calculate Total Weight for InterimSalesHeader
+            L_InterimSalesHeader."Total Weight" := CalculateWeight(L_InterimSalesHeader);
+            L_InterimSalesHeader."No. of Items" := calculateNoofItems(L_InterimSalesHeader);
+            L_InterimSalesHeader."Total No. of Items" := CalculateTotalItems(L_InterimSalesHeader);
+            //Code to Update Order Amount on Header Level
+            if L_InterimSalesHeader."Order Amount" = 0 then begin
+                G_InterimSalesLine.Reset();
+                G_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+                G_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+                if G_InterimSalesLine.FindSet() then begin
+                    repeat
+                        if G_InterimSalesLine."Amount Including VAT" > 0 then
+                            L_InterimSalesHeader."Order Amount" := L_InterimSalesHeader."Order Amount" + G_InterimSalesLine."Amount Including VAT";
+                    until G_InterimSalesLine.Next() = 0;
+                end;
+            end;
+
+            L_PaymentDetails.Reset();
+            L_PaymentDetails.SetRange("Channel Code", P_PaymentDetail."Channel Code");
+            L_PaymentDetails.SetRange("Channel Order ID", P_PaymentDetail."Channel Order ID");
+            //L_PaymentDetails.SetRange("Payment Method", P_PaymentDetail."Payment Method");  //Commented Bug 12050
+            if L_PaymentDetails.Count > 1 then
+                Clear(L_InterimSalesHeader."Payment Method");
+
+            L_InterimSalesHeader."Gift Order Amount" := GetGiftOrderAmount(L_InterimSalesHeader);
+            L_InterimSalesHeader."Gift Card" := G_GiftBool;
+
+            L_InterimSalesHeader.Modify(true);
+
+            //Not Required Sigma Integration++++
+            // //UpdateShippingAgentOnLines++
+            // L_InterimSalesLine.Reset();
+            // L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+            // L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+            // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+            // if L_InterimSalesLine.FindSet() then
+            //     repeat
+            //         L_InterimSalesLine."Shipping Agent Code" := L_InterimSalesHeader."Shipping Agent Code";//Sofyan
+            //         L_InterimSalesLine."Shipping Agent Service Code" := L_InterimSalesHeader."Shipping Agent Service Code";//Sofyan
+            //         L_InterimSalesLine.Modify(true);
+            //     until L_InterimSalesLine.Next() = 0;
+            // //UpdateShippingAgentOnLines--
+
+            //Code to Validate order
+            Sigma_OrderValidations(L_InterimSalesHeader);
+        end;
+    End;
+
     procedure CreateWebOrder(var P_InterimSalesHeader: Record "Interim Sales Header" temporary; var P_InterimSalesLine: Record "Interim Sales Line" temporary; P_ShipmentTracking: Record "Shipment Tracking" temporary; var P_PaymentDetail: Record "Channel Media" temporary)
     //Code to create a web Order and Line based on the data coming from diffrent channel integration code unit
     var
@@ -453,10 +670,10 @@ codeunit 90000 "Web Order Mgt"
             ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
             ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
             IF ItemCrossReference.FINDFIRST THEN
-                EXIT(ItemCrossReference."Item No.");
+                EXIT(ItemCrossReference."Item No.")
+            else
+                exit(P_ChannelSKU); //For Sigma++
 
-            // IF L_Item.GET(P_CrossRefNo) THEN
-            //     EXIT(L_Item."No.");
         End;
     end;
 
@@ -757,13 +974,17 @@ codeunit 90000 "Web Order Mgt"
         L_Cust: Record Customer;
         L_ShippingRule: Record "Shipping Rule";
         L_InterimSalesLine: Record "Interim Sales Line";
-        Item: Record Item;
+        L_Item: Record Item;
         L_TradePartner: Record "Trade Partner";
         TotalItems: Integer;
         ShippingAgent: Record "Shipping Agent";
         Countries: Record "Country/Region";
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+
+        L_CheckItemLicense: Codeunit "Check Item License";
+        L_AttributeCode: Code[20];
+        L_CompanyLicenseError: Text[100];
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -776,48 +997,89 @@ codeunit 90000 "Web Order Mgt"
                 PartnerErrorLog.DeleteAll();
 
             CLEAR(L_ErrorRecorded);
-            IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
-                Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, 'SEQ5');
-                L_ErrorRecorded := TRUE;
-            END ELSE
-                IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
-                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ5');
+            L_InterimSalesLine.RESET;
+            if L_ErrorRecorded = false then begin
+                IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
+                    Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
                     L_ErrorRecorded := TRUE;
-                END Else begin
-                    If L_Cust.Blocked <> L_Cust.Blocked::" " then begin
-                        Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is blocked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ6');
+                END;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
+                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                    L_ErrorRecorded := TRUE;
+                END
+            end;
+
+            if L_ErrorRecorded = false then begin
+                If L_Cust.Blocked <> L_Cust.Blocked::" " then begin
+                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is blocked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
+                    L_ErrorRecorded := TRUE;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    L_Cust.CalcFields("Balance (LCY)");
+                    if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
                         L_ErrorRecorded := TRUE;
-                    end else begin
-                        L_Cust.CalcFields("Balance (LCY)");
-                        if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
-                            Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, 'SEQ9');
-                            L_ErrorRecorded := TRUE;
-                        end;
                     end;
                 end;
+            end;
+
+
 
             //Start Line Validations
+            Clear(L_ErrorRecorded);
             L_InterimSalesLine.RESET;
             L_InterimSalesLine.SETRANGE("Document No", P_InterimSalesHeader."No.");
             IF L_InterimSalesLine.FINDSET THEN
                 REPEAT
-                    if L_InterimSalesLine."No." = '' then begin
-                        InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader);
-                        L_ErrorRecorded := TRUE;
-
+                    Clear(L_ErrorRecorded);
+                    if L_ErrorRecorded = false then begin
+                        if L_InterimSalesLine."No." = '' then begin
+                            Sigma_InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
+                            L_ErrorRecorded := TRUE;
+                        end;
                     end;
 
+                    if L_ErrorRecorded = false then begin
+                        if not L_Item.Get(L_InterimSalesLine."No.") then begin
+                            Sigma_InsertErrorLog('Product not on stock master', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
+                            L_ErrorRecorded := TRUE;
+                        end
+                    end;
+
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Blocked = true then begin
+                            Sigma_InsertErrorLog('Product Locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', false, '');
+                            L_ErrorRecorded := TRUE;
+                        end;
+                    end;
+
+                    if L_ErrorRecorded = false then begin
+                        //Check Company License ++
+                        Clear(L_AttributeCode);
+                        Clear(L_CompanyLicenseError);
+                        L_CheckItemLicense.ForIntegration_ValidateLicense(0, P_InterimSalesHeader."Sell-to Customer No.", P_InterimSalesHeader."Customer Posting Group", P_InterimSalesHeader."Ship-to Country/Region Code", P_InterimSalesHeader."Order Date", L_InterimSalesLine."No.", P_InterimSalesHeader."Ship-to Post Code", L_CompanyLicenseError, L_AttributeCode);
+                        if L_CompanyLicenseError <> '' then begin
+                            Sigma_InsertErrorLog(L_CompanyLicenseError, P_InterimSalesHeader, L_InterimSalesLine, 'SEQ13', false, L_AttributeCode);
+                            L_ErrorRecorded := TRUE;
+                        end;
+                    end;
                 UNTIL L_InterimSalesLine.NEXT = 0;
-
-
-            If L_ErrorRecorded then begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
-                P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
-            end Else begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
-                P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
-            end;
-            P_InterimSalesHeader.Modify();
+            // If L_ErrorRecorded then begin
+            //     P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+            //     P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+            // end Else begin
+            //     P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+            //     P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
+            // end;
+            //P_InterimSalesHeader.Modify();
         end;
     end;
 
@@ -1103,21 +1365,32 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    procedure Sigma_InsertErrorLog(P_Text: Text; VAR P_InterimSalesHeader: Record "Interim Sales Header"; _ErrorCode: Code[20])
+    procedure Sigma_InsertErrorLog(P_Text: Text; VAR P_InterimSalesHeader: Record "Interim Sales Header"; P_InterimSalesLine: Record "Interim Sales line"; _ErrorCode: Code[20]; P_Header: Boolean; _AttributeCode: Code[20]);
     var
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_OrderLevelResponse: Record "Order Level Response";
+        L_ProductLevelResponse: Record "Product Level Response";
     begin
-
         PartnerErrorLog.INIT;
         PartnerErrorLog."Document No." := P_InterimSalesHeader."No.";
         PartnerErrorLog.Date := WORKDATE;
+
         PartnerErrorLog."Error Code" := _ErrorCode;
-        L_OrderLevelResponse.Reset();
-        L_OrderLevelResponse.SetRange("Error Code", _ErrorCode);
-        if L_OrderLevelResponse.FindFirst() then begin
-            PartnerErrorLog."Sequence No." := L_OrderLevelResponse."Entry No.";
+        if P_Header = false then begin
+            PartnerErrorLog."Item No." := P_InterimSalesLine."No.";
+            PartnerErrorLog.Attribute := _AttributeCode;
+            L_ProductLevelResponse.Reset();
+            L_ProductLevelResponse.SetRange("Error Code", _ErrorCode);
+            if L_ProductLevelResponse.FindFirst() then begin
+                PartnerErrorLog."Sequence No." := L_ProductLevelResponse."Entry No.";
+            end;
+        end else begin
+            L_OrderLevelResponse.Reset();
+            L_OrderLevelResponse.SetRange("Error Code", _ErrorCode);
+            if L_OrderLevelResponse.FindFirst() then begin
+                PartnerErrorLog."Sequence No." := L_OrderLevelResponse."Entry No.";
+            end;
         end;
 
         L_PartnerErrorLog.RESET;
@@ -1126,13 +1399,12 @@ codeunit 90000 "Web Order Mgt"
             PartnerErrorLog."Line No." := L_PartnerErrorLog."Line No." + 10000
         ELSE
             PartnerErrorLog."Line No." := 10000;
-
         PartnerErrorLog."Error Text" := CopyStr(P_Text, 1, 250);
         PartnerErrorLog.INSERT;
-        if P_InterimSalesHeader.status <> P_InterimSalesHeader.status::Confirmed then begin
-            P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Confirmed;
-            P_InterimSalesHeader.MODIFY;
-        end;
+        // if P_InterimSalesHeader.status <> P_InterimSalesHeader.status::Confirmed then begin
+        //     P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Confirmed;
+        //     P_InterimSalesHeader.MODIFY;
+        // end;
     end;
 
     //Code to Calculate number Of Parcels Required For Shipment Based on Shipping Rule Specific Weight

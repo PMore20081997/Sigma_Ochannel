@@ -479,7 +479,7 @@ page 90017 "Web Order Header"
                     if InterimSalesHeader.FindSet() then begin
                         IF InterimSalesHeader.FIND('-') THEN
                             REPEAT
-                                WebOrdMngt.OrderValidations(InterimSalesHeader);
+                                WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
                             UNTIL InterimSalesHeader.NEXT = 0;
                     end;
                 end;

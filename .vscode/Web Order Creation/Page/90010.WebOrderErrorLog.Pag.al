@@ -29,6 +29,10 @@ page 90010 "Web Order Error Log"
                 {
                     ApplicationArea = All;
                 }
+                field("Item No."; Rec."Item No.")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

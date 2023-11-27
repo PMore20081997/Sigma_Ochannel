@@ -481,7 +481,7 @@ table 90004 "Interim Sales Line"
         {
 
         }
-        field(90046; "Reason Code"; Code[20])
+        field(90046; "Reason Code"; Code[50])
         {
             DataClassification = ToBeClassified;
         }

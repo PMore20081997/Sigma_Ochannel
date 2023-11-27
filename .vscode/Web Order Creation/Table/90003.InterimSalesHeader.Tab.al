@@ -527,13 +527,22 @@ table 90003 "Interim Sales Header"
             DataClassification = ToBeClassified;
         }
 
-        field(90046; "Reason Code"; Code[20])
+        field(90046; "Reason Code"; Code[50])
         {
             DataClassification = ToBeClassified;
         }
         field(90045; "Reason Message"; Text[250])
         {
             DataClassification = ToBeClassified;
+        }
+        field(90047; "Ready to process"; Boolean)
+        {
+
+        }
+        field(90048; "Ship-to Code"; Code[10])
+        {
+            Caption = 'Ship-to Code';
+            TableRelation = "Ship-to Address".Code WHERE("Customer No." = FIELD("Sell-to Customer No."));
         }
 
     }

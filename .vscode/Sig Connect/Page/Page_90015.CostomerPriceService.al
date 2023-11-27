@@ -4,7 +4,7 @@ page 90015 "Customer Price Service"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = 7001;
-    SourceTableView = where(Status = filter(Active));
+    SourceTableView = where(Status = filter(Active), "Sync Price" = filter(false));
 
     layout
     {
@@ -47,4 +47,5 @@ page 90015 "Customer Price Service"
 
     var
         myInt: Integer;
+        tes: Page 7016;
 }

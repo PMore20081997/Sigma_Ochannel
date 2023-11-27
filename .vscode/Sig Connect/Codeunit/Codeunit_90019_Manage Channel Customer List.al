@@ -8,6 +8,26 @@ codeunit 90019 "Manage Channel Customer List"
     var
         myInt: Integer;
 
+    //Manage Customer Price API++
+    [EventSubscriber(ObjectType::Table, Database::"Price List Line", 'OnAfterModifyEvent', '', false, false)]
+    local procedure OnAfterCopyToPriceSource(var Rec: Record "Price List Line"; var xRec: Record "Price List Line"; RunTrigger: Boolean);
+    var
+        PriceListManagement: Codeunit "Price List Management";
+        PriceListHeader: Record "Price List Header";
+    begin
+        if GuiAllowed = false then begin
+            PriceListHeader.Reset();
+            PriceListHeader.SetRange(Code, Rec."Price List Code");
+            if PriceListHeader.FindFirst() then
+                PriceListManagement.ActivateDraftLines(PriceListHeader)
+            else
+                Error('in');
+        end;
+        // else
+        //     Error('Out');
+    end;
+
+
     //Manage Customers API++
     Procedure CreateChannelCustomerlistingForMultipleSelection(VAR _Customer: Record Customer)
     var
