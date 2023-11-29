@@ -12,6 +12,7 @@ pageextension 90097 "Whse. Shipment Card" extends "Warehouse Shipment"
             {
                 ApplicationArea = All;
                 Editable = false;
+                Visible = false;
             }
         }
         // addbefore(WhseShptLines)

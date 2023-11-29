@@ -14,8 +14,13 @@ page 90007 "Customer Reference"
                 field("Customer No."; Rec."Customer No.")
                 {
                     ApplicationArea = Basic, Suite;
+                    Editable = false;
                 }
                 field("ET Access Code"; Rec."ET Access Code")
+                {
+                    ApplicationArea = Planning;
+                }
+                field(Locked; Rec.Locked)
                 {
                     ApplicationArea = Planning;
                 }

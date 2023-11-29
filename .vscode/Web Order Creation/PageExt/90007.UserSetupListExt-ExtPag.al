@@ -14,6 +14,7 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
             {
                 ApplicationArea = All;
                 ToolTip = 'Specifies the user if the user has permission to change Qty. to ship value in Warehouse Shipment Lines.';
+                Visible = false;
             }
         }
     }

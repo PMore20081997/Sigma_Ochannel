@@ -2,6 +2,13 @@ pageextension 90100 "ItemCardExt" extends "Item Card"
 {
     layout
     {
+        addafter("Base Unit of Measure")
+        {
+            field(Status; Rec.Status)
+            {
+                ApplicationArea = All;
+            }
+        }
         addafter(Inventory)
         {
 

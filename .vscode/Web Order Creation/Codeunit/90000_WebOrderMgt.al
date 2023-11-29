@@ -981,15 +981,18 @@ codeunit 90000 "Web Order Mgt"
         Countries: Record "Country/Region";
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-
+        L_Line: Record "Interim Sales Line";
         L_CheckItemLicense: Codeunit "Check Item License";
         L_AttributeCode: Code[20];
         L_CompanyLicenseError: Text[100];
+        L_CustRef: Record "Customer Reference";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
                 exit;
+
+            L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
 
             PartnerErrorLog.RESET;
             PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
@@ -1008,8 +1011,13 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
-                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                    L_ErrorRecorded := TRUE;
+                    if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Invalid A/C number', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end else begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
                 END
             end;
 
@@ -1031,6 +1039,31 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
+            if L_ErrorRecorded = false then begin
+                if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                    L_CustRef.Reset();
+                    L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."Trade Partner Code");
+                    if L_CustRef.FindFirst() then begin
+                        if L_CustRef.Locked = true then begin
+                            Sigma_InsertErrorLog(STRSUBSTNO('cross reference record locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
+                            L_ErrorRecorded := TRUE;
+                        end;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                    L_Line.Reset();
+                    L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+                    L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+                    if L_Line.IsEmpty then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('All product lines rejected', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
 
 
             //Start Line Validations
@@ -1045,6 +1078,29 @@ codeunit 90000 "Web Order Mgt"
                             Sigma_InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
                             L_ErrorRecorded := TRUE;
                         end;
+                    end;
+
+                    if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                        if L_ErrorRecorded = false then begin
+                            if L_Item.Get(L_InterimSalesLine."No.") then begin
+                                if L_Item.Status = L_Item.Status::DISCONTINUED then begin
+                                    Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                    L_ErrorRecorded := TRUE;
+                                end;
+                            end;
+                        end
+                    end;
+
+                    if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                        if L_ErrorRecorded = false then begin
+                            if L_Item.Get(L_InterimSalesLine."No.") then begin
+                                L_Item.CalcFields(Inventory);
+                                if L_Item.Inventory = 0 then begin
+                                    Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
+                                    L_ErrorRecorded := TRUE;
+                                end;
+                            end;
+                        end
                     end;
 
                     if L_ErrorRecorded = false then begin
@@ -1071,15 +1127,8 @@ codeunit 90000 "Web Order Mgt"
                             L_ErrorRecorded := TRUE;
                         end;
                     end;
+
                 UNTIL L_InterimSalesLine.NEXT = 0;
-            // If L_ErrorRecorded then begin
-            //     P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
-            //     P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
-            // end Else begin
-            //     P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
-            //     P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
-            // end;
-            //P_InterimSalesHeader.Modify();
         end;
     end;
 
@@ -2276,12 +2325,12 @@ codeunit 90000 "Web Order Mgt"
 
 
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnAfterWhseShptLineModify', '', true, true)]
-    local procedure OnAfterWhseShptLineModify(var WarehouseShipmentLine: Record "Warehouse Shipment Line")
-    begin
-        WarehouseShipmentLine.Validate("Qty. to Ship", 0);
-        WarehouseShipmentLine.Modify();
-    end;
+    /* [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnAfterWhseShptLineModify', '', true, true)]
+     local procedure OnAfterWhseShptLineModify(var WarehouseShipmentLine: Record "Warehouse Shipment Line")
+     begin
+         WarehouseShipmentLine.Validate("Qty. to Ship", 0);
+         WarehouseShipmentLine.Modify();
+     end;*/
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Activity-Register", 'OnAfterRegisteredWhseActivHeaderInsert', '', true, true)]
     local procedure OnAfterRegisteredWhseActivHeaderInsert(var RegisteredWhseActivityHdr: Record "Registered Whse. Activity Hdr."; WarehouseActivityHeader: Record "Warehouse Activity Header")

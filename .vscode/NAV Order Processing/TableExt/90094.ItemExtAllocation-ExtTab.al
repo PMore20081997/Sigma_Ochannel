@@ -48,5 +48,10 @@ tableextension 90094 "Item Ext Allocation" extends Item
             FieldClass = FlowField;
             CalcFormula = lookup(Vendor.Name where("No." = field("Vendor No.")));
         }
+        field(90106; Status; Option)
+        {
+            OptionMembers = ,CONTINUED,DISCONTINUED;
+            DataClassification = ToBeClassified;
+        }
     }
 }
