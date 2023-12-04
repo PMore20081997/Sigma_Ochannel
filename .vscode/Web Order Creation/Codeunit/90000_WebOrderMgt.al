@@ -986,6 +986,8 @@ codeunit 90000 "Web Order Mgt"
         L_AttributeCode: Code[20];
         L_CompanyLicenseError: Text[100];
         L_CustRef: Record "Customer Reference";
+        LineCount: Integer;
+        ErrorCount: Integer;
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1002,10 +1004,12 @@ codeunit 90000 "Web Order Mgt"
             CLEAR(L_ErrorRecorded);
             L_InterimSalesLine.RESET;
             if L_ErrorRecorded = false then begin
-                IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
-                    Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                    L_ErrorRecorded := TRUE;
-                END;
+                if L_TradePartner."Inbox Type" <> L_TradePartner."Inbox Type"::"File Location" then begin
+                    IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
+                        Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                        L_ErrorRecorded := TRUE;
+                    END;
+                end;
             end;
 
             if L_ErrorRecorded = false then begin
@@ -1022,9 +1026,32 @@ codeunit 90000 "Web Order Mgt"
             end;
 
             if L_ErrorRecorded = false then begin
-                If L_Cust.Blocked <> L_Cust.Blocked::" " then begin
-                    Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is blocked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
-                    L_ErrorRecorded := TRUE;
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Cust record locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::Ship then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Customer on Stop **', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ7', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
                 end;
             end;
 
@@ -1052,19 +1079,72 @@ codeunit 90000 "Web Order Mgt"
                     end;
                 end;
             end;
-
             if L_ErrorRecorded = false then begin
                 if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
-                    L_Line.Reset();
-                    L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
-                    L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
-                    if L_Line.IsEmpty then begin
-                        Sigma_InsertErrorLog(STRSUBSTNO('All product lines rejected', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
+                    L_CustRef.Reset();
+                    L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."Trade Partner Code");
+                    if NOT L_CustRef.FindFirst() then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
             end;
 
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    if L_Cust."Payment Terms Code" = 'COD' then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('COD Account *********', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Account Closed *****', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ12', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust."Shipping Agent Code" = '' then begin
+                        Sigma_InsertErrorLog(STRSUBSTNO('Delivery Schedule not assigned, contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ15', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            if L_ErrorRecorded = false then begin
+                Clear(LineCount);
+                L_Line.Reset();
+                L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+                L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+                L_Line.SetRange(Type, L_Line.Type::Item);
+                if L_Line.FindSet() then
+                    LineCount := L_Line.Count;
+
+                Clear(ErrorCount);
+                L_Line.Reset();
+                L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+                L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+                L_Line.SetRange(Type, L_Line.Type::Item);
+                L_Line.CalcFields("No of Error");
+                L_Line.SetFilter("No of Error", '>%1', 0);
+                if L_Line.FindSet() then
+                    ErrorCount := L_Line.Count;
+
+                if LineCount = ErrorCount then begin
+                    Sigma_InsertErrorLog(STRSUBSTNO('All product lines rejected', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ14', true, '');
+                    L_ErrorRecorded := TRUE;
+                end;
+            end;
 
             //Start Line Validations
             Clear(L_ErrorRecorded);
@@ -1073,10 +1153,12 @@ codeunit 90000 "Web Order Mgt"
             IF L_InterimSalesLine.FINDSET THEN
                 REPEAT
                     Clear(L_ErrorRecorded);
-                    if L_ErrorRecorded = false then begin
-                        if L_InterimSalesLine."No." = '' then begin
-                            Sigma_InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
-                            L_ErrorRecorded := TRUE;
+                    if L_TradePartner."Inbox Type" <> L_TradePartner."Inbox Type"::"File Location" then begin
+                        if L_ErrorRecorded = false then begin
+                            if L_InterimSalesLine."No." = '' then begin
+                                Sigma_InsertErrorLog('Value for Item no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
                         end;
                     end;
 
@@ -1105,15 +1187,43 @@ codeunit 90000 "Web Order Mgt"
 
                     if L_ErrorRecorded = false then begin
                         if not L_Item.Get(L_InterimSalesLine."No.") then begin
-                            Sigma_InsertErrorLog('Product not on stock master', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
+                            Sigma_InsertErrorLog('Product does not exist', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', false, '');
                             L_ErrorRecorded := TRUE;
                         end
                     end;
 
                     if L_ErrorRecorded = false then begin
-                        if L_Item.Blocked = true then begin
-                            Sigma_InsertErrorLog('Product Locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', false, '');
-                            L_ErrorRecorded := TRUE;
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if L_Item.Blocked = true then begin
+                                Sigma_InsertErrorLog('Record Locked (stock or depot stock file)', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end;
+
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if L_Item.Blocked = true then begin
+                                Sigma_InsertErrorLog('Product is not available', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ22', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end;
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if L_Item.Blocked = true then begin
+                                Sigma_InsertErrorLog('Product on stop', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ23', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end;
+
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if L_Item.Blocked = true then begin
+                                Sigma_InsertErrorLog('Product on stop', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ29', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
                         end;
                     end;
 
