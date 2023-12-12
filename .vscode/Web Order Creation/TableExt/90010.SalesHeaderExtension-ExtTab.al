@@ -7,6 +7,10 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
             DataClassification = ToBeClassified;
 
         }
+        field(90002; "Channel Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
         field(60006; SalesOrderReturnNo; Code[20])
         {
             Caption = 'Sales Order Return No.';

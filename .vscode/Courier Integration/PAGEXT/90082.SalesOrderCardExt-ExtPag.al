@@ -22,6 +22,14 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
         {
             Editable = false;
         }
+        addafter("External Document No.")
+        {
+            field("Channel Code"; Rec."Channel Code")
+            {
+                ApplicationArea = All;
+                Editable = false;
+            }
+        }
     }
 
     actions

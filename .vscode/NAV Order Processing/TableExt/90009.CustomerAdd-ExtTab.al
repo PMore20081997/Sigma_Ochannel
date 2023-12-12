@@ -25,6 +25,10 @@ tableextension 90009 "CustomerAdd" extends Customer
             CaptionML = ENU = 'Company Reg. No.';
 
         }
+        field(90004; "EDI Invoice/Credit"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
 
     }
 

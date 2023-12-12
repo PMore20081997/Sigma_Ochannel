@@ -353,6 +353,7 @@ codeunit 90005 "Process Web Order"
         L_SalesH.VALIDATE("Order Date", InterimSalesHeader."Document Date");
         L_SalesH.VALIDATE("Document Date", InterimSalesHeader."Document Date");
         L_SalesH.Validate("Web Shipment Method", InterimSalesHeader."Web Shipment Method");
+        L_SalesH."Channel Code" := InterimSalesHeader."Trade Partner Code";
         L_SalesH.INSERT(TRUE);
 
         //L_SalesH.VALIDATE("Order placed At",InterimSalesHeader."Order Placed At"); //commented by shailesh 040719

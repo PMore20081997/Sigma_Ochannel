@@ -12,6 +12,10 @@ pageextension 90093 "Customer Extended" extends "Customer Card"
             {
                 ApplicationArea = All;
             }
+            field("EDI Invoice/Credit"; rec."EDI Invoice/Credit")
+            {
+                ApplicationArea = all;
+            }
         }
 
 
