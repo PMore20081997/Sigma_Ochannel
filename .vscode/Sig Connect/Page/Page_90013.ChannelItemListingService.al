@@ -6,6 +6,7 @@ page 90013 "Channel Item Listing Service"
     PageType = List;
     RefreshOnActivate = true;
     ApplicationArea = All;
+    SourceTableView = where("Channel Code" = filter('SIGCONNECT'));
 
 
     layout
@@ -45,6 +46,14 @@ page 90013 "Channel Item Listing Service"
                 field("BC Variant Code"; Rec."NAV Variant")
                 {
                     ApplicationArea = ALL;
+                }
+                field(RRP; Rec.RRP)
+                {
+                    ApplicationArea = All;
+                }
+                field("Unit Price"; Rec."Unit Price")
+                {
+                    ApplicationArea = All;
                 }
                 field("Item Category Code"; rec."Item Category Code")
                 {

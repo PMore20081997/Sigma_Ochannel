@@ -4,7 +4,7 @@ pageextension 90100 "ItemCardExt" extends "Item Card"
     {
         addafter("Base Unit of Measure")
         {
-            field(Status; Rec.Status)
+            field("WebOrder Status"; "WebOrder Status")
             {
                 ApplicationArea = All;
             }

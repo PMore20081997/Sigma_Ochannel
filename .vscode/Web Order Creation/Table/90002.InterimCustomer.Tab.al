@@ -14,7 +14,7 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Name', ENG = 'Name';
         }
-        field(3; Address; Text[50])
+        field(3; Address; Text[100])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Address', ENG = 'Address';
@@ -94,7 +94,7 @@ table 90002 "Interim Customer"
             CaptionML = ENU = 'Responsibility Center', ENG = 'Responsibility Centre';
             TableRelation = "Responsibility Center";
         }
-        field(17; "Customer No."; Code[10])
+        field(17; "Customer No."; Code[20])
         {
             DataClassification = ToBeClassified;
             Caption = 'Customer No.';
@@ -248,7 +248,7 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
 
         }
-        field(43; "Bill to Customer Name"; Code[20])
+        field(43; "Bill to Customer Name"; Code[100])
         {
             DataClassification = ToBeClassified;
 
@@ -274,6 +274,20 @@ table 90002 "Interim Customer"
         {
             Caption = 'Customer Price Group 3';
             TableRelation = "Customer Price Group";
+        }
+        field(49; "Customer Price Group 4"; Code[10])
+        {
+            Caption = 'Customer Price Group 3';
+            TableRelation = "Customer Price Group";
+        }
+        field(50; "Customer Price Group 5"; Code[10])
+        {
+            Caption = 'Customer Price Group 3';
+            TableRelation = "Customer Price Group";
+        }
+        field(51; "Concerto Customer No."; Code[50])
+        {
+
         }
 
     }

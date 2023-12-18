@@ -1,4 +1,4 @@
-codeunit 90081 "EDI Invoice"
+codeunit 90082 "EDI Invoice"
 {
     TableNo = "Job Queue Entry";
     Permissions = tabledata "Sales Invoice Header" = M;

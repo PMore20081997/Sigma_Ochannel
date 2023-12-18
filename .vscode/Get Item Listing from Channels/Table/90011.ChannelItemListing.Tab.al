@@ -49,6 +49,7 @@ table 90011 "Channel Item Listing"
                     //VALIDATE(Rec.UOM, Item1."Base Unit of Measure");
                     VALIDATE(Rec."Channel Unit Price", Item1."Unit Price");
                     VALIDATE(Rec."Unit Price", Item1."Unit Price");
+                    Rec.Validate(RRP, Item1.RRP);
                     // VALIDATE(Rec."Channel Title", Description); commented by pavan 
                     //  VALIDATE("Channel SKU", Item1."No.");
                     //VALIDATE(Rec.Brand, Item1.brand);
@@ -79,13 +80,13 @@ table 90011 "Channel Item Listing"
                 IF Item1.GET("Item No.") THEN
                     Rec."Unit of Measure code" := Item1."Base Unit of Measure";
 
-                SalesPrice.RESET;
-                //SalesPrice.SETRANGE(SalesPrice."Item No.", Rec."Item No.");
-                //SalesPrice.SETRANGE(SalesPrice."Sales Code", Rec."Channel Code");
-                SalesPrice.SETRANGE("Unit of Measure Code", Rec."Unit of Measure code");
-                IF SalesPrice.FINDSET THEN BEGIN
-                    VALIDATE(Rec."Unit Price", SalesPrice."Unit Price");
-                END;
+                // SalesPrice.RESET;
+                // //SalesPrice.SETRANGE(SalesPrice."Item No.", Rec."Item No.");
+                // //SalesPrice.SETRANGE(SalesPrice."Sales Code", Rec."Channel Code");
+                // SalesPrice.SETRANGE("Unit of Measure Code", Rec."Unit of Measure code");
+                // IF SalesPrice.FINDSET THEN BEGIN
+                //     VALIDATE(Rec."Unit Price", SalesPrice."Unit Price");
+                // END;
 
                 itemvendor.RESET;
                 itemvendor.SETRANGE("Item No.", Rec."Item No.");
@@ -312,6 +313,10 @@ table 90011 "Channel Item Listing"
         field(50012; "Pack Size"; Code[20])
         {
             DataClassification = ToBeClassified;
+        }
+        field(50013; RRP; Decimal)
+        {
+            DecimalPlaces = 0 : 5;
         }
 
 

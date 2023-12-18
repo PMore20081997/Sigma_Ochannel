@@ -18,7 +18,7 @@ pageextension 90018 SalesCreditMemolist extends "Sales Credit Memos"
 
                 trigger OnAction()
                 var
-                    EDIInvoiceCOD: Codeunit 90081;
+                    EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
                 begin
                     JobQueueEntry.DeleteAll();

@@ -40,13 +40,19 @@ codeunit 90013 "Manage Channel Item Listing"
                                 repeat
                                     ChannelItemListing.RESET;
                                     ChannelItemListing.SETRANGE("Channel Code", TradePartner2.Code);
-                                    ChannelItemListing.SETRANGE("Channel SKU", L_Variant."Item No." + L_Variant.Code);
+                                    if TradePartner2.Code = 'SIGCONNECT' then
+                                        ChannelItemListing.SETRANGE("Channel SKU", L_Variant."Item No.")
+                                    else
+                                        ChannelItemListing.SETRANGE("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                     ChannelItemListing.SetRange("NAV Variant", L_Variant.Code);
                                     IF ChannelItemListing.FINDFIRST THEN BEGIN
                                         ChannelItemListing.VALIDATE("Item No.", P_Item."No.");
                                         ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
                                         ChannelItemListing.Validate("NAV Variant", L_Variant.Code);
-                                        ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
+                                        if TradePartner2.Code = 'SIGCONNECT' then
+                                            ChannelItemListing.Validate("Channel SKU", L_Variant."Item No.")
+                                        else
+                                            ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
 
@@ -68,7 +74,10 @@ codeunit 90013 "Manage Channel Item Listing"
                                         ChannelItemListing.VALIDATE("Item No.", P_Item."No.");
                                         ChannelItemListing.VALIDATE("Channel Title", P_Item.Description);
                                         ChannelItemListing.Validate("NAV Variant", L_Variant.Code);
-                                        ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
+                                        if TradePartner2.Code = 'SIGCONNECT' then
+                                            ChannelItemListing.Validate("Channel SKU", L_Variant."Item No.")
+                                        else
+                                            ChannelItemListing.Validate("Channel SKU", L_Variant."Item No." + L_Variant.Code);
                                         ChannelItemListing.Validate("Channel Variant", L_Variant.Code);
                                         ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                         //Update Invetory++

@@ -1165,7 +1165,7 @@ codeunit 90000 "Web Order Mgt"
                     if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                         if L_ErrorRecorded = false then begin
                             if L_Item.Get(L_InterimSalesLine."No.") then begin
-                                if L_Item.Status = L_Item.Status::DISCONTINUED then begin
+                                if L_Item."WebOrder Status" = L_Item."WebOrder Status"::DISCONTINUED then begin
                                     Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
                                     L_ErrorRecorded := TRUE;
                                 end;

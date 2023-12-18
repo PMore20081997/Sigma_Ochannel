@@ -18,7 +18,7 @@ pageextension 90010 SalesInvoiceExt extends "Sales Invoice"
 
                 trigger OnAction()
                 var
-                    EDIInvoiceCOD: Codeunit 90081;
+                    EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
                 begin
                     JobQueueEntry.DeleteAll();

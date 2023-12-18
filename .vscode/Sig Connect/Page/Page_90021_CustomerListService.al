@@ -4,6 +4,8 @@ page 90021 "Customer List Service"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = "Interim Customer";
+    SourceTableView = where("Channel Code" = filter('SIGCONNECT'));
+
 
     layout
     {
@@ -12,6 +14,10 @@ page 90021 "Customer List Service"
             group(GroupName)
             {
                 field("Sell to Customer No."; Rec."No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Concerto Customer No."; Rec."Concerto Customer No.")
                 {
                     ApplicationArea = All;
                 }
@@ -40,6 +46,14 @@ page 90021 "Customer List Service"
                     ApplicationArea = All;
                 }
                 field("Customer Price Group 3"; Rec."Customer Price Group 3")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 4"; Rec."Customer Price Group 4")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 5"; Rec."Customer Price Group 5")
                 {
                     ApplicationArea = All;
                 }

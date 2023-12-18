@@ -31,6 +31,10 @@ page 90002 "Web Customer"
                     Caption = 'Customer No.';
 
                 }
+                field("Concerto Customer No."; Rec."Concerto Customer No.")
+                {
+                    ApplicationArea = All;
+                }
                 field(Process; Rec.Process)
                 {
                     ApplicationArea = All;
@@ -223,6 +227,29 @@ page 90002 "Web Customer"
                     WebOrderMgt.CreateCustomer();
                 end;
             }
+
+            // action("Update Customer")
+            // {
+            //     ApplicationArea = All;
+
+            //     trigger OnAction();
+            //     var
+            //         L_Customer: Record Customer;
+            //         L_InterimCustomer: Record "Interim Customer";
+            //     begin
+            //         L_InterimCustomer.Reset();
+            //         L_InterimCustomer.SetRange("Channel Code", 'SIGCONNECT');
+            //         if L_InterimCustomer.FindSet() then
+            //             repeat
+            //                 L_Customer.Reset();
+            //                 L_Customer.SetRange("No.", L_InterimCustomer."Customer No.");
+            //                 if L_Customer.FindFirst() then begin
+            //                     L_InterimCustomer."Concerto Customer No." := L_Customer."Concerto Customer No.";
+            //                     L_InterimCustomer.Modify();
+            //                 end;
+            //             until L_InterimCustomer.Next() = 0;
+            //     end;
+            // }
         }
     }
 }

@@ -1,4 +1,4 @@
-tableextension 90007 "UserSetupExt" extends "User Setup"
+tableextension 90007 "OC UserSetupExt" extends "User Setup"
 {
     fields
     {

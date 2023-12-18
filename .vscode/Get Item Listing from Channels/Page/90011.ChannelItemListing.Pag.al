@@ -108,10 +108,13 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     Visible = false;
                 }
+                field(RRP; Rec.RRP)
+                {
+                    ApplicationArea = All;
+                }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = All;
-                    //Visible = false;
                 }
                 field("Image Url 1"; Rec."Image Url 1")
                 {
