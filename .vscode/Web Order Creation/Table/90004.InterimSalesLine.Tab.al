@@ -247,6 +247,7 @@ table 90004 "Interim Sales Line"
         {
             TableRelation = "Trade Partner";
             DataClassification = ToBeClassified;
+            ValidateTableRelation = false;
 
         }
         field(47; "No of Error"; Integer)

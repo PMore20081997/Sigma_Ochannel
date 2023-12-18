@@ -127,10 +127,11 @@ codeunit 90000 "Web Order Mgt"
                 Case ChannelPartner."Customer Mapping" OF
                     ChannelPartner."Customer Mapping"::"Default Customer":
                         SellToCustomer.GET(ChannelPartner."Customer No.");
-                    ChannelPartner."Customer Mapping"::"Order Customer":
-                        SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
+                /*ChannelPartner."Customer Mapping"::"Order Customer":
+                    SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");*/
                 End;
-                L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
+
+                L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
                 L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
                 L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
                 L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
@@ -1165,10 +1166,10 @@ codeunit 90000 "Web Order Mgt"
                     if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                         if L_ErrorRecorded = false then begin
                             if L_Item.Get(L_InterimSalesLine."No.") then begin
-                                if L_Item."WebOrder Status" = L_Item."WebOrder Status"::DISCONTINUED then begin
-                                    Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
-                                    L_ErrorRecorded := TRUE;
-                                end;
+                                //if L_Item."WebOrder Status" = L_Item."WebOrder Status"::DISCONTINUED then begin
+                                Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                L_ErrorRecorded := TRUE;
+                                //end;
                             end;
                         end
                     end;

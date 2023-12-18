@@ -21,7 +21,8 @@ codeunit 90018 "GOY File Integration"
         CASE RunType OF
             SyncOrderLabel:
                 BEGIN
-                    ImportOrders(StartParameter);
+                    GetFileNameFromAzure(StartParameter);
+                    //ImportOrders(StartParameter);
                     TradePartner.Get(StartParameter);
                     TradePartner."Last Order Sync" := CurrentDateTime;
                     TradePartner.Modify();
@@ -30,6 +31,146 @@ codeunit 90018 "GOY File Integration"
         end;
     end;
 
+    local procedure GetFileNameFromAzure(P_ChannelCode: Code[20])
+    var
+        apiEndPoint: Text;
+        containerName: Text;
+        apiattribute: Text;
+        sasToken: Text;
+        apiUrl: Text;
+        httpClient: HttpClient;
+        httpResponse: HttpResponseMessage;
+        ResponseText: Text;
+        xmlDoc: XmlDocument;
+        L_Root: XmlElement;
+        L_Orders: XmlNodeList;
+        L_Node: XmlNode;
+        e: XmlElement;
+        L_Orders2: XmlNodeList;
+        L_Node2: XmlNode;
+        L_Orders3: XmlNodeList;
+        L_Node3: XmlNode;
+        TradePartner: Record "Trade Partner";
+    begin
+        ClearLastError();
+        TradePartner.Reset();
+        TradePartner.SetRange(Code, P_ChannelCode);
+        if TradePartner.FindFirst() then begin
+            apiEndPoint := TradePartner."API Endpoint";
+            apiattribute := TradePartner."API Attribute";
+            containerName := TradePartner."Incoming Orders Conatiner Name";
+            sasToken := TradePartner."Incoming Orders Token";
+        end;
+        //apiEndPoint := 'https://sigmaplc.blob.core.windows.net';
+        //containerName := 'order';
+        // apiattribute := '?restype=container&comp=list';
+        // sasToken := 'sp=racwdli&st=2023-12-14T11:04:51Z&se=2023-12-14T19:04:51Z&spr=https&sv=2022-11-02&sr=c&sig=slXm4FAuDyf5nsd%2Fg%2FFwG5q1qwP5t5Qowy%2FydM%2B8SJQ%3D';
+        apiUrl := apiEndPoint + '/' + containerName + apiattribute + '&' + sasToken;
+
+        httpClient.Get(apiUrl, httpResponse);
+        if (httpResponse.HttpStatusCode = 200) then begin
+            if (httpResponse.IsSuccessStatusCode = true) then begin
+                httpResponse.Content().ReadAs(ResponseText);
+                if XmlDocument.ReadFrom(ResponseText, xmlDoc) then begin
+                    xmlDoc.GetRoot(L_Root);
+                    L_Orders := L_Root.GetChildElements('Blobs');
+                    foreach L_Node in L_Orders do begin
+                        Clear(e);
+                        e := L_Node.AsXmlElement();
+                        Clear(L_Orders2);
+                        Clear(L_Node2);
+                        L_Orders2 := L_Node.AsXmlElement().GetChildElements();
+                        foreach L_Node2 in L_Orders2 do begin
+                            Clear(e);
+                            e := L_Node2.AsXmlElement();
+                            Clear(L_Orders3);
+                            Clear(L_Node3);
+                            L_Orders3 := L_Node2.AsXmlElement().GetChildElements();
+                            foreach L_Node3 in L_Orders3 do begin
+                                Clear(e);
+                                e := L_Node3.AsXmlElement();
+                                if e.Name = 'Name' then begin
+                                    ReadSpecificFileFromAzure(StartParameter, e.InnerText);
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+            end;
+            Message('Order Sync Completed...');
+        end;
+    end;
+
+    local procedure ReadSpecificFileFromAzure(ChannelCode: Code[20]; FileName: Text)
+    var
+        L_ApiUrl: Text;
+        L_HttpClient: HttpClient;
+        L_HttpResponse: HttpResponseMessage;
+        L_ApiEndpoint: Text;
+        L_ContainerName: Text;
+        L_ResponseText: Text;
+        CSVOutstream: OutStream;
+        CUTempoBlob: Codeunit "Temp Blob";
+        CSVInstream: InStream;
+        csvBuffer: Record "CSV Buffer";
+        xmlDoc: XmlDocument;
+        L_Root: XmlElement;
+        L_Orders: XmlNodeList;
+        L_Node: XmlNode;
+        e: XmlElement;
+        L_InterimHeader: Record "Interim Sales Header" temporary;
+        L_InterimLine: Record "Interim Sales Line" temporary;
+        L_Orders2: XmlNodeList;
+        L_Node2: XmlNode;
+        L_Orders3: XmlNodeList;
+        L_Node3: XmlNode;
+        L_Orders4: XmlNodeList;
+        L_Node4: XmlNode;
+        L_Orders5: XmlNodeList;
+        L_Node5: XmlNode;
+        L_Orders6: XmlNodeList;
+        L_Node6: XmlNode;
+        L_Count: Integer;
+        L_ShipmnetTracking: Record "Shipment Tracking" temporary;
+        L_PaymentDetails: Record "Channel Media" temporary;
+        e2: XmlElement;
+        L_No: Code[20];
+        Flag: Boolean;
+        L_TradePartner: Record "Trade Partner";
+        ShippingRule: Record "Shipping Rule";
+        BlobInstream: InStream;
+        OutStream: OutStream;
+        TempBlob: Codeunit "Temp Blob";
+
+    begin
+        Clear(L_ApiUrl);
+        Clear(L_HttpClient);
+        Clear(L_HttpResponse);
+        Clear(L_ApiEndpoint);
+        Clear(L_ContainerName);
+        Clear(L_ResponseText);
+        Clear(L_TradePartner);
+        //headers.Remove('Content-Type');
+        //headers.Add('Content-Type', 'application/json');
+        L_TradePartner.Get(ChannelCode);
+        L_ApiEndpoint := L_TradePartner."API Endpoint";
+        L_ContainerName := L_TradePartner."Incoming Orders Conatiner Name";
+        L_ApiUrl := L_ApiEndpoint + '/' + L_ContainerName + '/' + FileName;
+        L_HttpClient.Get(L_ApiUrl, L_HttpResponse);
+        if L_HttpResponse.HttpStatusCode = 200 then begin
+            if (L_HttpResponse.IsSuccessStatusCode = true) then begin
+                L_HttpResponse.Content().ReadAs(L_ResponseText);
+                CUTempoBlob.CreateOutStream(CSVOutstream);
+                CSVOutstream.WriteText(L_ResponseText);
+
+                CUTempoBlob.CreateInStream(CSVInstream, TextEncoding::UTF8);
+
+                CSVInstream.ReadText(L_ResponseText);
+
+                CreateOrder(CSVInstream, StartParameter, FileName);
+            end;
+        end;
+    end;
 
 
     procedure ExportFile(Header: Record "Interim Sales Header"; P_ChannelCode: Code[20])
@@ -176,7 +317,7 @@ codeunit 90018 "GOY File Integration"
         if TempCSVBuffer.FindLast() then
             MaxRow := TempCSVBuffer."Line No.";
         for RowNo := 1 to MaxRow do begin
-            if GetCellValue(RowNo, 3) = 'Pend' then begin
+            if GetCellValue(RowNo, 3) = 'Pending' then begin
                 Clear(LineNo);
                 Evaluate(LineNo, GetCellValue(RowNo, 7));
                 InterimSalesHeader.Reset();
@@ -220,7 +361,7 @@ codeunit 90018 "GOY File Integration"
             if InterimSalesLine.FindSet() then begin
                 repeat
                 until InterimSalesLine.Next() = 0;
-                CUWebOrderMgt.CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+                CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
 
                 //Update Interim header and Interim Line Response Code and Message++
                 L_Header.Reset();

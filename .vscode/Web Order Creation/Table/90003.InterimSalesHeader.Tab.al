@@ -245,6 +245,7 @@ table 90003 "Interim Sales Header"
         field(60; "Trade Partner Code"; Code[250])
         {
             TableRelation = "Trade Partner";
+            ValidateTableRelation = false;
         }
         field(61; "Shipping Agent Code"; Code[10])
         {
