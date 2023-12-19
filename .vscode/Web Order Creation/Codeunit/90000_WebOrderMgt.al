@@ -120,6 +120,7 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
             L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::"In Progress");
             L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+            L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
             L_InterimSalesHeader.validate("Document Date", WorkDate);
             L_InterimSalesHeader.Validate("Order Date", WorkDate);
 
@@ -127,11 +128,18 @@ codeunit 90000 "Web Order Mgt"
                 Case ChannelPartner."Customer Mapping" OF
                     ChannelPartner."Customer Mapping"::"Default Customer":
                         SellToCustomer.GET(ChannelPartner."Customer No.");
-                /*ChannelPartner."Customer Mapping"::"Order Customer":
-                    SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");*/
+                    ChannelPartner."Customer Mapping"::"Order Customer":
+                        SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
                 End;
-
-                L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+                if ChannelPartner."Customer Mapping" = ChannelPartner."Customer Mapping"::"ET Access Customer" then begin
+                    SellToCustomer.Reset();
+                    SellToCustomer.SetRange("No.", P_InterimSalesHeader."Sell-to Customer No.");
+                    if SellToCustomer.FindFirst() then;
+                end;
+                if SellToCustomer."No." = '' then
+                    L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.")
+                else
+                    L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
                 L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
                 L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
                 L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
@@ -821,6 +829,7 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine."Document No" := P_InterimSalesHeader."No.";
         L_InterimSalesLine."Order Date" := P_InterimSalesHeader."Order Date";
         L_InterimSalesLine.VALIDATE("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+        L_InterimSalesLine.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
         L_InterimSalesLine.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
         L_InterimSalesLine."Line No." := FindLastLineNo(P_InterimSalesHeader);
         L_InterimSalesLine.Type := L_InterimSalesLine.Type::Item;

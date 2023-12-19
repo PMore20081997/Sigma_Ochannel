@@ -406,6 +406,10 @@ table 90006 "Handled Interim Sales Line"
         {
 
         }
+        field(90049; "ET Access Code"; Code[20])
+        {
+
+        }
     }
 
     keys

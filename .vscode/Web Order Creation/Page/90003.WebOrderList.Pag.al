@@ -27,6 +27,10 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("ET Access Code"; Rec."ET Access Code")
+                {
+                    ApplicationArea = all;
+                }
                 field("No."; Rec."No.")
                 {
                     ApplicationArea = all;

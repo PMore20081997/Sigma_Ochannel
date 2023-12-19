@@ -193,7 +193,7 @@ codeunit 90018 "GOY File Integration"
             Xmlport.Export(Xmlport::"Export File", FileOutStream, L_Line);
             TempBlob.CREATEINSTREAM(FileInStream);
             //outputFileName := Format(CurrentDateTime, 0, '20<Year>-<Month,2>-<Day,2>T<Hours24,2><Minutes,2><Seconds,2>') + 'GOYNORreply' + '.CSV';
-            outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + P_ChannelCode + 'reply.csv';
+            outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + L_Line."ET Access Code" + 'reply.csv';
             //DownloadFromStream(FileInStream, '', '', '', outputFileName);
             UploadFileTOAzureBlob(FileInStream, outputFileName, P_ChannelCode);
         end;
@@ -317,43 +317,45 @@ codeunit 90018 "GOY File Integration"
         if TempCSVBuffer.FindLast() then
             MaxRow := TempCSVBuffer."Line No.";
         for RowNo := 1 to MaxRow do begin
-            if GetCellValue(RowNo, 3) = 'Pending' then begin
-                Clear(LineNo);
-                Evaluate(LineNo, GetCellValue(RowNo, 7));
-                InterimSalesHeader.Reset();
-                InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
-                InterimSalesHeader.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
-                InterimSalesHeader.SetRange("File Name", GetCellValue(RowNo, 12));
-                if NOT InterimSalesHeader.FindFirst() then begin
-                    InterimSalesHeader.Init();
-                    InterimSalesHeader.Validate("Document Type", InterimSalesHeader."Document Type"::Order);
-                    InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
-                    InterimSalesHeader.Validate("Trade Partner Code", GetCellValue(RowNo, 1));
-                    InterimSalesHeader.Validate("Channel Order ID", GetCellValue(RowNo, 12));
-                    InterimSalesHeader.Validate("Sell-to Customer No.", GetCellValue(RowNo, 2));
-                    InterimSalesHeader.Validate("File Name", GetCellValue(RowNo, 12));
-                    InterimSalesHeader.Insert();
-                end;
-                InterimSalesLine.Reset();
-                InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
-                InterimSalesLine.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
-                InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-                InterimSalesLine.SetRange("Line No.", LineNo);
-                if NOT InterimSalesLine.FindFirst() then begin
-                    InterimSalesLine.Init();
-                    InterimSalesLine.Validate("Document Type", InterimSalesLine."Document Type"::Order);
-                    InterimSalesLine.Validate("Document No", InterimSalesHeader."No.");
-                    InterimSalesLine.Validate("Line No.", LineNo);
-                    InterimSalesLine.Validate(Type, InterimSalesLine.Type::Item);
-                    InterimSalesLine.Validate("Trade Partner Code", GetCellValue(RowNo, 1));
-                    InterimSalesLine.Validate("Channel Order ID", InterimSalesHeader."Channel Order ID");
-                    InterimSalesLine.Validate("Channel SKU", GetCellValue(RowNo, 8));
-                    Clear(Qty);
-                    Evaluate(Qty, GetCellValue(RowNo, 9));
-                    InterimSalesLine.Quantity := Qty;
-                    InterimSalesLine.Insert();
-                end;
+            //if GetCellValue(RowNo, 3) = 'Pending' then begin
+            Clear(LineNo);
+            Evaluate(LineNo, GetCellValue(RowNo, 7));
+            InterimSalesHeader.Reset();
+            InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
+            //InterimSalesHeader.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
+            InterimSalesHeader.SetRange("File Name", FileName);
+            if NOT InterimSalesHeader.FindFirst() then begin
+                InterimSalesHeader.Init();
+                InterimSalesHeader.Validate("Document Type", InterimSalesHeader."Document Type"::Order);
+                InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
+                InterimSalesHeader.Validate("Trade Partner Code", StartParameter);
+                InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
+                InterimSalesHeader.Validate("Channel Order ID", FileName);
+                InterimSalesHeader.Validate("Sell-to Customer No.", GetCellValue(RowNo, 2));
+                InterimSalesHeader.Validate("File Name", FileName);
+                InterimSalesHeader.Insert();
             end;
+            InterimSalesLine.Reset();
+            InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
+            //InterimSalesLine.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
+            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+            InterimSalesLine.SetRange("Line No.", LineNo);
+            if NOT InterimSalesLine.FindFirst() then begin
+                InterimSalesLine.Init();
+                InterimSalesLine.Validate("Document Type", InterimSalesLine."Document Type"::Order);
+                InterimSalesLine.Validate("Document No", InterimSalesHeader."No.");
+                InterimSalesLine.Validate("Line No.", LineNo);
+                InterimSalesLine.Validate(Type, InterimSalesLine.Type::Item);
+                InterimSalesLine.Validate("Trade Partner Code", InterimSalesHeader."Trade Partner Code");
+                InterimSalesLine.Validate("ET Access Code", GetCellValue(RowNo, 1));
+                InterimSalesLine.Validate("Channel Order ID", InterimSalesHeader."Channel Order ID");
+                InterimSalesLine.Validate("Channel SKU", GetCellValue(RowNo, 8));
+                Clear(Qty);
+                Evaluate(Qty, GetCellValue(RowNo, 9));
+                InterimSalesLine.Quantity := Qty;
+                InterimSalesLine.Insert();
+            end;
+            //end;
         end;
 
         if RowNo = MaxRow then begin

@@ -34,6 +34,11 @@ page 90019 "Handle Web Order"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("ET Access Code"; Rec."ET Access Code")
+                {
+                    Editable = false;
+                    ApplicationArea = all;
+                }
                 field("Bill-to Customer No."; Rec."Bill-to Customer No.")
                 {
                     ApplicationArea = All;

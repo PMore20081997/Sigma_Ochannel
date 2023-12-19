@@ -490,6 +490,10 @@ table 90004 "Interim Sales Line"
         {
             DataClassification = ToBeClassified;
         }
+        field(90049; "ET Access Code"; Code[20])
+        {
+
+        }
     }
 
     keys

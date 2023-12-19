@@ -22,7 +22,7 @@ table 90001 "Trade Partner"
 
         field(6; "Customer Mapping"; Option)
         {
-            OptionMembers = "Default Customer","Order Customer";
+            OptionMembers = "Default Customer","Order Customer","ET Access Customer";
             trigger OnValidate()
             var
                 myInt: Integer;

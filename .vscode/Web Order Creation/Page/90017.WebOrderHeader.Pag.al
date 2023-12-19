@@ -38,6 +38,11 @@ page 90017 "Web Order Header"
                     Lookup = false;
                     ApplicationArea = all;
                 }
+                field("ET Access Code"; Rec."ET Access Code")
+                {
+                    Editable = false;
+                    ApplicationArea = all;
+                }
                 field("Web Customer No."; Rec."Web Customer No.")
                 {
                     ApplicationArea = All;
