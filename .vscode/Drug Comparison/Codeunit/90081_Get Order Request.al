@@ -4,7 +4,7 @@ codeunit 90081 "Get Order Request API"
     var
         jsonText: JsonObject;
     begin
-        Input('{"OrderReferenceNo": "Robosol_01","CustomerNo": "121PHAR","Lines": [{"LineNo": "1","ItemNo": "000-0002","Quantity": "1"},{"LineNo": "2","ItemNo": "000-1289","Quantity": "2"}]}');
+        Input('{"OrderReferenceNo": "Robosol_01","CustomerNo": "C000101","Lines": [{"LineNo": "1","ItemNo": "000-0596","Quantity": "1"},{"LineNo": "2","ItemNo": "000-1040","Quantity": "2"}]}');
     end;
 
     var

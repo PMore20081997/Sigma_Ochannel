@@ -138,18 +138,19 @@ codeunit 90000 "Web Order Mgt"
                 end;
                 if SellToCustomer."No." = '' then
                     L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.")
-                else
+                else begin
                     L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
-                L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
-                L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
-                L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
-                L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
-                L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
-                if SellToCustomer."Location Code" <> '' then
-                    L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code")
-                else
-                    L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location);
-                L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
+                    L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
+                    L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
+                    L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
+                    L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
+                    L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
+                    if SellToCustomer."Location Code" <> '' then
+                        L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code")
+                    else
+                        L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location);
+                    L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
+                end;
             end;
 
 
