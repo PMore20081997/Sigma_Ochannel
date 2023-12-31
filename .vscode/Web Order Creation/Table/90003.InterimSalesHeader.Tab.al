@@ -545,7 +545,7 @@ table 90003 "Interim Sales Header"
             Caption = 'Ship-to Code';
             TableRelation = "Ship-to Address".Code WHERE("Customer No." = FIELD("Sell-to Customer No."));
         }
-        field(90049; "ET Access Code"; Code[20])
+        field(90049; "ET Access Code"; Code[50])
         {
 
         }

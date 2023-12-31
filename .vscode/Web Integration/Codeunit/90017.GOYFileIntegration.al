@@ -305,6 +305,7 @@ codeunit 90018 "GOY File Integration"
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_OrderLevelResponse: Record "Order Level Response";
         L_ProductLevelResponse: Record "Product Level Response";
+        CustomerRef: Record "Customer Reference";
     begin
         TempCSVBuffer.Reset();
         TempCSVBuffer.DeleteAll();
@@ -331,7 +332,10 @@ codeunit 90018 "GOY File Integration"
                 InterimSalesHeader.Validate("Trade Partner Code", StartParameter);
                 InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
                 InterimSalesHeader.Validate("Channel Order ID", FileName);
-                InterimSalesHeader.Validate("Sell-to Customer No.", GetCellValue(RowNo, 2));
+                CustomerRef.Reset();
+                CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
+                if CustomerRef.FindFirst() then
+                    InterimSalesHeader.Validate("Sell-to Customer No.", CustomerRef."Customer No.");
                 InterimSalesHeader.Validate("File Name", FileName);
                 InterimSalesHeader.Insert();
             end;

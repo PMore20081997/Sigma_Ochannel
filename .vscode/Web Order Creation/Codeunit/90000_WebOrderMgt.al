@@ -675,14 +675,25 @@ codeunit 90000 "Web Order Mgt"
                 EXIT(ChannelItemList."Item No.");
 
         End Else Begin
-            ItemCrossReference.RESET;
-            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
-            ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
-            ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
-            IF ItemCrossReference.FINDFIRST THEN
-                EXIT(ItemCrossReference."Item No.")
-            else
-                exit(P_ChannelSKU); //For Sigma++
+            if P_ChannelPartner."Inbox Type" = P_ChannelPartner."Inbox Type"::"File Location" then begin
+                ItemCrossReference.RESET;
+                ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::"Bar Code");
+                ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
+                IF ItemCrossReference.FINDFIRST THEN
+                    EXIT(ItemCrossReference."Item No.")
+                else
+                    exit(P_ChannelSKU);
+            end else begin
+                ItemCrossReference.RESET;
+                ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
+                ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
+                ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
+                IF ItemCrossReference.FINDFIRST THEN
+                    EXIT(ItemCrossReference."Item No.")
+                else
+                    exit(P_ChannelSKU); //For Sigma++
+            end;
+
 
         End;
     end;
@@ -1027,8 +1038,10 @@ codeunit 90000 "Web Order Mgt"
                 L_Cust.Reset();
                 IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
                     if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
-                        Sigma_InsertErrorLog(STRSUBSTNO('Invalid A/C number', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                        L_ErrorRecorded := TRUE;
+                        if P_InterimSalesHeader."Sell-to Customer No." <> '' then begin
+                            Sigma_InsertErrorLog(STRSUBSTNO('Invalid A/C number', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                            L_ErrorRecorded := TRUE;
+                        end;
                     end else begin
                         Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
                         L_ErrorRecorded := TRUE;
@@ -1081,7 +1094,7 @@ codeunit 90000 "Web Order Mgt"
                 if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                     L_CustRef.Reset();
                     L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
-                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."Trade Partner Code");
+                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
                     if L_CustRef.FindFirst() then begin
                         if L_CustRef.Locked = true then begin
                             Sigma_InsertErrorLog(STRSUBSTNO('cross reference record locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
@@ -1094,7 +1107,7 @@ codeunit 90000 "Web Order Mgt"
                 if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                     L_CustRef.Reset();
                     L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
-                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."Trade Partner Code");
+                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
                     if NOT L_CustRef.FindFirst() then begin
                         Sigma_InsertErrorLog(STRSUBSTNO('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
                         L_ErrorRecorded := TRUE;
@@ -1176,10 +1189,10 @@ codeunit 90000 "Web Order Mgt"
                     if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                         if L_ErrorRecorded = false then begin
                             if L_Item.Get(L_InterimSalesLine."No.") then begin
-                                //if L_Item."WebOrder Status" = L_Item."WebOrder Status"::DISCONTINUED then begin
-                                Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
-                                L_ErrorRecorded := TRUE;
-                                //end;
+                                if L_Item."WebOrder Status" = L_Item."WebOrder Status"::DISCONTINUED then begin
+                                    Sigma_InsertErrorLog('Product Discontinued', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                    L_ErrorRecorded := TRUE;
+                                end;
                             end;
                         end
                     end;

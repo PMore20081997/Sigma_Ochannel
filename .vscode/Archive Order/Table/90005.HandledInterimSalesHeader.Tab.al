@@ -514,7 +514,7 @@ table 90005 "Handled Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
-        field(90049; "ET Access Code"; Code[20])
+        field(90049; "ET Access Code"; Code[50])
         {
 
         }
