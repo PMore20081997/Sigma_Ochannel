@@ -306,6 +306,7 @@ codeunit 90018 "GOY File Integration"
         L_OrderLevelResponse: Record "Order Level Response";
         L_ProductLevelResponse: Record "Product Level Response";
         CustomerRef: Record "Customer Reference";
+        K: Integer;
     begin
         TempCSVBuffer.Reset();
         TempCSVBuffer.DeleteAll();
@@ -317,10 +318,21 @@ codeunit 90018 "GOY File Integration"
         TempCSVBuffer.Reset();
         if TempCSVBuffer.FindLast() then
             MaxRow := TempCSVBuffer."Line No.";
+        Clear(K);
         for RowNo := 1 to MaxRow do begin
             //if GetCellValue(RowNo, 3) = 'Pending' then begin
+            if K = 0 then
+                K := 1
+            else
+                K += 1;
             Clear(LineNo);
-            Evaluate(LineNo, GetCellValue(RowNo, 7));
+            if GetCellValue(RowNo, 7) <> '' then
+                if GetCellValue(RowNo, 7).Contains('-') then
+                    Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
+                else
+                    Evaluate(LineNo, GetCellValue(RowNo, 7))
+            else
+                LineNo := K;
             InterimSalesHeader.Reset();
             InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
             //InterimSalesHeader.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
