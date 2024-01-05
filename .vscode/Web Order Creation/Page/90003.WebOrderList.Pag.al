@@ -120,6 +120,10 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Sales Order Created"; Rec."Sales Order Created")
+                {
+                    ApplicationArea = all;
+                }
                 field("Shipping Agent Code"; Rec."Shipping Agent Code")
                 {
                     ApplicationArea = all;
@@ -276,7 +280,8 @@ page 90003 "Web Order List"
                     if InterimSalesHeader.FindSet() then begin
                         IF InterimSalesHeader.FIND('-') THEN
                             REPEAT
-                                WebOrdMngt.OrderValidations(InterimSalesHeader);
+                                //WebOrdMngt.OrderValidations(InterimSalesHeader);
+                                WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
                             UNTIL InterimSalesHeader.NEXT = 0;
                     end;
                 end;

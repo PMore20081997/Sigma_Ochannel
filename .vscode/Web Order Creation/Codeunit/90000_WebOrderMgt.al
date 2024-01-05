@@ -1263,6 +1263,14 @@ codeunit 90000 "Web Order Mgt"
                     end;
 
                 UNTIL L_InterimSalesLine.NEXT = 0;
+
+            If L_ErrorRecorded then begin
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+                P_InterimSalesHeader.Modify();
+            end Else begin
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+                P_InterimSalesHeader.Modify();
+            end;
         end;
     end;
 

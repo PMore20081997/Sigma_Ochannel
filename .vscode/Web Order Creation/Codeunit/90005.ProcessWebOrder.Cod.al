@@ -38,7 +38,7 @@ codeunit 90005 "Process Web Order"
         FirstOrder: Boolean;
         WarehouseSetup: Record "Warehouse Setup";
         ItemUnitofMeasure: Record "Item Unit of Measure";
-        TempSalesHeader: Record "Sales Header" temporary;
+        TempSalesHeader: Record "Web Buffer";
         CustRec: Record Customer;
         ResCen: Record "Responsibility Center";
         CalllType: Option "Internal Pick","Single Order","Consolidate Order";
@@ -308,20 +308,20 @@ codeunit 90005 "Process Web Order"
     local procedure UpdateSONo(var L_InterimSalesLine: Record "Interim Sales Line"; var RecInterimSalesHeader: Record "Interim Sales Header")
     begin
         //Update Interim Line
-        L_InterimSalesLine."Destination Doc Type" := L_InterimSalesLine."Destination Doc Type"::"Sales Order";
-        L_InterimSalesLine."Destination Doc No." := HeaderNo;
-        L_InterimSalesLine."Destination Doc. Line No" := LineNo;
-        L_InterimSalesLine.MODIFY;
+        /* L_InterimSalesLine."Destination Doc Type" := L_InterimSalesLine."Destination Doc Type"::"Sales Order";
+         L_InterimSalesLine."Destination Doc No." := HeaderNo;
+         L_InterimSalesLine."Destination Doc. Line No" := LineNo;
+         L_InterimSalesLine.MODIFY;
 
-        //Update Interim Header
-        RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::Processing);
-        RecInterimSalesHeader."Destination Doc Type" := RecInterimSalesHeader."Destination Doc Type"::"Sales Order";
-        RecInterimSalesHeader."Destination Doc No." := HeaderNo;
-        RecInterimSalesHeader.VALIDATE("Destination Doc No.", HeaderNo);
-        RecInterimSalesHeader.MODIFY;
+         //Update Interim Header
+         RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::Processing);
+         RecInterimSalesHeader."Destination Doc Type" := RecInterimSalesHeader."Destination Doc Type"::"Sales Order";
+         RecInterimSalesHeader."Destination Doc No." := HeaderNo;
+         RecInterimSalesHeader.VALIDATE("Destination Doc No.", HeaderNo);
+         RecInterimSalesHeader.MODIFY;*/
 
         //Insert Temp Header
-        InsertIntoTempHeader(HeaderNo);
+        InsertIntoTempHeader(L_InterimSalesLine."Document No", HeaderNo);
 
         //Update Shipment Tracking
         //AmazonIntegration.UpdateSalesOrderNoInShippmentTrackingLine(L_InterimSalesLine);//NIKHIL_28/01/19Commented By pavan No need Amazon
@@ -358,7 +358,7 @@ codeunit 90005 "Process Web Order"
 
         //L_SalesH.VALIDATE("Order placed At",InterimSalesHeader."Order Placed At"); //commented by shailesh 040719
         L_SalesH.VALIDATE("Sell-to Customer No.", InterimSalesHeader."Sell-to Customer No.");
-        L_SalesH.VALIDATE("External Document No.", InterimSalesHeader."Channel Order ID");//Block_Nikhil_30/01/19
+        //L_SalesH.VALIDATE("External Document No.", InterimSalesHeader."Channel Order ID");//Block_Nikhil_30/01/19
         IF InterimSalesHeader."Earliest Delivery date" <> 0D THEN BEGIN
             IF InterimSalesHeader."Earliest Delivery date" < WORKDATE THEN
                 L_SalesH.VALIDATE("Shipment Date", WORKDATE)
@@ -567,15 +567,15 @@ codeunit 90005 "Process Web Order"
 
     end;
 
-    local procedure InsertIntoTempHeader(DocNo: Code[20])
+    local procedure InsertIntoTempHeader(WebNo: Code[20]; SalesNo: Code[20])
     begin
         TempSalesHeader.RESET;
-        TempSalesHeader.SETRANGE("Document Type", TempSalesHeader."Document Type"::Order);
-        TempSalesHeader.SETRANGE("No.", DocNo);
+        TempSalesHeader.SETRANGE("Web Document No.", WebNo);
+        TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
         IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
             TempSalesHeader.INIT;
-            TempSalesHeader."Document Type" := TempSalesHeader."Document Type"::Order;
-            TempSalesHeader."No." := DocNo;
+            TempSalesHeader."Web Document No." := WebNo;
+            TempSalesHeader."Sales Document No." := SalesNo;
             TempSalesHeader.INSERT;
         END;
     end;
@@ -719,32 +719,41 @@ codeunit 90005 "Process Web Order"
         InterimSalesHeader1: Record "Interim Sales Header";
         Customer: Record "Customer";
         ShipmentTracking: Record "Shipment Tracking";
+        WebBuffer: Record "Web Buffer";
     begin
         IF FirstOrder = FALSE THEN BEGIN
-            //CLEAR(HeaderNo);
-            ISL.RESET;
-            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
-            ISL.SETRANGE("Document No", Rec."No.");
-            IF ISL.FINDSET THEN
-                REPEAT
-                    CLEAR(LineNo);
-                    CheckSOExists(ISL, Rec);
-                UNTIL ISL.NEXT = 0;
+            WebBuffer.Reset();
+            WebBuffer.SetRange("Web Document No.", Rec."No.");
+            if NOT WebBuffer.FindFirst() then begin
+                ISL.RESET;
+                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                ISL.SETRANGE("Document No", Rec."No.");
+                IF ISL.FINDSET THEN
+                    REPEAT
+                        CLEAR(LineNo);
+                        CheckSOExists(ISL, Rec);
+                    UNTIL ISL.NEXT = 0;
+            end;
+
         END
         ELSE BEGIN
             CLEAR(HeaderNo);
-            ISL.RESET;
-            ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
-            ISL.SETRANGE("Document No", Rec."No.");
-            IF ISL.FINDSET THEN BEGIN
-                HeaderNo := NewCreateSalesHeader(ISL);
-                REPEAT
-                    CLEAR(LineNo);
-                    LineNo := NewCreateSalesLine(HeaderNo, ISL);
-                    UpdateSONo(ISL, Rec);
-                UNTIL ISL.NEXT = 0;
-                //Message('Web Order Processed Successfully'); //Sofyan //NIKHIL_30/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
-                FirstOrder := FALSE;
+            WebBuffer.Reset();
+            WebBuffer.SetRange("Web Document No.", Rec."No.");
+            if NOT WebBuffer.FindFirst() then begin
+                ISL.RESET;
+                ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
+                ISL.SETRANGE("Document No", Rec."No.");
+                IF ISL.FINDSET THEN BEGIN
+                    HeaderNo := NewCreateSalesHeader(ISL);
+                    REPEAT
+                        CLEAR(LineNo);
+                        LineNo := NewCreateSalesLine(HeaderNo, ISL);
+                        UpdateSONo(ISL, Rec);
+                    UNTIL ISL.NEXT = 0;
+                    //Message('Web Order Processed Successfully'); //Sofyan //NIKHIL_30/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
+                    FirstOrder := FALSE;
+                END;
             END;
         END;
     end;

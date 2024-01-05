@@ -547,7 +547,12 @@ table 90003 "Interim Sales Header"
         }
         field(90049; "ET Access Code"; Code[50])
         {
-
+            DataClassification = ToBeClassified;
+        }
+        field(90050; "Sales Order Created"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("Web Buffer" where("Web Document No." = field("No.")));
         }
 
     }
