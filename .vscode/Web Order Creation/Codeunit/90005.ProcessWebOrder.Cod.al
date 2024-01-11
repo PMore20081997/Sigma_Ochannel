@@ -21,16 +21,20 @@ codeunit 90005 "Process Web Order"
 
             CalllType::"Consolidate Order":
                 begin
-                    CreateConsolidateOrder(Rec);
-                    GenSetupChannels.Get();
-                    if GenSetupChannels."Despatch Scan Enabled" = false then
-                        MovedToHandled(Rec, true);
+                    CreateConsolidateSO.SendRequesttoCreateOrders(Rec);
+                    //Commented Default Code++
+                    // CreateConsolidateOrder(Rec);
+                    // GenSetupChannels.Get();
+                    // if GenSetupChannels."Despatch Scan Enabled" = false then
+                    //     MovedToHandled(Rec, true);
+                    //Commented Default Codde--
                 end;
         end;
 
     end;
 
     var
+        CreateConsolidateSO: Codeunit "Create Consolidate SO";
         InvDiscountAmount: Decimal;
         NoSeriesManagement: Codeunit 396;
         HeaderNo: Code[20];

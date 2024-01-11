@@ -164,18 +164,18 @@ page 90003 "Web Order List"
     {
         area(processing)
         {
-            action(Test)
-            {
-                ApplicationArea = All;
-                Image = Import;
+            // action(Test)
+            // {
+            //     ApplicationArea = All;
+            //     Image = Import;
 
-                trigger OnAction()
-                var
-                    L_Codeunit: Codeunit "Get Order Request API";
-                begin
-                    L_Codeunit.Run();
-                end;
-            }
+            //     trigger OnAction()
+            //     var
+            //         L_Codeunit: Codeunit "Get Order Request API";
+            //     begin
+            //         L_Codeunit.Run();
+            //     end;
+            // }
             action(BulkDelete)
             {
                 ApplicationArea = All;

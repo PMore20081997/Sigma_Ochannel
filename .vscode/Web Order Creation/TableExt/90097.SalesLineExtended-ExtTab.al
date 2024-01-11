@@ -9,15 +9,15 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
             var
                 L_SalesLine: Record "Sales Line";
             begin
-                L_SalesLine.Reset();
-                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                L_SalesLine.SetRange("Document No.", Rec."Document No.");
-                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                if L_SalesLine.FindFirst() then begin
-                    if Rec."Channel Order ID" <> L_SalesLine."Channel Order ID" then
-                        Rec."Channel Order ID" := L_SalesLine."Channel Order ID";
-                    Rec."Channel Code" := L_SalesLine."Channel Code";
-                end;
+                // L_SalesLine.Reset();
+                // L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                // L_SalesLine.SetRange("Document No.", Rec."Document No.");
+                // L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                // if L_SalesLine.FindFirst() then begin
+                //     if Rec."Channel Order ID" <> L_SalesLine."Channel Order ID" then
+                //         Rec."Channel Order ID" := L_SalesLine."Channel Order ID";
+                //     Rec."Channel Code" := L_SalesLine."Channel Code";
+                // end;
             end;
         }
         field(90000; "Scanned Date"; DateTime)
@@ -29,6 +29,10 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         }
         field(90002; "Channel Code"; Code[20])
         {
+        }
+        field(90003; "Web Order"; Boolean)
+        {
+
         }
 
     }
