@@ -54,6 +54,12 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                         ApplicationArea = all;
                         Visible = true;
                     }
+                    action("Web Buffer")
+                    {
+                        Caption = 'Web Buffer';
+                        RunObject = page "Web Buffer";
+                        ApplicationArea = all;
+                    }
                     action("Order Response")
                     {
                         RunObject = page "Order Response";

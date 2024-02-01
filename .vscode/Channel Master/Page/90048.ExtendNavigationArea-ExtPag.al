@@ -13,6 +13,7 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
 
                 group(Setup)
                 {
+
                     action("Channel Partner")
                     {
                         RunObject = page "Trade Partner List";
@@ -52,6 +53,12 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         RunObject = page "Web Payments";
                         ApplicationArea = all;
                         Visible = true;
+                    }
+                    action("Web Buffer")
+                    {
+                        Caption = 'Web Buffer';
+                        RunObject = page "Web Buffer";
+                        ApplicationArea = all;
                     }
                     action("Order Response")
                     {

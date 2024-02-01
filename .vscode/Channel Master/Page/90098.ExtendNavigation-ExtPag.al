@@ -72,6 +72,12 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                     RunObject = page "Web Payments";
                     ApplicationArea = all;
                 }
+                action("Web Buffer")
+                {
+                    Caption = 'Web Buffer';
+                    RunObject = page "Web Buffer";
+                    ApplicationArea = all;
+                }
                 action("Order Response")
                 {
                     RunObject = page "Order Response";

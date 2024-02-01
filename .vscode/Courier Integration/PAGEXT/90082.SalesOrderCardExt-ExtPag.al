@@ -2,6 +2,15 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
 {
     layout
     {
+        addlast(General)
+        {
+            field("_Web Order"; reC."Web Order")
+            {
+                ApplicationArea = All;
+                Editable = false;
+                Caption = 'Web Order';
+            }
+        }
         modify("Customer Posting Group")
         {
             Editable = true;
@@ -22,22 +31,73 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
         {
             Editable = false;
         }
-        addafter("External Document No.")
-        {
-            field("Channel Code"; Rec."Channel Code")
-            {
-                ApplicationArea = All;
-                Editable = false;
-            }
-        }
+        // addafter("External Document No.")
+        // {
+        //     field("Channel Code"; Rec."Channel Code")
+        //     {
+        //         ApplicationArea = All;
+        //         Editable = false;
+        //     }
+        // }
     }
 
     actions
     {
         addafter(Release)
         {
+            action("Web Order")
+            {
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                ApplicationArea = All;
+                Image = Navigate;
 
+                trigger OnAction()
+                var
+                    L_WebOrderList: Page "Web Order List";
+                    L_InterimSalesHeader: Record "Interim Sales Header";
 
+                    HandledWebOrderList: Page "Handled Web Order List";
+                    L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+                begin
+                    Clear(L_WebOrderList);
+                    L_InterimSalesHeader.Reset();
+                    L_InterimSalesHeader.SetFilter("No.", SetWeborderFilter(Rec."No."));
+                    if L_InterimSalesHeader.FindSet() then begin
+                        L_WebOrderList.SetTableView(L_InterimSalesHeader);
+                        L_WebOrderList.Run();
+                    end else begin
+                        Clear(HandledWebOrderList);
+                        L_HandledInterimSalesHeader.Reset();
+                        L_HandledInterimSalesHeader.SetFilter("No.", SetHandledWeborderFilter(Rec."No."));
+                        if L_HandledInterimSalesHeader.FindSet() then begin
+                            HandledWebOrderList.SetTableView(L_HandledInterimSalesHeader);
+                            HandledWebOrderList.Run();
+                        end;
+                    end;
+                end;
+            }
+            // action("Handled Web Order")
+            // {
+            //     Image = Navigate;
+            //     Promoted = true;
+            //     PromotedCategory = Process;
+            //     PromotedIsBig = true;
+            //     ApplicationArea = All;
+
+            //     trigger OnAction()
+            //     var
+            //         HandledWebOrderList: Page "Handled Web Order List";
+            //         L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+            //     begin
+            //         Clear(HandledWebOrderList);
+            //         L_HandledInterimSalesHeader.Reset();
+            //         L_HandledInterimSalesHeader.SetFilter("No.", SetHandledWeborderFilter(Rec."No."));
+            //         HandledWebOrderList.SetTableView(L_HandledInterimSalesHeader);
+            //         HandledWebOrderList.Run();
+            //     end;
+            // }
             action("Shipment Tracking")
             {
                 Image = Track;
@@ -59,46 +119,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     end;
                 end;
             }
-            action("Web Order")
-            {
-                ApplicationArea = All;
-                Image = Web;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                trigger OnAction()
-                var
-                    InterimSalesHeader: Record "Interim Sales Header";
-                    HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-                    P_WebOrder: Page "Web Order Header";
-                    P_HnadledWebOrder: Page "Handle Web Order";
-                    SalesLine: Record "Sales Line";
-                begin
-                    SalesLine.Reset();
-                    SalesLine.SetRange("Document Type", SalesLine."Document Type"::Order);
-                    SalesLine.SetRange(Type, SalesLine.Type::Item);
-                    SalesLine.SetRange("Document No.", Rec."No.");
-                    if SalesLine.FindFirst() then begin
-                        InterimSalesHeader.Reset();
-                        InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
-                        InterimSalesHeader.SetRange("Channel Order ID", SalesLine."Channel Order ID");
-                        if InterimSalesHeader.FindFirst() then begin
-                            Clear(P_WebOrder);
-                            P_WebOrder.SetRecord(InterimSalesHeader);
-                            P_WebOrder.Run();
-                        end
-                        else begin
-                            HandledInterimSalesHeader.Reset();
-                            HandledInterimSalesHeader.SetRange("Channel Order ID", SalesLine."Channel Order ID");
-                            if HandledInterimSalesHeader.FindFirst() then begin
-                                Clear(P_HnadledWebOrder);
-                                P_HnadledWebOrder.SetRecord(HandledInterimSalesHeader);
-                                P_HnadledWebOrder.Run();
-                            end;
-                        end;
-                    end;
-                end;
-            }
+
         }
 
         modify(Release)
@@ -137,6 +158,48 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
             UpdateHandledInterimSalesHeader(SalesLine);
         end;
         OnAfterUpdateHandledWebOrder();
+    end;
+
+    local procedure SetWeborderFilter(_SalesOrderNo: Code[20]): Text
+    var
+        L_WebBuffer: Record "Web Buffer";
+        WebOrderNo: Text;
+    begin
+        Clear(WebOrderNo);
+        L_WebBuffer.Reset();
+        L_WebBuffer.SetRange("Sales Document No.", _SalesOrderNo);
+        L_WebBuffer.SetCurrentKey("Web Document No.");
+        L_WebBuffer.Ascending(true);
+        if L_WebBuffer.FindSet() then begin
+            repeat
+                if WebOrderNo <> '' then begin
+                    WebOrderNo := WebOrderNo + '|' + L_WebBuffer."Web Document No.";
+                end else
+                    WebOrderNo := L_WebBuffer."Web Document No.";
+            until L_WebBuffer.Next() = 0;
+        end;
+        exit(WebOrderNo);
+    end;
+
+    local procedure SetHandledWeborderFilter(_SalesOrderNo: Code[20]): Text
+    var
+        L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+        HandledWebOrderNo: Text;
+    begin
+        Clear(HandledWebOrderNo);
+        L_HandledInterimSalesHeader.Reset();
+        L_HandledInterimSalesHeader.SetRange("Destination Doc No.", _SalesOrderNo);
+        L_HandledInterimSalesHeader.SetCurrentKey("No.");
+        L_HandledInterimSalesHeader.Ascending(true);
+        if L_HandledInterimSalesHeader.FindSet() then begin
+            repeat
+                if HandledWebOrderNo <> '' then begin
+                    HandledWebOrderNo := HandledWebOrderNo + '|' + L_HandledInterimSalesHeader."No.";
+                end else
+                    HandledWebOrderNo := L_HandledInterimSalesHeader."No.";
+            until L_HandledInterimSalesHeader.Next() = 0;
+        end;
+        exit(HandledWebOrderNo);
     end;
 
     local procedure UpdateHandledInterimSalesLine(var SalesLine: Record "Sales Line")

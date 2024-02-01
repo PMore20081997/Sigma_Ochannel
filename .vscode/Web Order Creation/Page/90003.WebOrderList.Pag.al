@@ -35,6 +35,16 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Sell-to Customer No."; Rec."Sell-to Customer No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Bill-to Customer No."; Rec."Bill-to Customer No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Ship-to Name"; Rec."Ship-to Name")
                 {
                     ApplicationArea = All;

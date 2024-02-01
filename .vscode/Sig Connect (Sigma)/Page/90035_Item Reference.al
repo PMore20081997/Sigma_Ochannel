@@ -29,6 +29,10 @@ page 90035 "Channel Item Reference"
                 {
                     ApplicationArea = All;
                 }
+                field(Synced; Rec.Synced)
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

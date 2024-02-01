@@ -77,6 +77,8 @@ page 90029 "Web Order Header API Card"
                         SellToCustomer.GET(ChannelPartner."Customer No.");
                     ChannelPartner."Customer Mapping"::"Order Customer":
                         SellToCustomer.GET(Rec."Sell-to Customer No.");
+                    ChannelPartner."Customer Mapping"::"ET Access Customer":
+                        SellToCustomer.GET(Rec."Sell-to Customer No.");
                 End;
                 if SellToCustomer.Blocked = SellToCustomer.Blocked::" " then begin
                     Rec."Sell-to Customer No." := SellToCustomer."No.";

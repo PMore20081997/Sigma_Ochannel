@@ -320,6 +320,11 @@ page 90017 "Web Order Header"
             group(Shipping)
             {
                 Caption = 'Shipping';
+                field("Ship-to Code"; Rec."Ship-to Code")
+                {
+                    ApplicationArea = All;
+                    //Editable = false;
+                }
                 field("Ship-to Name"; rec."Ship-to Name")
                 {
                     Editable = true;

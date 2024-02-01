@@ -850,6 +850,9 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine."Channel Item Id" := P_InterimSalesLine."Channel Item Id";
         L_ItemNo := FindItemNo(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner);
         L_InterimSalesLine.Validate("No.", L_ItemNo);
+        Rec_Item.Reset();
+        if Rec_Item.Get(L_ItemNo) then
+            L_InterimSalesLine.Description := Rec_Item.Description;
         /*L_InterimSalesLine.Description := P_InterimSalesLine.Description;
         if (L_ItemNo <> '') and (P_InterimSalesLine.Description = '') then begin
             Rec_Item.Reset();
