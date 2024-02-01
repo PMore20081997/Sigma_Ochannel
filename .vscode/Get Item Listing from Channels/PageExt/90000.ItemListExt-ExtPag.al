@@ -3,25 +3,25 @@ pageextension 90000 "ItemListExt" extends "Item List"
     layout
     {
         // Add changes to page layout here
-        addlast(Control1)
-        {
-            field("W/H Inventory"; Rec."W/H Inventory")
-            {
-                DecimalPlaces = 0;
-                Caption = 'Available Inventory';
-                ApplicationArea = All;
-            }
+        // addlast(Control1)
+        // {
+        //     // field("W/H Inventory"; Rec."W/H Inventory")
+        //     // {
+        //     //     DecimalPlaces = 0;
+        //     //     Caption = 'Available Inventory';
+        //     //     ApplicationArea = All;
+        //     // }
 
 
 
 
-            // field("Available Inventory"; Rec."Available Inventory")
-            // {
-            //     DecimalPlaces = 0;
-            //     Caption = 'Available Inventory';
-            //     ApplicationArea = All;
-            // }
-        }
+        //     // field("Available Inventory"; Rec."Available Inventory")
+        //     // {
+        //     //     DecimalPlaces = 0;
+        //     //     Caption = 'Available Inventory';
+        //     //     ApplicationArea = All;
+        //     // }
+        // }
     }
 
     actions
