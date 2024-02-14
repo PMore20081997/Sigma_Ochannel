@@ -41,18 +41,20 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                     {
                         RunObject = page "Shipping Agents";
                         ApplicationArea = all;
+                        Visible = false;
                     }
                     action("Shipping Rule")
                     {
                         RunObject = page "Shipping Rules";
                         ApplicationArea = all;
+                        Visible = false;
                     }
                     action("Web Payment Method")
                     {
                         Caption = 'Payments';
                         RunObject = page "Web Payments";
                         ApplicationArea = all;
-                        Visible = true;
+                        Visible = false;
                     }
                     action("Web Buffer")
                     {
@@ -101,6 +103,7 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
 
                 Group(Warehouse)
                 {
+                    Visible = false;
                     action("Shipment Tracking")
                     {
                         RunObject = page "Shipment Tracking";

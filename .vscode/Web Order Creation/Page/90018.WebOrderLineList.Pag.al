@@ -19,6 +19,10 @@ page 90018 "Web Order Line List"
         {
             repeater(Group)
             {
+                field("Trade Partner Code"; Rec."Trade Partner Code")
+                {
+                    ApplicationArea = All;
+                }
                 field("Order Date"; rec."Order Date")
                 {
                     ApplicationArea = All;
@@ -56,6 +60,10 @@ page 90018 "Web Order Line List"
                     Visible = false;
                     ApplicationArea = All;
                 }
+                field("Unit of Measure Code"; Rec."Unit of Measure Code")
+                {
+                    ApplicationArea = All;
+                }
                 field("Channel Variant"; Rec."Channel Variant")
                 {
                     Visible = false;
@@ -74,10 +82,7 @@ page 90018 "Web Order Line List"
                 field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = All;
-                }
-                field("Unit of Measure Code"; Rec."Unit of Measure Code")
-                {
-                    ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Trolley No."; rec."Trolley No.")
                 {
@@ -87,30 +92,37 @@ page 90018 "Web Order Line List"
                 field("Shipping Price"; Rec."Shipping Price")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Gift Wrap Price"; Rec."Gift Wrap Price")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Discount; Rec.Discount)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Amount; Rec.Amount)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Amount Including VAT"; Rec."Amount Including VAT")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT amount"; Rec."VAT amount")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel Identifier"; Rec."Channel Identifier")
                 {
@@ -125,24 +137,23 @@ page 90018 "Web Order Line List"
                 field("VAT Prod. Posting Group"; Rec."VAT Prod. Posting Group")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT Bus. Posting Group"; Rec."VAT Bus. Posting Group")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT%"; Rec."VAT%")
                 {
                     ApplicationArea = All;
                     Visible = false;
                 }
-                field("Trade Partner Code"; Rec."Trade Partner Code")
-                {
-                    ApplicationArea = All;
-                }
                 field("Destination Doc Type"; Rec."Destination Doc Type")
                 {
                     ApplicationArea = All;
                     Visible = false;
+
                 }
                 field("Destination Doc No."; Rec."Destination Doc No.")
                 {
@@ -154,6 +165,7 @@ page 90018 "Web Order Line List"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Card field.';
+                    Visible = false;
                 }
             }
         }

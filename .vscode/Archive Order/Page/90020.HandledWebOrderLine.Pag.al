@@ -11,6 +11,10 @@ page 90020 "Handled Web Order Line"
         {
             repeater(Group)
             {
+                field("Trade Partner Code"; Rec."Trade Partner Code")
+                {
+                    ApplicationArea = All;
+                }
                 field("Document No"; Rec."Document No")
                 {
                     ApplicationArea = All;
@@ -44,6 +48,7 @@ page 90020 "Handled Web Order Line"
                 field(Description2; Rec.Description2)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel Variant"; Rec."Channel Variant")
                 {
@@ -57,6 +62,7 @@ page 90020 "Handled Web Order Line"
                 field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 // field("Unit of Measure Code";"Unit of Measure Code")
                 // {
@@ -64,30 +70,37 @@ page 90020 "Handled Web Order Line"
                 field("Shipping Price"; Rec."Shipping Price")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Gift Wrap Price"; Rec."Gift Wrap Price")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Discount; Rec.Discount)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(Amount; Rec.Amount)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Amount Including VAT"; Rec."Amount Including VAT")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT amount"; Rec."VAT amount")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field(SKU; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Gift Wrap"; Rec."Gift Wrap")
                 {
@@ -95,11 +108,13 @@ page 90020 "Handled Web Order Line"
                     Enabled = true;
                     ApplicationArea = All;
                     CaptionML = ENU = 'Gift', ENG = 'Gift';
+                    Visible = false;
                 }
                 field("Channel Identifier"; Rec."Channel Identifier")
                 {
                     Visible = false;
                     ApplicationArea = All;
+
                 }
                 field("Channel Item Id"; Rec."Channel Item Id")
                 {
@@ -109,10 +124,12 @@ page 90020 "Handled Web Order Line"
                 field("VAT Prod. Posting Group"; Rec."VAT Prod. Posting Group")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT Bus. Posting Group"; Rec."VAT Bus. Posting Group")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("VAT%"; Rec."VAT%")
                 {
@@ -120,16 +137,10 @@ page 90020 "Handled Web Order Line"
                     Visible = false;
 
                 }
-
-
-                field("Trade Partner Code"; Rec."Trade Partner Code")
-                {
-                    ApplicationArea = All;
-                }
-
                 field("Line Status"; Rec."Line Status")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
 
                 field("Scanned Date"; Rec."Scanned Date")
@@ -142,6 +153,7 @@ page 90020 "Handled Web Order Line"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the value of the Gift Card field.';
+                    Visible = false;
                 }
             }
         }

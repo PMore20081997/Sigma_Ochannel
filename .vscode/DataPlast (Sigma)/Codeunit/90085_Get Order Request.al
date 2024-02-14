@@ -271,11 +271,12 @@ codeunit 90085 "DataPlast Order Request API"
         if NOT InterimSalesHeader.FindFirst() then begin
             InterimSalesHeader.Init();
             InterimSalesHeader.Validate("Document Type", InterimSalesHeader."Document Type"::Order);
-            InterimSalesHeader.Validate("No.", _OrderReferenceNo);
+            InterimSalesHeader.Validate("No.", _OrderReferenceNo);  //At the time of insert in actual table we are getting Number from NO series++
             InterimSalesHeader.Validate("Trade Partner Code", 'DataPlast');
             InterimSalesHeader.Validate("Channel Order ID", _OrderReferenceNo);
             InterimSalesHeader.Validate("Sell-to Customer No.", _CustomerNo);
             InterimSalesHeader.Validate("File Name", 'API');
+            InterimSalesHeader.Validate("External Document No.", _OrderReferenceNo);
             InterimSalesHeader.Insert();
         end;
         InterimSalesLine.Reset();

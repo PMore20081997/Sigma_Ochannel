@@ -35,6 +35,10 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Channel Order ID"; Rec."Channel Order ID")
+                {
+                    ApplicationArea = all;
+                }
                 field("Sell-to Customer No."; Rec."Sell-to Customer No.")
                 {
                     ApplicationArea = All;
@@ -45,59 +49,34 @@ page 90003 "Web Order List"
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field("Ship-to Name"; Rec."Ship-to Name")
+                field("Ship-to Code"; Rec."Ship-to Code")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
-                field("MultiLine Order No."; Rec."MultiLine Order No.")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Old MultiLine Order No."; Rec."Old MultiLine Order No.")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Channel Order ID"; Rec."Channel Order ID")
-                {
-                    ApplicationArea = all;
-                }
-                field("Tracking No."; Rec."Package Tracking No.")
-                {
-                    ApplicationArea = all;
-                    //Caption = 'Tracking No.';
-                    CaptionML = ENU = 'Tracking No.', ENG = 'Tracking No.';
-                }
+
                 field(Status; Rec.Status)
                 {
                     ApplicationArea = all;
                     Caption = 'Status';
                 }
-                field("Order Status"; Rec."Order Status")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Order Status field.';
-                    Visible = false;
-                }
+                // field("Order Status"; Rec."Order Status")
+                // {
+                //     ApplicationArea = All;
+                //     ToolTip = 'Specifies the value of the Order Status field.';
+                //     Visible = false;
+                // }
 
                 field("Order Date"; Rec."Order Date")
                 {
                     ApplicationArea = all;
                 }
 
-
                 field("Document Date"; Rec."Document Date")
                 {
                     CaptionML = ENU = 'Document Date', ENG = 'Document Date';
                     ApplicationArea = All;
                 }
-                field("Order Discount Amount"; Rec."Order Discount Amount")
-                {
-                    CaptionML = ENU = 'Order Discount Amount', ENG = 'Order Discount Amount';
-                    ApplicationArea = all;
-                }
-
                 field("Order Created On"; rec."Order Created On")
                 {
                     ApplicationArea = All;
@@ -106,21 +85,6 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = All;
                     Caption = 'No. of Item Lines';
-                }
-                field("Destination Doc Type"; Rec."Destination Doc Type")
-                {
-
-                    ApplicationArea = all;
-                    Visible = false;
-                }
-                field(Rec; Rec."Destination Doc No.")
-                {
-                    ApplicationArea = all;
-                    Visible = false;
-                    trigger OnDrillDown()
-                    begin
-                        OpenDestinationDocument(Rec);
-                    end;
                 }
                 field("No of Error"; Rec."No of Error")
                 {
@@ -134,37 +98,32 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
-                field("Shipping Agent Code"; Rec."Shipping Agent Code")
-                {
-                    ApplicationArea = all;
-                }
-                field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
-                {
-                    ApplicationArea = all;
-                }
-                field(Remarks; Rec.Remarks)
-                {
-                    Visible = false;
-                    ApplicationArea = all;
-                }
+                // field("Shipping Agent Code"; Rec."Shipping Agent Code")
+                // {
+                //     ApplicationArea = all;
+                // }
+                // field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
+                // {
+                //     ApplicationArea = all;
+                // }
 
-                field("Gift Card"; Rec."Gift Card")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Card field.';
-                    Visible = false;
-                }
-                field("Gift Order Amount"; Rec."Gift Order Amount")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Order Amount field.';
-                    Visible = false;
-                }
-                field("Payment Method"; Rec."Payment Method")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
+                // field("Gift Card"; Rec."Gift Card")
+                // {
+                //     ApplicationArea = All;
+                //     ToolTip = 'Specifies the value of the Gift Card field.';
+                //     Visible = false;
+                // }
+                // field("Gift Order Amount"; Rec."Gift Order Amount")
+                // {
+                //     ApplicationArea = All;
+                //     ToolTip = 'Specifies the value of the Gift Order Amount field.';
+                //     Visible = false;
+                // }
+                // field("Payment Method"; Rec."Payment Method")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
 
             }
         }
@@ -190,6 +149,7 @@ page 90003 "Web Order List"
             {
                 ApplicationArea = All;
                 Caption = 'Bulk Delete';
+                Visible = false;
                 trigger OnAction()
                 var
                     InterimSalesHeader: Record "Interim Sales Header";
@@ -241,6 +201,7 @@ page 90003 "Web Order List"
                 PromotedIsBig = true;
                 PromotedOnly = true;
                 ApplicationArea = All;
+                Visible = false;
                 trigger OnAction()
                 var
                     L_InterimSalesHeader: Record "Interim Sales Header";
@@ -304,6 +265,7 @@ page 90003 "Web Order List"
                 Promoted = true;
                 Visible = false; //07/07/2020
                 ApplicationArea = All;
+
 
                 trigger OnAction()
                 begin
@@ -428,6 +390,7 @@ page 90003 "Web Order List"
                 CaptionML = ENG = 'Order Payment Details', ENU = 'Order Payment Details';
                 ApplicationArea = all;
                 Image = Payment;
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -453,6 +416,7 @@ page 90003 "Web Order List"
                 ApplicationArea = All;
                 Image = Print;
                 Caption = 'Label Print';
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -484,6 +448,7 @@ page 90003 "Web Order List"
                 ApplicationArea = Basic, Suite;
                 Caption = 'Delivery Note';
                 Image = Print;
+                Visible = false;
 
 
                 trigger OnAction()
@@ -514,6 +479,7 @@ page 90003 "Web Order List"
                 Caption = 'Re-Order';
                 Image = ReturnOrder;
                 ToolTip = 'Create a warehouse shipment to start a pick a ship process according to an advanced warehouse configuration.';
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -525,6 +491,7 @@ page 90003 "Web Order List"
             {
                 Image = CancelAllLines;
                 ApplicationArea = All;
+                Visible = false;
 
 
                 trigger OnAction()

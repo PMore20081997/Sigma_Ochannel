@@ -33,6 +33,7 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                     ApplicationArea = all;
                     Caption = 'Dispatch Scan';
                     //Visible = ShowDespatchScanButton;
+                    Visible = false;
                 }
                 action("Ochannel Return Order")
                 {

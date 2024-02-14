@@ -992,6 +992,10 @@ codeunit 90000 "Web Order Mgt"
         EXIT(TRUE);
     end;
 
+
+
+
+
     procedure Sigma_OrderValidations(var P_InterimSalesHeader: Record "Interim Sales Header")
     var
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
@@ -1270,6 +1274,7 @@ codeunit 90000 "Web Order Mgt"
             If L_ErrorRecorded then begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
                 P_InterimSalesHeader.Modify();
+                Error('');
             end Else begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
                 P_InterimSalesHeader.Modify();

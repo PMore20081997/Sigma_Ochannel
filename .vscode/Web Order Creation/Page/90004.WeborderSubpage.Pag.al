@@ -2,13 +2,9 @@
 page 90004 "Web order Subpage"
 {
     PageType = ListPart;
-    //ApplicationArea = All;
-    //UsageCategory = Administration;
     SourceTable = "Interim Sales Line";
     CaptionML = ENU = 'Web order Subpage', ENG = 'Web order Subpage';
     ModifyAllowed = true;
-    // LinksAllowed = false;
-    // DelayedInsert = true;
     AutoSplitKey = true;
     InsertAllowed = true;
     DeleteAllowed = true;
@@ -186,6 +182,11 @@ page 90004 "Web order Subpage"
                     Visible = false;
                     ApplicationArea = All;
                 }
+                field("Unit of Measure Code"; Rec."Unit of Measure Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
 
                 field(Quantity; Rec.Quantity)
                 {
@@ -272,28 +273,26 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = ALl;
                     Editable = false;
-                    Visible = true;
+                    Visible = false;
                 }
                 field(Reserved; Rec.Reserved)
                 {
                     ApplicationArea = All;
-                    Visible = true;
+                    Visible = false;
                     Editable = false;
-                }
-                field("Unit of Measure Code"; Rec."Unit of Measure Code")
-                {
-                    ApplicationArea = All;
                 }
                 field("Channel Price"; Rec."Channel Price")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     Caption = 'Unit Price Ex. VAT';
                     ApplicationArea = All;
                     DecimalPlaces = 0 : 4;
+                    Visible = false;
 
                     trigger OnValidate()
                     var
@@ -350,10 +349,12 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field(Weight; Rec.Weight)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                     trigger OnValidate()
                     var
                         InterimSalesHeader: Record "Interim Sales Header";
@@ -392,6 +393,7 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Caption = 'Line Discount Inc VAT';
+                    Visible = false;
                 }
                 field("Discount %"; Rec."Discount %")
                 {
@@ -401,6 +403,7 @@ page 90004 "Web order Subpage"
                 field("VAT amount"; Rec."VAT amount")
                 {
                     ApplicationArea = All;
+                    Visible = false;
 
                     trigger OnValidate()
                     var
@@ -456,18 +459,22 @@ page 90004 "Web order Subpage"
                 field(Amount; Rec.Amount)
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Amount Including VAT"; Rec."Amount Including VAT")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Channel Order ID"; Rec."Channel Order ID")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("NAV Variant code"; Rec."NAV Variant code")
                 {
@@ -478,6 +485,7 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Caption = 'Location Code';
+                    Visible = false;
                 }
                 field("Gift Wrap"; Rec."Gift Wrap")
                 {
@@ -485,6 +493,7 @@ page 90004 "Web order Subpage"
                     Editable = true;
                     Enabled = true;
                     CaptionML = ENU = 'Zero Price', ENG = 'Zero Price';
+                    Visible = false;
                 }
                 field("Channel Identifier"; Rec."Channel Identifier")
                 {
@@ -518,6 +527,7 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
 
                     trigger OnValidate()
                     var
@@ -559,6 +569,7 @@ page 90004 "Web order Subpage"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
 
                     trigger OnValidate()
                     var
@@ -607,6 +618,7 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     Caption = 'Product Response';
                     Editable = false;
+                    Visible = false;
                 }
 
             }
@@ -621,6 +633,7 @@ page 90004 "Web order Subpage"
             {
                 ApplicationArea = All;
                 Image = Cancel;
+                Visible = false;
                 trigger OnAction()
                 var
                     L_InterimSalesLine: Record "Interim Sales Line";

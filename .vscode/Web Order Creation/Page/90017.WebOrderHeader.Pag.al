@@ -16,7 +16,7 @@ page 90017 "Web Order Header"
         {
             group(General)
             {
-                Editable = true;
+                Editable = false;
                 field("Document Type"; rec."Document Type")
                 {
                     Visible = false;
@@ -42,11 +42,6 @@ page 90017 "Web Order Header"
                 {
                     Editable = false;
                     ApplicationArea = all;
-                }
-                field("Web Customer No."; Rec."Web Customer No.")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
                 }
                 field("Bill- to Name"; rec."Bill- to Name")
                 {
@@ -102,64 +97,18 @@ page 90017 "Web Order Header"
                     Editable = false;
                     ApplicationArea = all;
                 }
-                field("Deal ID"; rec."Deal ID")
-                {
-                    Editable = false;
-                    Visible = false;
-                    ApplicationArea = all;
-                }
-                field("Fullfillment Channel"; rec."Fullfillment Channel")
-                {
-                    Editable = false;
-                    ApplicationArea = all;
-                    Visible = false;
-                }
-                field("Order Type"; rec."Order Type")
-                {
-                    Visible = false;
-                    ApplicationArea = all;
-                }
                 field("Currency Code"; Rec."Currency Code")
                 {
                     ApplicationArea = all;
                     Editable = false;
                 }
-                field("Order Amount"; rec."Order Amount")
-                {
-                    Editable = false;
-                    ApplicationArea = all;
-                }
-                field("Order Discount Amount"; Rec."Order Discount Amount")
-                {
-                    Editable = false;
-                    ApplicationArea = All;
-                }
-                field("Gift Order Amount"; Rec."Gift Order Amount")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Order Amount field.';
-                    Editable = false;
-                    Visible = false;
-                }
 
-                field("Gift Message"; rec."Gift Message")
-                {
-                    //  Editable = EditGiftMsg; ps
-                    MultiLine = true;
-                    Visible = false;
-                    ApplicationArea = all;
-                }
                 field(Status; Rec.Status)
                 {
                     Editable = false;
                     ApplicationArea = all;
                 }
-                // field(order_id; Rec.order_id)
-                // {
-                //     ApplicationArea = All;
-                //     Caption = 'Order Response';
-                //     Editable = false;
-                // }
+
                 field("Reason Code"; Rec."Reason Code")
                 {
                     ApplicationArea = All;
@@ -171,57 +120,22 @@ page 90017 "Web Order Header"
                     Editable = false;
                 }
 
-                field("Order Status"; Rec."Order Status")
-                {
-                    Editable = false;
-                    ApplicationArea = all;
-                    Visible = false;
-                }
-                field("MultiLine Order No."; Rec."MultiLine Order No.")
-                {
-                    Editable = false;
-                    ApplicationArea = all;
-                    Visible = false;
-                }
-                field("Destination Doc Type"; Rec."Destination Doc Type")
-                {
-                    ApplicationArea = all;
-                    Editable = false;
-                    Visible = false;
-                }
-                field(Rec; Rec."Destination Doc No.")
-                {
-                    ApplicationArea = all;
-                    Visible = false;
-                    Editable = false;
-                    trigger OnDrillDown()
-                    begin
-                        OpenDestinationDocument(Rec);
-                    end;
-                }
-
-                field("Gift Card"; Rec."Gift Card")
-                {
-                    Editable = false;
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Card field.';
-                    Visible = false;
-                }
-
-
-                field(ReservedFlag; Rec.ReservedFlag)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                    Caption = 'Reserved';
-                    ToolTip = 'This will be enable if all the web lines have Reserved Quantity';
-                    Visible = false;
-                }
+                // field(Rec; Rec."Destination Doc No.")
+                // {
+                //     ApplicationArea = all;
+                //     Visible = false;
+                //     Editable = false;
+                //     trigger OnDrillDown()
+                //     begin
+                //         OpenDestinationDocument(Rec);
+                //     end;
+                // }
 
                 group("Shipping Details")
                 {
+                    Visible = false;
                     Caption = 'Shipping Details';
-                    Editable = true;
+                    Editable = false;
                     field("Web Shipment Method"; rec."Web Shipment Method")
                     {
                         Editable = false;
@@ -319,6 +233,7 @@ page 90017 "Web Order Header"
             }
             group(Shipping)
             {
+                Editable = false;
                 Caption = 'Shipping';
                 field("Ship-to Code"; Rec."Ship-to Code")
                 {
@@ -328,11 +243,6 @@ page 90017 "Web Order Header"
                 field("Ship-to Name"; rec."Ship-to Name")
                 {
                     Editable = true;
-                    ApplicationArea = all;
-                }
-                field("Buyer Name"; rec."Buyer Name")
-                {
-                    Editable = false;
                     ApplicationArea = all;
                 }
                 field("Ship-to Address"; rec."Ship-to Address")
@@ -386,12 +296,6 @@ page 90017 "Web Order Header"
                         //8862--
                     end;
                 }
-                field("Buyer Email"; rec."Buyer Email")
-                {
-                    Visible = false;
-                    ApplicationArea = all;
-                    CaptionML = ENU = 'E-mail', ENG = 'E-mail';
-                }
                 field("Ship-to Email"; Rec."Ship-to Email")
                 {
                     ApplicationArea = All;
@@ -402,28 +306,28 @@ page 90017 "Web Order Header"
                     ApplicationArea = All;
                 }
 
-                field("Earliest Delivery date"; rec."Earliest Delivery date")
-                {
-                    Visible = true;
-                    ApplicationArea = all;
-                }
-                field("Earliest Ship Date"; rec."Earliest Ship Date")
-                {
-                    Visible = true;
-                    ApplicationArea = all;
-                }
-                field("Shipment Method Code"; rec."Shipment Method Code")
-                {
-                    ApplicationArea = all;
-                }
-                field("Shipping Agent Code"; rec."Shipping Agent Code")
-                {
-                    ApplicationArea = all;
-                }
-                field("Shipping Agent Service Code"; rec."Shipping Agent Service Code")
-                {
-                    ApplicationArea = all;
-                }
+                // field("Earliest Delivery date"; rec."Earliest Delivery date")
+                // {
+                //     Visible = true;
+                //     ApplicationArea = all;
+                // }
+                // field("Earliest Ship Date"; rec."Earliest Ship Date")
+                // {
+                //     Visible = true;
+                //     ApplicationArea = all;
+                // }
+                // field("Shipment Method Code"; rec."Shipment Method Code")
+                // {
+                //     ApplicationArea = all;
+                // }
+                // field("Shipping Agent Code"; rec."Shipping Agent Code")
+                // {
+                //     ApplicationArea = all;
+                // }
+                // field("Shipping Agent Service Code"; rec."Shipping Agent Service Code")
+                // {
+                //     ApplicationArea = all;
+                // }
 
             }
 
@@ -452,6 +356,7 @@ page 90017 "Web Order Header"
                 PromotedOnly = true;
                 PromotedIsBig = true;
                 ApplicationArea = All;
+                Visible = false;
                 trigger OnAction()
                 var
                     L_InterimSalesHeader: Record "Interim Sales Header";
@@ -503,6 +408,7 @@ page 90017 "Web Order Header"
                 PromotedOnly = true;
                 PromotedIsBig = true;
                 ApplicationArea = all;
+                Visible = false;
                 trigger OnAction()
                 var
                     InterimSalesLine: Record "Interim Sales Line";
@@ -550,6 +456,7 @@ page 90017 "Web Order Header"
                 CaptionML = ENG = 'Order Payment Details', ENU = 'Order Payment Details';
                 ApplicationArea = all;
                 Image = Payment;
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -575,6 +482,7 @@ page 90017 "Web Order Header"
                 ApplicationArea = All;
                 Image = Print;
                 Caption = 'Label Print';
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -605,6 +513,7 @@ page 90017 "Web Order Header"
                 ApplicationArea = Basic, Suite;
                 Caption = 'Delivery Note';
                 Image = Print;
+                Visible = false;
 
 
                 trigger OnAction()
@@ -635,6 +544,7 @@ page 90017 "Web Order Header"
                 Caption = 'Re-Order';
                 Image = ReturnOrder;
                 ToolTip = 'Create a warehouse shipment to start a pick a ship process according to an advanced warehouse configuration.';
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -646,6 +556,7 @@ page 90017 "Web Order Header"
             {
                 Image = CancelAllLines;
                 ApplicationArea = All;
+                Visible = false;
 
 
                 trigger OnAction()
