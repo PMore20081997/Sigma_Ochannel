@@ -184,7 +184,7 @@ codeunit 90082 "EDI Invoice"
             repeat
                 purchHeader.Reset();
                 purchHeader.SetRange("Buy-from Vendor No.", vendor."No.");
-                purchHeader.SetRange("Document Type", purchHeader."Document Type"::Invoice);
+                purchHeader.SetRange("Document Type", purchHeader."Document Type"::Order);
                 if purchHeader.FindFirst() then begin
                     repeat
                         ProcessEDIFile1(purchHeader, vendor);
@@ -448,7 +448,143 @@ codeunit 90082 "EDI Invoice"
         end;
     end;
 
+    procedure GetEDIRecords3()
+    var
+        NoSeriesMgmt1: Codeunit NoSeriesManagement;
+        NextNo1: Code[20];
+        //Salesinvoicehead: Record "Sales Invoice Header";
+        salesHeader: Record "Sales Header";
+        customer: Record Customer;
+    begin
 
+        customer.Reset();
+        if customer.FindSet() then begin
+            repeat
+                salesHeader.Reset();
+                salesHeader.SetRange("Sell-to Customer No.", customer."No.");
+                salesHeader.SetRange("Document Type", salesHeader."Document Type"::Order);
+                if salesHeader.FindFirst() then begin
+                    repeat
+                        ProcessEDIFile3(salesHeader, customer);
+                    until salesHeader.Next() = 0;
+                end;
+            until customer.Next() = 0;
+
+        end;
+    end;
+
+    local procedure ProcessEDIFile3(var salesHeader: Record "Sales Header"; var P_customer: Record Customer)
+    var
+        //PurchHeader: Record "Purchase Header";
+        CompanyInfo: Record "Company Information";
+        salesline: Record "Sales Line";
+        item: Record Item;
+    begin
+        CRLF[1] := 13;
+        CRLF[2] := 10;
+        Clear(InvNo);
+        Clear(DMYPostingFormat);
+        Clear(YearText);
+        Clear(MonthText);
+        Clear(Dateformat);
+        Clear(TimeFormat);
+        Clear(TimeStr);
+        Clear(TimeText);
+        Clear(HeaderInfoAll);
+        Clear(HeaderInfo1);
+        Clear(HeaderInfo2);
+        Clear(HeaderInfo3);
+        Clear(HeaderInfo4);
+        Clear(HeaderInfo5);
+        Clear(HeaderInfo6);
+        Clear(HeaderInfo7);
+        Clear(HeaderInfo8);
+        Clear(HeaderInfo9);
+        Clear(HeaderInfo10);
+        Clear(HeaderInfo11);
+
+        CompanyInfo.get();
+
+        Dateformat := Date2DMY(salesHeader."Order Date", 1);
+        if Dateformat < 10 then
+            DateText := '0' + Format(Dateformat)
+        else
+            DateText := format(Dateformat);
+        Monthformat := Date2DMY(salesHeader."Order Date", 2);
+        if Monthformat < 10 then
+            MonthText := '0' + Format(Monthformat)
+        else
+            MonthText := format(Monthformat);
+        Yearformat := Date2DMY(salesHeader."Order Date", 3);
+        YearText := Format(Yearformat);
+        DMYPostingFormat := YearText + MonthText + DateText;
+        Time1 := DT2Time(salesHeader.SystemCreatedAt);
+        TimeText := Format(Time1, 0, '<Hours24,2><Minutes,2><Seconds,2>');
+        InvNo := salesHeader."No.";
+        CompGLN := P_customer.GLN;
+        Curr := salesHeader."Currency Code";
+        RefCurr := P_customer."Currency Code";
+        taxDate := salesHeader."VAT Reporting Date";
+        //TotalAmt := SalesHeader."Amount Including VAT";
+        salesHeader.CalcFields("Amount Including VAT", Amount);
+        TaxAmount := salesHeader."Amount Including VAT" - salesHeader.Amount;
+        BuyerRef := salesHeader."Your Reference";
+        Clear(LineInfoAll);
+        Clear(count);
+        Clear(TotalAmtIncVat);
+        salesline.Reset();
+        salesline.SetRange("Document No.", salesHeader."No.");
+        salesline.SetRange("Document Type", salesHeader."Document Type");
+        salesline.SetRange(Type, salesline.Type::Item);
+        if salesline.findset() then begin
+            repeat
+                Clear(LineInfo1);
+                Clear(LineInfo2);
+                Clear(LineInfo3);
+                Clear(item);
+                Clear(gtin);
+                item.Reset();
+                if item.Get(salesline."No.") then begin
+                    gtin := item.GTIN;
+                end;
+                count += 1;
+                TotalAmtIncVat += salesline."Amount Including VAT";
+                TotalAmtExcVat += salesline.Amount;
+                DiscountAmt += salesline."Line Discount Amount";
+                LineInfo1 := '**OL,' + salesHeader."Your Reference" + ',' + format(count) + ',' + format(salesline."Line No.") + ',' + format(salesline.Quantity) + ',,,,,,,,,,,,' + CRLF[1];
+                LineInfo2 := '**P,O,,,' + gtin + ',,,' + salesline."No." + ',' + salesline.Description + ',,' + format(salesline.Quantity) + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
+                LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
+            until salesline.Next() = 0;
+
+
+            HeaderInfoAll := '';
+            HeaderInfo1 := '**!1.01.01GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
+            HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + salesHeader."Salesperson Code" + ',' + P_customer."No." + 'ORD,FINAL,N,' + salesHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,' + CRLF[1];
+            //HeaderInfo3 := '**IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + CRLF[1];
+            HeaderInfo3 := '**OH,' + salesHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,' + CRLF[1];
+
+            HeaderInfo4 := '**A,0,0,COMPANY,' + CompanyInfo.GLN + ',,,,' + salesHeader."Salesperson Code" + ',' + CompanyInfo.Name + ',' + CompanyInfo.Address + ',' + CompanyInfo."Address 2" + ',' + CompanyInfo.City + ',' + CompanyInfo.County + ',' + CompanyInfo."Post Code" + ',' + CompanyInfo."Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo5 := '**A,0,0,SHIP TO,' + P_customer.GLN + ',,,,' + salesHeader."Ship-to Name" + ',' + salesHeader."Ship-to Address" + ',' + salesHeader."Ship-to Address 2" + ',' + salesHeader."Ship-to City" + ',' + salesHeader."Ship-to County" + ',' + salesHeader."Ship-to Post Code" + ',' + salesHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo6 := '**A,0,0,PARTNER,' + P_customer.GLN + ',,,,,' + salesHeader."Salesperson Code" + ',' + P_customer.Name + ',' + P_customer.Address + ',' + P_customer."Address 2" + ',' + P_customer.City + ',' + P_customer.County + ',' + P_customer."Post Code" + ',' + P_customer."Country/Region Code" + ',' + CRLF[1];
+            //HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE' + '^' + CompGLN + '^^^^^^' + PurchHeader.buy + '^' + PurchHeader."Bill-to Address" + '^' + PurchHeader."Bill-to Address 2" + '^' + PurchHeader."Bill-to City" + '^' + PurchHeader."Bill-to County" + '^' + PurchHeader."Bill-to Post Code" + '^' + PurchHeader."Bill-to Country/Region Code" + '^' + CRLF[1];
+            //HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
+            HeaderInfo10 := '*OT,' + salesHeader."Your Reference" + ',' + Format(count) + ',' + format(salesline.Quantity) + CRLF[1];
+            HeaderInfo11 := '**@      ' + InvNo + '     1    ';
+            HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
+
+        end;
+        EDIMessage := HeaderInfoAll + EDIMessage;
+        if EDIMessage <> '' then begin
+            FileName := '$' + salesHeader."No." + '.fif';
+            tempblob.CreateOutStream(TextOutstream);
+            TextOutstream.WriteText(EDIMessage);
+            tempblob.CreateInStream(TextInstream);
+            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+            UploadFileTOAzureBlob(TextInstream, FileName, TradepartnerRecord.Code);
+        end;
+        //end;
+    end;
 
 
 
