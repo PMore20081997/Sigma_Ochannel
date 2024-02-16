@@ -181,8 +181,8 @@ codeunit 90066 "Create Consolidate SO"
         L_Customer.Reset();
         L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
         if L_Customer.FindFirst() then
-            if L_Customer."KNAPP Customer" = true then
-                InsertedSH."KNAPP Customer" := L_Customer."KNAPP Customer";
+            if L_Customer."Knapp Customer" = true then
+                InsertedSH."Knapp Customer" := L_Customer."Knapp Customer";
         InsertedSH.Insert();
 
         InsertedSH.Validate("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
@@ -198,7 +198,7 @@ codeunit 90066 "Create Consolidate SO"
     var
         InsertedSL: Record "Sales Line";
         L_Item: Record Item;
-        ConsolidateWarehouseShipment: Codeunit "Consolidate Warehouse Shipment";
+        CU_KnappGenerateDocuments: Codeunit "Knapp Generate Documents";
         L_Location: Record Location;
     begin
         InsertedSL.Reset();
@@ -212,8 +212,8 @@ codeunit 90066 "Create Consolidate SO"
             L_Item.Reset();
             L_Item.SetRange("No.", _InterimSalesLine."No.");
             if L_Item.FindFirst() then
-                if L_Item."KNAPP Item" = true then
-                    InsertedSL."KNAPP Item" := L_Item."KNAPP Item";
+                if L_Item."Knapp Item" = true then
+                    InsertedSL."Knapp Item" := L_Item."Knapp Item";
             InsertedSL.Modify(true);
             // if _InterimSalesLine."Response Code" = '3' then begin
             //     InsertedSL.Validate(Quantity, InsertedSL.Quantity + _InterimSalesLine."Quantity To Deliver");
@@ -235,24 +235,24 @@ codeunit 90066 "Create Consolidate SO"
             L_Item.Reset();
             L_Item.SetRange("No.", _InterimSalesLine."No.");
             if L_Item.FindFirst() then
-                if L_Item."KNAPP Item" = true then
-                    InsertedSL."KNAPP Item" := L_Item."KNAPP Item";
+                if L_Item."Knapp Item" = true then
+                    InsertedSL."Knapp Item" := L_Item."Knapp Item";
             // if _InterimSalesLine."Response Code" = '3' then begin
             //     InsertedSL.VALIDATE(Quantity, _InterimSalesLine."Quantity To Deliver");
             // end else
             //     InsertedSL.VALIDATE(Quantity, _InterimSalesLine.Quantity);
             //InsertedSL.Validate("Location Code", _SalesHeader."Location Code");
-            if ConsolidateWarehouseShipment.CheckkNAPCustomer(_SalesHeader."Sell-to Customer No.") = true then begin
-                if ConsolidateWarehouseShipment.CheckkNAPItem(_InterimSalesLine."No.") = false then begin
+            if CU_KnappGenerateDocuments.CheckKnappCustomer(_SalesHeader."Sell-to Customer No.") = true then begin
+                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = false then begin
                     L_Location.Reset();
                     L_Location.SetRange("Manual Picking", true);
                     if L_Location.FindFirst() then begin
                         InsertedSL.Validate("Location Code", L_Location.Code);
                     end;
                 end;
-                if ConsolidateWarehouseShipment.CheckkNAPItem(_InterimSalesLine."No.") = true then begin
+                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = true then begin
                     L_Location.Reset();
-                    L_Location.SetRange("KNAPP Location", true);
+                    L_Location.SetRange("Knapp Location", true);
                     if L_Location.FindFirst() then begin
                         InsertedSL.Validate("Location Code", L_Location.Code);
                     end;
@@ -260,8 +260,8 @@ codeunit 90066 "Create Consolidate SO"
             end;
 
             //Manual Customer++
-            if ConsolidateWarehouseShipment.CheckkNAPCustomer(_SalesHeader."Sell-to Customer No.") = false then begin
-                if ConsolidateWarehouseShipment.CheckkNAPItem(_InterimSalesLine."No.") = true then begin
+            if CU_KnappGenerateDocuments.CheckKnappCustomer(_SalesHeader."Sell-to Customer No.") = false then begin
+                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = true then begin
                     L_Location.Reset();
                     L_Location.SetRange("Manual Picking", true);
                     if L_Location.FindFirst() then begin
@@ -269,7 +269,7 @@ codeunit 90066 "Create Consolidate SO"
                     end;
                 end;
 
-                if ConsolidateWarehouseShipment.CheckkNAPItem(_InterimSalesLine."No.") = false then begin
+                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = false then begin
                     L_Location.Reset();
                     L_Location.SetRange("Manual Picking", true);
                     if L_Location.FindFirst() then begin
