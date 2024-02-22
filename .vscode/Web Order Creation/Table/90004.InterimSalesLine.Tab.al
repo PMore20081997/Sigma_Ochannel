@@ -494,6 +494,11 @@ table 90004 "Interim Sales Line"
         {
 
         }
+        field(90050; "Sales Order Created"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("Web Buffer" where("Web Document No." = field("Document No")));
+        }
     }
 
     keys

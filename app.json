@@ -40,6 +40,12 @@
       "name": "Knapp Integration",
       "publisher": "Robosol",
       "version": "22.0.0.0"
+    },
+    {
+      "id": "9d21f859-860e-4a4d-ab73-d2bf6815a030",
+      "name": "Customer_Trends",
+      "publisher": "Robosol",
+      "version": "19.0.0.0"
     }
   ],
   "screenshots": [],

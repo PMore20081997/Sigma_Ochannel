@@ -2,6 +2,15 @@ pageextension 90000 "ItemListExt" extends "Item List"
 {
     layout
     {
+        addafter(InventoryField)
+        {
+            field("Qty. on Web Order"; Rec."Qty. on Web Order")
+            {
+                ApplicationArea = All;
+                Editable = false;
+                DecimalPlaces = 0 : 5;
+            }
+        }
         // Add changes to page layout here
         // addlast(Control1)
         // {

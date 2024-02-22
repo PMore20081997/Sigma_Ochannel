@@ -3,6 +3,17 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
 
     fields
     {
+        modify(Quantity)
+        {
+            trigger OnAfterValidate()
+            begin
+                if Rec.Quantity <> 0 then begin
+                    if Rec.Quantity > TotalAvailableQtyForSaleable(Rec) then
+                        Error('Qty. should be less than Free Inventory %1', TotalAvailableQtyForSaleable(Rec));
+                end;
+            end;
+        }
+
         modify("No.")
         {
             trigger OnAfterValidate()
@@ -34,6 +45,13 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         {
 
         }
+        field(90004; "Web Orders Qty"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(true)));
+            DecimalPlaces = 0 : 5;
+            Editable = false;
+        }
 
     }
 
@@ -52,5 +70,20 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 HISL.Delete(true);
             end;
         end;
+    end;
+
+    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Sales Line"): Decimal
+    var
+        _LocationCode: Code[20];
+        L_ILE: Record "Item Ledger Entry";
+    begin
+        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
+        if _Rec."Saleable Inventory" > 0 then
+            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty") > 0 then
+                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty")
+            else
+                exit(0)
+        else
+            exit(0);
     end;
 }
