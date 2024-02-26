@@ -7,9 +7,9 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         {
             trigger OnAfterValidate()
             begin
-                if Rec.Quantity <> 0 then begin
+                if (Rec.Quantity <> 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') then begin
                     if Rec.Quantity > TotalAvailableQtyForSaleable(Rec) then
-                        Error('Qty. should be less than Free Inventory %1', TotalAvailableQtyForSaleable(Rec));
+                        Error('Qty. should be less than Free Inventory %1. Order Number: %2, Line Number: %3, Item Number: %4', TotalAvailableQtyForSaleable(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
                 end;
             end;
         }

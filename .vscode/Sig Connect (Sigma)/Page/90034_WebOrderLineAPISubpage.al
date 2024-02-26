@@ -99,6 +99,10 @@ page 90030 "Web Order Line Subpage"
                         end;
                     end;
                 }
+                field("Qty. to Deliver"; Rec."Qty. to Deliver")
+                {
+                    ApplicationArea = All;
+                }
                 // field(ChannelSKU; Rec."Channel SKU")
                 // {
                 //     ApplicationArea = All;
@@ -166,6 +170,9 @@ page 90030 "Web Order Line Subpage"
 
             //Check Validation+++
             Sigma_LineValidations(MyHeader, Rec);
+
+            //WIll check this code ++
+            Rec."Qty. to Deliver" := Rec.Quantity;
 
             //Update Interim header and Interim Line Response Code and Message++
             //Line++

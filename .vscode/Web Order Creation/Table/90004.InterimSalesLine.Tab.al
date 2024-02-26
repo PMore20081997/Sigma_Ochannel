@@ -499,6 +499,10 @@ table 90004 "Interim Sales Line"
             FieldClass = FlowField;
             CalcFormula = exist("Web Buffer" where("Web Document No." = field("Document No")));
         }
+        field(90051; "Qty. to Deliver"; Decimal)
+        {
+
+        }
     }
 
     keys

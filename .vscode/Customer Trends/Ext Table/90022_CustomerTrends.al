@@ -17,7 +17,7 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
             begin
                 if "Qty. to be added to SO" <> 0 then begin
                     if "Qty. to be added to SO" > TotalAvailableQtyForSaleable(Rec) then
-                        Error('Qty. to be added to SO should be less than Free Inventory %1', TotalAvailableQtyForSaleable(Rec));
+                        Error('Qty. to be added to SO should be less than Free Inventory %1. Item Number: %2', TotalAvailableQtyForSaleable(Rec), Rec."Item No.");
                 end;
             end;
         }
