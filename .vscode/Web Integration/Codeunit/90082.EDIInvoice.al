@@ -13,6 +13,7 @@ codeunit 90082 "EDI Invoice"
 
             EDICustomerLabel:
                 begin
+
                     GetEDIRecords();
 
                 end;
@@ -56,7 +57,8 @@ codeunit 90082 "EDI Invoice"
         end;
     end;
 
-    local procedure ProcessEDIFile(var salesHeader: Record "Sales Header"; var P_customer: Record Customer)
+
+    procedure ProcessEDIFile(var salesHeader: Record "Sales Header"; var P_customer: Record Customer)
     var
         // SalesHeader: Record "Sales Header";
 
@@ -477,7 +479,7 @@ codeunit 90082 "EDI Invoice"
         end;
     end;
 
-    local procedure ProcessEDIFile3(var salesHeader: Record "Sales Header"; var P_customer: Record Customer)
+    procedure ProcessEDIFile3(var salesHeader: Record "Sales Header"; var P_customer: Record Customer)
     var
         //PurchHeader: Record "Purchase Header";
         CompanyInfo: Record "Company Information";
