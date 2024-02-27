@@ -27,6 +27,11 @@ codeunit 90082 "EDI Invoice"
                     GetEDIRecords2();
 
                 end;
+            EDISalesOrderLabel:
+                begin
+                    GetEDIRecords2();
+
+                end;
         end;
     end;
     //Customer EDI
@@ -138,8 +143,8 @@ codeunit 90082 "EDI Invoice"
                 TotalAmtIncVat += salesline."Amount Including VAT";
                 TotalAmtExcVat += salesline.Amount;
                 DiscountAmt += salesline."Line Discount Amount";
-                LineInfo1 := '**IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + format(salesline.Quantity) + '^' + '2' + '^' + format(salesline."Amount Including VAT") + '^' + Format(salesline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesline."VAT %") + '^' + format(salesline."Amount Including VAT" - salesline.Amount) + '^^^' + CRLF[1];
-                LineInfo2 := '**P' + '^' + 'O' + '^' + salesline."No." + '^' + gtin + '^^^^^^' + salesline.Description + '^' + PackSize + '^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
+                LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesline.Quantity) + '^' + '2' + '^' + format(salesline."Amount Including VAT") + '^' + Format(salesline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesline."VAT %") + '^' + format(salesline."Amount Including VAT" - salesline.Amount) + '^^^' + CRLF[1];
+                LineInfo2 := '**P' + '^' + 'O' + '^' + salesline."No." + '^' + gtin + '^^^^^^' + salesline.Description + '^^' + PackSize + '^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
                 LineInfo3 := '**G^O^' + format(salesline."Amount Including VAT") + '^' + Format(salesline.Amount) + '^^^^^^^' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesline.Next() = 0;
@@ -148,10 +153,10 @@ codeunit 90082 "EDI Invoice"
         HeaderInfoAll := '';
         HeaderInfo1 := '**!' + '1.01.01' + 'G' + 'INV' + '0000' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + CompanyInfo.GLN + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + CRLF[1];
-        HeaderInfo3 := '**IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + CRLF[1];
+        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + CRLF[1];
         HeaderInfo4 := '**OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
+        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + CompGLN + '^^^^^^' + SalesHeader."Bill-to Name" + '^' + SalesHeader."Bill-to Address" + '^' + SalesHeader."Bill-to Address 2" + '^' + SalesHeader."Bill-to City" + '^' + SalesHeader."Bill-to County" + '^' + SalesHeader."Bill-to Post Code" + '^' + SalesHeader."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + SalesHeader."Ship-to Name" + '^' + SalesHeader."Ship-to Address" + '^' + SalesHeader."Ship-to Address 2" + '^' + SalesHeader."Ship-to City" + '^' + SalesHeader."Ship-to County" + '^' + SalesHeader."Ship-to Post Code" + '^' + SalesHeader."Ship-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
@@ -205,6 +210,7 @@ codeunit 90082 "EDI Invoice"
         CompanyInfo: Record "Company Information";
         Purchline: Record "Purchase Line";
         item: Record Item;
+        quantityInt: Integer;
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -228,6 +234,7 @@ codeunit 90082 "EDI Invoice"
         Clear(HeaderInfo9);
         Clear(HeaderInfo10);
         Clear(HeaderInfo11);
+        Clear(quantityInt);
 
         CompanyInfo.get();
 
@@ -279,7 +286,8 @@ codeunit 90082 "EDI Invoice"
                 TotalAmtIncVat += Purchline."Amount Including VAT";
                 TotalAmtExcVat += Purchline.Amount;
                 DiscountAmt += Purchline."Line Discount Amount";
-                LineInfo1 := '**OL,' + PurchHeader."Your Reference" + ',' + format(count) + ',' + format(Purchline."Line No.") + ',' + format(Purchline.Quantity) + ',,,,,,,,,,,,' + CRLF[1];
+                Evaluate(quantityInt, DelChr(Format(Purchline.Quantity), '<=>', ','));
+                LineInfo1 := '**OL,' + PurchHeader."Your Reference" + ',' + format(count) + ',' + format(Purchline."Line No.") + ',' + Format(quantityInt) + ',,,,,,,,,,,,' + CRLF[1];
                 LineInfo2 := '**P,O,,,' + gtin + ',,,' + Purchline."No." + ',,' + Purchline.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
@@ -706,6 +714,7 @@ codeunit 90082 "EDI Invoice"
         EDICustomerLabel: Label 'EDICustomer';
         EDISupplierLabel: Label 'EDISupplier';
         EDICrMemoLabel: Label 'EDICrMemo';
+        EDISalesOrderLabel: Label 'EDISalesOrder';
         StartParameter: Text;
         RunType: Text;
         TradepartnerRecord: Record "Trade Partner";
