@@ -20,12 +20,21 @@ pageextension 90018 SalesCreditMemolist extends "Sales Credit Memos"
                 var
                     EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
+                    SalesHeader: Record "Sales Header";
+                    Customer: Record Customer;
                 begin
-                    JobQueueEntry.DeleteAll();
-                    JobQueueEntry.Init();
-                    JobQueueEntry."Parameter String" := 'EDI;EDICrMemo';
-                    JobQueueEntry.Insert();
-                    EDIInvoiceCOD.Run(JobQueueEntry);
+                    Clear(SalesHeader);
+                    SalesHeader := Rec;
+                    CurrPage.SetSelectionFilter(SalesHeader);
+
+                    if SalesHeader.FindSet() then begin
+                        repeat
+                            Clear(Customer);
+                            Customer.Reset();
+                            if Customer.get(SalesHeader."Sell-to Customer No.") then
+                                EDIInvoiceCOD.ProcessEDIFile(SalesHeader, Customer);
+                        until SalesHeader.Next() = 0;
+                    end;
                 end;
             }
         }

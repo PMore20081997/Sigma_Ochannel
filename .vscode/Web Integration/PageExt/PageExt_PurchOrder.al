@@ -20,12 +20,21 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 var
                     EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
+                    purchHeader: Record "Purchase Header";
+                    vendor: Record Vendor;
                 begin
-                    JobQueueEntry.DeleteAll();
-                    JobQueueEntry.Init();
-                    JobQueueEntry."Parameter String" := 'EDI;EDISupplier';
-                    JobQueueEntry.Insert();
-                    EDIInvoiceCOD.Run(JobQueueEntry);
+                    Clear(purchHeader);
+                    purchHeader := Rec;
+                    CurrPage.SetSelectionFilter(purchHeader);
+
+                    if purchHeader.FindSet() then begin
+                        repeat
+                            Clear(vendor);
+                            vendor.Reset();
+                            if vendor.get(purchHeader."Buy-from Vendor No.") then
+                                EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor);
+                        until purchHeader.Next() = 0;
+                    end;
                 end;
             }
         }

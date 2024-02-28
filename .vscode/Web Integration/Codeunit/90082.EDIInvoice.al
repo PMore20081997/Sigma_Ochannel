@@ -189,6 +189,7 @@ codeunit 90082 "EDI Invoice"
     begin
 
         vendor.Reset();
+        vendor.SetRange("EDI Invoice/Credit", true);
         if vendor.FindSet() then begin
             repeat
                 purchHeader.Reset();
@@ -204,7 +205,7 @@ codeunit 90082 "EDI Invoice"
         end;
     end;
 
-    local procedure ProcessEDIFile1(var purchHeader: Record "Purchase Header"; var P_vendor: Record Vendor)
+    procedure ProcessEDIFile1(var purchHeader: Record "Purchase Header"; var P_vendor: Record Vendor)
     var
         //PurchHeader: Record "Purchase Header";
         CompanyInfo: Record "Company Information";
@@ -298,11 +299,11 @@ codeunit 90082 "EDI Invoice"
             HeaderInfo1 := '**!1.01.01GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
             HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + PurchHeader."Purchaser Code" + ',' + P_vendor."No." + ',ORD,FINAL,N,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,' + CRLF[1];
             //HeaderInfo3 := '**IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + CRLF[1];
-            HeaderInfo3 := '**OH,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,' + CRLF[1];
+            HeaderInfo3 := '*OH,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,' + CRLF[1];
 
             HeaderInfo4 := '**A,0,0,COMPANY,' + CompanyInfo.GLN + ',,,,' + PurchHeader."Purchaser Code" + ',,' + CompanyInfo.Name + ',' + CompanyInfo.Address + ',' + CompanyInfo."Address 2" + ',' + CompanyInfo.City + ',' + CompanyInfo.County + ',' + CompanyInfo."Post Code" + ',' + CompanyInfo."Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo5 := '**A,0,0,SHIP TO,' + P_vendor.GLN + ',,,,' + PurchHeader."Ship-to Name" + ',' + PurchHeader."Ship-to Address" + ',' + PurchHeader."Ship-to Address 2" + ',' + PurchHeader."Ship-to City" + ',' + PurchHeader."Ship-to County" + ',' + PurchHeader."Ship-to Post Code" + ',' + PurchHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo6 := '**A,0,0,PARTNER,' + P_vendor.GLN + ',,,,,' + PurchHeader."Purchaser Code" + ',' + P_vendor.Name + ',' + P_vendor.Address + ',' + P_vendor."Address 2" + ',' + P_vendor.City + ',' + P_vendor.County + ',' + P_vendor."Post Code" + ',' + P_vendor."Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo5 := '**A,0,0,SHIP TO,' + P_vendor.GLN + ',,,,' + purchHeader."Purchaser Code" + ',,' + PurchHeader."Ship-to Name" + ',' + PurchHeader."Ship-to Address" + ',' + PurchHeader."Ship-to Address 2" + ',' + PurchHeader."Ship-to City" + ',' + PurchHeader."Ship-to County" + ',' + PurchHeader."Ship-to Post Code" + ',' + PurchHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo6 := '**A,0,0,PARTNER,' + P_vendor.GLN + ',,,,,' + PurchHeader."Buy-from Vendor No." + ',' + purchHeader."Buy-from Vendor Name" + ',' + P_vendor.Address + ',' + P_vendor." Address 2" + ',' + P_vendor.City + ',' + P_vendor.County + ',' + P_vendor." Post Code " + ',' + P_vendor." Country/Region Code " + ',' + CRLF[1];
             //HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE' + '^' + CompGLN + '^^^^^^' + PurchHeader.buy + '^' + PurchHeader."Bill-to Address" + '^' + PurchHeader."Bill-to Address 2" + '^' + PurchHeader."Bill-to City" + '^' + PurchHeader."Bill-to County" + '^' + PurchHeader."Bill-to Post Code" + '^' + PurchHeader."Bill-to Country/Region Code" + '^' + CRLF[1];
             //HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
             HeaderInfo10 := '*OT,' + PurchHeader."Your Reference" + ',' + Format(count) + ',' + format(Purchline.Quantity) + CRLF[1];
@@ -471,7 +472,9 @@ codeunit 90082 "EDI Invoice"
         customer: Record Customer;
     begin
 
-        customer.Reset();
+
+        Customer.Reset();
+        Customer.SetRange("EDI Invoice/Credit", true);
         if customer.FindSet() then begin
             repeat
                 salesHeader.Reset();
