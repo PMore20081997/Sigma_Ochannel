@@ -20,8 +20,10 @@ codeunit 90066 "Create Consolidate SO"
         Released_SalesHeader: Record "Sales Header";
         L_InterimHeader: Record "Interim Sales Header";
         WebOrderMgt: Codeunit "Process Web Order";
+        L_SalesLine: Record "Sales Line";
+        L_Item: Record Item;
     begin
-        if Not CheckSalesHeaderExist_But_WarehouseShipmet_And_PostedWarehouseShipmetNotExist(_InterimSH."Sell-to Customer No.", _InterimSH."Ship-to Code") then begin
+        if Not CheckSalesHeaderExist_But_InventoryPick_And_PostedInventoryPickNotExist(_InterimSH) then begin
             Clear(G_SalesHeaderCreated);
             Clear(G_SNo);
         end;
@@ -29,7 +31,7 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.Reset();
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
         L_InterimSL.SetRange("Document No", _InterimSH."No.");
-        //L_InterimSL.SetFilter("Response Code", '%1|%2', '0', '3');
+        L_InterimSL.SetFilter("Reason Message", '%1', 'Successful'); //Need to check partialy quantity filter
         if L_InterimSL.FindSet() then begin
             repeat
                 if Not G_SalesHeaderCreated then
@@ -40,10 +42,10 @@ codeunit 90066 "Create Consolidate SO"
                     L_ExistSalesHeader.SetRange("No.", G_SNo);
                     L_ExistSalesHeader.SetRange("Document Type", L_ExistSalesHeader."Document Type"::Order);
                     if L_ExistSalesHeader.FindFirst() then begin
-                        //Open Existing Order If Released++
-                        if L_ExistSalesHeader.Status = L_ExistSalesHeader.Status::Released then begin
-                            ReleaseSalesDoc.PerformManualReopen(L_ExistSalesHeader);
-                        end;
+                        // //Open Existing Order If Released++
+                        // if L_ExistSalesHeader.Status = L_ExistSalesHeader.Status::Released then begin
+                        //     ReleaseSalesDoc.PerformManualReopen(L_ExistSalesHeader);
+                        // end;
 
                         //Update "Dataplast Order" field on Sales Order++
                         L_ExistSalesHeader."Marged Web Order" := true;
@@ -54,37 +56,81 @@ codeunit 90066 "Create Consolidate SO"
 
                     end;
                 end else begin
-                    //Open Sales Order If released++
-                    if InsertedSH.Status = InsertedSH.Status::Released then
-                        ReleaseSalesDoc.PerformManualReopen(InsertedSH);
+                    // //Open Sales Order If released++
+                    // if InsertedSH.Status = InsertedSH.Status::Released then
+                    //     ReleaseSalesDoc.PerformManualReopen(InsertedSH);
 
                     //Create Line++    
                     CreateSalesLine(InsertedSH, L_InterimSL);
                 end;
             until L_InterimSL.Next() = 0;
 
-            //Released the sales order+++
-            if G_SNo <> '' then begin
-                Released_SalesHeader.Reset();
-                Released_SalesHeader.SetRange("No.", G_SNo);
-                Released_SalesHeader.SetRange("Document Type", Released_SalesHeader."Document Type"::Order);
-                if Released_SalesHeader.FindFirst() then begin
-                    //Release Order++
-                    if Released_SalesHeader.Status = Released_SalesHeader.Status::Open then begin
-                        ReleaseSalesDoc.PerformManualRelease(Released_SalesHeader);
-                    end;
 
-                    //Moved Into Web Buffer Table++
-                    InsertIntoTempHeader(_InterimSH."No.", Released_SalesHeader."No.");
+
+            if G_SNo <> '' then begin
+                //Check Threshold Quantity and make KNAPP Line++
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document No.", G_SNo);
+                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                if L_SalesLine.FindSet() then begin
+                    repeat
+                        L_Item.Reset();
+                        L_Item.SetRange("No.", L_SalesLine."No.");
+                        L_Item.SetRange("Knapp Item", true);
+                        if L_Item.FindFirst() then begin
+                            if L_Item."Knapp Threshold Quantity" <> 0 then begin
+                                if L_SalesLine.Quantity < L_Item."Knapp Threshold Quantity" then begin
+                                    L_SalesLine.Validate("Knapp Line", true);
+                                    L_SalesLine.Modify();
+                                end
+                                else begin
+                                    L_SalesLine.Validate("Knapp Line", false);
+                                    L_SalesLine.Modify();
+                                end;
+                            end else begin
+                                L_SalesLine.Validate("Knapp Line", true);
+                                L_SalesLine.Modify();
+                            end;
+                        end;
+                    until L_SalesLine.Next() = 0;
                 end;
+
+                //Moved Into Web Buffer Table++
+                InsertIntoTempHeader(_InterimSH."No.", Released_SalesHeader."No.");
+
             end else begin
-                //Release Order++
-                ReleaseSalesDoc.PerformManualRelease(InsertedSH);
+                //Check Threshold Quantity and make KNAPP Line++
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document No.", InsertedSH."No.");
+                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                if L_SalesLine.FindSet() then begin
+                    repeat
+                        L_Item.Reset();
+                        L_Item.SetRange("No.", L_SalesLine."No.");
+                        L_Item.SetRange("Knapp Item", true);
+                        if L_Item.FindFirst() then begin
+                            if L_Item."Knapp Threshold Quantity" <> 0 then begin
+                                if L_SalesLine.Quantity < L_Item."Knapp Threshold Quantity" then begin
+                                    L_SalesLine.Validate("Knapp Line", true);
+                                    L_SalesLine.Modify();
+                                end
+                                else begin
+                                    L_SalesLine.Validate("Knapp Line", false);
+                                    L_SalesLine.Modify();
+                                end;
+                            end else begin
+                                L_SalesLine.Validate("Knapp Line", true);
+                                L_SalesLine.Modify();
+                            end;
+                        end;
+                    until L_SalesLine.Next() = 0;
+                end;
 
                 //Moved Into Web Buffer Table++
                 InsertIntoTempHeader(_InterimSH."No.", InsertedSH."No.");
             end;
-            //Released the sales order---
         end;
     end;
 
@@ -109,22 +155,28 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH: Record "Sales Header";
         tes: page "Sales Order";
 
-    local procedure CheckSalesHeaderExist_But_WarehouseShipmet_And_PostedWarehouseShipmetNotExist(_SellToCustomerNo: Code[50]; _ShipToCode: Code[20]): Boolean
+    local procedure CheckSalesHeaderExist_But_InventoryPick_And_PostedInventoryPickNotExist(_InterimSH: Record "Interim Sales Header"): Boolean
     var
         L_SalesHeader: Record "Sales Header";
     begin
         Clear(G_SNo);
         L_SalesHeader.Reset();
-        L_SalesHeader.SetRange("Sell-to Customer No.", _SellToCustomerNo);
-        L_SalesHeader.SetRange("Ship-to Code", _ShipToCode);
+        L_SalesHeader.SetRange("Sell-to Customer No.", _InterimSH."Sell-to Customer No.");
+        L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+        L_SalesHeader.SetRange("Shipment Date", _InterimSH."Shipment Date");
+        L_SalesHeader.SetRange("Location Code", _InterimSH."Location Code");
+        L_SalesHeader.SetRange("Shipping Agent Code", _InterimSH."Shipping Agent Code");
+        L_SalesHeader.SetRange("Shipping Agent Service Code", _InterimSH."Shipping Agent Service Code");
+        L_SalesHeader.SetRange("Weekend Ship. Agnt. Serv. Code", _InterimSH."Weekend Ship Agent Serv Code");
+        L_SalesHeader.SetRange("IRP Order", true);
         if L_SalesHeader.FindSet() then begin
             repeat
-                //Check Pick Is available or not++
-                if not CheckWarehouseShipment(L_SalesHeader) then begin
+                //Check Inventory Pick is available+
+                if not CheckInventoryPick(L_SalesHeader) then begin
 
-                    //Check Posted Pick is Availabel or not+++
-                    if not CheckPostedSalesShipment(L_SalesHeader) then begin
+                    //Check Posted Inventory Pick is Availabel+
+                    if not CheckPostedInventoryPick(L_SalesHeader) then begin
                         G_SalesHeaderCreated := true;
                         G_SNo := L_SalesHeader."No.";
                         exit(true);
@@ -136,26 +188,28 @@ codeunit 90066 "Create Consolidate SO"
         end;
     end;
 
-    local procedure CheckWarehouseShipment(_SalesHeader: Record "Sales Header"): Boolean
+    local procedure CheckInventoryPick(_SalesHeader: Record "Sales Header"): Boolean
     var
-        L_WarehouseShipmentLine: Record "Warehouse Shipment Line";
+        L_WarehouseActivityHeader: Record "Warehouse Activity Header";
     begin
-        L_WarehouseShipmentLine.Reset();
-        L_WarehouseShipmentLine.SetRange("Source Document", L_WarehouseShipmentLine."Source Document"::"Sales Order");
-        L_WarehouseShipmentLine.SetRange("Source No.", _SalesHeader."No.");
-        if not L_WarehouseShipmentLine.IsEmpty then
+        L_WarehouseActivityHeader.Reset();
+        L_WarehouseActivityHeader.SetRange(Type, L_WarehouseActivityHeader.Type::"Invt. Pick");
+        L_WarehouseActivityHeader.SetRange("Source Document", L_WarehouseActivityHeader."Source Document"::"Sales Order");
+        L_WarehouseActivityHeader.SetRange("Source No.", _SalesHeader."No.");
+        if not L_WarehouseActivityHeader.IsEmpty then
             exit(true)
         else
             exit(false);
     end;
 
-    local procedure CheckPostedSalesShipment(_SalesHeader: Record "Sales Header"): Boolean
+    local procedure CheckPostedInventoryPick(_SalesHeader: Record "Sales Header"): Boolean
     var
-        L_PostedSalesShipmentLine: Record "Sales Shipment Line";
+        L_PostedInvtPickHeader: Record "Posted Invt. Pick Header";
     begin
-        L_PostedSalesShipmentLine.Reset();
-        L_PostedSalesShipmentLine.SetRange("Order No.", _SalesHeader."No.");
-        if not L_PostedSalesShipmentLine.IsEmpty then
+        L_PostedInvtPickHeader.Reset();
+        L_PostedInvtPickHeader.SetRange("Source Document", L_PostedInvtPickHeader."Source Document"::"Sales Order");
+        L_PostedInvtPickHeader.SetRange("Source No.", _SalesHeader."No.");
+        if not L_PostedInvtPickHeader.IsEmpty then
             exit(true)
         else
             exit(false);
@@ -163,33 +217,37 @@ codeunit 90066 "Create Consolidate SO"
 
     local procedure CreateSalesHeader(_InterimSalesHeader: Record "Interim Sales Header")
     var
-        "S&R": Record "Sales & Receivables Setup";
+        SalesRecSetup: Record "Sales & Receivables Setup";
         NoSeriesManagement: Codeunit NoSeriesManagement;
         L_Customer: Record Customer;
+        L_DocumetNo: Code[20];
     begin
-        "S&R".Get();
+        SalesRecSetup.Get();
         InsertedSH.Reset();
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
-        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo("S&R"."Order Nos.", WORKDATE, TRUE));
+        Clear(L_DocumetNo);
+        L_DocumetNo := NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE);
+        InsertedSH."No." := L_DocumetNo;
+        InsertedSH.Validate("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
         InsertedSH.Validate("Posting Date", WorkDate());
-        InsertedSH.Validate("Order Date", _InterimSalesHeader."Document Date");
-        InsertedSH.Validate("Location Code", _InterimSalesHeader."Location Code");
-        InsertedSH.Validate("Document Date", _InterimSalesHeader."Document Date");
-        //InsertedSH."Channel Code" := _InterimSalesHeader."Trade Partner Code"; // 
-        InsertedSH."Web Order" := true;
+        InsertedSH.Validate("Order Date", WorkDate());
+        InsertedSH.Validate("Document Date", WorkDate());
+        InsertedSH.Validate("Shipping Agent Code", _InterimSalesHeader."Shipping Agent Code");
+        InsertedSH.Validate("Shipping Agent Service Code", _InterimSalesHeader."Shipping Agent Service Code");
+        InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", _InterimSalesHeader."Weekend Ship Agent Serv Code");
         L_Customer.Reset();
         L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
         if L_Customer.FindFirst() then
-            if L_Customer."Knapp Customer" = true then
-                InsertedSH."Knapp Customer" := L_Customer."Knapp Customer";
-        InsertedSH.Insert();
+            InsertedSH."Knapp Customer" := L_Customer."Knapp Customer";
 
-        InsertedSH.Validate("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
-        //InsertedSH.Validate("External Document No.", _InterimSalesHeader."No.");
-        //If Ship-to Code is blank then system should validate default customer address++++
-        if _InterimSalesHeader."Ship-to Code" <> '' then
-            InsertedSH.Validate("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        InsertedSH.Validate("IRP Order", true);
+        InsertedSH.Validate("Web Order", true);
+        InsertedSH.Insert(true);
+
+        //Update Shipment date and Location++
+        InsertedSH.Validate("Location Code", _InterimSalesHeader."Location Code");
+        InsertedSH.Validate("Shipment Date", _InterimSalesHeader."Shipment Date");
         InsertedSH.Modify();
         G_SalesHeaderCreated := true;
     end;
@@ -200,89 +258,84 @@ codeunit 90066 "Create Consolidate SO"
         L_Item: Record Item;
         CU_KnappGenerateDocuments: Codeunit "Knapp Generate Documents";
         L_Location: Record Location;
+        L_Zone: Record Zone;
     begin
         InsertedSL.Reset();
         InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
         InsertedSL.SetRange("Document No.", _SalesHeader."No.");
         InsertedSL.SetRange("No.", _InterimSalesLine."No.");
         InsertedSL.SetRange(Type, InsertedSL.Type::Item);
+        InsertedSL.SetRange("Sent to Knapp", false);
         if InsertedSL.FindFirst() then begin
-            InsertedSL.Validate("Web Order", true);
-            InsertedSL.Validate(Quantity, InsertedSL.Quantity + _InterimSalesLine.Quantity);
-            L_Item.Reset();
-            L_Item.SetRange("No.", _InterimSalesLine."No.");
-            if L_Item.FindFirst() then
-                if L_Item."Knapp Item" = true then
-                    InsertedSL."Knapp Item" := L_Item."Knapp Item";
+            InsertedSL.Validate(Quantity, InsertedSL.Quantity + _InterimSalesLine."Qty. to Deliver");
             InsertedSL.Modify(true);
-            // if _InterimSalesLine."Response Code" = '3' then begin
-            //     InsertedSL.Validate(Quantity, InsertedSL.Quantity + _InterimSalesLine."Quantity To Deliver");
-            //     InsertedSL.Modify(true);
-            // end else begin
-            //     InsertedSL.Validate(Quantity, InsertedSL.Quantity + _InterimSalesLine.Quantity);
-            //     InsertedSL.Modify(true);
-            // end;
         end else begin
-            InsertedSL.Reset();
             InsertedSL.Init();
             InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
             InsertedSL.VALIDATE("Document No.", _SalesHeader."No.");
             InsertedSL.VALIDATE("Line No.", GetLastLineNo(_SalesHeader."No."));
-            InsertedSL.VALIDATE(Type, _InterimSalesLine.Type);
+            InsertedSL.VALIDATE(Type, InsertedSL.Type::Item);
             InsertedSL.VALIDATE("No.", _InterimSalesLine."No.");
-            InsertedSL.VALIDATE(Quantity, _InterimSalesLine.Quantity);
-            InsertedSL.Validate("Web Order", true);
+            InsertedSL.VALIDATE(Quantity, _InterimSalesLine."Qty. to Deliver");
             L_Item.Reset();
             L_Item.SetRange("No.", _InterimSalesLine."No.");
             if L_Item.FindFirst() then
-                if L_Item."Knapp Item" = true then
-                    InsertedSL."Knapp Item" := L_Item."Knapp Item";
-            // if _InterimSalesLine."Response Code" = '3' then begin
-            //     InsertedSL.VALIDATE(Quantity, _InterimSalesLine."Quantity To Deliver");
-            // end else
-            //     InsertedSL.VALIDATE(Quantity, _InterimSalesLine.Quantity);
-            //InsertedSL.Validate("Location Code", _SalesHeader."Location Code");
-            if CU_KnappGenerateDocuments.CheckKnappCustomer(_SalesHeader."Sell-to Customer No.") = true then begin
-                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = false then begin
-                    L_Location.Reset();
-                    L_Location.SetRange("Manual Picking", true);
-                    if L_Location.FindFirst() then begin
-                        InsertedSL.Validate("Location Code", L_Location.Code);
-                    end;
-                end;
-                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = true then begin
-                    L_Location.Reset();
-                    L_Location.SetRange("Knapp Location", true);
-                    if L_Location.FindFirst() then begin
-                        InsertedSL.Validate("Location Code", L_Location.Code);
-                    end;
-                end;
-            end;
+                InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
 
-            //Manual Customer++
-            if CU_KnappGenerateDocuments.CheckKnappCustomer(_SalesHeader."Sell-to Customer No.") = false then begin
-                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = true then begin
-                    L_Location.Reset();
-                    L_Location.SetRange("Manual Picking", true);
-                    if L_Location.FindFirst() then begin
-                        InsertedSL.Validate("Location Code", L_Location.Code);
-                    end;
-                end;
+            //We are using one location setup For Purchase and Sales++
+            InsertedSL.Validate("Location Code", _SalesHeader."Location Code");
 
-                if CU_KnappGenerateDocuments.CheckKnappItem(_InterimSalesLine."No.") = false then begin
-                    L_Location.Reset();
-                    L_Location.SetRange("Manual Picking", true);
-                    if L_Location.FindFirst() then begin
-                        InsertedSL.Validate("Location Code", L_Location.Code);
-                    end;
-                end;
-            end;
+
+            //Below are the conditions
+            //1. If Customer is KNAPP, only then check validations in Sales line level
+            //2. If Customer is not KNAPP, then the entire SO will be a Manual Pick. Need to still have a separate Fridge and CD Picks.
+            //3. KNAPP Item – If Customer is KNAPP and Item is not KNAPP, then Manual Pick
+            //4. KNAPP Route – If Customer is KNAPP and Shipping Agent Service Code is not KNAPP, then Manual Pick
+            //5. If Item is KNAPP and below Threshold then send it KNAPP
+            //6. If Item is KNAPP and over Threshold, then Manual Pick (SH/Unit1)
+            //7. If Item is not KNAPP, then always Manual Pick (SH/Unit1)
+            //9. Fridge – Always separate Pick irrespective of KNAPP or Manual Pick
+            //10. CD – Always separate Pick irrespective of KNAPP or Manual Pick
+            //11. If the qty is above the Threshold on item card, then system has to automatically suggest SH/Unit1 else HDH
+            //13. Potentially we don’t have to assign Variants on SO, it has to auto-fill based on the Inventory Pick post
+
+            //Knapp Customer++
+            //Knapp Customer++
+            if (CheckKnaapCustomer(InsertedSL."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentService(_SalesHeader) = true) AND (CheckKnaapItem(InsertedSL."No.") = true) then
+                InsertedSL.Validate("Knapp Line", true);
+            // if (CheckKnaapCustomer(InsertedSL."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentService(_SalesHeader) = true) then begin
+            //     if (CheckKnaapItem(InsertedSL."No.") = true) then begin
+            //         //KNAPP
+            //         L_Zone.Reset();
+            //         L_Zone.SetRange("Knapp Zone", true);
+            //         if L_Zone.FindFirst() then begin
+            //             InsertedSL.Validate("Bin Code", GetBinCodeFromBincontent(InsertedSL, _SalesHeader, L_Zone));
+            //             InsertedSL.Validate("Knapp Line", true);
+            //         end else
+            //             Error('Knaap Zone is not available in BC. Please create and try again');
+            //     end;
+
+
+            //     //Manual++
+            //     if (CheckKnaapItem(InsertedSL."No.") = false) then begin
+            //         L_Zone.Reset();
+            //         L_Zone.SetRange("Knapp Zone", false);
+            //         if L_Zone.FindFirst() then begin
+            //             InsertedSL.Validate("Bin Code", GetBinCodeFromBincontent(InsertedSL, _SalesHeader, L_Zone));
+            //         end else
+            //             Error('Manual Zone is not available in BC. Please create and try again');
+            //     end;
+            // end else begin
+            //     //Manual++
+            //     L_Zone.Reset();
+            //     L_Zone.SetRange("Knapp Zone", false);
+            //     if L_Zone.FindFirst() then begin
+            //         InsertedSL.Validate("Bin Code", GetBinCodeFromBincontent(InsertedSL, _SalesHeader, L_Zone));
+            //     end else
+            //         Error('Manual Zone is not available in BC. Please create and try again');
+            // end;
             InsertedSL.Insert(true);
         end;
-
-
-
-
     end;
 
     local procedure GetLastLineNo(HeaderNo: Code[20]): Integer
@@ -296,5 +349,74 @@ codeunit 90066 "Create Consolidate SO"
             EXIT(L_SalesLine."Line No." + 10000)
         ELSE
             EXIT(10000);
+    end;
+
+
+    procedure CheckKnaapCustomer(_CustomerNo: Code[20]): Boolean
+    var
+        L_Customer: Record Customer;
+    begin
+        if L_Customer.Get(_CustomerNo) then
+            if L_Customer."Knapp Customer" = true then
+                exit(true);
+        exit(false);
+    end;
+
+    procedure CheckKnaapItem(_ItemNo: Code[20]): Boolean
+    var
+        L_Item: Record Item;
+    begin
+        if L_Item.Get(_ItemNo) then
+            if L_Item."Knapp Item" = true then
+                exit(true);
+        exit(false);
+    end;
+
+    procedure CheckKnaapShippingAgentService(_SalesHeader: Record "Sales Header"): Boolean
+    var
+        L_ShippingAgentService: Record "Shipping Agent Services";
+    begin
+        if (_SalesHeader."Shipping Agent Code" <> '') AND (_SalesHeader."Shipping Agent Service Code" <> '') then begin
+            L_ShippingAgentService.Reset();
+            L_ShippingAgentService.SetRange("Shipping Agent Code", _SalesHeader."Shipping Agent Code");
+            L_ShippingAgentService.SetRange(Code, _SalesHeader."Shipping Agent Service Code");
+            if L_ShippingAgentService.FindFirst() then begin
+                if L_ShippingAgentService."Knapp Round" = true then
+                    exit(true);
+            end;
+        end;
+
+        exit(false);
+    end;
+
+
+    local procedure GetBinCodeFromBincontent(_SalesLine: Record "Sales Line"; _SalesHeader: Record "Sales Header"; _Zone: Record Zone): Code[20]
+    var
+        L_BinContent: Record "Bin Content";
+        L_Bin: Record Bin;
+        L_Item: Record Item;
+    begin
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Location Code", _SalesHeader."Location Code");
+        L_BinContent.SetRange("Zone Code", _Zone.Code);
+        L_BinContent.SetRange("Item No.", _SalesLine."No.");
+        L_BinContent.SetRange("Unit of Measure Code", _SalesLine."Unit of Measure Code");
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        if L_Item.Get(_SalesLine."No.") then
+            if L_Item."Warehouse Class Code" <> '' then
+                L_BinContent.SetRange("Warehouse Class Code", L_Item."Warehouse Class Code");
+        if L_BinContent.FindFirst() then begin
+            if L_BinContent.CalcQtyAvailToTakeUOM() > 0 then begin
+                exit(L_BinContent."Bin Code")
+            end;
+        end else begin
+            L_Bin.Reset();
+            L_Bin.SetRange("Location Code", _SalesHeader."Location Code");
+            L_Bin.SetRange("Zone Code", _Zone.Code);
+            L_Bin.SetRange(Empty, false);
+            if L_Bin.FindFirst() then begin
+                exit(L_Bin.Code)
+            end;
+        end;
     end;
 }

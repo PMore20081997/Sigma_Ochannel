@@ -17,11 +17,6 @@ page 90017 "Web Order Header"
             group(General)
             {
                 Editable = false;
-                field("Document Type"; rec."Document Type")
-                {
-                    Visible = false;
-                    ApplicationArea = all;
-                }
                 field("No."; rec."No.")
                 {
                     Editable = false;
@@ -39,11 +34,6 @@ page 90017 "Web Order Header"
                     ApplicationArea = all;
                 }
                 field("ET Access Code"; Rec."ET Access Code")
-                {
-                    Editable = false;
-                    ApplicationArea = all;
-                }
-                field("Bill- to Name"; rec."Bill- to Name")
                 {
                     Editable = false;
                     ApplicationArea = all;
@@ -77,7 +67,6 @@ page 90017 "Web Order Header"
                 field("Order Date"; rec."Order Date")
                 {
                     Editable = false;
-                    Visible = true;
                     ApplicationArea = all;
                 }
                 field("Order Placed At"; rec."Order Placed At")
@@ -102,7 +91,16 @@ page 90017 "Web Order Header"
                     ApplicationArea = all;
                     Editable = false;
                 }
-
+                field("Location Code"; Rec."Location Code")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
+                }
+                field("Shipment Date"; Rec."Shipment Date")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field(Status; Rec.Status)
                 {
                     Editable = false;
@@ -119,117 +117,105 @@ page 90017 "Web Order Header"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                //     group("Shipping Details")
+                //     {
+                //         Visible = false;
+                //         Caption = 'Shipping Details';
+                //         Editable = false;
+                //         field("Web Shipment Method"; rec."Web Shipment Method")
+                //         {
+                //             Editable = false;
+                //             Enabled = false;
+                //             Visible = true;
+                //             ApplicationArea = all;
+                //         }
+                //         field("Shipment Date"; rec."Shipment Date")
+                //         {
+                //             ApplicationArea = all;
+                //         }
+                //         field("Tracking No."; rec."Package Tracking No.")
+                //         {
+                //             ApplicationArea = all;
+                //             Editable = false;
+                //             CaptionML = ENU = 'Tracking No.', ENG = 'Tracking No.';
+                //         }
+                //         field(Remarks; rec.Remarks)
+                //         {
+                //             Caption = 'Shipment Remark';
+                //             ApplicationArea = all;
+                //             Editable = false;
+                //         }
+                //         field("Total Weight"; rec."Total Weight")
+                //         {
+                //             ApplicationArea = all;
+                //             Editable = false;
+                //         }
+                //         field("Pickup Date"; rec."Pickup Date")
+                //         {
+                //             ApplicationArea = all;
+                //             Visible = false;
+                //         }
+                //         field("Pickup Time"; rec."Pickup Time")
+                //         {
+                //             ApplicationArea = all;
+                //             Visible = false;
+                //         }
+                //         field("No. of Items"; rec."No. of Items")
+                //         {
+                //             ApplicationArea = all;
+                //             Editable = false;
+                //             Caption = 'No. of Item Lines';
+                //         }
+                //         field("Total No. of Items"; Rec."Total No. of Items")
+                //         {
+                //             ApplicationArea = All;
+                //             Editable = false;
+                //         }
+                //         field("No. Of Parcels"; rec."No. Of Parcels")
+                //         {
+                //             ApplicationArea = all;
+                //             Editable = true;
 
-                // field(Rec; Rec."Destination Doc No.")
-                // {
-                //     ApplicationArea = all;
-                //     Visible = false;
-                //     Editable = false;
-                //     trigger OnDrillDown()
-                //     begin
-                //         OpenDestinationDocument(Rec);
-                //     end;
-                // }
+                //             trigger OnValidate()
+                //             var
+                //                 L_InterimSalesLine: Record "Interim Sales Line";
+                //                 TotalItems: Integer;
+                //                 ShippingAgentService: Record "Shipping Agent Services";
+                //             begin
+                //                 if ((Rec."No." <> '') and (Rec."No. Of Parcels" <> 0)) then begin
+                //                     TotalItems := 0;
+                //                     L_InterimSalesLine.Reset();
+                //                     L_InterimSalesLine.SetRange("Document No", Rec."No.");
+                //                     L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                //                     if L_InterimSalesLine.FindSet() then begin
+                //                         repeat
+                //                             TotalItems += L_InterimSalesLine.Quantity;
+                //                         until L_InterimSalesLine.Next() = 0;
+                //                     end;
 
-                group("Shipping Details")
-                {
-                    Visible = false;
-                    Caption = 'Shipping Details';
-                    Editable = false;
-                    field("Web Shipment Method"; rec."Web Shipment Method")
-                    {
-                        Editable = false;
-                        Enabled = false;
-                        Visible = true;
-                        ApplicationArea = all;
-                    }
-                    field("Shipment Date"; rec."Shipment Date")
-                    {
-                        ApplicationArea = all;
-                    }
-                    field("Tracking No."; rec."Package Tracking No.")
-                    {
-                        ApplicationArea = all;
-                        Editable = false;
-                        CaptionML = ENU = 'Tracking No.', ENG = 'Tracking No.';
-                    }
-                    field(Remarks; rec.Remarks)
-                    {
-                        Caption = 'Shipment Remark';
-                        ApplicationArea = all;
-                        Editable = false;
-                    }
-                    field("Total Weight"; rec."Total Weight")
-                    {
-                        ApplicationArea = all;
-                        Editable = false;
-                    }
-                    field("Pickup Date"; rec."Pickup Date")
-                    {
-                        ApplicationArea = all;
-                        Visible = false;
-                    }
-                    field("Pickup Time"; rec."Pickup Time")
-                    {
-                        ApplicationArea = all;
-                        Visible = false;
-                    }
-                    field("No. of Items"; rec."No. of Items")
-                    {
-                        ApplicationArea = all;
-                        Editable = false;
-                        Caption = 'No. of Item Lines';
-                    }
-                    field("Total No. of Items"; Rec."Total No. of Items")
-                    {
-                        ApplicationArea = All;
-                        Editable = false;
-                    }
-                    field("No. Of Parcels"; rec."No. Of Parcels")
-                    {
-                        ApplicationArea = all;
-                        Editable = true;
+                //                     if TotalItems < Rec."No. Of Parcels" then begin
+                //                         Error('Number of Parcels cannot be greater than Total no. of Items');
+                //                     end;
 
-                        trigger OnValidate()
-                        var
-                            L_InterimSalesLine: Record "Interim Sales Line";
-                            TotalItems: Integer;
-                            ShippingAgentService: Record "Shipping Agent Services";
-                        begin
-                            if ((Rec."No." <> '') and (Rec."No. Of Parcels" <> 0)) then begin
-                                TotalItems := 0;
-                                L_InterimSalesLine.Reset();
-                                L_InterimSalesLine.SetRange("Document No", Rec."No.");
-                                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-                                if L_InterimSalesLine.FindSet() then begin
-                                    repeat
-                                        TotalItems += L_InterimSalesLine.Quantity;
-                                    until L_InterimSalesLine.Next() = 0;
-                                end;
-
-                                if TotalItems < Rec."No. Of Parcels" then begin
-                                    Error('Number of Parcels cannot be greater than Total no. of Items');
-                                end;
-
-                                if ((Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') and (Rec."Ship-to Country/Region Code" <> 'GB')) then begin
-                                    ShippingAgentService.Reset();
-                                    ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                                    ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                                    if ShippingAgentService.FindFirst() then begin
-                                        if Rec."No. Of Parcels" > ShippingAgentService."Max. No. of Parcel" then begin
-                                            Error(StrSubstNo('Number of Parcels cannot be greater than %1 for International Orders.', ShippingAgentService."Max. No. of Parcel"));
-                                        end;
-                                    end;
-                                end;
-                            end;
-                        end;
-                    }
-                    field("Location Code"; rec."Location Code")
-                    {
-                        ApplicationArea = all;
-                        Editable = false;
-                    }
-                }
+                //                     if ((Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') and (Rec."Ship-to Country/Region Code" <> 'GB')) then begin
+                //                         ShippingAgentService.Reset();
+                //                         ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                //                         ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                //                         if ShippingAgentService.FindFirst() then begin
+                //                             if Rec."No. Of Parcels" > ShippingAgentService."Max. No. of Parcel" then begin
+                //                                 Error(StrSubstNo('Number of Parcels cannot be greater than %1 for International Orders.', ShippingAgentService."Max. No. of Parcel"));
+                //                             end;
+                //                         end;
+                //                     end;
+                //                 end;
+                //             end;
+                //         }
+                //         field("Location Code"; rec."Location Code")
+                //         {
+                //             ApplicationArea = all;
+                //             Editable = false;
+                //         }
+                //     }
             }
             group(Shipping)
             {
@@ -238,7 +224,6 @@ page 90017 "Web Order Header"
                 field("Ship-to Code"; Rec."Ship-to Code")
                 {
                     ApplicationArea = All;
-                    //Editable = false;
                 }
                 field("Ship-to Name"; rec."Ship-to Name")
                 {
@@ -304,6 +289,26 @@ page 90017 "Web Order Header"
                 field("Ship-to Phone"; Rec."Ship-to Phone")
                 {
                     ApplicationArea = All;
+                }
+                group("Shipment Method")
+                {
+                    Editable = false;
+                    field("Shipment Method Code"; Rec."Shipment Method Code")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Shipping Agent Code"; Rec."Shipping Agent Code")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Weekend Ship Agent Serv Code"; Rec."Weekend Ship Agent Serv Code")
+                    {
+                        ApplicationArea = All;
+                    }
                 }
 
                 // field("Earliest Delivery date"; rec."Earliest Delivery date")
@@ -396,6 +401,38 @@ page 90017 "Web Order Header"
                             REPEAT
                                 WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
                             UNTIL InterimSalesHeader.NEXT = 0;
+                    end;
+                end;
+            }
+
+            action(Process)
+            {
+                Caption = 'Process';
+                Ellipsis = true;
+                Image = CompleteLine;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                ApplicationArea = all;
+
+                trigger OnAction()
+                var
+                    R90000: Report "Process Web Orders";
+                    ReportParams: Text;
+                begin
+                    Clear(R90000);
+                    InterimSalesHeader.Reset();
+                    InterimSalesHeader.SetRange("No.", Rec."No.");
+                    InterimSalesHeader.SetRange("Document Type", Rec."Document Type");
+                    InterimSalesHeader.SetRange("Trade Partner Code", Rec."Trade Partner Code");
+                    if InterimSalesHeader.FindFirst() then begin
+                        R90000.SetTotalNoOfOrders(InterimSalesHeader.Count);
+                        R90000.SetTableView(InterimSalesHeader);
+                        if Rec."Trade Partner Code" = 'B&Q' then
+                            R90000.SetBnQChannel(Rec."Trade Partner Code");
+                        R90000.UseRequestPage(true);
+                        R90000.Run();
                     end;
                 end;
             }

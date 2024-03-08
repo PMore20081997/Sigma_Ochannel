@@ -184,13 +184,17 @@ page 90003 "Web Order List"
                     R90000: Report "Process Web Orders";
                     ReportParams: Text;
                 begin
-                    InterimSalesHeader.CopyFilters(Rec);
-                    R90000.SetTotalNoOfOrders(Rec.Count);
-                    R90000.SetTableView(InterimSalesHeader);
-                    if Rec."Trade Partner Code" = 'B&Q' then
-                        R90000.SetBnQChannel(Rec."Trade Partner Code");
-                    R90000.UseRequestPage(true);
-                    R90000.Run();
+                    Clear(R90000);
+                    InterimSalesHeader.Reset();
+                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if InterimSalesHeader.FindSet() then begin
+                        R90000.SetTotalNoOfOrders(InterimSalesHeader.Count);
+                        R90000.SetTableView(InterimSalesHeader);
+                        if Rec."Trade Partner Code" = 'B&Q' then
+                            R90000.SetBnQChannel(Rec."Trade Partner Code");
+                        R90000.UseRequestPage(true);
+                        R90000.Run();
+                    end;
                 end;
             }
             action("Generate Shipment")

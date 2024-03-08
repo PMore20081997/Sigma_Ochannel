@@ -141,7 +141,7 @@ codeunit 90018 "GOY File Integration"
         BlobInstream: InStream;
         OutStream: OutStream;
         TempBlob: Codeunit "Temp Blob";
-
+        test: Record "CSV Buffer" temporary;
     begin
         Clear(L_ApiUrl);
         Clear(L_HttpClient);
@@ -150,6 +150,8 @@ codeunit 90018 "GOY File Integration"
         Clear(L_ContainerName);
         Clear(L_ResponseText);
         Clear(L_TradePartner);
+        Clear(CSVOutstream);
+        Clear(CSVInstream);
         //headers.Remove('Content-Type');
         //headers.Add('Content-Type', 'application/json');
         L_TradePartner.Get(ChannelCode);
@@ -162,11 +164,7 @@ codeunit 90018 "GOY File Integration"
                 L_HttpResponse.Content().ReadAs(L_ResponseText);
                 CUTempoBlob.CreateOutStream(CSVOutstream);
                 CSVOutstream.WriteText(L_ResponseText);
-
                 CUTempoBlob.CreateInStream(CSVInstream, TextEncoding::UTF8);
-
-                CSVInstream.ReadText(L_ResponseText);
-
                 CreateOrder(CSVInstream, StartParameter, FileName);
             end;
         end;
@@ -308,6 +306,7 @@ codeunit 90018 "GOY File Integration"
         CustomerRef: Record "Customer Reference";
         K: Integer;
     begin
+        Clear(MaxRow);
         TempCSVBuffer.Reset();
         TempCSVBuffer.DeleteAll();
         TempCSVBuffer.LoadDataFromStream(BlobInstream, ',');
@@ -315,7 +314,6 @@ codeunit 90018 "GOY File Integration"
         InterimSalesLine.DeleteAll();
         ShipmnetTracking.DeleteAll();
         PaymentDetails.DeleteAll();
-        TempCSVBuffer.Reset();
         if TempCSVBuffer.FindLast() then
             MaxRow := TempCSVBuffer."Line No.";
         Clear(K);
@@ -344,6 +342,7 @@ codeunit 90018 "GOY File Integration"
                 InterimSalesHeader.Validate("Trade Partner Code", StartParameter);
                 InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
                 InterimSalesHeader.Validate("Channel Order ID", FileName);
+                //InterimSalesHeader.Validate("External Document No.", FileName);
                 CustomerRef.Reset();
                 CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
                 if CustomerRef.FindFirst() then
@@ -377,8 +376,8 @@ codeunit 90018 "GOY File Integration"
         if RowNo = MaxRow then begin
             InterimSalesLine.Reset();
             if InterimSalesLine.FindSet() then begin
-                repeat
-                until InterimSalesLine.Next() = 0;
+                // repeat
+                // until InterimSalesLine.Next() = 0;
                 CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
 
                 //Update Interim header and Interim Line Response Code and Message++
@@ -422,7 +421,7 @@ codeunit 90018 "GOY File Integration"
                                 L_ProductLevelResponse.Reset();
                                 L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                                 if L_ProductLevelResponse.FindFirst() then begin
-                                    if L_ProductLevelResponse."Error Code" = 'SEQ13' then begin
+                                    if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
                                         L_Line."Reason Code" := L_ProductLevelResponse.Reason;
                                         L_Line."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
                                         L_Line.Modify();
@@ -450,12 +449,12 @@ codeunit 90018 "GOY File Integration"
                     L_Line.Reset();
                     L_Line.SetRange("Document Type", L_Header."Document Type");
                     L_Line.SetRange("Document No", L_Header."No.");
-                    L_Line.SetFilter("Reason Message", '<>%1', 'Successful');
+                    L_Line.SetFilter("Reason Message", '%1', 'Successful');
                     if L_Line.FindFirst() then begin
-                        L_Header.status := L_Header.status::Confirmed;
+                        L_Header.status := L_Header.status::"In Progress";
                         L_Header.Modify();
                     end else begin
-                        L_Header.status := L_Header.status::"In Progress";
+                        L_Header.status := L_Header.status::Confirmed;
                         L_Header."Ready to process" := true;
                         L_Header.Modify();
                     end;
@@ -465,7 +464,6 @@ codeunit 90018 "GOY File Integration"
                 end;
 
                 ExportFile(L_Header, StartParameter);
-
             end;
         end;
     end;

@@ -72,6 +72,7 @@ table 90004 "Interim Sales Line"
         field(8; Quantity; Decimal)
         {
             DataClassification = ToBeClassified;
+            DecimalPlaces = 0 : 5;
             trigger OnValidate()
             var
                 myInt: Integer;
@@ -501,7 +502,18 @@ table 90004 "Interim Sales Line"
         }
         field(90051; "Qty. to Deliver"; Decimal)
         {
-
+            DecimalPlaces = 0 : 5;
+        }
+        field(90052; "Item Category Code"; Code[20])
+        {
+            Caption = 'Item Category Code';
+            TableRelation = "Item Category";
+        }
+        field(70048; "Customer Price Group"; Code[10])
+        {
+            Caption = 'Customer Price Group';
+            Editable = false;
+            TableRelation = "Customer Price Group";
         }
     }
 

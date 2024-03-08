@@ -4,7 +4,7 @@ table 90012 "Order Level Response"
     {
         field(1; "Entry No."; Integer)
         {
-            AutoIncrement = true;
+            //AutoIncrement = true;
         }
         field(2; Reason; Text[250])
         {
@@ -23,6 +23,7 @@ table 90012 "Order Level Response"
                 if Rec."Error Code" <> '' then begin
                     L_OrderLevelResponse.Reset();
                     L_OrderLevelResponse.SetRange("Error Code", Rec."Error Code");
+                    L_OrderLevelResponse.SetFilter("Entry No.", '<>%1', Rec."Entry No.");
                     if L_OrderLevelResponse.FindFirst() then
                         Error('Error Code %1 already exist', Rec."Error Code");
                 end;
@@ -30,6 +31,7 @@ table 90012 "Order Level Response"
             end;
         }
     }
+
     keys
     {
         key(PK; "Entry No.")
@@ -37,4 +39,5 @@ table 90012 "Order Level Response"
 
         }
     }
+
 }

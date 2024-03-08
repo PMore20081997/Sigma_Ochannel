@@ -187,10 +187,15 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     Editable = false;
                 }
-
+                field("Item Category Code"; Rec."Item Category Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field(Quantity; Rec.Quantity)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                     trigger OnValidate()
                     var
                         InterimSalesHeader: Record "Interim Sales Header";
@@ -258,6 +263,11 @@ page 90004 "Web order Subpage"
                         CurrPage.Update();
                     end;
                     // Editable = false;  // Irshad 13052022
+                }
+                field("Qty. to Deliver"; Rec."Qty. to Deliver")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Reason Code"; Rec."Reason Code")
                 {

@@ -127,7 +127,7 @@ codeunit 90085 "DataPlast Order Request API"
                         L_ProductLevelResponse.Reset();
                         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                         if L_ProductLevelResponse.FindFirst() then begin
-                            if L_ProductLevelResponse."Error Code" = 'SEQ13' then begin
+                            if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
                                 L_InsterimSalesLine."Reason Code" := L_ProductLevelResponse.Reason;
                                 L_InsterimSalesLine."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
                                 L_InsterimSalesLine.Modify();

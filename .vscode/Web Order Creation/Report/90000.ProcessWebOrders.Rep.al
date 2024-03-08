@@ -17,12 +17,9 @@ report 90000 "Process Web Orders"
                                     WHERE("Document Type" = FILTER(Order),
                                           "Destination Doc No." = filter(''),
                                            Status = FILTER("In Progress"),
-                                          "No of Error" = CONST(0)
+                                          "No of Error" = CONST(0), "Sales Order Created" = const(false));
 
-
-                );//Sofyan
                 RequestFilterFields = "No.", "Document Date", "Shipping Agent Code", "Shipping Agent Service Code";//"Sell-to Customer No.", "Ship-to Country/Region Code", ; //, "Prime Order", "Premium Order"
-
                 trigger OnAfterGetRecord()
                 var
                     CreateOrderErrror: Text;

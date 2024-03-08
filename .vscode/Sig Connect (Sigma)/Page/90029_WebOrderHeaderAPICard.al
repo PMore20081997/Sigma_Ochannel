@@ -72,15 +72,16 @@ page 90029 "Web Order Header API Card"
         Temp_InterimSalesHeader: Record "Interim Sales Header";
         NoSeriesManagement: Codeunit NoSeriesManagement;
         GeneralSetup: record "General Setup - Channels";
+        L_Date: Record Date;
     begin
         GeneralSetup.Get();
         GeneralSetup.TestField("Web Order Nos");
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
-            // //Duplicate Detection Code
-            // IsExist := CU_WebOrderManagement.CheckOrderNotExist(Rec."Trade Partner Code", Rec."Channel Order ID");
-            // if IsExist = false then begin
-            //     Error(StrSubstNo('Order Already Exists With Order Id %1 For Channel Partner %2', Rec."Channel Order ID", Rec."Trade Partner Code"));
-            // end;
+            //Duplicate Detection Code
+            IsExist := CU_WebOrderManagement.CheckOrderNotExist(Rec."Trade Partner Code", Rec."Channel Order ID");
+            if IsExist = false then begin
+                Error(StrSubstNo('Order Already Exists With Order Id %1 For Channel Partner %2', Rec."Channel Order ID", Rec."Trade Partner Code"));
+            end;
 
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
@@ -112,55 +113,72 @@ page 90029 "Web Order Header API Card"
                 else
                     Rec.Validate("Location Code", ChannelPartner.Location);
                 Rec.Validate("MultiLine Order No.", Rec."MultiLine Order No.");
-            end;
+                Rec.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
+                Rec.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
+                Rec.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
+                Rec.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
 
-            L_ShiptoAddress.Reset();
-            L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
-            if L_ShiptoAddress.FindFirst() then begin
-                Rec.Validate("Ship-to Code", L_ShiptoAddress.Code);
-                Rec.VALIDATE("Ship-to Name", L_ShiptoAddress.Name);
-                Rec.VALIDATE("Ship-to Address", L_ShiptoAddress.Address);
-                Rec.VALIDATE("Ship-to Address 2", L_ShiptoAddress."Address 2");
-                Rec.VALIDATE("Ship-to City", L_ShiptoAddress.City);
-                Rec.VALIDATE("Ship-to County", L_ShiptoAddress.County);
-                Rec.VALIDATE("Ship-to Country/Region Code", L_ShiptoAddress."Country/Region Code");
-                Rec.VALIDATE("Ship-to Post Code", L_ShiptoAddress."Post Code");
-                Rec.VALIDATE("Ship-to Phone", L_ShiptoAddress."Phone No.");
-                Rec.VALIDATE("Ship-to Email", L_ShiptoAddress."E-Mail");
-                Rec."Customer Posting Group" := SellToCustomer."Customer Posting Group";
-            end else begin
-                Rec.VALIDATE("Ship-to Name", SellToCustomer.Name);
-                Rec.VALIDATE("Ship-to Address", SellToCustomer.Address);
-                Rec.VALIDATE("Ship-to Address 2", SellToCustomer."Address 2");
-                Rec.VALIDATE("Ship-to City", SellToCustomer.City);
-                Rec.VALIDATE("Ship-to County", SellToCustomer.County);
-                Rec.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
-                Rec.VALIDATE("Ship-to Post Code", SellToCustomer."Post Code");
-                Rec.VALIDATE("Ship-to Phone", SellToCustomer."Phone No.");
-                Rec.VALIDATE("Ship-to Email", SellToCustomer."E-Mail");
-                Rec."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+                //Update Shipment Date++
+                L_Date.Reset();
+                L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                L_Date.SetRange(L_Date."Period Start", Today);
+                if L_Date.FindFirst() then
+                    if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                        if Rec."Weekend Ship Agent Serv Code" <> '' then
+                            //Update Saturday++
+                            Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                        else begin
+                            //Update Monday
+                            Rec.Validate("Shipment Date", CalcDate('<+3D>', Today))
+                        end;
+                    end else
+                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today));
 
-            end;
 
-            BillToCustomer.Reset();
-            BillToCustomer.SetRange("No.", SellToCustomer."Bill-to Customer No.");
-            if BillToCustomer.FindFirst() then begin
-                Rec."Bill-to Customer No." := BillToCustomer."No.";
-                Rec."Bill- to Name" := BillToCustomer.Name;
-                Rec."Bill-to County" := BillToCustomer.County;
+                L_ShiptoAddress.Reset();
+                L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
+                if L_ShiptoAddress.FindFirst() then begin
+                    Rec.Validate("Ship-to Code", L_ShiptoAddress.Code);
+                    Rec.VALIDATE("Ship-to Name", L_ShiptoAddress.Name);
+                    Rec.VALIDATE("Ship-to Address", L_ShiptoAddress.Address);
+                    Rec.VALIDATE("Ship-to Address 2", L_ShiptoAddress."Address 2");
+                    Rec.VALIDATE("Ship-to City", L_ShiptoAddress.City);
+                    Rec.VALIDATE("Ship-to County", L_ShiptoAddress.County);
+                    Rec.VALIDATE("Ship-to Country/Region Code", L_ShiptoAddress."Country/Region Code");
+                    Rec.VALIDATE("Ship-to Post Code", L_ShiptoAddress."Post Code");
+                    Rec.VALIDATE("Ship-to Phone", L_ShiptoAddress."Phone No.");
+                    Rec.VALIDATE("Ship-to Email", L_ShiptoAddress."E-Mail");
+                    Rec."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+                end else begin
+                    Rec.VALIDATE("Ship-to Name", SellToCustomer.Name);
+                    Rec.VALIDATE("Ship-to Address", SellToCustomer.Address);
+                    Rec.VALIDATE("Ship-to Address 2", SellToCustomer."Address 2");
+                    Rec.VALIDATE("Ship-to City", SellToCustomer.City);
+                    Rec.VALIDATE("Ship-to County", SellToCustomer.County);
+                    Rec.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
+                    Rec.VALIDATE("Ship-to Post Code", SellToCustomer."Post Code");
+                    Rec.VALIDATE("Ship-to Phone", SellToCustomer."Phone No.");
+                    Rec.VALIDATE("Ship-to Email", SellToCustomer."E-Mail");
+                    Rec."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+                end;
+
+                BillToCustomer.Reset();
+                BillToCustomer.SetRange("No.", SellToCustomer."Bill-to Customer No.");
+                if BillToCustomer.FindFirst() then begin
+                    Rec."Bill-to Customer No." := BillToCustomer."No.";
+                    Rec."Bill- to Name" := BillToCustomer.Name;
+                    Rec."Bill-to County" := BillToCustomer.County;
+                end;
+
+                Rec."Customer Price Group" := SellToCustomer."Customer Price Group";
             end;
 
             Rec."Job Reference" := Rec."Job Reference";
             Rec."Package Tracking No." := Rec."Package Tracking No.";
             Rec."Web Shipping Agent" := Rec."Web Shipping Agent";
             Rec."Web Shipment Method" := Rec."Web Shipment Method";
-
-            Rec."Shipment Method Code" := Rec."Shipment Method Code";
-            Rec."Shipping Agent Code" := Rec."Shipping Agent Code";
-            Rec."Shipping Agent Service Code" := Rec."Shipping Agent Service Code";
             Rec."Payment Method" := Rec."Payment Method";  //Added By Shubham 05082022
             Rec."Currency Code" := Rec."Currency Code";
-
             Rec.VALIDATE("Buyer Email", Rec."Buyer Email");
             Rec."Buyer Name" := Rec."Buyer Name";
             Rec.VALIDATE("No. Of Parcels", Rec."No. Of Parcels");
@@ -169,10 +187,9 @@ page 90029 "Web Order Header API Card"
             Rec."Order Placed At" := CurrentDateTime;
             Rec."Order Created On" := CurrentDateTime;
             Rec."User ID" := UserId;
-            Rec."File Name" := Rec."File Name";
+            Rec."File Name" := 'API';
             Rec.Validate("Order Amount", Rec."Order Amount");  //Added By Shubham 19072021
             Rec.Validate("Order Discount Amount", Rec."Order Discount Amount");
-            Rec.Validate("Shipment Date", Rec."Shipment Date");
             Rec.Validate("Fullfillment Channel", Rec."Fullfillment Channel");
             Rec.Validate("Web Customer No.", Rec."Web Customer No.");
             Rec.Validate("Order Status", Rec."Order Status");
@@ -214,12 +231,12 @@ page 90029 "Web Order Header API Card"
             L_InsterimSalesLine.Reset();
             L_InsterimSalesLine.SetRange("Document Type", Rec."Document Type");
             L_InsterimSalesLine.SetRange("Document No", Rec."No.");
-            L_InsterimSalesLine.SetFilter("Reason Message", '<>%1', 'Successful');
+            L_InsterimSalesLine.SetFilter("Reason Message", '%1', 'Successful');
             if L_InsterimSalesLine.FindFirst() then begin
-                Rec.status := Rec.status::Confirmed;
+                Rec.status := Rec.status::"In Progress";
                 Rec.Modify();
             end else begin
-                Rec.status := Rec.status::"In Progress";
+                Rec.status := Rec.status::Confirmed;
                 Rec."Ready to process" := true;
                 Rec.Modify();
             end;
@@ -254,83 +271,28 @@ page 90029 "Web Order Header API Card"
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
-
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
                 exit;
-
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
             PartnerErrorLog.RESET;
             PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");
             IF PartnerErrorLog.FindSet() THEN
                 PartnerErrorLog.DeleteAll();
 
-            CLEAR(L_ErrorRecorded);
-            L_InterimSalesLine.RESET;
+            //Response SEQ3++
             if L_ErrorRecorded = false then begin
-                if L_TradePartner."Inbox Type" <> L_TradePartner."Inbox Type"::"File Location" then begin
-                    IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                        L_ErrorRecorded := TRUE;
-                    END;
-                end;
-            end;
-
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
-                    if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
-                        if P_InterimSalesHeader."Sell-to Customer No." <> '' then begin
-                            CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Invalid A/C number', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                            L_ErrorRecorded := TRUE;
-                        end;
-                    end else begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 does not exist', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                END
-            end;
-
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Cust record locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
+                if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
+                    L_CustRef.Reset();
+                    L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
+                    if NOT L_CustRef.FindFirst() then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
             end;
 
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::Ship then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer on Stop **', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ7', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
-
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
-
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    L_Cust.CalcFields("Balance (LCY)");
-                    if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
-
+            //Response SEQ4++
             if L_ErrorRecorded = false then begin
                 if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
                     L_CustRef.Reset();
@@ -344,48 +306,105 @@ page 90029 "Web Order Header API Card"
                     end;
                 end;
             end;
+
+            //Response SEQ5++
+            CLEAR(L_ErrorRecorded);
+            L_InterimSalesLine.RESET;
             if L_ErrorRecorded = false then begin
-                if L_TradePartner."Inbox Type" = L_TradePartner."Inbox Type"::"File Location" then begin
-                    L_CustRef.Reset();
-                    L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
-                    L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
-                    if NOT L_CustRef.FindFirst() then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
+                IF P_InterimSalesHeader."Sell-to Customer No." = '' THEN BEGIN
+                    CU_WebOrderManagement.Sigma_InsertErrorLog('Value for customer no must not be blank', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                    L_ErrorRecorded := TRUE;
+                END;
             end;
 
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    if L_Cust."Payment Terms Code" = 'COD' then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('COD Account *********', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
+                IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
+                    CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer not on file', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                    L_ErrorRecorded := TRUE;
+                END;
             end;
+            //Response SEQ5--
 
+            //Response SEQ6++
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account Closed *****', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ12', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
             end;
 
+            //Response SEQ7++
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::Ship then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer on Stop **', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ7', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //Response SEQ8++
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //Response SEQ9++
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    L_Cust.CalcFields("Balance (LCY)");
+                    if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //Response SEQ10++
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    if L_Cust."Payment Terms Code" = 'COD' then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('COD Account *********', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //Response SEQ11++
+            if L_ErrorRecorded = false then begin
+                L_Cust.Reset();
+                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account Closed *****', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //Response SEQ12++
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust."Shipping Agent Code" = '' then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Delivery Schedule not assigned, contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ15', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Delivery Schedule not assigned, contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ12', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
             end;
 
+            //Response SEQ13++
             // if L_ErrorRecorded = false then begin
             //     Clear(LineCount);
             //     L_Line.Reset();

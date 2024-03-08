@@ -46,6 +46,12 @@
       "name": "Customer_Trends",
       "publisher": "Robosol",
       "version": "19.0.0.0"
+    },
+    {
+      "id": "996edaf0-a9f0-4939-aea6-cfbc08d07710",
+      "name": "Item Sales Quota",
+      "publisher": "Robosol",
+      "version": "1.0.0.0"
     }
   ],
   "screenshots": [],

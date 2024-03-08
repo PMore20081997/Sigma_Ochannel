@@ -127,7 +127,7 @@ codeunit 90081 "Get Order Request API"
                         L_ProductLevelResponse.Reset();
                         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                         if L_ProductLevelResponse.FindFirst() then begin
-                            if L_ProductLevelResponse."Error Code" = 'SEQ13' then begin
+                            if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
                                 L_InsterimSalesLine."Reason Code" := L_ProductLevelResponse.Reason;
                                 L_InsterimSalesLine."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
                                 L_InsterimSalesLine.Modify();
@@ -155,12 +155,12 @@ codeunit 90081 "Get Order Request API"
             L_InsterimSalesLine.Reset();
             L_InsterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
             L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-            L_InsterimSalesLine.SetFilter("Reason Message", '<>%1', 'Successful');
+            L_InsterimSalesLine.SetFilter("Reason Message", '%1', 'Successful');
             if L_InsterimSalesLine.FindFirst() then begin
-                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"In Progress";
                 L_InterimSalesHeader.Modify();
             end else begin
-                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"In Progress";
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
                 L_InterimSalesHeader."Ready to process" := true;
                 L_InterimSalesHeader.Modify();
             end;
@@ -276,6 +276,7 @@ codeunit 90081 "Get Order Request API"
             InterimSalesHeader.Validate("Channel Order ID", _OrderReferenceNo);
             InterimSalesHeader.Validate("Sell-to Customer No.", _CustomerNo);
             InterimSalesHeader.Validate("File Name", 'API');
+            InterimSalesHeader.Validate("External Document No.", _OrderReferenceNo);
             InterimSalesHeader.Insert();
         end;
         InterimSalesLine.Reset();

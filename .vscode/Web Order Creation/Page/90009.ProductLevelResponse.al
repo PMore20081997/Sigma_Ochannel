@@ -33,7 +33,28 @@ page 90009 "Product Response"
             }
         }
 
+        area(FactBoxes)
+        {
+            // systempart(Control1900383207; Links)
+            // {
+            //     ApplicationArea = RecordLinks;
+            // }
+            systempart(Control1905767507; Notes)
+            {
+                ApplicationArea = All;
+            }
+        }
+
     }
+
+    trigger OnOpenPage()
+    begin
+        if UpperCase(UserId) = UpperCase('ABDUL.K') then
+            CurrPage.Editable := true
+        else
+            CurrPage.Editable := false;
+
+    end;
 
 
 }
