@@ -37,6 +37,47 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                     end;
                 end;
             }
+
+
+        }
+        addafter("Co&mments")
+        {
+            action(ExportPOviaXMLport)
+            {
+                Caption = 'Export PO via XMLport';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::mio10, false, false);
+                end;
+            }
+            action(ExportItemviaXMLport)
+            {
+                Caption = 'Export Item via XMLport';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::mio24, false, false);
+                end;
+            }
+            action(ExportCustviaXMLport)
+            {
+                Caption = 'Export Customer via XMLport';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::mio01, false, false);
+                end;
+            }
         }
     }
 

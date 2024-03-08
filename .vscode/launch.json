@@ -12,18 +12,11 @@
             "environmentType": "Sandbox",
             "startupObjectType": "Page",
             "startupObjectId": 22,
-<<<<<<< HEAD
             //"environmentName": "Sigma_UAT",
             "environmentName": "Sigma_Robosol",
             //"environmentName": "Sigma_MAIN",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"ForceSync",
-=======
-           //"environmentName": "Sigma_UAT",
-            //"environmentName": "Sigma_Robosol",
-            "environmentName": "Sigma_MAIN",
-            "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3"
->>>>>>> 14e319714e8ed57f2ba3b1ecc5fe74e3d5d0d2f0
         }
     ]
 }

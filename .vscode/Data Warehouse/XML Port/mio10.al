@@ -1,0 +1,806 @@
+// xmlport 90000 "mio10"
+// {
+
+//     Format = VariableText;
+//     Direction = Export;
+//     TextEncoding = UTF8;
+//     UseRequestPage = false;
+//     FileName = 'mio10.csv';
+//     TableSeparator = '<NewLine>';
+//     schema
+//     {
+//         textelement(Root)
+//         {
+//             tableelement(Integer; Integer)
+//             {
+
+//                 SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
+//                 textelement("Supp_Code")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Supp_Code" := 'Supp Code';
+//                     end;
+//                 }
+//                 textelement("Prod_Code")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Prod_Code" := 'Prod Code';
+//                     end;
+//                 }
+//                 textelement("PurchOrdNo")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "PurchOrdNo" := 'Purch Ord No';
+//                     end;
+//                 }
+//                 // textelement("DepotCode")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "DepotCode" := 'Depot Code';
+//                 //     end;
+//                 // }
+//                 textelement("PordQty")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "PordQty" := 'Pord Qty';
+//                     end;
+//                 }
+//                 textelement("Pord_Qty_OS")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Pord_Qty_OS" := 'Pord Qty OS';
+//                     end;
+//                 }
+
+//                 textelement("Qty_Desc")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Qty_Desc" := 'Qty Desc';
+//                     end;
+//                 }
+
+//                 textelement("Pord_Value")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Pord_Value" := 'Pord Value';
+//                     end;
+//                 }
+//                 //  textelement("Price_Desc")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Price_Desc" := 'Price Desc';
+//                 //     end;
+//                 // }
+//                 textelement("Pord_List")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Pord_List" := 'Pord List';
+//                     end;
+//                 }
+//                 textelement("Pord_Price")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Pord_Price" := 'Pord Price';
+//                     end;
+//                 }
+//                 //  textelement("Receipt_No")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Receipt_No" := 'Receipt No';
+//                 //     end;
+//                 // }
+//                 textelement("OrderDate")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "OrderDate" := 'Order Date';
+//                     end;
+//                 }
+//                 textelement("DueDate")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "DueDate" := 'Due Date';
+//                     end;
+//                 }
+//                 textelement("Orig_Due_Date")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Orig_Due_Date" := 'Orig Due Date';
+//                     end;
+//                 }
+//                 // textelement("Period")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Period" := 'Period';
+//                 //     end;
+//                 // }
+//                 // textelement("Days_Late")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Days_Late" := 'Days Late';
+//                 //     end;
+//                 // }
+
+//                 // textelement("Late_Qty")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Late_Qty" := 'Late Qty';
+//                 //     end;
+//                 // }
+//                 textelement("Company")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Company" := 'Company';
+//                     end;
+//                 }
+//                 //  textelement("Trans_Anal_6")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Trans_Anal_6" := 'Trans Anal 6';
+//                 //     end;
+//                 // }
+//                 // textelement("Account_Year")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Account_Year" := 'Trans Anal 6';
+//                 //     end;
+//                 // }
+//                 // textelement("Account_Month")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Account_Month" := 'Account Month';
+//                 //     end;
+//                 // }
+//                 // textelement("Sell_By_Date")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Sell_By_Date" := 'Sell By Date';
+//                 //     end;
+//                 // }
+
+//                 textelement("Cost_in_Currency")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Cost_in_Currency" := 'Cost in Currency';
+//                     end;
+//                 }
+//                 //  textelement("Weight")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Weight" := 'Weight';
+//                 //     end;
+//                 // }
+//                 //  textelement("Pord_Type")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Pord_Type" := 'Pord Type';
+//                 //     end;
+//                 // }
+//                 //  textelement("State_Code")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "State_Code" := 'State Code';
+//                 //     end;
+//                 // }
+//                 //  textelement("Master_Ord_No")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Master_Ord_No" := 'Master Ord No';
+//                 //     end;
+//                 // }
+//                 //  textelement("Sales_Ord_No")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Sales_Ord_No" := 'Sales Ord No';
+//                 //     end;
+//                 // }
+//                 //  textelement("Sord_Line_No")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Sord_Line_No" := 'Sord Line No';
+//                 //     end;
+//                 // }
+//                 textelement("Pord_Line_No")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Pord_Line_No" := 'Pord Line No';
+//                     end;
+//                 }
+//                 //  textelement("Pord_Line_Desc")
+//                 // {
+
+//                 //     trigger OnBeforePassVariable()
+//                 //     begin
+//                 //         "Pord_Line_Desc" := 'Pord_Line_Desc';
+//                 //     end;
+//                 // }
+//                 textelement("Exch_Rate")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Exch_Rate" := 'Exch Rate';
+//                     end;
+//                 }
+//                 textelement("Foreign_Curr_Code")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "Foreign_Curr_Code" := 'Foreign Curr Code';
+//                     end;
+//                 }
+//                 textelement("PO_Operator_Code")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "PO_Operator_Code" := 'PO Operator Code';
+//                     end;
+//                 }
+//                 textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+//                 {
+
+//                     trigger OnBeforePassVariable()
+//                     begin
+//                         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" := 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+//                     end;
+//                 }
+
+
+
+
+
+
+
+//             }
+//             tableelement("Purchase_Header"; "Purchase Header")
+//             {
+//                 //XmlName = 'Item';
+//                 RequestFilterFields = "No.";
+
+//                 tableelement("Purchase_Line"; "Purchase Line")
+//                 {
+//                     LinkTable = Purchase_Header;
+//                     LinkFields = "Document No." = field("No.");
+
+//                     tableelement(Item; Item)
+//                     {
+//                         LinkTable = Purchase_Line;
+//                         LinkFields = "No." = field("No.");
+
+//                         tableelement("Company_Information"; "Company Information")
+//                         {
+//                             fieldelement(Supp_Code; Purchase_Header."Buy-from Vendor No.")
+//                             {
+//                             }
+//                             fieldelement(Prod_Code; Purchase_Line."No.")
+//                             {
+
+//                             }
+//                             fieldelement(PurchOrdNo; Purchase_Header."No.")
+//                             {
+
+//                             }
+//                             //  fieldelement()
+//                             // {
+
+//                             // }
+
+//                             fieldelement(PordQty; Purchase_Line.Quantity)
+//                             {
+
+//                             }
+//                             fieldelement("Pord_Qty_OS"; Purchase_Line."Outstanding Quantity")
+//                             {
+
+//                             }
+//                             fieldelement(Qty_Desc; Purchase_Line."Unit of Measure")
+//                             {
+
+//                             }
+//                             fieldelement(Pord_Value; Purchase_Line."Outstanding Amount")
+//                             {
+
+//                             }
+//                             // fieldelement(Price_Desc; Purchase_Line.)
+//                             // {
+
+//                             // }
+//                             fieldelement(Pord_List; Item."Unit List Price")
+//                             {
+
+//                             }
+//                             fieldelement(Pord_Price; Purchase_Line."Direct Unit Cost")
+//                             {
+
+//                             }
+//                             //  fieldelement(Receipt_No; )
+//                             // {
+
+//                             // }
+//                             fieldelement(OrderDate; Purchase_Header."Order Date")
+//                             {
+
+//                             }
+//                             fieldelement(DueDate; Purchase_Header."Due Date")
+//                             {
+
+//                             }
+//                             fieldelement(Orig_Due_Date; Purchase_Header."Due Date")
+//                             {
+
+
+//                             }
+//                             // fieldelement(Period; Purchase_Header."Due Date")
+//                             // {
+
+//                             // }
+//                             // fieldelement(Days_Late; )
+//                             // {
+
+//                             // }
+//                             // fieldelement(Late_Qty; )
+//                             // {
+
+//                             // }
+//                             fieldelement(Company; Company_Information.Name)
+//                             {
+//                                 // trigger OnBeforePassField()
+//                                 // begin
+//                                 //     CompanyInfo.Get();
+//                                 // end;
+//                             }
+//                             // fieldelement(Trans_Anal_6; )
+//                             // {
+
+//                             // }
+//                             // fieldelement(Account_Year; )
+//                             // {
+
+//                             // }
+//                             // fieldelement(Account_Month; )
+//                             // {
+
+//                             // }
+//                             // fieldelement(Sell_By_Date; )
+//                             // {
+
+//                             // }
+//                             fieldelement(Cost_in_Currency; Purchase_Line."Unit Cost (LCY)")
+//                             {
+
+
+//                             }
+//                             // fieldelement(Weight; )
+//                             // {
+
+
+//                             // }
+
+//                             // fieldelement(Pord_Type; )
+//                             // {
+
+
+//                             // }
+
+//                             // fieldelement(State_Code; )
+//                             // {
+
+
+//                             // }
+
+//                             // fieldelement(Master_Ord_No; )
+//                             // {
+
+
+//                             // }
+
+//                             // fieldelement(Sales_Ord_No; )
+//                             // {
+
+
+//                             // }
+
+//                             // fieldelement(Sord_Line_No; )
+//                             // {
+
+
+//                             // }
+//                             fieldelement(Pord_Line_No; Purchase_Line."Line No.")
+//                             {
+
+
+//                             }
+//                             //  fieldelement(Pord_Line_Desc; )
+//                             // {
+
+
+//                             // }
+//                             //  fieldelement(Exch_Rate; )
+//                             // {
+
+
+//                             // }
+//                             //  fieldelement(Foreign_Curr_Code; )
+//                             // {
+
+
+//                             // }
+//                             //  fieldelement(PO_Operator_Code; )
+//                             // {
+
+
+//                             // }
+
+
+
+
+
+
+
+
+
+
+
+//                         }
+
+//                     }
+
+
+
+//                 }
+
+//             }
+
+//         }
+
+//     }
+//     var
+//         CompanyInfo: Record "Company Information";
+// }
+xmlport 90000 "mio10"
+{
+
+    Caption = 'Export File';
+    DefaultFieldsValidation = false;
+    Direction = Export;
+    // FieldSeparator = ',';
+    //FieldDelimiter = '<None>';
+    TableSeparator = '<NewLine>';
+    Format = VariableText;
+    TextEncoding = UTF8;
+    UseRequestPage = false;
+    FileName = 'mio10.csv';
+
+    schema
+    {
+        textelement(Root)
+        {
+            tableelement("Purchase_Line"; "Purchase Line")
+            {
+
+                //SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
+
+                textelement("Supp_Code")
+                {
+
+
+
+                }
+                textelement("Prod_Code")
+                {
+
+
+                }
+                textelement("DepotCode")
+                {
+
+
+                }
+                textelement("PurchOrdNo")
+                {
+
+
+                }
+                textelement("PordQty")
+                {
+
+
+                }
+                textelement("Pord_Qty_OS")
+                {
+
+
+                }
+
+                textelement("Qty_Desc")
+                {
+
+
+                }
+
+                textelement("Pord_Value")
+                {
+
+
+                }
+                textelement("Price_Desc")
+                {
+
+
+                }
+                textelement("Pord_List")
+                {
+
+
+                }
+                textelement("Pord_Price")
+                {
+
+
+                }
+                textelement("Receipt_No")
+                {
+
+
+                }
+                textelement("OrderDate")
+                {
+
+
+                }
+                textelement("DueDate")
+                {
+
+
+                }
+                textelement("Orig_Due_Date")
+                {
+
+
+                }
+                textelement("Period")
+                {
+
+
+                }
+                textelement("Days_Late")
+                {
+
+
+                }
+
+                textelement("Late_Qty")
+                {
+
+
+                }
+                textelement("Company")
+                {
+
+
+                }
+                textelement("Trans_Anal_6")
+                {
+
+
+                }
+                textelement("Account_Year")
+                {
+
+
+                }
+                textelement("Account_Month")
+                {
+
+
+                }
+                textelement("Sell_By_Date")
+                {
+
+
+                }
+
+                textelement("Cost_in_Currency")
+                {
+
+
+                }
+                textelement("Weight")
+                {
+
+
+                }
+                textelement("Pord_Type")
+                {
+
+
+                }
+                textelement("State_Code")
+                {
+
+
+                }
+                textelement("Master_Ord_No")
+                {
+
+                }
+                textelement("Sales_Ord_No")
+                {
+
+
+                }
+                textelement("Sord_Line_No")
+                {
+
+
+                }
+                textelement("Pord_Line_No")
+                {
+
+
+                }
+                textelement("Pord_Line_Desc")
+                {
+
+
+                }
+                textelement("Exch_Rate")
+                {
+
+
+                }
+                textelement("Foreign_Curr_Code")
+                {
+
+
+                }
+                textelement("PO_Operator_Code")
+                {
+
+
+                }
+                textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                {
+
+                    trigger OnBeforePassVariable()
+                    begin
+                        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" := 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+                    end;
+                }
+
+
+
+                trigger OnAfterGetRecord()
+                var
+                    L_PurchHeader: Record "Purchase Header";
+                    L_Item: record Item;
+                    companyInfo: Record "Company Information";
+
+                begin
+                    // if Check = true then
+                    //     updateheadercaption();
+                    Purchase_Line.SetRange(Type, Purchase_Line.Type::Item);
+                    L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.");
+                    Supp_Code := L_PurchHeader."Buy-from Vendor No.";
+                    Prod_Code := Purchase_Line."No.";
+                    DepotCode := '';
+                    PurchOrdNo := L_PurchHeader."No.";
+                    PordQty := format(Purchase_Line.Quantity);
+                    Pord_Qty_OS := format(Purchase_Line."Outstanding Quantity");
+                    Qty_Desc := Purchase_Line."Unit of Measure";
+                    Pord_Value := format(Purchase_Line."Outstanding Amount");
+                    Price_Desc := '';
+                    L_Item.Get(Purchase_Line."No.");
+                    Pord_List := format(L_Item."Unit List Price");
+                    Pord_Price := format(Purchase_Line."Direct Unit Cost");
+                    Receipt_No := '';
+                    OrderDate := format(L_PurchHeader."Order Date");
+                    DueDate := Format(L_PurchHeader."Due Date");
+                    Orig_Due_Date := Format(L_PurchHeader."Due Date");
+                    Period := format(L_PurchHeader."Order Date");
+                    Days_Late := '';
+                    Late_Qty := '';
+                    companyInfo.Get();
+                    Company := companyInfo.Name;
+                    Trans_Anal_6 := '';
+                    Account_Year := format(L_PurchHeader."Order Date");
+                    Account_Month := format(L_PurchHeader."Order Date");
+                    Sell_By_Date := '00/00/00';
+                    Cost_in_Currency := format(Purchase_Line."Unit Cost (LCY)");
+                    Weight := '';
+                    Pord_Type := '';
+                    State_Code := '';
+                    Master_Ord_No := '';
+                    Sales_Ord_No := '';
+                    Sord_Line_No := '';
+                    Pord_Line_No := format(Purchase_Line."Line No.");
+                    Pord_Line_Desc := '';
+                    Exch_Rate := format(L_PurchHeader."Currency Factor");
+                    Foreign_Curr_Code := format(L_PurchHeader."Currency Code");
+                    PO_Operator_Code := format(L_PurchHeader."Purchaser Code");
+                    //Check := false;
+                end;
+            }
+
+        }
+    }
+    // procedure updateheadercaption()
+    // begin
+    //     Supp_Code := 'Supp Code';
+    // end;
+
+    // trigger OnPreXmlPort()
+    // var
+
+    // begin
+    //     //Check := true;
+    //     // updateheadercaption();
+
+    // end;
+
+    // var
+    //     Check: Boolean;
+}

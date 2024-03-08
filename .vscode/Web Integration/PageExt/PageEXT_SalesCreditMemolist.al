@@ -1,4 +1,4 @@
-pageextension 90018 SalesCreditMemolist extends "Sales Credit Memos"
+pageextension 90018 SalesCreditMemolist extends "Posted Sales Credit Memos"
 {
     layout
     {
@@ -7,7 +7,7 @@ pageextension 90018 SalesCreditMemolist extends "Sales Credit Memos"
 
     actions
     {
-        addafter("&Cr. Memo")
+        addafter("&Print")
         {
             action("EDI File")
             {
@@ -20,20 +20,20 @@ pageextension 90018 SalesCreditMemolist extends "Sales Credit Memos"
                 var
                     EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
-                    SalesHeader: Record "Sales Header";
+                    SalesCrHeader: Record "Sales Cr.Memo Header";
                     Customer: Record Customer;
                 begin
-                    Clear(SalesHeader);
-                    SalesHeader := Rec;
-                    CurrPage.SetSelectionFilter(SalesHeader);
+                    Clear(SalesCrHeader);
+                    SalesCrHeader := Rec;
+                    CurrPage.SetSelectionFilter(SalesCrHeader);
 
-                    if SalesHeader.FindSet() then begin
+                    if SalesCrHeader.FindSet() then begin
                         repeat
                             Clear(Customer);
                             Customer.Reset();
-                            if Customer.get(SalesHeader."Sell-to Customer No.") then
-                                EDIInvoiceCOD.ProcessEDIFile(SalesHeader, Customer);
-                        until SalesHeader.Next() = 0;
+                            if Customer.get(SalesCrHeader."Sell-to Customer No.") then
+                                EDIInvoiceCOD.ProcessEDIFile2(SalesCrHeader, Customer);
+                        until SalesCrHeader.Next() = 0;
                     end;
                 end;
             }

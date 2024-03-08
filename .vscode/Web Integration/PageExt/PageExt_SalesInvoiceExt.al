@@ -1,4 +1,4 @@
-pageextension 90010 SalesInvoiceListExt extends "Sales Invoice List"
+pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
 {
     layout
     {
@@ -7,7 +7,7 @@ pageextension 90010 SalesInvoiceListExt extends "Sales Invoice List"
 
     actions
     {
-        addafter("&Invoice")
+        addafter(Print)
         {
             action("EDI File")
             {
@@ -20,20 +20,20 @@ pageextension 90010 SalesInvoiceListExt extends "Sales Invoice List"
                 var
                     EDIInvoiceCOD: Codeunit "EDI Invoice";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
-                    SalesHeader: Record "Sales Header";
+                    SalesinvoiceHeader: Record "Sales Invoice Header";
                     Customer: Record Customer;
                 begin
-                    Clear(SalesHeader);
-                    SalesHeader := Rec;
-                    CurrPage.SetSelectionFilter(SalesHeader);
+                    Clear(SalesinvoiceHeader);
+                    SalesinvoiceHeader := Rec;
+                    CurrPage.SetSelectionFilter(SalesinvoiceHeader);
 
-                    if SalesHeader.FindSet() then begin
+                    if SalesinvoiceHeader.FindSet() then begin
                         repeat
                             Clear(Customer);
                             Customer.Reset();
-                            if Customer.get(SalesHeader."Sell-to Customer No.") then
-                                EDIInvoiceCOD.ProcessEDIFile(SalesHeader, Customer);
-                        until SalesHeader.Next() = 0;
+                            if Customer.get(SalesinvoiceHeader."Sell-to Customer No.") then
+                                EDIInvoiceCOD.ProcessEDIFile(SalesinvoiceHeader, Customer);
+                        until SalesinvoiceHeader.Next() = 0;
                     end;
                 end;
             }
