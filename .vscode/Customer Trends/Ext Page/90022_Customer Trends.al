@@ -3,7 +3,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
     layout
     {
         // Add changes to page layout here
-        addafter("Allocated on SO")
+        addafter("Qty. to be added to SO")
         {
             field("Free"; TotalAvailableQtyForSealable(Rec))
             {

@@ -3,7 +3,7 @@ pageextension 90023 "OC Special Promotions" extends "Special Promotions"
     layout
     {
         // Add changes to page layout here
-        addafter("Allocated on SO")
+        addafter("Qty. to be added to SO")
         {
             field("Free"; TotalAvailableQtyForSaleable(Rec))
             {
