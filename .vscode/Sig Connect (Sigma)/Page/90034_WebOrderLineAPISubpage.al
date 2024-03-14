@@ -40,64 +40,27 @@ page 90030 "Web Order Line Subpage"
                 field(No; Rec."No.")
                 {
                     ApplicationArea = All;
-                    trigger OnValidate()
-                    var
-                        L_Item: Record Item;
-                        L_ItemUOM: Record "Item Unit of Measure";
-                        L_GLAccount: Record "G/L Account";
-                    begin
-                        if Rec."No." <> '' then begin
-                            L_Item.Reset();
-                            L_Item.SetRange("No.", Rec."No.");
-                            if L_Item.FindFirst() then begin
-                                Rec.Description := L_Item.Description;
-                                Rec."Unit of Measure Code" := L_Item."Base Unit of Measure";
-
-                                if Rec.Weight = 0 then begin
-                                    L_ItemUOM.Reset();
-                                    L_ItemUOM.SetFilter("Item No.", L_Item."No.");
-                                    L_ItemUOM.SetFilter(Code, L_Item."Base Unit of Measure");
-                                    if L_ItemUOM.FindFirst() then begin
-                                        Rec.Weight := L_ItemUOM.Weight * Rec.Quantity;
-                                    end;
-                                end;
-
-                                L_Item.SetFilter("Location Filter", G_LocationCode);
-                                L_Item.CalcFields(Inventory);
-                                if Rec.Quantity > 0 then begin
-                                    if Rec.Quantity < L_Item.Inventory then
-                                        InventoryStatus := InventoryStatus::Accepted
-                                    else
-                                        InventoryStatus := InventoryStatus::Rejected;
-                                end;
-                            end;
-
-                            CASE Rec.Type OF
-                                Rec.Type::"G/L Account":
-                                    BEGIN
-                                        IF L_GLAccount.GET(Rec."No.") THEN
-                                            Rec."VAT Prod. Posting Group" := L_GLAccount."VAT Prod. Posting Group";
-                                    END;
-                            END;
-                        end;
-                    end;
                 }
                 field(Description; Rec.Description)
+                {
+                    ApplicationArea = All;
+                }
+                field("ChannelItemId"; Rec."Sig Channel Item Id")
                 {
                     ApplicationArea = All;
                 }
                 field(Quantity; Rec."Quantity")
                 {
                     ApplicationArea = All;
-                    trigger OnValidate()
-                    var
-                    begin
-                        IF (Rec.Quantity > 0) THEN begin
-                            Rec."Channel Price" := Rec."Unit Price";
-                            Rec.CalculateVatAmount(Rec);
-                            Rec.CalculateBaseQuantity(Rec);
-                        end;
-                    end;
+                    // trigger OnValidate()
+                    // var
+                    // begin
+                    //     IF (Rec.Quantity > 0) THEN begin
+                    //         Rec."Channel Price" := Rec."Unit Price";
+                    //         Rec.CalculateVatAmount(Rec);
+                    //         Rec.CalculateBaseQuantity(Rec);
+                    //     end;
+                    // end;
                 }
                 field("Qty. to Deliver"; Rec."Qty. to Deliver")
                 {
@@ -262,7 +225,7 @@ page 90030 "Web Order Line Subpage"
         LineCount: Integer;
         ErrorCount: Integer;
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
-        SalesQuotaValidation: Codeunit "Sales Quota Validation";
+        SalesQuotaValidation: Codeunit "Web Order Sales Quota";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
@@ -336,7 +299,7 @@ page 90030 "Web Order Line Subpage"
             if L_ErrorRecorded = false then begin
                 Clear(L_AttributeCode);
                 Clear(L_CompanyLicenseError);
-                L_CheckItemLicense.ForIntegration_ValidateLicense(0, P_InterimSalesHeader."Sell-to Customer No.", P_InterimSalesHeader."Customer Posting Group", P_InterimSalesHeader."Ship-to Country/Region Code", P_InterimSalesHeader."Order Date", _InterimSalesLine."No.", P_InterimSalesHeader."Ship-to Post Code", L_CompanyLicenseError, L_AttributeCode);
+                L_CompanyLicenseError := L_CheckItemLicense.ForIntegration_ValidateLicense(0, P_InterimSalesHeader."Sell-to Customer No.", P_InterimSalesHeader."Customer Posting Group", P_InterimSalesHeader."Ship-to Country/Region Code", P_InterimSalesHeader."Order Date", _InterimSalesLine."No.", P_InterimSalesHeader."Ship-to Post Code", L_AttributeCode);
                 if L_CompanyLicenseError <> '' then begin
                     CU_WebOrderManagement.Sigma_InsertErrorLog(L_CompanyLicenseError, P_InterimSalesHeader, _InterimSalesLine, 'SEQ9', false, L_AttributeCode);
                     L_ErrorRecorded := TRUE;

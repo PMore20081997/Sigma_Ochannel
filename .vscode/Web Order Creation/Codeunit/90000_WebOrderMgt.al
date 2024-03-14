@@ -1040,7 +1040,7 @@ codeunit 90000 "Web Order Mgt"
         LineCount: Integer;
         ErrorCount: Integer;
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
-        SalesQuotaValidation: Codeunit "Sales Quota Validation";
+        SalesQuotaValidation: Codeunit "Web Order Sales Quota";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1205,6 +1205,7 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
+
             //Start Line Validations
             Clear(L_ErrorRecorded);
             L_InterimSalesLine.RESET;
@@ -1282,13 +1283,14 @@ codeunit 90000 "Web Order Mgt"
                     if L_ErrorRecorded = false then begin
                         Clear(L_AttributeCode);
                         Clear(L_CompanyLicenseError);
-                        L_CheckItemLicense.ForIntegration_ValidateLicense(0, P_InterimSalesHeader."Sell-to Customer No.", P_InterimSalesHeader."Customer Posting Group", P_InterimSalesHeader."Ship-to Country/Region Code", P_InterimSalesHeader."Order Date", L_InterimSalesLine."No.", P_InterimSalesHeader."Ship-to Post Code", L_CompanyLicenseError, L_AttributeCode);
+                        L_CompanyLicenseError := L_CheckItemLicense.ForIntegration_ValidateLicense(0, P_InterimSalesHeader."Sell-to Customer No.", P_InterimSalesHeader."Customer Posting Group", P_InterimSalesHeader."Ship-to Country/Region Code", P_InterimSalesHeader."Order Date", L_InterimSalesLine."No.", P_InterimSalesHeader."Ship-to Post Code", L_AttributeCode);
                         if L_CompanyLicenseError <> '' then begin
                             Sigma_InsertErrorLog(L_CompanyLicenseError, P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', false, L_AttributeCode);
                             L_ErrorRecorded := TRUE;
                         end;
                     end;
                 UNTIL L_InterimSalesLine.NEXT = 0;
+
 
             If L_ErrorRecorded then begin
                 P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;

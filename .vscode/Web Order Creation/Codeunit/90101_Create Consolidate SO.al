@@ -11,7 +11,6 @@ codeunit 90066 "Create Consolidate SO"
     procedure SendRequesttoCreateOrders(_InterimSH: Record "Interim Sales Header")
     var
         Tradpartner: Record "Trade Partner";
-        //L_InterimSH: Record "Interim Sales Header";
         L_LastCustomerNo: Code[50];
         L_LastShipToCode: Code[20];
         L_InterimSL: Record "Interim Sales Line";
@@ -42,31 +41,25 @@ codeunit 90066 "Create Consolidate SO"
                     L_ExistSalesHeader.SetRange("No.", G_SNo);
                     L_ExistSalesHeader.SetRange("Document Type", L_ExistSalesHeader."Document Type"::Order);
                     if L_ExistSalesHeader.FindFirst() then begin
-                        // //Open Existing Order If Released++
-                        // if L_ExistSalesHeader.Status = L_ExistSalesHeader.Status::Released then begin
-                        //     ReleaseSalesDoc.PerformManualReopen(L_ExistSalesHeader);
-                        // end;
 
-                        //Update "Dataplast Order" field on Sales Order++
-                        L_ExistSalesHeader."Marged Web Order" := true;
-                        L_ExistSalesHeader.Modify();
+                        //This field use for Tracking on SO++
+                        if L_ExistSalesHeader."Marged Web Order" = false then begin
+                            L_ExistSalesHeader."Marged Web Order" := true;
+                            L_ExistSalesHeader.Modify();
+                        end;
 
                         //Create Lines++
                         CreateSalesLine(L_ExistSalesHeader, L_InterimSL);
 
                     end;
                 end else begin
-                    // //Open Sales Order If released++
-                    // if InsertedSH.Status = InsertedSH.Status::Released then
-                    //     ReleaseSalesDoc.PerformManualReopen(InsertedSH);
-
                     //Create Line++    
                     CreateSalesLine(InsertedSH, L_InterimSL);
                 end;
             until L_InterimSL.Next() = 0;
 
 
-
+            ///////////////////++++++++++++++++++++++++++++++++++
             if G_SNo <> '' then begin
                 //Check Threshold Quantity and make KNAPP Line++
                 L_SalesLine.Reset();
@@ -97,7 +90,11 @@ codeunit 90066 "Create Consolidate SO"
                 end;
 
                 //Moved Into Web Buffer Table++
-                InsertIntoTempHeader(_InterimSH."No.", Released_SalesHeader."No.");
+                L_ExistSalesHeader.Reset();
+                L_ExistSalesHeader.SetRange("No.", G_SNo);
+                L_ExistSalesHeader.SetRange("Document Type", L_ExistSalesHeader."Document Type"::Order);
+                if L_ExistSalesHeader.FindFirst() then
+                    InsertIntoTempHeader(_InterimSH."No.", L_ExistSalesHeader."No.");
 
             end else begin
                 //Check Threshold Quantity and make KNAPP Line++
@@ -220,22 +217,16 @@ codeunit 90066 "Create Consolidate SO"
         SalesRecSetup: Record "Sales & Receivables Setup";
         NoSeriesManagement: Codeunit NoSeriesManagement;
         L_Customer: Record Customer;
-        L_DocumetNo: Code[20];
     begin
         SalesRecSetup.Get();
         InsertedSH.Reset();
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
-        Clear(L_DocumetNo);
-        L_DocumetNo := NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE);
-        InsertedSH."No." := L_DocumetNo;
+        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
         InsertedSH.Validate("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
-        InsertedSH.Validate("Posting Date", WorkDate());
-        InsertedSH.Validate("Order Date", WorkDate());
-        InsertedSH.Validate("Document Date", WorkDate());
-        InsertedSH.Validate("Shipping Agent Code", _InterimSalesHeader."Shipping Agent Code");
-        InsertedSH.Validate("Shipping Agent Service Code", _InterimSalesHeader."Shipping Agent Service Code");
-        InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", _InterimSalesHeader."Weekend Ship Agent Serv Code");
+        InsertedSH.Validate("Posting Date", InsertedSH."Order Date");
+        InsertedSH.Validate("Order Date", InsertedSH."Order Date");
+        InsertedSH.Validate("Document Date", InsertedSH."Order Date");
         L_Customer.Reset();
         L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
         if L_Customer.FindFirst() then
@@ -246,6 +237,9 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH.Insert(true);
 
         //Update Shipment date and Location++
+        InsertedSH.Validate("Shipping Agent Code", _InterimSalesHeader."Shipping Agent Code");
+        InsertedSH.Validate("Shipping Agent Service Code", _InterimSalesHeader."Shipping Agent Service Code");
+        InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", _InterimSalesHeader."Weekend Ship Agent Serv Code");
         InsertedSH.Validate("Location Code", _InterimSalesHeader."Location Code");
         InsertedSH.Validate("Shipment Date", _InterimSalesHeader."Shipment Date");
         InsertedSH.Modify();

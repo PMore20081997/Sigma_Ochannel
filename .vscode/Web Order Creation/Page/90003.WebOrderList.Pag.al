@@ -67,6 +67,11 @@ page 90003 "Web Order List"
                 //     Visible = false;
                 // }
 
+                field("Shipment Date"; Rec."Shipment Date")
+                {
+                    ApplicationArea = All;
+                }
+
                 field("Order Date"; Rec."Order Date")
                 {
                     ApplicationArea = all;
@@ -133,41 +138,6 @@ page 90003 "Web Order List"
     {
         area(processing)
         {
-            // action(Test)
-            // {
-            //     ApplicationArea = All;
-            //     Image = Import;
-
-            //     trigger OnAction()
-            //     var
-            //         L_Codeunit: Codeunit "Get Order Request API";
-            //     begin
-            //         L_Codeunit.Run();
-            //     end;
-            // }
-            action(BulkDelete)
-            {
-                ApplicationArea = All;
-                Caption = 'Bulk Delete';
-                Visible = false;
-                trigger OnAction()
-                var
-                    InterimSalesHeader: Record "Interim Sales Header";
-                    InterimSalesLine: Record "Interim Sales Line";
-                begin
-                    Clear(InterimSalesHeader);
-                    CurrPage.SetSelectionFilter(InterimSalesHeader);
-                    if InterimSalesHeader.FindSet() then
-                        repeat
-                            InterimSalesLine.Reset();
-                            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-                            if InterimSalesLine.FindSet() then
-                                InterimSalesLine.DeleteAll(true);
-                            InterimSalesHeader.Delete(true);
-                        until InterimSalesHeader.Next() = 0;
-                end;
-
-            }
             action(Process)
             {
                 Caption = 'Process';
@@ -197,48 +167,6 @@ page 90003 "Web Order List"
                     end;
                 end;
             }
-            action("Generate Shipment")
-            {
-                Image = Shipment;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                PromotedOnly = true;
-                ApplicationArea = All;
-                Visible = false;
-                trigger OnAction()
-                var
-                    L_InterimSalesHeader: Record "Interim Sales Header";
-                    ShippingRule: Record "Shipping Rule";
-                    Rec_ShippingAgent: Record "Shipping Agent";
-                    ShipmentTracking: Record "Shipment Tracking";
-                    ProcessLabel: Codeunit "Auto Generate Shipment";
-                    L_ChannelPartner: Record "Trade Partner";
-                    SecretSales: Codeunit "B&Q";
-                begin
-                    Clear(L_InterimSalesHeader);
-                    L_InterimSalesHeader := Rec;
-                    CurrPage.SetSelectionFilter(L_InterimSalesHeader);
-
-                    L_InterimSalesHeader.SetRange("No of Error", 0);
-                    L_InterimSalesHeader.SetRange(ReservedFlag, true);
-                    if L_InterimSalesHeader.FindSet() then begin
-                        repeat
-                            ProcessLabel.GenerateLabel(L_InterimSalesHeader);
-
-                            L_ChannelPartner.Reset();
-                            L_ChannelPartner.SetRange(Code, L_InterimSalesHeader."Trade Partner Code");
-                            if L_ChannelPartner.FindFirst() then begin
-                                if L_ChannelPartner."Update Tracking Information" = true then begin
-                                    L_InterimSalesHeader.CalcFields("Tracking No.");
-                                    SecretSales.SendTrackingInformation(L_InterimSalesHeader."Shipping Agent Code", L_InterimSalesHeader."Tracking No.", L_InterimSalesHeader.order_id, L_InterimSalesHeader."Trade Partner Code");
-                                end;
-                            end;
-                        until L_InterimSalesHeader.Next() = 0;
-                        Message('Generate Shipment Process Completed.Please check Error Text in Order if label not generated.');
-                    end;
-                end;
-            }
 
             action("Eliminate Selected  Error")
             {
@@ -261,214 +189,39 @@ page 90003 "Web Order List"
                     end;
                 end;
             }
-
-            action("Process Shipping Rule")
+            action(BulkDelete)
             {
-                Caption = 'Process Shipping Rule';
-                Image = Track;
-                Promoted = true;
-                Visible = false; //07/07/2020
                 ApplicationArea = All;
-
-
-                trigger OnAction()
-                begin
-                    REPORT.RUN(50100, TRUE, FALSE, InterimSalesHeader);
-                    CurrPage.UPDATE(TRUE);
-                end;
-            }
-
-
-            action(MovetoHandled)
-            {
-                Caption = 'MovetoHandled';
+                Caption = 'Bulk Delete';
                 Ellipsis = true;
-                Image = CompleteLine;
-                ApplicationArea = all;
-                Visible = false;
-                trigger OnAction()
-                var
-                    R80020: Report "Move Scanned Order to Handled";
-                begin
-                    CLEAR(R80020);
-                    //R80020.SETTABLEVIEW(Rec);
-                    R80020.USEREQUESTPAGE(true);
-                    R80020.RUNMODAL();
-
-                end;
-            }
-            action("Dispatch Scanning")
-            {
-                Caption = 'Dispatch Scanning';
-                Promoted = true;
-                Visible = false;//07/07/2020
-                ApplicationArea = All;
-                trigger OnAction()
-                var
-                    myInt: Integer;
-                    ISH: Record "Interim Sales Header";
-                //DispatchScan: Page "Dispatch Scanning new";
-                begin
-
-                    //DispatchScan.Run();
-                end;
-
-            }
-            action("Delivery Note A6")
-            {
-                ApplicationArea = All;
-                Image = Report;
+                Image = Delete;
                 Promoted = true;
                 PromotedCategory = Process;
+                PromotedIsBig = true;
                 PromotedOnly = true;
-                Visible = false;
-
                 trigger OnAction()
                 var
-                    ISH: Record "Interim Sales Header";
-                    AddText: Text;
+                    InterimSalesHeader: Record "Interim Sales Header";
+                    InterimSalesLine: Record "Interim Sales Line";
                 begin
-                    CLEAR(AddText);
-                    InterimSalesHeader := Rec;
-                    CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
-                    IF InterimSalesHeader.FINDSET THEN
-                        REPEAT
-                            AddToFilterText(AddText, '|', '', InterimSalesHeader."No.")
-                        UNTIL InterimSalesHeader.NEXT = 0;
-
-                    ISH.RESET;
-                    ISH.SETRANGE("Document Type", ISH."Document Type"::Order);
-                    ISH.SETFILTER("No.", AddText);
-                    ISH.SETFILTER("Tracking No.", '<>%1', ' ');
-                    IF ISH.FINDSET THEN BEGIN
-                        REPORT.RUN(90003, TRUE, FALSE, ISH);
-                    END;
+                    Clear(InterimSalesHeader);
+                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if InterimSalesHeader.FindSet() then
+                        repeat
+                            InterimSalesLine.Reset();
+                            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+                            InterimSalesLine.SetRange("Document Type", InterimSalesHeader."Document Type");
+                            if InterimSalesLine.FindSet() then
+                                InterimSalesLine.DeleteAll(true);
+                            InterimSalesHeader.Delete(true);
+                        until InterimSalesHeader.Next() = 0;
                 end;
+
             }
 
-            // action(ExportOrderAck)
-            // {
-            //     ApplicationArea = All;
-            //     Caption = 'ExportOrderAck';
-            //     Image = Export;
-            //     Promoted = true;
-            //     PromotedCategory = Process;
-            //     PromotedIsBig = true;
-            //     PromotedOnly = true;
-            //     trigger OnAction()
-            //     var
-            //     begin
-            //         OrderAck.OrderAckConvertText(rec."Channel Order ID");
-            //         CurrPage.Update();
-            //     end;
-            // }
-            // action(ExportOrderAckCopy)
-            // {
-            //     ApplicationArea = All;
-            //     Caption = 'ExportOrderAckCopy';
-            //     Image = Export;
-            //     Promoted = true;
-            //     PromotedCategory = Process;
-            //     PromotedIsBig = true;
-            //     PromotedOnly = true;
-            //     trigger OnAction()
-            //     var
-            // InterimSalesHeader: Record "Interim Sales Header";
-            //     begin
-            // Clear(InterimSalesHeader);
-            // InterimSalesHeader := Rec;
-            // CurrPage.SetSelectionFilter(InterimSalesHeader);
-            // InterimSalesHeader.SETRANGE("Trade Partner Code", 'SHOPDIRECT');
-            // if InterimSalesHeader.FindSet() then begin
-            //     repeat
-            //         OrderAck.OrderAckConvertTextCopy();
-            //         Message('%1', InterimSalesHeader."Channel Order ID");
-            //     until InterimSalesHeader.Next() = 0;
-            //     CurrPage.Update();
-            // end;
         }
         area(Navigation)
         {
-            action("Payment Details")
-            {
-                CaptionML = ENG = 'Order Payment Details', ENU = 'Order Payment Details';
-                ApplicationArea = all;
-                Image = Payment;
-                Visible = false;
-
-                trigger OnAction()
-                var
-                    ChannelMedia: Record "Channel Media";
-                    ChannelOrderId: Text;
-                    ChannelOrderId1: Text;
-                    Length: Integer;
-                begin
-                    CurrPage.SetSelectionFilter(InterimSalesHeader);
-                    if InterimSalesHeader.FindSet then
-                        repeat
-                            ChannelOrderId += InterimSalesHeader."Channel Order ID" + '|' + '';
-                        until InterimSalesHeader.Next = 0;
-
-                    Length := STRLEN(ChannelOrderId);
-                    ChannelOrderId1 := CopyStr(ChannelOrderId, 1, Length - 1);
-                    ChannelMedia.ShowPaymentDetails(ChannelOrderId1, InterimSalesHeader."Channel Order ID", 0, Rec."Trade Partner Code");
-                end;
-
-            }
-            action("Direct Printing Label")
-            {
-                ApplicationArea = All;
-                Image = Print;
-                Caption = 'Label Print';
-                Visible = false;
-
-                trigger OnAction()
-                var
-                    L_InterimSalesHeader: Record "Interim Sales Header";
-                    WebMgt: Codeunit "Web Order Mgt";
-                    ShippingAgent: Record "Shipping Agent";
-                    L_ShipmentTracking: Record "Shipment Tracking";
-                begin
-                    //WebMgt.SendDirectPrintRequest(Rec."No.", 90081, Rec."No. Of Parcels");
-                    L_InterimSalesHeader.RESET;
-                    L_InterimSalesHeader.SETRANGE("No.", Rec."No.");
-                    IF L_InterimSalesHeader.FindFirst() THEN BEGIN
-                        ShippingAgent.Reset();
-                        ShippingAgent.SetRange(Code, L_InterimSalesHeader."Shipping Agent Code");
-                        if ShippingAgent.FindFirst() then begin
-                            if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::RAW) then begin
-                                //RAW Printing Option Means it is For DPD EPL Label and PDF labels
-                                WebMgt.SendDirectPrintRequest(L_InterimSalesHeader."No.", 90084, FORMAT(ShippingAgent."Printing Options")); // 90084 - DPD Label printer (RAW)
-                            end;
-                            if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::PDF) then begin
-                                WebMgt.SendDirectPrintRequest(L_InterimSalesHeader."No.", 90081, FORMAT(ShippingAgent."Printing Options")); // 90081 - PDF Label Printer (Windows Driver)
-                            end;
-                        end;
-                    END;
-                end;
-            }
-            action(DeliveryNoteNew)
-            {
-                ApplicationArea = Basic, Suite;
-                Caption = 'Delivery Note';
-                Image = Print;
-                Visible = false;
-
-
-                trigger OnAction()
-                var
-                    L_InterimSalesHeader: Record "Interim Sales Header";
-                    NewDeliveryNote: Report "Web Delivery Note";
-                begin
-                    InterimSalesHeader.RESET;
-                    InterimSalesHeader.SETRANGE("No.", Rec."No.");
-                    IF InterimSalesHeader.FINDSET THEN BEGIN
-                        CLEAR(NewDeliveryNote);
-                        NewDeliveryNote.SETTABLEVIEW(InterimSalesHeader);
-                        NewDeliveryNote.RUN;
-                    END;
-                end;
-            }
             action(ShowCustomer)
             {
                 ApplicationArea = All;
@@ -477,43 +230,400 @@ page 90003 "Web Order List"
                 RunObject = Page 21;
                 RunPageLink = "No." = FIELD("Sell-to Customer No.");
             }
-            action(ReOrder)
-            {
-                ApplicationArea = Warehouse;
-                Caption = 'Re-Order';
-                Image = ReturnOrder;
-                ToolTip = 'Create a warehouse shipment to start a pick a ship process according to an advanced warehouse configuration.';
-                Visible = false;
 
-                trigger OnAction()
-                var
-                begin
-                    WebOrdMngt.CopyOrder(Rec);
-                end;
-            }
-            action("Cancel Order")
+            action("Web Buffer")
             {
-                Image = CancelAllLines;
                 ApplicationArea = All;
-                Visible = false;
-
-
-                trigger OnAction()
-                var
-                    RecInterimSalesLine: Record "Interim Sales Line";
-                    L_InterimSalesLine: Record "Interim Sales Line"; //Prathamesh
-
-                    InterimSalesHeader: Record "Interim Sales Header";
-                begin
-                    if Not (Rec.status in [rec.status::Confirmed, rec.status::"In Progress", rec.status::Cancelled]) then
-                        Error('Order Status must be either Confirmed or In progress.');
-                    Clear(InterimSalesHeader);
-                    CurrPage.SetSelectionFilter(InterimSalesHeader);
-                    if InterimSalesHeader.FindFirst() then
-                        WebOrdMngt.CancelOrder(InterimSalesHeader);
-                end;
+                Image = Navigate;
+                RunObject = page "Web Buffer";
+                RunPageLink = "Web Document No." = field("No.");
             }
         }
+
+        // area(Creation)
+        // {
+        //     // action(Test)
+        //     // {
+        //     //     ApplicationArea = All;
+        //     //     Image = Import;
+
+        //     //     trigger OnAction()
+        //     //     var
+        //     //         L_Codeunit: Codeunit "Get Order Request API";
+        //     //     begin
+        //     //         L_Codeunit.Run();
+        //     //     end;
+        //     // }
+        //     // action(BulkDelete)
+        //     // {
+        //     //     ApplicationArea = All;
+        //     //     Caption = 'Bulk Delete';
+        //     //     Visible = false;
+        //     //     trigger OnAction()
+        //     //     var
+        //     //         InterimSalesHeader: Record "Interim Sales Header";
+        //     //         InterimSalesLine: Record "Interim Sales Line";
+        //     //     begin
+        //     //         Clear(InterimSalesHeader);
+        //     //         CurrPage.SetSelectionFilter(InterimSalesHeader);
+        //     //         if InterimSalesHeader.FindSet() then
+        //     //             repeat
+        //     //                 InterimSalesLine.Reset();
+        //     //                 InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+        //     //                 InterimSalesLine.SetRange("Document Type", InterimSalesHeader."Document Type");
+        //     //                 if InterimSalesLine.FindSet() then
+        //     //                     InterimSalesLine.DeleteAll(true);
+        //     //                 InterimSalesHeader.Delete(true);
+        //     //             until InterimSalesHeader.Next() = 0;
+        //     //     end;
+
+        //     // }
+        //     // action(Process)
+        //     // {
+        //     //     Caption = 'Process';
+        //     //     Ellipsis = true;
+        //     //     Image = CompleteLine;
+        //     //     Promoted = true;
+        //     //     PromotedCategory = Process;
+        //     //     PromotedIsBig = true;
+        //     //     PromotedOnly = true;
+        //     //     ApplicationArea = all;
+
+        //     //     trigger OnAction()
+        //     //     var
+        //     //         R90000: Report "Process Web Orders";
+        //     //         ReportParams: Text;
+        //     //     begin
+        //     //         Clear(R90000);
+        //     //         InterimSalesHeader.Reset();
+        //     //         CurrPage.SetSelectionFilter(InterimSalesHeader);
+        //     //         if InterimSalesHeader.FindSet() then begin
+        //     //             R90000.SetTotalNoOfOrders(InterimSalesHeader.Count);
+        //     //             R90000.SetTableView(InterimSalesHeader);
+        //     //             if Rec."Trade Partner Code" = 'B&Q' then
+        //     //                 R90000.SetBnQChannel(Rec."Trade Partner Code");
+        //     //             R90000.UseRequestPage(true);
+        //     //             R90000.Run();
+        //     //         end;
+        //     //     end;
+        //     // }
+        //     action("Generate Shipment")
+        //     {
+        //         Image = Shipment;
+        //         Promoted = true;
+        //         PromotedCategory = Process;
+        //         PromotedIsBig = true;
+        //         PromotedOnly = true;
+        //         ApplicationArea = All;
+        //         Visible = false;
+        //         trigger OnAction()
+        //         var
+        //             L_InterimSalesHeader: Record "Interim Sales Header";
+        //             ShippingRule: Record "Shipping Rule";
+        //             Rec_ShippingAgent: Record "Shipping Agent";
+        //             ShipmentTracking: Record "Shipment Tracking";
+        //             ProcessLabel: Codeunit "Auto Generate Shipment";
+        //             L_ChannelPartner: Record "Trade Partner";
+        //             SecretSales: Codeunit "B&Q";
+        //         begin
+        //             Clear(L_InterimSalesHeader);
+        //             L_InterimSalesHeader := Rec;
+        //             CurrPage.SetSelectionFilter(L_InterimSalesHeader);
+
+        //             L_InterimSalesHeader.SetRange("No of Error", 0);
+        //             L_InterimSalesHeader.SetRange(ReservedFlag, true);
+        //             if L_InterimSalesHeader.FindSet() then begin
+        //                 repeat
+        //                     ProcessLabel.GenerateLabel(L_InterimSalesHeader);
+
+        //                     L_ChannelPartner.Reset();
+        //                     L_ChannelPartner.SetRange(Code, L_InterimSalesHeader."Trade Partner Code");
+        //                     if L_ChannelPartner.FindFirst() then begin
+        //                         if L_ChannelPartner."Update Tracking Information" = true then begin
+        //                             L_InterimSalesHeader.CalcFields("Tracking No.");
+        //                             SecretSales.SendTrackingInformation(L_InterimSalesHeader."Shipping Agent Code", L_InterimSalesHeader."Tracking No.", L_InterimSalesHeader.order_id, L_InterimSalesHeader."Trade Partner Code");
+        //                         end;
+        //                     end;
+        //                 until L_InterimSalesHeader.Next() = 0;
+        //                 Message('Generate Shipment Process Completed.Please check Error Text in Order if label not generated.');
+        //             end;
+        //         end;
+        //     }
+
+        //     // action("Eliminate Selected  Error")
+        //     // {
+        //     //     Caption = 'Eliminate Selected  Error';
+        //     //     Image = ErrorLog;
+        //     //     Promoted = true;
+        //     //     PromotedCategory = Process;
+        //     //     PromotedOnly = true;
+        //     //     PromotedIsBig = true;
+        //     //     ApplicationArea = all;
+        //     //     trigger OnAction()
+        //     //     begin
+        //     //         CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
+        //     //         if InterimSalesHeader.FindSet() then begin
+        //     //             IF InterimSalesHeader.FIND('-') THEN
+        //     //                 REPEAT
+        //     //                     //WebOrdMngt.OrderValidations(InterimSalesHeader);
+        //     //                     WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
+        //     //                 UNTIL InterimSalesHeader.NEXT = 0;
+        //     //         end;
+        //     //     end;
+        //     // }
+
+        //     action("Process Shipping Rule")
+        //     {
+        //         Caption = 'Process Shipping Rule';
+        //         Image = Track;
+        //         Promoted = true;
+        //         Visible = false; //07/07/2020
+        //         ApplicationArea = All;
+
+
+        //         trigger OnAction()
+        //         begin
+        //             REPORT.RUN(50100, TRUE, FALSE, InterimSalesHeader);
+        //             CurrPage.UPDATE(TRUE);
+        //         end;
+        //     }
+
+
+        //     action(MovetoHandled)
+        //     {
+        //         Caption = 'MovetoHandled';
+        //         Ellipsis = true;
+        //         Image = CompleteLine;
+        //         ApplicationArea = all;
+        //         Visible = false;
+        //         trigger OnAction()
+        //         var
+        //             R80020: Report "Move Scanned Order to Handled";
+        //         begin
+        //             CLEAR(R80020);
+        //             //R80020.SETTABLEVIEW(Rec);
+        //             R80020.USEREQUESTPAGE(true);
+        //             R80020.RUNMODAL();
+
+        //         end;
+        //     }
+        //     action("Dispatch Scanning")
+        //     {
+        //         Caption = 'Dispatch Scanning';
+        //         Promoted = true;
+        //         Visible = false;//07/07/2020
+        //         ApplicationArea = All;
+        //         trigger OnAction()
+        //         var
+        //             myInt: Integer;
+        //             ISH: Record "Interim Sales Header";
+        //         //DispatchScan: Page "Dispatch Scanning new";
+        //         begin
+
+        //             //DispatchScan.Run();
+        //         end;
+
+        //     }
+        //     action("Delivery Note A6")
+        //     {
+        //         ApplicationArea = All;
+        //         Image = Report;
+        //         Promoted = true;
+        //         PromotedCategory = Process;
+        //         PromotedOnly = true;
+        //         Visible = false;
+
+        //         trigger OnAction()
+        //         var
+        //             ISH: Record "Interim Sales Header";
+        //             AddText: Text;
+        //         begin
+        //             CLEAR(AddText);
+        //             InterimSalesHeader := Rec;
+        //             CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
+        //             IF InterimSalesHeader.FINDSET THEN
+        //                 REPEAT
+        //                     AddToFilterText(AddText, '|', '', InterimSalesHeader."No.")
+        //                 UNTIL InterimSalesHeader.NEXT = 0;
+
+        //             ISH.RESET;
+        //             ISH.SETRANGE("Document Type", ISH."Document Type"::Order);
+        //             ISH.SETFILTER("No.", AddText);
+        //             ISH.SETFILTER("Tracking No.", '<>%1', ' ');
+        //             IF ISH.FINDSET THEN BEGIN
+        //                 REPORT.RUN(90003, TRUE, FALSE, ISH);
+        //             END;
+        //         end;
+        //     }
+
+        //     // action(ExportOrderAck)
+        //     // {
+        //     //     ApplicationArea = All;
+        //     //     Caption = 'ExportOrderAck';
+        //     //     Image = Export;
+        //     //     Promoted = true;
+        //     //     PromotedCategory = Process;
+        //     //     PromotedIsBig = true;
+        //     //     PromotedOnly = true;
+        //     //     trigger OnAction()
+        //     //     var
+        //     //     begin
+        //     //         OrderAck.OrderAckConvertText(rec."Channel Order ID");
+        //     //         CurrPage.Update();
+        //     //     end;
+        //     // }
+        //     // action(ExportOrderAckCopy)
+        //     // {
+        //     //     ApplicationArea = All;
+        //     //     Caption = 'ExportOrderAckCopy';
+        //     //     Image = Export;
+        //     //     Promoted = true;
+        //     //     PromotedCategory = Process;
+        //     //     PromotedIsBig = true;
+        //     //     PromotedOnly = true;
+        //     //     trigger OnAction()
+        //     //     var
+        //     // InterimSalesHeader: Record "Interim Sales Header";
+        //     //     begin
+        //     // Clear(InterimSalesHeader);
+        //     // InterimSalesHeader := Rec;
+        //     // CurrPage.SetSelectionFilter(InterimSalesHeader);
+        //     // InterimSalesHeader.SETRANGE("Trade Partner Code", 'SHOPDIRECT');
+        //     // if InterimSalesHeader.FindSet() then begin
+        //     //     repeat
+        //     //         OrderAck.OrderAckConvertTextCopy();
+        //     //         Message('%1', InterimSalesHeader."Channel Order ID");
+        //     //     until InterimSalesHeader.Next() = 0;
+        //     //     CurrPage.Update();
+        //     // end;
+        // }
+        // area(Navigation)
+        // {
+        //     action("Payment Details")
+        //     {
+        //         CaptionML = ENG = 'Order Payment Details', ENU = 'Order Payment Details';
+        //         ApplicationArea = all;
+        //         Image = Payment;
+        //         Visible = false;
+
+        //         trigger OnAction()
+        //         var
+        //             ChannelMedia: Record "Channel Media";
+        //             ChannelOrderId: Text;
+        //             ChannelOrderId1: Text;
+        //             Length: Integer;
+        //         begin
+        //             CurrPage.SetSelectionFilter(InterimSalesHeader);
+        //             if InterimSalesHeader.FindSet then
+        //                 repeat
+        //                     ChannelOrderId += InterimSalesHeader."Channel Order ID" + '|' + '';
+        //                 until InterimSalesHeader.Next = 0;
+
+        //             Length := STRLEN(ChannelOrderId);
+        //             ChannelOrderId1 := CopyStr(ChannelOrderId, 1, Length - 1);
+        //             ChannelMedia.ShowPaymentDetails(ChannelOrderId1, InterimSalesHeader."Channel Order ID", 0, Rec."Trade Partner Code");
+        //         end;
+
+        //     }
+        //     action("Direct Printing Label")
+        //     {
+        //         ApplicationArea = All;
+        //         Image = Print;
+        //         Caption = 'Label Print';
+        //         Visible = false;
+
+        //         trigger OnAction()
+        //         var
+        //             L_InterimSalesHeader: Record "Interim Sales Header";
+        //             WebMgt: Codeunit "Web Order Mgt";
+        //             ShippingAgent: Record "Shipping Agent";
+        //             L_ShipmentTracking: Record "Shipment Tracking";
+        //         begin
+        //             //WebMgt.SendDirectPrintRequest(Rec."No.", 90081, Rec."No. Of Parcels");
+        //             L_InterimSalesHeader.RESET;
+        //             L_InterimSalesHeader.SETRANGE("No.", Rec."No.");
+        //             IF L_InterimSalesHeader.FindFirst() THEN BEGIN
+        //                 ShippingAgent.Reset();
+        //                 ShippingAgent.SetRange(Code, L_InterimSalesHeader."Shipping Agent Code");
+        //                 if ShippingAgent.FindFirst() then begin
+        //                     if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::RAW) then begin
+        //                         //RAW Printing Option Means it is For DPD EPL Label and PDF labels
+        //                         WebMgt.SendDirectPrintRequest(L_InterimSalesHeader."No.", 90084, FORMAT(ShippingAgent."Printing Options")); // 90084 - DPD Label printer (RAW)
+        //                     end;
+        //                     if (ShippingAgent."Printing Options" = ShippingAgent."Printing Options"::PDF) then begin
+        //                         WebMgt.SendDirectPrintRequest(L_InterimSalesHeader."No.", 90081, FORMAT(ShippingAgent."Printing Options")); // 90081 - PDF Label Printer (Windows Driver)
+        //                     end;
+        //                 end;
+        //             END;
+        //         end;
+        //     }
+        //     action(DeliveryNoteNew)
+        //     {
+        //         ApplicationArea = Basic, Suite;
+        //         Caption = 'Delivery Note';
+        //         Image = Print;
+        //         Visible = false;
+
+
+        //         trigger OnAction()
+        //         var
+        //             L_InterimSalesHeader: Record "Interim Sales Header";
+        //             NewDeliveryNote: Report "Web Delivery Note";
+        //         begin
+        //             InterimSalesHeader.RESET;
+        //             InterimSalesHeader.SETRANGE("No.", Rec."No.");
+        //             IF InterimSalesHeader.FINDSET THEN BEGIN
+        //                 CLEAR(NewDeliveryNote);
+        //                 NewDeliveryNote.SETTABLEVIEW(InterimSalesHeader);
+        //                 NewDeliveryNote.RUN;
+        //             END;
+        //         end;
+        //     }
+        //     action(ShowCustomer)
+        //     {
+        //         ApplicationArea = All;
+        //         Caption = 'Show Customer';
+        //         Image = Customer;
+        //         RunObject = Page 21;
+        //         RunPageLink = "No." = FIELD("Sell-to Customer No.");
+        //     }
+        //     action(ReOrder)
+        //     {
+        //         ApplicationArea = Warehouse;
+        //         Caption = 'Re-Order';
+        //         Image = ReturnOrder;
+        //         ToolTip = 'Create a warehouse shipment to start a pick a ship process according to an advanced warehouse configuration.';
+        //         Visible = false;
+
+        //         trigger OnAction()
+        //         var
+        //         begin
+        //             WebOrdMngt.CopyOrder(Rec);
+        //         end;
+        //     }
+        //     action("Cancel Order")
+        //     {
+        //         Image = CancelAllLines;
+        //         ApplicationArea = All;
+        //         Visible = false;
+
+
+        //         trigger OnAction()
+        //         var
+        //             RecInterimSalesLine: Record "Interim Sales Line";
+        //             L_InterimSalesLine: Record "Interim Sales Line"; //Prathamesh
+
+        //             InterimSalesHeader: Record "Interim Sales Header";
+        //         begin
+        //             if Not (Rec.status in [rec.status::Confirmed, rec.status::"In Progress", rec.status::Cancelled]) then
+        //                 Error('Order Status must be either Confirmed or In progress.');
+        //             Clear(InterimSalesHeader);
+        //             CurrPage.SetSelectionFilter(InterimSalesHeader);
+        //             if InterimSalesHeader.FindFirst() then
+        //                 WebOrdMngt.CancelOrder(InterimSalesHeader);
+        //         end;
+        //     }
+        // }
     }
 
 

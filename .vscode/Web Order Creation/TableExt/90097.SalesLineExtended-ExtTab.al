@@ -6,29 +6,16 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         modify(Quantity)
         {
             trigger OnAfterValidate()
+            var
+                RecUserSetup: Record "User Setup";
+                L_SalesHeader: Record "Sales Header";
             begin
                 if (Rec.Quantity <> 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') then begin
+                    //Check Free Quantity ++
                     if Rec.Quantity > TotalAvailableQtyForSaleable(Rec) then
                         Error('Qty. should be less than Free Inventory %1. Order Number: %2, Line Number: %3, Item Number: %4', TotalAvailableQtyForSaleable(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
                 end;
-            end;
-        }
 
-        modify("No.")
-        {
-            trigger OnAfterValidate()
-            var
-                L_SalesLine: Record "Sales Line";
-            begin
-                // L_SalesLine.Reset();
-                // L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                // L_SalesLine.SetRange("Document No.", Rec."Document No.");
-                // L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                // if L_SalesLine.FindFirst() then begin
-                //     if Rec."Channel Order ID" <> L_SalesLine."Channel Order ID" then
-                //         Rec."Channel Order ID" := L_SalesLine."Channel Order ID";
-                //     Rec."Channel Code" := L_SalesLine."Channel Code";
-                // end;
             end;
         }
         field(90000; "Scanned Date"; DateTime)

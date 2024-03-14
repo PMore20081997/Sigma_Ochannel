@@ -370,7 +370,6 @@ page 90016 "Trade Partner card"
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
                     if TradePartnerList.FindFirst then begin
                         if TradePartnerList.SyncOrder = true then begin
-
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
                             JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncOrder';
@@ -378,8 +377,6 @@ page 90016 "Trade Partner card"
 
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
-
-
                         end else
                             MESSAGE('Please enable the Sync Order feature.');
                     end;

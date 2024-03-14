@@ -515,6 +515,11 @@ table 90004 "Interim Sales Line"
             Editable = false;
             TableRelation = "Customer Price Group";
         }
+        field(70049; "Sig Channel Item Id"; Integer)
+        {
+            DataClassification = ToBeClassified;
+
+        }
     }
 
     keys

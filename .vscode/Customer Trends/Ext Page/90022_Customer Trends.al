@@ -2,6 +2,16 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 {
     layout
     {
+
+        modify("Qty. to be added to SO")
+        {
+            trigger OnAfterValidate()
+            begin
+                if Rec."Qty. to be added to SO" <> 0 then begin
+                    CurrPage.Update(); //Update Current Quantity++
+                end;
+            end;
+        }
         // Add changes to page layout here
         addafter("Qty. to be added to SO")
         {

@@ -112,6 +112,7 @@ page 90029 "Web Order Header API Card"
                     Rec.validate("Location Code", SellToCustomer."Location Code")
                 else
                     Rec.Validate("Location Code", ChannelPartner.Location);
+
                 Rec.Validate("MultiLine Order No.", Rec."MultiLine Order No.");
                 Rec.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
                 Rec.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");

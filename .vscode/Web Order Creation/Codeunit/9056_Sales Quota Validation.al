@@ -1,4 +1,4 @@
-codeunit 90056 "Sales Quota Validation"
+codeunit 90056 "Web Order Sales Quota"
 {
     trigger OnRun()
     begin
@@ -275,13 +275,23 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -298,78 +308,150 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Dimension Value", L_DefaultDimension."Dimension Value Code");
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
-                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                        //PerDay Web orders Qty++++++
-                        L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                        L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
-                        L_DayWiseWebOrderQty.OPEN;
-                        WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                        END;
-                        L_DayWiseWebOrderQty.CLOSE;
+                        //Permonth Web orders Qty++++++
+                        L_InterimSalesLinePerdayQuantity.Reset();
+                        L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
+                        L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                        if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                                end;
+                            until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        end;
 
-                        //PerDay Current Web orders Qty++++++
+                        // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                        // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
+                        // L_DayWiseWebOrderQty.OPEN;
+                        // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseWebOrderQty.CLOSE;
+                        //Permonth Web orders Qty------
+
+                        //Permonth Current Web orders Qty++++++
                         L_InterimSalesLine.RESET;
                         L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-                        L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                        L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                        L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                         IF L_InterimSalesLine.FINDSET THEN BEGIN
-                            REPEAT
-                                IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                    L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                                ELSE
-                                    L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                            UNTIL L_InterimSalesLine.NEXT = 0;
+                            L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                            L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                         END;
 
-                        //PerDay Order Qty++++
-                        L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
-                        L_DayWiseQty.OPEN;
-                        WHILE L_DayWiseQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                        END;
-                        L_DayWiseQty.CLOSE;
+                        //Permonth Order Qty++++++
+                        L_SalesLine.Reset();
+                        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                        L_SalesLine.SetRange("Item Category Code", ItemCat);
+                        L_SalesLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesLine.FindSet() then begin
+                            repeat
+                                L_SaleasHeader.Reset();
+                                L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                                L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                                if L_SaleasHeader.FindFirst() then begin
+                                    L_DimensionSetEntry.Reset();
+                                    L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                    L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                    L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                    if L_DimensionSetEntry.FindFirst() then begin
+                                        L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                    end;
+                                end;
+                            until L_SalesLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
+                        // L_DayWiseQty.OPEN;
+                        // WHILE L_DayWiseQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseQty.CLOSE;
+                        //Permonth Order Qty------
 
 
-                        //PerDay SHipped Qty++
-                        L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
-                        L_DayWiseShippedQty.OPEN;
-                        WHILE L_DayWiseShippedQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                        END;
-                        L_DayWiseShippedQty.CLOSE;
+                        //Permonth SHipped Qty+++++
+                        L_SalesShipmentLine.Reset();
+                        L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
+                        L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesShipmentLine.FindSet() then begin
+                            repeat
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                                end;
+                            until L_SalesShipmentLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
+                        // L_DayWiseShippedQty.OPEN;
+                        // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseShippedQty.CLOSE;
+                        //PerDay SHipped Qty+++++
+
+                        //Perday Customer Trends Quantity+++
+                        L_CustomerTrends.Reset();
+                        L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                        L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_CustomerTrends.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                                end;
+                            until L_CustomerTrends.Next() = 0;
+                        end;
 
                         L_EntryFound := true;
-                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                        IF L_RemainingQuantity < 0 THEN
+                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                        if L_RemainingQuantity < L_OrderQty then
                             exit(ReturnValue::"Exceeded Qty");
-                        //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                     end;
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
             exit(ReturnValue::"Allowed Qty");
-
     end;
 
 
@@ -386,13 +468,23 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -408,73 +500,148 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Sales Code", L_DefaultDimension."Dimension Code");
                 L_MaxOrderQty.SetRange("Dimension Value", L_DefaultDimension."Dimension Value Code");
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
-                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                        //PerDay Web orders Qty++++++
-                        L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                        L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseWebOrderQty.OPEN;
-                        WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                        END;
-                        L_DayWiseWebOrderQty.CLOSE;
+                        //PerMonth Web orders Qty++++++
+                        L_InterimSalesLinePerdayQuantity.Reset();
+                        L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                        L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                        if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                                end;
+                            until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        end;
 
-                        //PerDay Current Web orders Qty++++++
+                        // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                        // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseWebOrderQty.OPEN;
+                        // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseWebOrderQty.CLOSE;
+                        //PerMonth Web orders Qty------
+
+                        //PerMonth Current Web orders Qty++++++
                         L_InterimSalesLine.RESET;
                         L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                         L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                        L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                         IF L_InterimSalesLine.FINDSET THEN BEGIN
-                            REPEAT
-                                IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                    L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                                ELSE
-                                    L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                            UNTIL L_InterimSalesLine.NEXT = 0;
+                            L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                            L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                         END;
 
-                        //PerDay Order Qty++++
-                        L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseQty.OPEN;
-                        WHILE L_DayWiseQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                        END;
-                        L_DayWiseQty.CLOSE;
 
 
-                        //PerDay SHipped Qty++
-                        L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseShippedQty.OPEN;
-                        WHILE L_DayWiseShippedQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                        END;
-                        L_DayWiseShippedQty.CLOSE;
+                        //PerMonth Order Qty+++++
+                        L_SalesLine.Reset();
+                        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                        L_SalesLine.SetRange("No.", _InterimSalesLine."No.");
+                        L_SalesLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesLine.FindSet() then begin
+                            repeat
+                                L_SaleasHeader.Reset();
+                                L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                                L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                                if L_SaleasHeader.FindFirst() then begin
+                                    L_DimensionSetEntry.Reset();
+                                    L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                    L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                    L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                    if L_DimensionSetEntry.FindFirst() then begin
+                                        L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                    end;
+                                end;
+                            until L_SalesLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseQty.OPEN;
+                        // WHILE L_DayWiseQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseQty.CLOSE;
+                        //PerMonth Order Qty-----
+
+
+                        //PerMonth SHipped Qty+++++
+                        L_SalesShipmentLine.Reset();
+                        L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                        L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesShipmentLine.FindSet() then begin
+                            repeat
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                                end;
+                            until L_SalesShipmentLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseShippedQty.OPEN;
+                        // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseShippedQty.CLOSE;
+                        //PerMonth SHipped Qty-----
+
+                        //PerMonth Customer Trends Quantity+++
+                        L_CustomerTrends.Reset();
+                        L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                        L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_CustomerTrends.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                                end;
+                            until L_CustomerTrends.Next() = 0;
+                        end;
 
                         L_EntryFound := true;
-                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                        IF L_RemainingQuantity < 0 THEN
+                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                        if L_RemainingQuantity < L_OrderQty then
                             exit(ReturnValue::"Exceeded Qty");
-                        //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                     end;
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
@@ -496,13 +663,23 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -519,78 +696,152 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Dimension Value", L_DefaultDimension."Dimension Value Code");
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
-                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                        //PerDay Web orders Qty++++++
-                        L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                        L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseWebOrderQty.OPEN;
-                        WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                        END;
-                        L_DayWiseWebOrderQty.CLOSE;
+                        //Permonth Web orders Qty++++++
+                        L_InterimSalesLinePerdayQuantity.Reset();
+                        L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                        L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                        if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                                end;
+                            until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        end;
 
-                        //PerDay Current Web orders Qty++++++
+                        // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                        // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseWebOrderQty.OPEN;
+                        // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseWebOrderQty.CLOSE;
+                        //Permonth Web orders Qty------
+
+                        //Permonth Current Web orders Qty++++++
                         L_InterimSalesLine.RESET;
                         L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                         L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                        L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                         IF L_InterimSalesLine.FINDSET THEN BEGIN
-                            REPEAT
-                                IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                    L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                                ELSE
-                                    L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                            UNTIL L_InterimSalesLine.NEXT = 0;
+                            L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                            L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                         END;
 
-                        //PerDay Order Qty++++
-                        L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                        L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseQty.OPEN;
-                        WHILE L_DayWiseQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                        END;
-                        L_DayWiseQty.CLOSE;
 
 
-                        //PerDay SHipped Qty++
-                        L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                        //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                        L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                        L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
-                        L_DayWiseShippedQty.OPEN;
-                        WHILE L_DayWiseShippedQty.READ DO BEGIN
-                            L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                        END;
-                        L_DayWiseShippedQty.CLOSE;
+                        //Permonth Order Qty+++++
+                        L_SalesLine.Reset();
+                        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                        L_SalesLine.SetRange("No.", _InterimSalesLine."No.");
+                        L_SalesLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesLine.FindSet() then begin
+                            repeat
+                                L_SaleasHeader.Reset();
+                                L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                                L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                                if L_SaleasHeader.FindFirst() then begin
+                                    L_DimensionSetEntry.Reset();
+                                    L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                    L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                    L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                    if L_DimensionSetEntry.FindFirst() then begin
+                                        L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                    end;
+                                end;
+                            until L_SalesLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                        // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseQty.OPEN;
+                        // WHILE L_DayWiseQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseQty.CLOSE;
+                        //Permonth Order Qty-----
+
+
+                        //Permonth SHipped Qty+++++
+                        L_SalesShipmentLine.Reset();
+                        L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                        L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_SalesShipmentLine.FindSet() then begin
+                            repeat
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                                end;
+                            until L_SalesShipmentLine.Next() = 0;
+                        end;
+
+                        // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                        // L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
+                        // L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
+                        // L_DayWiseShippedQty.OPEN;
+                        // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                        //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                        // END;
+                        // L_DayWiseShippedQty.CLOSE;
+                        //Permonth SHipped Qty-----
+
+                        //Permonth Customer Trends Quantity+++
+                        L_CustomerTrends.Reset();
+                        L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                        L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        if L_CustomerTrends.FindSet() then begin
+                            repeat
+                                DefaultDimension_2.Reset();
+                                DefaultDimension_2.SetRange("Table ID", 18);
+                                DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                                DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                                DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if DefaultDimension_2.FindFirst() then begin
+                                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                                end;
+                            until L_CustomerTrends.Next() = 0;
+                        end;
 
                         L_EntryFound := true;
-                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                        IF L_RemainingQuantity < 0 THEN
+                        L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                        if L_RemainingQuantity < L_OrderQty then
                             exit(ReturnValue::"Exceeded Qty");
-                        //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                     end;
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
             exit(ReturnValue::"Allowed Qty");
-
     end;
 
     procedure PerMonthSelCustomerGroupSelItemCatQty(_InterimSalesLine: Record "Interim Sales Line"; _InterimSalesHeader: Record "Interim Sales Header"; ItemCat: code[20]; Sdate: date; Edate: Date) ReturnValue: Option "Allowed Qty","Exceeded Qty","No Entry"
@@ -604,6 +855,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -620,30 +874,25 @@ codeunit 90056 "Sales Quota Validation"
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
                 //PerDay Web orders Qty++++++
-                L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                L_DayWiseWebOrderQty.SetFilter(L_DayWiseWebOrderQty.Order_Date, '%1..%2', Sdate, Edate);
+                L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
                 L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
-                L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
                 L_DayWiseWebOrderQty.OPEN;
                 WHILE L_DayWiseWebOrderQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
                 END;
-                L_DayWiseWebOrderQty.CLOSE;
-
 
                 //PerDay Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-                L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -651,7 +900,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
                 L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
+                L_DayWiseQty.SETRANGE(L_DayWiseQty.Item_Category_Code, ItemCat);
                 L_DayWiseQty.OPEN;
                 WHILE L_DayWiseQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
@@ -662,17 +911,26 @@ codeunit 90056 "Sales Quota Validation"
                 //PerDay SHipped Qty++
                 L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
+                L_DayWiseShippedQty.SETRANGE(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
                 L_DayWiseShippedQty.OPEN;
                 WHILE L_DayWiseShippedQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Perday Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+                L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -693,6 +951,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -708,30 +969,25 @@ codeunit 90056 "Sales Quota Validation"
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
                 //PerDay Web orders Qty++++++
-                L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                L_DayWiseWebOrderQty.SetFilter(L_DayWiseWebOrderQty.Order_Date, '%1..%2', Sdate, Edate);
+                L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
-                L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.OPEN;
                 WHILE L_DayWiseWebOrderQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
                 END;
-                L_DayWiseWebOrderQty.CLOSE;
-
 
                 //PerDay Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -757,10 +1013,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Perday Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -781,10 +1046,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesLine."Customer Price Group");
@@ -797,30 +1066,25 @@ codeunit 90056 "Sales Quota Validation"
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
                 //PerDay Web orders Qty++++++
-                L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                L_DayWiseWebOrderQty.SetFilter(L_DayWiseWebOrderQty.Order_Date, '%1..%2', Sdate, Edate);
+                L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
-                L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.OPEN;
                 WHILE L_DayWiseWebOrderQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
                 END;
-                L_DayWiseWebOrderQty.CLOSE;
-
 
                 //PerDay Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -846,10 +1110,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Perday Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -872,6 +1145,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -891,7 +1167,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
+                L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
                 L_DayWiseWebOrderQty.OPEN;
                 WHILE L_DayWiseWebOrderQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
@@ -899,18 +1175,15 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseWebOrderQty.CLOSE;
 
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-                L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -918,7 +1191,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
+                L_DayWiseQty.SETRANGE(L_DayWiseQty.Item_Category_Code, ItemCat);
                 L_DayWiseQty.OPEN;
                 WHILE L_DayWiseQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
@@ -929,17 +1202,26 @@ codeunit 90056 "Sales Quota Validation"
                 //PerDay SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
-                L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
+                L_DayWiseShippedQty.SETRANGE(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
                 L_DayWiseShippedQty.OPEN;
                 WHILE L_DayWiseShippedQty.READ DO BEGIN
                     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -960,10 +1242,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
@@ -986,18 +1272,15 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseWebOrderQty.CLOSE;
 
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -1023,10 +1306,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -1047,6 +1339,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -1074,18 +1369,15 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseWebOrderQty.CLOSE;
 
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
@@ -1111,10 +1403,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -1135,6 +1436,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -1151,7 +1455,7 @@ codeunit 90056 "Sales Quota Validation"
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                //PerDay Web orders Qty++++++
+                //Permonth Web orders Qty++++++
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
@@ -1164,22 +1468,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseWebOrderQty.CLOSE;
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-                L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
-                //PerDay Order Qty++++
+                //Permonth Order Qty++++
                 L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
@@ -1192,7 +1493,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseQty.CLOSE;
 
 
-                //PerDay SHipped Qty++
+                //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
@@ -1203,10 +1504,20 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -1227,10 +1538,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -1242,7 +1557,7 @@ codeunit 90056 "Sales Quota Validation"
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                //PerDay Web orders Qty++++++
+                //Permonth Web orders Qty++++++
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
@@ -1255,22 +1570,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseWebOrderQty.CLOSE;
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
-                //PerDay Order Qty++++
+                //Permonth Order Qty++++
                 L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
@@ -1283,7 +1595,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseQty.CLOSE;
 
 
-                //PerDay SHipped Qty++
+                //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
@@ -1294,10 +1606,20 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -1319,10 +1641,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -1335,7 +1661,7 @@ codeunit 90056 "Sales Quota Validation"
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
-                //PerDay Web orders Qty++++++
+                //Permonth Web orders Qty++++++
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
@@ -1348,22 +1674,19 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseWebOrderQty.CLOSE;
 
-                //PerDay Current Web orders Qty++++++
+                //Permonth Current Web orders Qty++++++
                 L_InterimSalesLine.RESET;
                 L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                 L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                 L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                 IF L_InterimSalesLine.FINDSET THEN BEGIN
-                    REPEAT
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    UNTIL L_InterimSalesLine.NEXT = 0;
+                    L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                 END;
 
 
-                //PerDay Order Qty++++
+                //Permonth Order Qty++++
                 L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
@@ -1376,7 +1699,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_DayWiseQty.CLOSE;
 
 
-                //PerDay SHipped Qty++
+                //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
                 L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
@@ -1387,10 +1710,20 @@ codeunit 90056 "Sales Quota Validation"
                 END;
                 L_DayWiseShippedQty.CLOSE;
 
+                //Permonth Customer Trends Quantity+++
+                L_CustomerTrends.Reset();
+                L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+                L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+                if L_CustomerTrends.FindSet() then begin
+                    L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                    L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                end;
 
-                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-                IF L_RemainingQuantity < 0 THEN
+
+                L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                if L_RemainingQuantity < L_OrderQty then
                     exit(ReturnValue::"Exceeded Qty")
                 else
                     exit(ReturnValue::"Allowed Qty");
@@ -1411,10 +1744,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesLine."Customer Price Group");
@@ -1424,10 +1761,10 @@ codeunit 90056 "Sales Quota Validation"
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
-            //PerDay Web orders Qty++++++
-            L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            //Perday Web orders Qty++++++
+            L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-            L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseWebOrderQty.OPEN;
@@ -1436,26 +1773,23 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseWebOrderQty.CLOSE;
 
-            //PerDay Current Web orders Qty++++++
+            //Perday Current Web orders Qty++++++
             L_InterimSalesLine.RESET;
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-            RecSalesLineNew.SetRange("Item Category Code", ItemCat);
+            L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
-            //PerDay Order Qty++++
+            //Permonth Order Qty++++
             L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
-            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.OPEN;
             WHILE L_DayWiseQty.READ DO BEGIN
                 L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
@@ -1463,9 +1797,9 @@ codeunit 90056 "Sales Quota Validation"
             L_DayWiseQty.CLOSE;
 
 
-            //PerDay SHipped Qty++
-            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+            //Perday SHipped Qty++
             L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
+            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
             L_DayWiseShippedQty.OPEN;
             WHILE L_DayWiseShippedQty.READ DO BEGIN
@@ -1473,10 +1807,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+            L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -1495,10 +1838,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesLine."Customer Price Group");
@@ -1509,10 +1856,10 @@ codeunit 90056 "Sales Quota Validation"
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
-            L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-            L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-            L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Order_Date, _InterimSalesHeader."Order Date");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.No, _InterimSalesLine."No.");
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseWebOrderQty.OPEN;
             WHILE L_DayWiseWebOrderQty.READ DO BEGIN
@@ -1525,31 +1872,26 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
-
 
             //PerDay Order Qty++++
             L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.OPEN;
             WHILE L_DayWiseQty.READ DO BEGIN
                 L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
             END;
             L_DayWiseQty.CLOSE;
 
-
             //PerDay SHipped Qty++
-            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
+            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseShippedQty.OPEN;
             WHILE L_DayWiseShippedQty.READ DO BEGIN
@@ -1557,10 +1899,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -1579,10 +1930,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesLine."Customer Price Group");
@@ -1592,10 +1947,10 @@ codeunit 90056 "Sales Quota Validation"
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
-            L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-            L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-            L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Order_Date, _InterimSalesHeader."Order Date");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.No, _InterimSalesLine."No.");
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseWebOrderQty.OPEN;
             WHILE L_DayWiseWebOrderQty.READ DO BEGIN
@@ -1608,31 +1963,26 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
-
 
             //PerDay Order Qty++++
             L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-            L_DayWiseQty.SetRange(L_DayWiseQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
             L_DayWiseQty.OPEN;
             WHILE L_DayWiseQty.READ DO BEGIN
                 L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
             END;
             L_DayWiseQty.CLOSE;
 
-
             //PerDay SHipped Qty++
-            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Customer_Price_Group, _InterimSalesLine."Customer Price Group");
+            L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseShippedQty.OPEN;
             WHILE L_DayWiseShippedQty.READ DO BEGIN
@@ -1640,10 +1990,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -1665,13 +2024,23 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -1689,69 +2058,157 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     //PerDay Web orders Qty++++++
-                    L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                    L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
-                    L_DayWiseWebOrderQty.OPEN;
-                    WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                    END;
-                    L_DayWiseWebOrderQty.CLOSE;
+                    L_InterimSalesLinePerdayQuantity.Reset();
+                    L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
+                    L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                    if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                            end;
+                        until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    end;
+
+                    // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
+                    // L_DayWiseWebOrderQty.OPEN;
+                    // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseWebOrderQty.CLOSE;
+                    //PerDay Web orders Qty------
 
                     //PerDay Current Web orders Qty++++++
                     L_InterimSalesLine.RESET;
                     L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-                    L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                    L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                    L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                            ELSE
-                                L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                        UNTIL L_InterimSalesLine.NEXT = 0;
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                     END;
 
-                    //PerDay Order Qty++++
-                    L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
-                    L_DayWiseQty.OPEN;
-                    WHILE L_DayWiseQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                    END;
-                    L_DayWiseQty.CLOSE;
+                    // L_InterimSalesLine.RESET;
+                    // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                    // L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+                    // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                    //     REPEAT
+                    //         IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
+                    //             L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
+                    //         ELSE
+                    //             L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
+                    //     UNTIL L_InterimSalesLine.NEXT = 0;
+                    // END;
+                    //PerDay Current Web orders Qty------
 
 
-                    //PerDay SHipped Qty++
-                    L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
-                    L_DayWiseShippedQty.OPEN;
-                    WHILE L_DayWiseShippedQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                    END;
-                    L_DayWiseShippedQty.CLOSE;
+                    //PerDay Sales Order Qty++++
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    L_SalesLine.SetRange("Item Category Code", ItemCat);
+                    L_SalesLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesLine.FindSet() then begin
+                        repeat
+                            L_SaleasHeader.Reset();
+                            L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                            L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                            if L_SaleasHeader.FindFirst() then begin
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                end;
+                            end;
+                        until L_SalesLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseQty.SetRange(L_DayWiseQty.Item_Category_Code, ItemCat);
+                    // L_DayWiseQty.OPEN;
+                    // WHILE L_DayWiseQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseQty.CLOSE;
+                    //PerDay Sales Order Qty----
+
+
+                    //PerDay SHipped Qty+++++
+                    L_SalesShipmentLine.Reset();
+                    L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
+                    L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesShipmentLine.FindSet() then begin
+                        repeat
+                            L_DimensionSetEntry.Reset();
+                            L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                            L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if L_DimensionSetEntry.FindFirst() then begin
+                                L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                            end;
+                        until L_SalesShipmentLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
+                    // L_DayWiseShippedQty.OPEN;
+                    // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseShippedQty.CLOSE;
+                    //PerDay SHipped Qty-----
+
+                    //Perday Customer Trends Quantity+++
+                    L_CustomerTrends.Reset();
+                    L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                    L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_CustomerTrends.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                            end;
+                        until L_CustomerTrends.Next() = 0;
+                    end;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                    IF L_RemainingQuantity < 0 THEN
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                    if L_RemainingQuantity < L_OrderQty then
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
@@ -1772,8 +2229,17 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
@@ -1795,66 +2261,138 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Dimension Value", L_DefaultDimension."Dimension Value Code");
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     //PerDay Web orders Qty++++++
-                    L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                    L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseWebOrderQty.OPEN;
-                    WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                    END;
-                    L_DayWiseWebOrderQty.CLOSE;
+                    L_InterimSalesLinePerdayQuantity.Reset();
+                    L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                    L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                    if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                            end;
+                        until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    end;
+
+                    // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseWebOrderQty.OPEN;
+                    // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseWebOrderQty.CLOSE;
+                    //PerDay Web orders Qty------
 
                     //PerDay Current Web orders Qty++++++
                     L_InterimSalesLine.RESET;
                     L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                     L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                    L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                            ELSE
-                                L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                        UNTIL L_InterimSalesLine.NEXT = 0;
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                     END;
 
-                    //PerDay Order Qty++++
-                    L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseQty.OPEN;
-                    WHILE L_DayWiseQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                    END;
-                    L_DayWiseQty.CLOSE;
+                    //PerDay Sales Order Qty++++
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    L_SalesLine.SetRange("No.", _InterimSalesLine."No.");
+                    L_SalesLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesLine.FindSet() then begin
+                        repeat
+                            L_SaleasHeader.Reset();
+                            L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                            L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                            if L_SaleasHeader.FindFirst() then begin
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                end;
+                            end;
+                        until L_SalesLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseQty.OPEN;
+                    // WHILE L_DayWiseQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseQty.CLOSE;
+                    //PerDay Sales Order Qty----
 
 
-                    //PerDay SHipped Qty++
-                    L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseShippedQty.OPEN;
-                    WHILE L_DayWiseShippedQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                    END;
-                    L_DayWiseShippedQty.CLOSE;
+                    //PerDay SHipped Qty+++++
+                    L_SalesShipmentLine.Reset();
+                    L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                    L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesShipmentLine.FindSet() then begin
+                        repeat
+                            L_DimensionSetEntry.Reset();
+                            L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                            L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if L_DimensionSetEntry.FindFirst() then begin
+                                L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                            end;
+                        until L_SalesShipmentLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseShippedQty.OPEN;
+                    // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseShippedQty.CLOSE;
+                    //PerDay SHipped Qty-----
+
+                    //Perday Customer Trends Quantity+++
+                    L_CustomerTrends.Reset();
+                    L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                    L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_CustomerTrends.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                            end;
+                        until L_CustomerTrends.Next() = 0;
+                    end;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                    IF L_RemainingQuantity < 0 THEN
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                    if L_RemainingQuantity < L_OrderQty then
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
@@ -1881,13 +2419,23 @@ codeunit 90056 "Sales Quota Validation"
         L_DefaultDimension: Record "Default Dimension";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
-
         L_EntryFound: Boolean;
+
+        //New
+        L_SalesLine: Record "Sales Line";
+        L_CustomerTrendsPerdayQty: Record CustomerTrends;
+        DefaultDimension_2: Record "Default Dimension";
+        L_SaleasHeader: Record "Sales Header";
+        L_DimensionSetEntry: Record "Dimension Set Entry";
+        L_SalesShipmentLine: Record "Sales Shipment Line";
+        L_InterimSalesLinePerdayQuantity: Record "Interim Sales Line";
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_EntryFound);
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -1905,75 +2453,146 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
-
                     //PerDay Web orders Qty++++++
-                    L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-                    L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseWebOrderQty.OPEN;
-                    WHILE L_DayWiseWebOrderQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
-                    END;
-                    L_DayWiseWebOrderQty.CLOSE;
+                    L_InterimSalesLinePerdayQuantity.Reset();
+                    L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                    L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Reason Message", 'Successful');
+                    if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                            end;
+                        until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    end;
+
+                    // L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseWebOrderQty.OPEN;
+                    // WHILE L_DayWiseWebOrderQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseWebOrderQty.CLOSE;
+                    //PerDay Web orders Qty------
 
                     //PerDay Current Web orders Qty++++++
                     L_InterimSalesLine.RESET;
                     L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
                     L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                    L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                            ELSE
-                                L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                        UNTIL L_InterimSalesLine.NEXT = 0;
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
                     END;
 
-                    //PerDay Order Qty++++
-                    L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
-                    L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseQty.OPEN;
-                    WHILE L_DayWiseQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
-                    END;
-                    L_DayWiseQty.CLOSE;
+                    //PerDay Sales Order Qty++++
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    L_SalesLine.SetRange("No.", _InterimSalesLine."No.");
+                    L_SalesLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesLine.FindSet() then begin
+                        repeat
+                            L_SaleasHeader.Reset();
+                            L_SaleasHeader.SetRange("Document Type", L_SalesLine."Document Type");
+                            L_SaleasHeader.SetRange("No.", L_SalesLine."Document No.");
+                            if L_SaleasHeader.FindFirst() then begin
+                                L_DimensionSetEntry.Reset();
+                                L_DimensionSetEntry.SetRange("Dimension Set ID", L_SaleasHeader."Dimension Set ID");
+                                L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                                L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                                if L_DimensionSetEntry.FindFirst() then begin
+                                    L_DayOrderQty += L_SalesLine."Outstanding Quantity";
+                                end;
+                            end;
+                        until L_SalesLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+                    // L_DayWiseQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseQty.OPEN;
+                    // WHILE L_DayWiseQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseQty.CLOSE;
+                    //PerDay Sales Order Qty----
 
 
-                    //PerDay SHipped Qty++
-                    L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                    //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
-                    L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-                    L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
-                    L_DayWiseShippedQty.OPEN;
-                    WHILE L_DayWiseShippedQty.READ DO BEGIN
-                        L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
-                    END;
-                    L_DayWiseShippedQty.CLOSE;
+                    //PerDay SHipped Qty+++++
+                    L_SalesShipmentLine.Reset();
+                    L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                    L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_SalesShipmentLine.FindSet() then begin
+                        repeat
+                            L_DimensionSetEntry.Reset();
+                            L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                            L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if L_DimensionSetEntry.FindFirst() then begin
+                                L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                            end;
+                        until L_SalesShipmentLine.Next() = 0;
+                    end;
+
+                    // L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+                    // L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
+                    // L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
+                    // L_DayWiseShippedQty.OPEN;
+                    // WHILE L_DayWiseShippedQty.READ DO BEGIN
+                    //     L_DayOrderQty += L_DayWiseShippedQty.Sum_Quantity;
+                    // END;
+                    // L_DayWiseShippedQty.CLOSE;
+                    //PerDay SHipped Qty-----
+
+                    //Perday Customer Trends Quantity+++
+                    L_CustomerTrends.Reset();
+                    L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                    L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    if L_CustomerTrends.FindSet() then begin
+                        repeat
+                            DefaultDimension_2.Reset();
+                            DefaultDimension_2.SetRange("Table ID", 18);
+                            DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                            DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                            DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                            DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                            if DefaultDimension_2.FindFirst() then begin
+                                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                            end;
+                        until L_CustomerTrends.Next() = 0;
+                    end;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-                    IF L_RemainingQuantity < 0 THEN
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+                    if L_RemainingQuantity < L_OrderQty then
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPDQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", L_OrderQty, RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
             exit(ReturnValue::"Allowed Qty");
-
     end;
 
 
@@ -1989,10 +2608,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2020,15 +2643,11 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.RESET;
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-            L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
-            L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+            L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2056,10 +2675,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -2078,10 +2706,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2110,13 +2742,10 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2144,13 +2773,23 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
+
         end;
         exit(ReturnValue::"No Entry");
     end;
@@ -2167,10 +2806,15 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2198,13 +2842,10 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2232,10 +2873,20 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            L_CustomerTrends.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -2256,6 +2907,9 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
@@ -2269,11 +2923,11 @@ codeunit 90056 "Sales Quota Validation"
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
-            L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
+            L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-            L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesLine."Sell-to Customer No.");
-            L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
-            L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Order_Date, _InterimSalesHeader."Order Date");
+            L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
             L_DayWiseWebOrderQty.OPEN;
             WHILE L_DayWiseWebOrderQty.READ DO BEGIN
                 L_DayOrderQty += L_DayWiseWebOrderQty.Sum_Quantity;
@@ -2284,14 +2938,11 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.RESET;
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
-            L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
+            L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2306,7 +2957,6 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseQty.CLOSE;
 
-
             //PerDay SHipped Qty++
             L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
             L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
@@ -2317,10 +2967,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -2339,10 +2998,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
@@ -2365,16 +3028,13 @@ codeunit 90056 "Sales Quota Validation"
 
             //PerDay Current Web orders Qty++++++
             L_InterimSalesLine.RESET;
-            L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type"::Order);
+            L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2401,9 +3061,19 @@ codeunit 90056 "Sales Quota Validation"
             L_DayWiseShippedQty.CLOSE;
 
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
+
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -2424,10 +3094,14 @@ codeunit 90056 "Sales Quota Validation"
         L_DayWiseShippedQty: Query "DayShippe Qty Copy";
         L_DayWiseWebOrderQty: Query "Daywise Web order quantity";
         L_InterimSalesLine: Record "Interim Sales Line";
+
+        //New+
+        L_CustomerTrends: Record CustomerTrends;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
@@ -2438,7 +3112,7 @@ codeunit 90056 "Sales Quota Validation"
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
-            L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesLine."Sell-to Customer No.");
+            L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
             L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseWebOrderQty.OPEN;
@@ -2452,13 +3126,10 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_OrderQty := L_OrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_OrderQty := L_OrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
             END;
 
 
@@ -2484,10 +3155,19 @@ codeunit 90056 "Sales Quota Validation"
             END;
             L_DayWiseShippedQty.CLOSE;
 
+            //Perday Customer Trends Quantity+++
+            L_CustomerTrends.Reset();
+            L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
+            L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+            L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+            if L_CustomerTrends.FindSet() then begin
+                L_CustomerTrends.CalcSums("Qty. to be added to SO");
+                L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+            end;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPDQ');
-            IF L_RemainingQuantity < 0 THEN
+
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
+            if L_RemainingQuantity < L_OrderQty then
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
@@ -2503,20 +3183,15 @@ codeunit 90056 "Sales Quota Validation"
         L_RemainingQuantity: Decimal;
         L_InterimSalesLine: Record "Interim Sales Line";
         L_OrderQty: Decimal;
-        L_Customer: Record Customer;
         RecItem: Record Item;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
-
-        L_Customer.Reset();
-        L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
-        if L_Customer.FindFirst() then
-            L_MaxOrderQty.SetRange("Sales Code", L_Customer."Customer Price Group");
-
+        L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Customer Price Group");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
@@ -2527,30 +3202,19 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-            //L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    RecItem.Reset();
-                    RecItem.SetRange("No.", L_InterimSalesLine."No.");
-                    RecItem.SetRange("Item Category Code", ItemCat);
-                    if RecItem.FindFirst() then begin
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    end;
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'SCGSICPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
@@ -2562,19 +3226,14 @@ codeunit 90056 "Sales Quota Validation"
         L_RemainingQuantity: Decimal;
         L_InterimSalesLine: Record "Interim Sales Line";
         L_OrderQty: Decimal;
-        L_Customer: Record Customer;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
-
-        L_Customer.Reset();
-        L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
-        if L_Customer.FindFirst() then
-            L_MaxOrderQty.SetRange("Sales Code", L_Customer."Customer Price Group");
-
+        L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Customer Price Group");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
@@ -2585,26 +3244,19 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
-            //L_InterimSalesLine.SetRange("Customer Price Group", _InterimSalesLine."Customer Price Group");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            // CheckingRemainingQty(L_RemainingQuantity, 'SCGSIPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
@@ -2615,19 +3267,13 @@ codeunit 90056 "Sales Quota Validation"
         L_RemainingQuantity: Decimal;
         L_InterimSalesLine: Record "Interim Sales Line";
         L_OrderQty: Decimal;
-        L_Customer: Record Customer;
     begin
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"Customer Price Group");
-
-        L_Customer.Reset();
-        L_Customer.SetRange("No.", _InterimSalesHeader."Sell-to Customer No.");
-        if L_Customer.FindFirst() then
-            L_MaxOrderQty.SetRange("Sales Code", L_Customer."Customer Price Group");
-
+        L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Customer Price Group");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
@@ -2639,23 +3285,17 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'SCGAPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
@@ -2672,6 +3312,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2685,30 +3326,18 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.RESET;
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesLine."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesLine."Document No");
+            L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-            //L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    RecItem.Reset();
-                    RecItem.SetRange("No.", L_InterimSalesLine."No.");
-                    RecItem.SetRange("Item Category Code", ItemCat);
-                    if RecItem.FindFirst() then begin
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    end;
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
-            // CheckingRemainingQty(L_RemainingQuantity, 'SCSICPOQ');
         end;
         exit(ReturnValue::"No Entry");
     end;
@@ -2725,6 +3354,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2741,22 +3371,15 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine.Quantity;
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
-            //CheckingRemainingQty(L_RemainingQuantity, 'SCSIPOQ');
         end;
         exit(ReturnValue::"No Entry");
     end;
@@ -2774,10 +3397,10 @@ codeunit 90056 "Sales Quota Validation"
         RecItem: Record Item;
     begin
         Clear(L_EntryFound);
-
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -2795,40 +3418,26 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     L_InterimSalesLine.RESET;
                     L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesLine."Document Type");
                     L_InterimSalesLine.SETRANGE("Document No", _InterimSalesLine."Document No");
-                    L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
-                    L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                    L_InterimSalesLine.SetRange("Item Category Code", ItemCat);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            RecItem.Reset();
-                            RecItem.SetRange("No.", L_InterimSalesLine."No.");
-                            RecItem.SetRange("Item Category Code", ItemCat);
-                            if RecItem.FindFirst() then begin
-                                IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                    L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                                ELSE
-                                    L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                            end;
-                        UNTIL L_InterimSalesLine.NEXT = 0;
-                    END
-                    ELSE
-                        L_OrderQty := _InterimSalesLine."Qty. to Deliver";
-
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    END;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
                     IF L_RemainingQuantity < 0 THEN
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCAPOQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", (L_DayOrderQty + L_OrderQty), RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
@@ -2846,10 +3455,10 @@ codeunit 90056 "Sales Quota Validation"
         L_EntryFound: Boolean;
     begin
         Clear(L_EntryFound);
-
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -2865,9 +3474,7 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Sales Code", L_DefaultDimension."Dimension Code");
                 L_MaxOrderQty.SetRange("Dimension Value", L_DefaultDimension."Dimension Value Code");
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
-                L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -2877,25 +3484,18 @@ codeunit 90056 "Sales Quota Validation"
                     L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
                     L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                            ELSE
-                                L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                        UNTIL L_InterimSalesLine.NEXT = 0;
-                    END
-                    ELSE
-                        L_OrderQty := _InterimSalesLine."Qty. to Deliver";
-
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    END;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
                     IF L_RemainingQuantity < 0 THEN
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCAPOQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", (L_DayOrderQty + L_OrderQty), RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
@@ -2913,10 +3513,10 @@ codeunit 90056 "Sales Quota Validation"
         L_EntryFound: Boolean;
     begin
         Clear(L_EntryFound);
-
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_DefaultDimension.Reset();
         L_DefaultDimension.SetRange("Table ID", 18);
         L_DefaultDimension.SetRange("Parent Type", L_DefaultDimension."Parent Type"::Customer);
@@ -2934,7 +3534,6 @@ codeunit 90056 "Sales Quota Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-                //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -2944,25 +3543,18 @@ codeunit 90056 "Sales Quota Validation"
                     L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
                     L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
                     IF L_InterimSalesLine.FINDSET THEN BEGIN
-                        REPEAT
-                            IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                                L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                            ELSE
-                                L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                        UNTIL L_InterimSalesLine.NEXT = 0;
-                    END
-                    ELSE
-                        L_OrderQty := _InterimSalesLine."Qty. to Deliver";
-
+                        L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    END;
 
                     L_EntryFound := true;
-                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+                    L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
                     IF L_RemainingQuantity < 0 THEN
                         exit(ReturnValue::"Exceeded Qty");
-                    //CheckingRemainingQty(L_RemainingQuantity, 'SCAPOQ', WarningtypeOpion, L_MaxOrderQty."Maximum Quantity", L_MaxOrderQty."Quantity Restriction", (L_DayOrderQty + L_OrderQty), RecSalesLine);
                 end;
             until L_DefaultDimension.Next() = 0;
         end;
+
         if L_EntryFound = false then
             exit(ReturnValue::"No Entry")
         else
@@ -2980,6 +3572,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::Customer);
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
@@ -2995,22 +3588,15 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
-            // CheckingRemainingQty(L_RemainingQuantity, 'SCAPOQ');
         end;
         exit(ReturnValue::"No Entry");
     end;
@@ -3028,6 +3614,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
@@ -3040,30 +3627,19 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
             L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-            //L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+            L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    RecItem.Reset();
-                    RecItem.SetRange("No.", L_InterimSalesLine."No.");
-                    RecItem.SetRange("Item Category Code", ItemCat);
-                    if RecItem.FindFirst() then begin
-                        IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                            L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                        ELSE
-                            L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                    end;
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'ASICPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
@@ -3079,6 +3655,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
@@ -3092,23 +3669,17 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'AAPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
@@ -3124,6 +3695,7 @@ codeunit 90056 "Sales Quota Validation"
         Clear(L_DayOrderQty);
         Clear(L_RemainingQuantity);
         Clear(L_OrderQty);
+
         L_MaxOrderQty.RESET;
         L_MaxOrderQty.SETRANGE("Sales Type", L_MaxOrderQty."Sales Type"::"All Customer");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
@@ -3138,24 +3710,17 @@ codeunit 90056 "Sales Quota Validation"
             L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
             L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
             IF L_InterimSalesLine.FINDSET THEN BEGIN
-                REPEAT
-                    IF L_InterimSalesLine."Line No." = _InterimSalesLine."Line No." THEN
-                        L_DayOrderQty := L_DayOrderQty + _InterimSalesLine."Qty. to Deliver"
-                    ELSE
-                        L_DayOrderQty := L_DayOrderQty + L_InterimSalesLine."Qty. to Deliver";
-                UNTIL L_InterimSalesLine.NEXT = 0;
-            END
-            ELSE
-                L_OrderQty := _InterimSalesLine."Qty. to Deliver";
+                L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                L_DayOrderQty := L_InterimSalesLine."Qty. to Deliver";
+            END;
 
-            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - (L_DayOrderQty + L_OrderQty);
-            //CheckingRemainingQty(L_RemainingQuantity, 'ASIPOQ');
+            L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
             IF L_RemainingQuantity < 0 THEN
                 exit(ReturnValue::"Exceeded Qty")
             else
                 exit(ReturnValue::"Allowed Qty");
-
         end;
+
         exit(ReturnValue::"No Entry");
     end;
 
