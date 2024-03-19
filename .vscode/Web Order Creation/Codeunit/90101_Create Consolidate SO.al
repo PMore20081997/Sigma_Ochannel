@@ -30,7 +30,7 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.Reset();
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
         L_InterimSL.SetRange("Document No", _InterimSH."No.");
-        L_InterimSL.SetFilter("Reason Message", '%1', 'Successful'); //Need to check partialy quantity filter
+        //L_InterimSL.SetFilter("Reason Message", '%1', 'Successful'); //Need to check partialy quantity filter
         if L_InterimSL.FindSet() then begin
             repeat
                 if Not G_SalesHeaderCreated then

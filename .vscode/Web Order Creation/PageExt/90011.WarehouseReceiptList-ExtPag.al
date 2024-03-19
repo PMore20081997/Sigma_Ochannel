@@ -9,6 +9,7 @@ pageextension 90011 "Warehouse Receipt List" extends "Warehouse Receipts"
             {
                 Caption = 'Expected Receipt Date';
                 ApplicationArea = All;
+                Visible = false;
             }
         }
     }

@@ -219,6 +219,65 @@ page 90003 "Web Order List"
 
             }
 
+            // action("Update Reason Code")
+            // {
+            //     ApplicationArea = All;
+            //     Caption = 'Update Reason Code';
+            //     Ellipsis = true;
+            //     Image = Delete;
+            //     Promoted = true;
+            //     PromotedCategory = Process;
+            //     PromotedIsBig = true;
+            //     PromotedOnly = true;
+
+            //     trigger OnAction()
+            //     var
+            //         L_Line: Record "Interim Sales Line";
+            //         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+            //         L_OrderLevelResponse: Record "Order Level Response";
+            //         L_ProductLevelResponse: Record "Product Level Response";
+            //         CustomerRef: Record "Customer Reference";
+            //         K: Integer;
+            //     begin
+            //         Clear(InterimSalesHeader);
+            //         CurrPage.SetSelectionFilter(InterimSalesHeader);
+            //         if InterimSalesHeader.FindSet() then
+            //             repeat
+            //                 L_Line.Reset();
+            //                 L_Line.SetRange("Document Type", InterimSalesHeader."Document Type");
+            //                 L_Line.SetRange("Document No", InterimSalesHeader."No.");
+            //                 if L_Line.FindSet() then begin
+            //                     repeat
+            //                         PartnerErrorLog.RESET;
+            //                         PartnerErrorLog.SETRANGE("Document No.", InterimSalesHeader."No.");
+            //                         PartnerErrorLog.SetFilter("Item No.", L_Line."No.");
+            //                         PartnerErrorLog.SetCurrentKey("Sequence No.");
+            //                         PartnerErrorLog.Ascending(true);
+            //                         IF PartnerErrorLog.FindFirst() THEN begin
+            //                             L_ProductLevelResponse.Reset();
+            //                             L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            //                             if L_ProductLevelResponse.FindFirst() then begin
+            //                                 if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
+            //                                     L_Line."Reason Code" := L_ProductLevelResponse.Reason;
+            //                                     L_Line."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+            //                                     L_Line.Modify();
+            //                                 end else begin
+            //                                     L_Line."Reason Code" := L_ProductLevelResponse.Reason;
+            //                                     L_Line."Reason Message" := L_ProductLevelResponse.Message;
+            //                                     L_Line.Modify();
+            //                                 end;
+            //                             end;
+            //                         end else begin
+            //                             L_Line."Reason Code" := 'Order Line Created';
+            //                             L_Line."Reason Message" := 'Successful';
+            //                             L_Line.Modify();
+            //                         end;
+            //                     until L_Line.Next() = 0;
+            //                 end;
+            //             until InterimSalesHeader.Next() = 0;
+            //     end;
+            // }
+
         }
         area(Navigation)
         {
