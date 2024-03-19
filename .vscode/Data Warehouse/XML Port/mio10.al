@@ -538,10 +538,205 @@ xmlport 90000 "mio10"
     {
         textelement(Root)
         {
+            tableelement(Integer; Integer)
+            {
+                SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
+
+                textelement("Supp_Code_Header")
+                {
+                }
+                textelement("Prod_Code_Header")
+                {
+
+
+                }
+                textelement("DepotCode_Header")
+                {
+
+
+                }
+                textelement("PurchOrdNo_Header")
+                {
+
+
+                }
+                textelement("PordQty_Header")
+                {
+
+
+                }
+                textelement("Pord_Qty_OS_Header")
+                {
+
+
+                }
+
+                textelement("Qty_Desc_Header")
+                {
+
+
+                }
+
+                textelement("Pord_Value_Header")
+                {
+
+
+                }
+                textelement("Price_Desc_Header")
+                {
+
+
+                }
+                textelement("Pord_List_Header")
+                {
+
+
+                }
+                textelement("Pord_Price_Header")
+                {
+
+
+                }
+                textelement("Receipt_No_Header")
+                {
+
+
+                }
+                textelement("OrderDate_Header")
+                {
+
+
+                }
+                textelement("DueDate_Header")
+                {
+
+
+                }
+                textelement("Orig_Due_Date_Header")
+                {
+
+
+                }
+                textelement("Period_Header")
+                {
+
+
+                }
+                textelement("Days_Late_Header")
+                {
+
+
+                }
+
+                textelement("Late_Qty_Header")
+                {
+
+
+                }
+                textelement("Company_Header")
+                {
+
+
+                }
+                textelement("Trans_Anal_6_Header")
+                {
+
+
+                }
+                textelement("Account_Year_Header")
+                {
+
+
+                }
+                textelement("Account_Month_Header")
+                {
+
+
+                }
+                textelement("Sell_By_Date_Header")
+                {
+
+
+                }
+
+                textelement("Cost_in_Currency_Header")
+                {
+
+
+                }
+                textelement("Weight_Header")
+                {
+
+
+                }
+                textelement("Pord_Type_Header")
+                {
+
+
+                }
+                textelement("State_Code_Header")
+                {
+
+
+                }
+                textelement("Master_Ord_No_Header")
+                {
+
+                }
+                textelement("Sales_Ord_No_Header")
+                {
+
+
+                }
+                textelement("Sord_Line_No_Header")
+                {
+
+
+                }
+                textelement("Pord_Line_No_Header")
+                {
+
+
+                }
+                textelement("Pord_Line_Desc_Header")
+                {
+
+
+                }
+                textelement("Exch_Rate_Header")
+                {
+
+
+                }
+                textelement("Foreign_Curr_Code_Header")
+                {
+
+
+                }
+                textelement("PO_Operator_Code_Header")
+                {
+
+
+                }
+                textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                {
+
+                }
+
+                trigger OnAfterGetRecord()
+                var
+
+
+                begin
+                    Supp_Code_Header := 'Supp code';
+
+                end;
+
+            }
             tableelement("Purchase_Line"; "Purchase Line")
             {
 
-                //SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
+                SourceTableView = WHERE(Type = filter(Item), "Document Type" = filter(order), "No." = filter(<> ''));
 
                 textelement("Supp_Code")
                 {
@@ -722,16 +917,6 @@ xmlport 90000 "mio10"
 
 
                 }
-                textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-                {
-
-                    trigger OnBeforePassVariable()
-                    begin
-                        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" := 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
-                    end;
-                }
-
-
 
                 trigger OnAfterGetRecord()
                 var
@@ -740,9 +925,7 @@ xmlport 90000 "mio10"
                     companyInfo: Record "Company Information";
 
                 begin
-                    // if Check = true then
-                    //     updateheadercaption();
-                    Purchase_Line.SetRange(Type, Purchase_Line.Type::Item);
+
                     L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.");
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
                     Prod_Code := Purchase_Line."No.";
@@ -781,26 +964,11 @@ xmlport 90000 "mio10"
                     Exch_Rate := format(L_PurchHeader."Currency Factor");
                     Foreign_Curr_Code := format(L_PurchHeader."Currency Code");
                     PO_Operator_Code := format(L_PurchHeader."Purchaser Code");
-                    //Check := false;
+
                 end;
+
             }
 
         }
     }
-    // procedure updateheadercaption()
-    // begin
-    //     Supp_Code := 'Supp Code';
-    // end;
-
-    // trigger OnPreXmlPort()
-    // var
-
-    // begin
-    //     //Check := true;
-    //     // updateheadercaption();
-
-    // end;
-
-    // var
-    //     Check: Boolean;
 }
