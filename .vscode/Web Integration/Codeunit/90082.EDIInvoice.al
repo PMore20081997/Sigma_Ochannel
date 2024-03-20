@@ -161,7 +161,7 @@ codeunit 90082 "EDI Invoice"
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + Salesinvoicehead."Ship-to Name" + '^' + Salesinvoicehead."Ship-to Address" + '^' + Salesinvoicehead."Ship-to Address 2" + '^' + Salesinvoicehead."Ship-to City" + '^' + Salesinvoicehead."Ship-to County" + '^' + Salesinvoicehead."Ship-to Post Code" + '^' + Salesinvoicehead."Ship-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
         HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + format(DiscountAmt) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
-        HeaderInfo11 := '**@0000' + InvNo + '1' + '     1';
+        HeaderInfo11 := '**@0000' + InvNo + '1    1     ' + Format(count);
         HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
 
@@ -309,7 +309,7 @@ codeunit 90082 "EDI Invoice"
             //HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE' + '^' + CompGLN + '^^^^^^' + PurchHeader.buy + '^' + PurchHeader."Bill-to Address" + '^' + PurchHeader."Bill-to Address 2" + '^' + PurchHeader."Bill-to City" + '^' + PurchHeader."Bill-to County" + '^' + PurchHeader."Bill-to Post Code" + '^' + PurchHeader."Bill-to Country/Region Code" + '^' + CRLF[1];
             //HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + CRLF[1];
             HeaderInfo10 := '*OT,' + PurchHeader."Your Reference" + ',' + Format(count) + ',' + format(totalqty) + CRLF[1];
-            HeaderInfo11 := '**@    ' + InvNo + '     1    ';
+            HeaderInfo11 := '**@    ' + InvNo + '1    1     ' + Format(count);
             HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
         end;
