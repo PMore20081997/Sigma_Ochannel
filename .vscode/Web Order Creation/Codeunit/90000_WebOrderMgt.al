@@ -116,6 +116,8 @@ codeunit 90000 "Web Order Mgt"
             GeneralSetup.Get;
             GeneralSetup.TestField("Web Order Nos");
 
+
+            //Insert Header+++
             L_InterimSalesHeader.INIT;
             L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
             L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
@@ -259,7 +261,8 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
             L_InterimSalesHeader.Insert(True);
 
-            If P_InterimSalesLine.FindFirst() then
+            //Insert Line++
+            If P_InterimSalesLine.FindSet() then
                 repeat
                     if P_InterimSalesLine."Gift Card" = false then
                         InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent)
@@ -271,7 +274,7 @@ codeunit 90000 "Web Order Mgt"
 
 
 
-            //Not Required Sigma Integration++++
+            //Not Required Sigma Integration+++++++++++++++++++++++++++++++++++++++
             //CreateGLLines(L_InterimSalesHeader);
             //DeleteRefundPaymentDetails(P_PaymentDetail);
             // P_PaymentDetail.Reset();
@@ -283,38 +286,38 @@ codeunit 90000 "Web Order Mgt"
             //         end;
             //     until P_PaymentDetail.Next() = 0;
             // end;
-            //Not Required Sigma Integration+++++
 
-            //Shubham Calculate Total Weight for InterimSalesHeader
-            L_InterimSalesHeader."Total Weight" := CalculateWeight(L_InterimSalesHeader);
-            L_InterimSalesHeader."No. of Items" := calculateNoofItems(L_InterimSalesHeader);
-            L_InterimSalesHeader."Total No. of Items" := CalculateTotalItems(L_InterimSalesHeader);
-            //Code to Update Order Amount on Header Level
-            if L_InterimSalesHeader."Order Amount" = 0 then begin
-                G_InterimSalesLine.Reset();
-                G_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-                G_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-                if G_InterimSalesLine.FindSet() then begin
-                    repeat
-                        if G_InterimSalesLine."Amount Including VAT" > 0 then
-                            L_InterimSalesHeader."Order Amount" := L_InterimSalesHeader."Order Amount" + G_InterimSalesLine."Amount Including VAT";
-                    until G_InterimSalesLine.Next() = 0;
-                end;
-            end;
 
-            L_PaymentDetails.Reset();
-            L_PaymentDetails.SetRange("Channel Code", P_PaymentDetail."Channel Code");
-            L_PaymentDetails.SetRange("Channel Order ID", P_PaymentDetail."Channel Order ID");
-            //L_PaymentDetails.SetRange("Payment Method", P_PaymentDetail."Payment Method");  //Commented Bug 12050
-            if L_PaymentDetails.Count > 1 then
-                Clear(L_InterimSalesHeader."Payment Method");
+            // //Shubham Calculate Total Weight for InterimSalesHeader
+            // L_InterimSalesHeader."Total Weight" := CalculateWeight(L_InterimSalesHeader);
+            // L_InterimSalesHeader."No. of Items" := calculateNoofItems(L_InterimSalesHeader);
+            // L_InterimSalesHeader."Total No. of Items" := CalculateTotalItems(L_InterimSalesHeader);
+            // //Code to Update Order Amount on Header Level
+            // if L_InterimSalesHeader."Order Amount" = 0 then begin
+            //     G_InterimSalesLine.Reset();
+            //     G_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+            //     G_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+            //     if G_InterimSalesLine.FindSet() then begin
+            //         repeat
+            //             if G_InterimSalesLine."Amount Including VAT" > 0 then
+            //                 L_InterimSalesHeader."Order Amount" := L_InterimSalesHeader."Order Amount" + G_InterimSalesLine."Amount Including VAT";
+            //         until G_InterimSalesLine.Next() = 0;
+            //     end;
+            // end;
 
-            L_InterimSalesHeader."Gift Order Amount" := GetGiftOrderAmount(L_InterimSalesHeader);
-            L_InterimSalesHeader."Gift Card" := G_GiftBool;
+            // L_PaymentDetails.Reset();
+            // L_PaymentDetails.SetRange("Channel Code", P_PaymentDetail."Channel Code");
+            // L_PaymentDetails.SetRange("Channel Order ID", P_PaymentDetail."Channel Order ID");
+            // //L_PaymentDetails.SetRange("Payment Method", P_PaymentDetail."Payment Method");  //Commented Bug 12050
+            // if L_PaymentDetails.Count > 1 then
+            //     Clear(L_InterimSalesHeader."Payment Method");
 
-            L_InterimSalesHeader.Modify(true);
+            // L_InterimSalesHeader."Gift Order Amount" := GetGiftOrderAmount(L_InterimSalesHeader);
+            // L_InterimSalesHeader."Gift Card" := G_GiftBool;
 
-            //Not Required Sigma Integration++++
+            // L_InterimSalesHeader.Modify(true);
+
+
             // //UpdateShippingAgentOnLines++
             // L_InterimSalesLine.Reset();
             // L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
@@ -326,7 +329,8 @@ codeunit 90000 "Web Order Mgt"
             //         L_InterimSalesLine."Shipping Agent Service Code" := L_InterimSalesHeader."Shipping Agent Service Code";//Sofyan
             //         L_InterimSalesLine.Modify(true);
             //     until L_InterimSalesLine.Next() = 0;
-            // //UpdateShippingAgentOnLines--
+            //UpdateShippingAgentOnLines--
+            //Not Required Sigma Integration+++++++++++++++++++++++++++++++++++++++
 
             //Code to Validate order
             Sigma_OrderValidations(L_InterimSalesHeader);
@@ -1290,15 +1294,6 @@ codeunit 90000 "Web Order Mgt"
                         end;
                     end;
                 UNTIL L_InterimSalesLine.NEXT = 0;
-
-
-            If L_ErrorRecorded then begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
-                P_InterimSalesHeader.Modify();
-            end Else begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
-                P_InterimSalesHeader.Modify();
-            end;
         end;
     end;
 

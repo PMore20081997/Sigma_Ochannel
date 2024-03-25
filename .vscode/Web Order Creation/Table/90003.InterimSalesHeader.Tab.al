@@ -250,20 +250,11 @@ table 90003 "Interim Sales Header"
         field(61; "Shipping Agent Code"; Code[10])
         {
             TableRelation = "Shipping Agent";
-            trigger OnValidate()
-            var
-                myInt: Integer;
-            begin
-                IF xRec."Shipping Agent Code" = "Shipping Agent Code" THEN
-                    EXIT;
-
-                "Shipping Agent Service Code" := '';
-            end;
-
         }
         field(62; "Shipping Agent Service Code"; Code[250])
         {
             TableRelation = "Shipping Agent Services".Code WHERE("Shipping Agent Code" = FIELD("Shipping Agent Code"));
+            ValidateTableRelation = false;
         }
         field(63; "Shipment Date"; Date)
         {
@@ -558,6 +549,7 @@ table 90003 "Interim Sales Header"
         {
             TableRelation = "Shipping Agent Services".Code WHERE("Shipping Agent Code" = FIELD("Shipping Agent Code"));
             Caption = 'Weekend Shipping Agent Service Code';
+            ValidateTableRelation = false;
         }
         field(90057; "Customer Price Group"; Code[10])
         {

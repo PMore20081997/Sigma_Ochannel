@@ -97,7 +97,6 @@ codeunit 90018 "GOY File Integration"
                     end;
                 end;
             end;
-            Message('Order Sync Completed...');
         end;
     end;
 
@@ -141,31 +140,38 @@ codeunit 90018 "GOY File Integration"
         BlobInstream: InStream;
         OutStream: OutStream;
         TempBlob: Codeunit "Temp Blob";
-        test: Record "CSV Buffer" temporary;
+
+        L_InterimSalesHeader: Record "Interim Sales Header";
     begin
-        Clear(L_ApiUrl);
-        Clear(L_HttpClient);
-        Clear(L_HttpResponse);
-        Clear(L_ApiEndpoint);
-        Clear(L_ContainerName);
-        Clear(L_ResponseText);
-        Clear(L_TradePartner);
-        Clear(CSVOutstream);
-        Clear(CSVInstream);
-        //headers.Remove('Content-Type');
-        //headers.Add('Content-Type', 'application/json');
-        L_TradePartner.Get(ChannelCode);
-        L_ApiEndpoint := L_TradePartner."API Endpoint";
-        L_ContainerName := L_TradePartner."Incoming Orders Conatiner Name";
-        L_ApiUrl := L_ApiEndpoint + '/' + L_ContainerName + '/' + FileName;
-        L_HttpClient.Get(L_ApiUrl, L_HttpResponse);
-        if L_HttpResponse.HttpStatusCode = 200 then begin
-            if (L_HttpResponse.IsSuccessStatusCode = true) then begin
-                L_HttpResponse.Content().ReadAs(L_ResponseText);
-                CUTempoBlob.CreateOutStream(CSVOutstream);
-                CSVOutstream.WriteText(L_ResponseText);
-                CUTempoBlob.CreateInStream(CSVInstream, TextEncoding::UTF8);
-                CreateOrder(CSVInstream, StartParameter, FileName);
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetRange("Trade Partner Code", ChannelCode);
+        L_InterimSalesHeader.SetRange("Channel Order ID", FileName);
+        if not L_InterimSalesHeader.FindFirst() then begin
+
+            Clear(L_ApiUrl);
+            Clear(L_HttpClient);
+            Clear(L_HttpResponse);
+            Clear(L_ApiEndpoint);
+            Clear(L_ContainerName);
+            Clear(L_ResponseText);
+            Clear(L_TradePartner);
+            Clear(CSVOutstream);
+            Clear(CSVInstream);
+            //headers.Remove('Content-Type');
+            //headers.Add('Content-Type', 'application/json');
+            L_TradePartner.Get(ChannelCode);
+            L_ApiEndpoint := L_TradePartner."API Endpoint";
+            L_ContainerName := L_TradePartner."Incoming Orders Conatiner Name";
+            L_ApiUrl := L_ApiEndpoint + '/' + L_ContainerName + '/' + FileName;
+            L_HttpClient.Get(L_ApiUrl, L_HttpResponse);
+            if L_HttpResponse.HttpStatusCode = 200 then begin
+                if (L_HttpResponse.IsSuccessStatusCode = true) then begin
+                    L_HttpResponse.Content().ReadAs(L_ResponseText);
+                    CUTempoBlob.CreateOutStream(CSVOutstream);
+                    CSVOutstream.WriteText(L_ResponseText);
+                    CUTempoBlob.CreateInStream(CSVInstream, TextEncoding::UTF8);
+                    CreateOrder(CSVInstream, StartParameter, FileName);
+                end;
             end;
         end;
     end;
@@ -331,9 +337,10 @@ codeunit 90018 "GOY File Integration"
                     Evaluate(LineNo, GetCellValue(RowNo, 7))
             else
                 LineNo := K;
+
+            #Region Insert data in temp table++++
             InterimSalesHeader.Reset();
             InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
-            //InterimSalesHeader.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
             InterimSalesHeader.SetRange("File Name", FileName);
             if NOT InterimSalesHeader.FindFirst() then begin
                 InterimSalesHeader.Init();
@@ -350,6 +357,8 @@ codeunit 90018 "GOY File Integration"
                 InterimSalesHeader.Validate("File Name", FileName);
                 InterimSalesHeader.Insert();
             end;
+
+            //Lines++
             InterimSalesLine.Reset();
             InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
             //InterimSalesLine.SetRange("Trade Partner Code", GetCellValue(RowNo, 1));
@@ -370,15 +379,16 @@ codeunit 90018 "GOY File Integration"
                 InterimSalesLine.Quantity := Qty;
                 InterimSalesLine.Insert();
             end;
-            //end;
+            #endregion
         end;
 
+        #Region Insert Order in actual table++++
         if RowNo = MaxRow then begin
+            Clear(InterimSalesLine);
             InterimSalesLine.Reset();
             if InterimSalesLine.FindSet() then begin
-                // repeat
-                // until InterimSalesLine.Next() = 0;
                 CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmnetTracking, PaymentDetails);
+
 
                 //Update Interim header and Interim Line Response Code and Message++
                 L_Header.Reset();
@@ -403,7 +413,6 @@ codeunit 90018 "GOY File Integration"
                         L_Header."Reason Code" := 'Order Created';
                         L_Header."Reason Message" := 'Accepted';
                         L_Header.Modify();
-
                     end;
 
                     //Line++
@@ -463,9 +472,14 @@ codeunit 90018 "GOY File Integration"
                     L_Header.Modify();
                 end;
 
-                ExportFile(L_Header, StartParameter);
+                //Send Response (Store Response File in Container)
+                //ExportFile(L_Header, StartParameter);
+
+                //Commit++
+                Commit();
             end;
         end;
+        #endregion
     end;
 
     local procedure GetCellValue(RowNo: Integer; ColNo: Integer): Text
