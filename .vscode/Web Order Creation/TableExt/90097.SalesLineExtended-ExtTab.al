@@ -35,7 +35,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         field(90004; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(true)));
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(false)));
             DecimalPlaces = 0 : 5;
             Editable = false;
         }

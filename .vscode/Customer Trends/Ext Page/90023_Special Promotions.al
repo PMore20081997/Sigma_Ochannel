@@ -3,6 +3,28 @@ pageextension 90023 "OC Special Promotions" extends "Special Promotions"
     layout
     {
         // Add changes to page layout here
+        modify("Qty. to be added to SO")
+        {
+            trigger OnAfterValidate()
+            begin
+                if Rec."Qty. to be added to SO" <> 0 then begin
+                    CurrPage.Update(); //Update Current Quantity++
+                end;
+            end;
+        }
+
+        addafter(Allocated)
+        {
+            field("Total Free"; TotalAvailableQty(rec))
+            {
+                Caption = 'Total Free';
+                ApplicationArea = All;
+                Editable = false;
+                DecimalPlaces = 0 : 5;
+                ToolTip = 'Total Physical - Total SO Allocated - Web Order Qty';
+            }
+        }
+
         addafter("Qty. to be added to SO")
         {
             field("Free"; TotalAvailableQtyForSaleable(Rec))
@@ -11,15 +33,7 @@ pageextension 90023 "OC Special Promotions" extends "Special Promotions"
                 Editable = false;
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
-                //Caption = 'Total Available Quantity(Saleable)';
                 Caption = 'Free';
-            }
-            field("Web Orders Qty"; Rec."Web Orders Qty")
-            {
-                ApplicationArea = All;
-                Editable = false;
-                DecimalPlaces = 0 : 5;
-                ToolTip = 'Sucessfull Electronic Orders';
             }
         }
     }
@@ -32,6 +46,21 @@ pageextension 90023 "OC Special Promotions" extends "Special Promotions"
     var
         myInt: Integer;
 
+    local procedure TotalAvailableQty(_Rec: Record CustomerTrends): Decimal
+    var
+        L_ILE: Record "Item Ledger Entry";
+    begin
+        //+++++Formula:- Total Free => "Total Physical - Total SO Allocated - Web Orders Qty"
+        //Inventory is Total Physical
+        //Total SO Allocated is Allocated
+        //Web Orders Qty is Web order Qty------
+        _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty", "Qty On Customer Trends");
+        if (_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends") > 0 then
+            exit(_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends")
+        else
+            exit(0);
+    end;
+
     local procedure TotalAvailableQtyForSaleable(_Rec: Record CustomerTrends): Decimal
     var
         ItemVariant: Record "Item Variant";
@@ -42,10 +71,10 @@ pageextension 90023 "OC Special Promotions" extends "Special Promotions"
         SaleableQtyOnSO: Decimal;
         item: Record Item;
     begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
+        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty", "Qty On Customer Trends");
         if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty")
+            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends") > 0 then
+                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends")
             else
                 exit(0)
         else
