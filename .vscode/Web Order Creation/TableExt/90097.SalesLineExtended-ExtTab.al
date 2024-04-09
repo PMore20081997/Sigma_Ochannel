@@ -10,7 +10,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 RecUserSetup: Record "User Setup";
                 L_SalesHeader: Record "Sales Header";
             begin
-                if (Rec.Quantity <> 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') then begin
+                if (Rec.Quantity <> 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
                     //Check Free Quantity ++
                     if Rec.Quantity > TotalAvailableQtyForSaleable(Rec) then
                         Error('Qty. should be less than Free Inventory %1. Order Number: %2, Line Number: %3, Item Number: %4', TotalAvailableQtyForSaleable(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");

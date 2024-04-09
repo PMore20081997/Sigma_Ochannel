@@ -5,6 +5,10 @@ query 90065 "Daywise Web order quantity"
     {
         dataitem(QueryElement1000000000; "Interim Sales Header")
         {
+            column(Sales_Order_Created; "Sales Order Created")
+            {
+
+            }
             column(Document_Type; "Document Type")
             {
             }
@@ -22,16 +26,15 @@ query 90065 "Daywise Web order quantity"
             }
             dataitem(QueryElement1000000001; "Interim Sales Line")
             {
-                //DataItemLink= "Document Type"= QueryElement1000000000.doc
                 DataItemLink = "Document Type" = "QueryElement1000000000"."Document Type", "Document No" = "QueryElement1000000000"."No.";
                 DataItemTableFilter = Type = FILTER(Item), "Reason Message" = const('Successful');
                 column(No; "No.")
                 {
                 }
-                // column(Line_No_; "Line No.")
-                // {
+                column(Line_No_; "Line No.")
+                {
 
-                // }
+                }
                 column(Item_Category_Code; "Item Category Code")
                 {
 
@@ -48,5 +51,11 @@ query 90065 "Daywise Web order quantity"
             }
         }
     }
+
+
+    trigger OnBeforeOpen()
+    begin
+        CurrQuery.SetFilter(Sales_Order_Created, '%1', false);
+    end;
 }
 

@@ -21,8 +21,7 @@ pageextension 90021 "OC Purchase Order Subform" extends "Purchase Order Subform"
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
-                ToolTip = 'Physical (Saleable) - Allocated on SO (Saleable) - Web Orders Qty';
-                //Caption = 'Total Available Quantity(Saleable)';
+                ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
                 Caption = 'Free';
             }
         }

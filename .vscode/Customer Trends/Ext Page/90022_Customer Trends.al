@@ -24,6 +24,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
                 Editable = false;
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Total Physical - Total SO Allocated - Web Order Qty';
+                StyleExpr = G_Colour;
             }
         }
 
@@ -36,6 +37,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
                 Caption = 'Free';
+                StyleExpr = G_Colour;
             }
         }
     }
@@ -47,6 +49,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
     var
         myInt: Integer;
+        G_Colour: Text;
 
     local procedure TotalAvailableQty(_Rec: Record CustomerTrends): Decimal
     var
@@ -81,5 +84,40 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
                 exit(0)
         else
             exit(0);
+    end;
+
+
+    trigger OnAfterGetCurrRecord()
+    var
+        L_CustomerTrends: Record CustomerTrends;
+    begin
+        //Set Color For Special Items on Top Screen++
+        Clear(G_Colour);
+        L_CustomerTrends.Reset();
+        L_CustomerTrends.SetRange("Salesperson Code", Rec."Salesperson Code");
+        L_CustomerTrends.SetRange("Customer No.", Rec."Customer No.");
+        L_CustomerTrends.SetRange("Special Promotion", false); //For Top SCreen
+        L_CustomerTrends.SetRange("Item No.", Rec."Item No.");
+        if L_CustomerTrends.FindFirst() then begin
+            if L_CustomerTrends."Special Item on Top SCreen" = true then
+                G_Colour := 'Favorable';
+        end;
+    end;
+
+    trigger OnAfterGetRecord()
+    var
+        L_CustomerTrends: Record CustomerTrends;
+    begin
+        //Set Color For Special Items on Top Screen++
+        Clear(G_Colour);
+        L_CustomerTrends.Reset();
+        L_CustomerTrends.SetRange("Salesperson Code", Rec."Salesperson Code");
+        L_CustomerTrends.SetRange("Customer No.", Rec."Customer No.");
+        L_CustomerTrends.SetRange("Special Promotion", false); //For Top SCreen
+        L_CustomerTrends.SetRange("Item No.", Rec."Item No.");
+        if L_CustomerTrends.FindFirst() then begin
+            if L_CustomerTrends."Special Item on Top SCreen" = true then
+                G_Colour := 'Favorable';
+        end;
     end;
 }
