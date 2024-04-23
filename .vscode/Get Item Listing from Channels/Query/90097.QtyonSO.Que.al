@@ -1,29 +1,26 @@
 query 90097 "Qty on SO"
 {
-
     elements
     {
         dataitem(Sales_Line; "Sales Line")
         {
             DataItemTableFilter = "Document Type" = filter(Order), Type = filter(Item);
-            column(No_; "No.")
+            column(No; "No.")
             {
 
             }
-            column(Variant_Code; "Variant Code")
+            column(Saleable_Location; "Saleable Location")
             {
 
             }
-            column(Location_Code; "Location Code")
+            column(Unit_of_Measure_Code; "Unit of Measure Code")
             {
 
             }
-            column(Outstanding_Qty___Base_; "Outstanding Qty. (Base)")
+            column(Outstanding_Qty; "Outstanding Quantity")
             {
                 Method = Sum;
             }
-
         }
     }
 }
-

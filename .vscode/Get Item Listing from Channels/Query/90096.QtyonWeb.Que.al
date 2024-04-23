@@ -1,6 +1,5 @@
 query 90096 "Qty on Web"
 {
-
     elements
     {
         dataitem(Interim_Sales_Line; "Interim Sales Line")
@@ -10,20 +9,10 @@ query 90096 "Qty on Web"
             {
 
             }
-            column(NAV_Variant_code; "NAV Variant code")
-            {
-
-            }
-            column(Location_Code; "Location Code")
-            {
-
-            }
             column(Quantity; Quantity)
             {
                 Method = Sum;
             }
-
         }
     }
 }
-

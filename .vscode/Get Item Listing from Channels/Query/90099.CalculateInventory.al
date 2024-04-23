@@ -5,16 +5,15 @@ query 90099 "Calculate Inventory"
     {
         dataitem(Item_Ledger_Entry; "Item Ledger Entry")
         {
-
             column(Item_No_; "Item No.")
             {
 
             }
-            column(Variant_Code; "Variant Code")
+            column(Unit_of_Measure_Code; "Unit of Measure Code")
             {
 
             }
-            column(Location_Code; "Location Code")
+            column(Saleable_Location; "Saleable Location")
             {
 
             }
@@ -22,7 +21,6 @@ query 90099 "Calculate Inventory"
             {
                 Method = Sum;
             }
-
         }
     }
 }

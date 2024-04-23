@@ -108,10 +108,10 @@ page 90029 "Web Order Header API Card"
                 Rec.VALIDATE(City, SellToCustomer.City);
                 Rec.VALIDATE("Post Code", SellToCustomer."Post Code");
                 Rec.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
-                if SellToCustomer."Location Code" <> '' then
-                    Rec.validate("Location Code", SellToCustomer."Location Code")
+                if ChannelPartner.Location <> '' then
+                    Rec.Validate("Location Code", ChannelPartner.Location)
                 else
-                    Rec.Validate("Location Code", ChannelPartner.Location);
+                    Rec.validate("Location Code", SellToCustomer."Location Code");
 
                 Rec.Validate("MultiLine Order No.", Rec."MultiLine Order No.");
                 Rec.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
@@ -178,7 +178,7 @@ page 90029 "Web Order Header API Card"
             Rec."Package Tracking No." := Rec."Package Tracking No.";
             Rec."Web Shipping Agent" := Rec."Web Shipping Agent";
             Rec."Web Shipment Method" := Rec."Web Shipment Method";
-            Rec."Payment Method" := Rec."Payment Method";  //Added By Shubham 05082022
+            Rec."Payment Method" := Rec."Payment Method";
             Rec."Currency Code" := Rec."Currency Code";
             Rec.VALIDATE("Buyer Email", Rec."Buyer Email");
             Rec."Buyer Name" := Rec."Buyer Name";
@@ -189,12 +189,11 @@ page 90029 "Web Order Header API Card"
             Rec."Order Created On" := CurrentDateTime;
             Rec."User ID" := UserId;
             Rec."File Name" := 'API';
-            Rec.Validate("Order Amount", Rec."Order Amount");  //Added By Shubham 19072021
+            Rec.Validate("Order Amount", Rec."Order Amount");
             Rec.Validate("Order Discount Amount", Rec."Order Discount Amount");
             Rec.Validate("Fullfillment Channel", Rec."Fullfillment Channel");
             Rec.Validate("Web Customer No.", Rec."Web Customer No.");
             Rec.Validate("Order Status", Rec."Order Status");
-
 
             //Check Validation+++
             Sigma_SigConnectHeaderValidations(Rec);
@@ -222,9 +221,6 @@ page 90029 "Web Order Header API Card"
 
     trigger OnAfterGetRecord()
     var
-        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
-        L_OrderLevelResponse: Record "Order Level Response";
-        L_ProductLevelResponse: Record "Product Level Response";
         L_InsterimSalesLine: Record "Interim Sales Line";
     begin
         //Update Status in Interim Sales Header++
@@ -258,14 +254,7 @@ page 90029 "Web Order Header API Card"
         L_Item: Record Item;
         L_TradePartner: Record "Trade Partner";
         TotalItems: Integer;
-        ShippingAgent: Record "Shipping Agent";
         Countries: Record "Country/Region";
-        L_InterimSalesHeader: Record "Interim Sales Header";
-        L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-        L_Line: Record "Interim Sales Line";
-        L_CheckItemLicense: Codeunit "Check Item License";
-        L_AttributeCode: Code[20];
-        L_CompanyLicenseError: Text[100];
         L_CustRef: Record "Customer Reference";
         LineCount: Integer;
         ErrorCount: Integer;
@@ -287,7 +276,7 @@ page 90029 "Web Order Header API Card"
                     L_CustRef.SetRange("Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
                     L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
                     if NOT L_CustRef.FindFirst() then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Unauthorised Electronic Access - Contact Sigma', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -301,7 +290,7 @@ page 90029 "Web Order Header API Card"
                     L_CustRef.SetRange("ET Access Code", P_InterimSalesHeader."ET Access Code");
                     if L_CustRef.FindFirst() then begin
                         if L_CustRef.Locked = true then begin
-                            CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('cross reference record locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
+                            CU_WebOrderManagement.Sigma_InsertErrorLog('cross reference record locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ4', true, '');
                             L_ErrorRecorded := TRUE;
                         end;
                     end;
@@ -321,7 +310,7 @@ page 90029 "Web Order Header API Card"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 IF NOT L_Cust.GET(P_InterimSalesHeader."Sell-to Customer No.") THEN BEGIN
-                    CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer not on file', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
+                    CU_WebOrderManagement.Sigma_InsertErrorLog('Customer not on file', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ5', true, '');
                     L_ErrorRecorded := TRUE;
                 END;
             end;
@@ -332,7 +321,7 @@ page 90029 "Web Order Header API Card"
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer locked', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Customer locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -343,7 +332,7 @@ page 90029 "Web Order Header API Card"
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust.Blocked = L_Cust.Blocked::Ship then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer on Stop **', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ7', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Customer on Stop **', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ7', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -354,7 +343,7 @@ page 90029 "Web Order Header API Card"
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -377,7 +366,7 @@ page 90029 "Web Order Header API Card"
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     if L_Cust."Payment Terms Code" = 'COD' then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('COD Account *********', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('COD Account *********', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -388,7 +377,7 @@ page 90029 "Web Order Header API Card"
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Account Closed *****', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Account Closed *****', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -398,8 +387,8 @@ page 90029 "Web Order Header API Card"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust."Shipping Agent Code" = '' then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Delivery Schedule not assigned, contact Sigma', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ12', true, '');
+                    If (L_Cust."Shipping Agent Code" = '') or (L_Cust."Shipping Agent Service Code" = '') then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Delivery Schedule not assigned, contact Sigma', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ12', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;

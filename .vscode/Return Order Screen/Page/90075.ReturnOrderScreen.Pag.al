@@ -199,6 +199,7 @@ page 90075 "Return Order Screen"
                     whseRecpt: Record "Warehouse Receipt Header";
                     whserecptpage: Page "Warehouse Receipt";
                     Createsourcedoc: Codeunit "Whse.-Create Source Document";
+                    SalesWarehouseMgmt: Codeunit "Sales Warehouse Mgt.";
                     L_OrignalOrderid: Code[50];
                     L_OrignalOrderidLineWise: Code[50];
                     SH2: Record "Sales Header";
@@ -476,7 +477,7 @@ page 90075 "Return Order Screen"
                                 SL.SetRange(Type, SL.Type::Item);
                                 if SL.FindFirst() then
                                     repeat
-                                        Createsourcedoc.SalesLine2ReceiptLine(whseRecpt, SL)
+                                        SalesWarehouseMgmt.SalesLine2ReceiptLine(whseRecpt, SL)
                                     until SL.Next() = 0;
                             until SH.Next() = 0;
                         Clear(salesreturnlist);

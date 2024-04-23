@@ -205,7 +205,9 @@ page 90003 "Web Order List"
                     InterimSalesLine: Record "Interim Sales Line";
                 begin
                     Clear(InterimSalesHeader);
+                    InterimSalesHeader := Rec;
                     CurrPage.SetSelectionFilter(InterimSalesHeader);
+
                     if InterimSalesHeader.FindSet() then
                         repeat
                             InterimSalesLine.Reset();
@@ -216,7 +218,6 @@ page 90003 "Web Order List"
                             InterimSalesHeader.Delete(true);
                         until InterimSalesHeader.Next() = 0;
                 end;
-
             }
 
             // action("Update Reason Code")
@@ -312,30 +313,6 @@ page 90003 "Web Order List"
         //     //     begin
         //     //         L_Codeunit.Run();
         //     //     end;
-        //     // }
-        //     // action(BulkDelete)
-        //     // {
-        //     //     ApplicationArea = All;
-        //     //     Caption = 'Bulk Delete';
-        //     //     Visible = false;
-        //     //     trigger OnAction()
-        //     //     var
-        //     //         InterimSalesHeader: Record "Interim Sales Header";
-        //     //         InterimSalesLine: Record "Interim Sales Line";
-        //     //     begin
-        //     //         Clear(InterimSalesHeader);
-        //     //         CurrPage.SetSelectionFilter(InterimSalesHeader);
-        //     //         if InterimSalesHeader.FindSet() then
-        //     //             repeat
-        //     //                 InterimSalesLine.Reset();
-        //     //                 InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-        //     //                 InterimSalesLine.SetRange("Document Type", InterimSalesHeader."Document Type");
-        //     //                 if InterimSalesLine.FindSet() then
-        //     //                     InterimSalesLine.DeleteAll(true);
-        //     //                 InterimSalesHeader.Delete(true);
-        //     //             until InterimSalesHeader.Next() = 0;
-        //     //     end;
-
         //     // }
         //     // action(Process)
         //     // {
