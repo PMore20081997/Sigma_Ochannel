@@ -529,6 +529,11 @@ table 90005 "Handled Interim Sales Header"
             Editable = false;
             TableRelation = "Customer Price Group";
         }
+        field(90058; "Salesperson Code"; Code[20])
+        {
+            TableRelation = "Salesperson/Purchaser";
+            Caption = 'SalesPerson/Purchaser Code';
+        }
     }
 
     keys

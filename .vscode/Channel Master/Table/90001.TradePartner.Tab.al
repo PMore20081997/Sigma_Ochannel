@@ -305,12 +305,31 @@ table 90001 "Trade Partner"
 
         }
 
-
         field(50066; "Update Tracking Information"; Boolean)
         {
             DataClassification = ToBeClassified;
 
         }
+        field(50067; "Customer Trend Code"; Boolean)
+        {
+            trigger OnValidate()
+            var
+                L_TradPartner: Record "Trade Partner";
+            begin
+                if Rec."Customer Trend Code" = true then begin
+                    L_TradPartner.SetFilter(Code, '<>%1', Rec.Code);
+                    L_TradPartner.SetRange("Customer Trend Code", true);
+                    if L_TradPartner.FindFirst() then
+                        Error('Customer Trend Code should not be more than one');
+                end;
+            end;
+        }
+        field(50068; "Customer trends Order Nos"; Code[20])
+        {
+            //This is used at the time of Creating Temp Order++
+            TableRelation = "No. Series".Code;
+        }
+
 
     }
     keys

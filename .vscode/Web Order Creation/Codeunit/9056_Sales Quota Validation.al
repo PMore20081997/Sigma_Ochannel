@@ -1077,7 +1077,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -1087,7 +1087,7 @@ codeunit 90056 "Web Order Sales Quota"
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
                 L_DayWiseWebOrderQty.OPEN;
@@ -1109,7 +1109,7 @@ codeunit 90056 "Web Order Sales Quota"
 
                 //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
                 L_DayWiseShippedQty.OPEN;
@@ -1153,7 +1153,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -1163,7 +1163,7 @@ codeunit 90056 "Web Order Sales Quota"
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.OPEN;
@@ -1185,7 +1185,7 @@ codeunit 90056 "Web Order Sales Quota"
 
                 //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseShippedQty.OPEN;
@@ -1231,7 +1231,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -1241,7 +1241,7 @@ codeunit 90056 "Web Order Sales Quota"
                 L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
                 L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
                 L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseWebOrderQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseWebOrderQty.OPEN;
@@ -1263,7 +1263,7 @@ codeunit 90056 "Web Order Sales Quota"
 
                 //Permonth SHipped Qty++
                 L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-                //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+                L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
                 L_DayWiseShippedQty.SetFilter(Order_Date, '%1..%2', Sdate, Edate);
                 L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
                 L_DayWiseShippedQty.OPEN;
@@ -1865,7 +1865,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -1873,7 +1873,7 @@ codeunit 90056 "Web Order Sales Quota"
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
             L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-            //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseWebOrderQty.SETRANGE(L_DayWiseWebOrderQty.Item_Category_Code, ItemCat);
             L_DayWiseWebOrderQty.OPEN;
@@ -1895,7 +1895,7 @@ codeunit 90056 "Web Order Sales Quota"
 
             //PerDay SHipped Qty++
             L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-            //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SetRange(L_DayWiseShippedQty.Item_Category_Code, ItemCat);
             L_DayWiseShippedQty.OPEN;
@@ -1935,7 +1935,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -1943,7 +1943,7 @@ codeunit 90056 "Web Order Sales Quota"
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
             L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-            //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseWebOrderQty.OPEN;
@@ -1965,7 +1965,7 @@ codeunit 90056 "Web Order Sales Quota"
 
             //PerDay SHipped Qty++
             L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-            //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseShippedQty.OPEN;
@@ -2010,7 +2010,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -2018,7 +2018,7 @@ codeunit 90056 "Web Order Sales Quota"
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");//azhar
             L_DayWiseWebOrderQty.SETFILTER(L_DayWiseWebOrderQty.Doc_No, '<>%1', _InterimSalesHeader."No.");
             L_DayWiseWebOrderQty.SETRANGE(Sell_to_Customer_No, _InterimSalesLine."Sell-to Customer No.");
-            //L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseWebOrderQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseWebOrderQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseWebOrderQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseWebOrderQty.OPEN;
@@ -2040,7 +2040,7 @@ codeunit 90056 "Web Order Sales Quota"
 
             //PerDay SHipped Qty++
             L_DayWiseShippedQty.SETRANGE(Sell_to_Customer_No, _InterimSalesHeader."Sell-to Customer No.");
-            //L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
+            L_DayWiseShippedQty.SETRANGE(Ship_to_Code, _InterimSalesHeader."Ship-to Code");
             L_DayWiseShippedQty.SETRANGE(Order_Date, _InterimSalesHeader."Order Date");
             L_DayWiseShippedQty.SETRANGE(No, _InterimSalesLine."No.");
             L_DayWiseShippedQty.OPEN;
@@ -2414,7 +2414,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"Item Category");
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -2457,7 +2457,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::Item);
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
@@ -2677,7 +2677,7 @@ codeunit 90056 "Web Order Sales Quota"
         L_MaxOrderQty.SetRange("Sales Code", _InterimSalesHeader."Sell-to Customer No.");
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
-        //L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
+        L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
         L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN

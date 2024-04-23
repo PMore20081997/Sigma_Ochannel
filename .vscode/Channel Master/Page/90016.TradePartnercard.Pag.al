@@ -100,6 +100,18 @@ page 90016 "Trade Partner card"
                     ApplicationArea = All;
                 }
 
+                group("Customer trends")
+                {
+                    field("Customer Trend Code"; Rec."Customer Trend Code")
+                    {
+                        ApplicationArea = ALl;
+                    }
+                    field("Customer trends Order Nos"; REc."Customer trends Order Nos")
+                    {
+                        ApplicationArea = All;
+                    }
+                }
+
             }
 
 

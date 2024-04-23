@@ -63,7 +63,7 @@ codeunit 90019 "Manage Channel Customer List"
                                 InterimCustomer.Validate("Channel Code", TradePartner2.Code);
                                 InterimCustomer.Validate("No.", _Customer."No."); //For Sigma No field Consider as Customer No.
                                 InterimCustomer.Validate("Customer No.", _Customer."No.");
-                                InterimCustomer.Validate("Concerto Customer No.", _Customer."Concerto Customer No.");
+                                InterimCustomer.Validate("Concerto Customer No.", _Customer."No.");
                                 InterimCustomer.Validate(Name, _Customer.Name);
                                 InterimCustomer.Validate(Address, _Customer.Address);
                                 InterimCustomer.Validate("Address 2", _Customer."Address 2");
