@@ -208,6 +208,10 @@ xmlport 90015 "mio82"
                 {
 
                 }
+                textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                {
+
+                }
 
                 trigger OnAfterGetRecord()
                 var
@@ -441,10 +445,54 @@ xmlport 90015 "mio82"
                 trigger OnAfterGetRecord()
                 var
                     L_PurchReceiptLine: Record "Purch. Rcpt. Line";
+                    compInfo: Record "Company Information";
                 begin
-                    L_PurchReceiptLine.Get(Purch_Rcpt_Header."No.");
+                    if L_PurchReceiptLine.Get(Purch_Rcpt_Header."No.") then;
                     Supp_Code := Purch_Rcpt_Header."Buy-from Vendor No.";
-
+                    Prod_Code := L_PurchReceiptLine."No.";
+                    Depot_Code := '';
+                    Grn_No := L_PurchReceiptLine."Document No.";
+                    Prod_Qty := Format(L_PurchReceiptLine.Quantity);
+                    Grn_Qty := Format(L_PurchReceiptLine.Quantity);
+                    Qty_Desc := L_PurchReceiptLine."Unit of Measure";
+                    Pord_Value := '';
+                    Grn_Value := '';
+                    Price_Desc := '';
+                    Grn_Price := '';
+                    Receipt_Date := Format(Purch_Rcpt_Header."Posting Date");
+                    Due_Date := Format(Purch_Rcpt_Header."Due Date");
+                    Weight := '';
+                    // Period := Format(Date2DMY(Purch_Rcpt_Header."Posting Date", 2));
+                    Period := Format(Purch_Rcpt_Header."Posting Date", 0, '<Month Text>');
+                    Period := CopyStr(Period, 1, 3);
+                    if Purch_Rcpt_Header."Expected Receipt Date" <> 0D then begin
+                        Days_Late := Format(Today - Purch_Rcpt_Header."Expected Receipt Date");
+                    end else begin
+                        Days_Late := Format('');
+                    end;
+                    Late_Qty := '';
+                    Return_Qty := '';
+                    Claim_Qty := '';
+                    compInfo.Get();
+                    Company := compInfo.Name;
+                    Trans_Anal_6 := '';
+                    Account_Year := '';
+                    Account_Month := '';
+                    Sell_By_Date := '';
+                    Cost_in_Currency := '';
+                    Purch_Ord_No := Purch_Rcpt_Header."Order No.";
+                    Master_Ord_No := '';
+                    Sales_Ord_No := '';
+                    Sord_Line_No := '';
+                    Pord_Line_No := Format(L_PurchReceiptLine."Line No.");
+                    Pord_Line_Desc := L_PurchReceiptLine.Description;
+                    Order_Date := Format(Purch_Rcpt_Header."Order Date");
+                    Pord_FC_Value := Format(Purch_Rcpt_Header."Currency Factor");
+                    Pord_Exch_Rate := Format(Purch_Rcpt_Header."Currency Factor");
+                    GRN_Exch_Rate := Format(Purch_Rcpt_Header."Currency Code");
+                    Foreign_Curr_Code := Format(Purch_Rcpt_Header."Currency Code");
+                    Pord_Type := '';
+                    PO_Operator_Code := Purch_Rcpt_Header."Purchaser Code";
 
                 end;
 

@@ -16,6 +16,7 @@ xmlport 90001 "mio24"
     {
         textelement(Root)
         {
+
             tableelement(Item; Item)
             {
 
@@ -178,7 +179,7 @@ xmlport 90001 "mio24"
                     LPP_Cost := format(Item."Last Direct Cost");
                     Avg_Cost := format(Item."Unit Cost");
                     True_Cost := format(Item."Unit List Price");
-                    Min_Stock := LS_Date;
+                    Min_Stock := format(Item."Reorder Point");
 
                     Std_Cost := format(Item."Standard Cost");
                     Max_Stock := format(Item."Maximum Inventory");

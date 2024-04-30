@@ -16,6 +16,313 @@ xmlport 90002 "mio01"
     {
         textelement(Root)
         {
+            tableelement(Integer; Integer)
+
+            {
+                SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
+                textelement("Cust_Code_Header")
+                {
+
+                }
+
+                textelement("Cust_Name_Header")
+                {
+
+                }
+
+                textelement("Address_1_Header")
+                {
+
+                }
+
+                textelement("Address_2_Header")
+                {
+
+                }
+
+                textelement("Address_3_Header")
+                {
+
+                }
+
+                textelement("Postcode_Header")
+                {
+
+                }
+
+                textelement("Telephone_No_Header")
+                {
+
+                }
+
+                textelement("Fax_Number_Header")
+                {
+
+                }
+
+                textelement("Market_Code_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_3_Header")
+                {
+
+                }
+
+                textelement("Rep_Code_Header")
+                {
+
+                }
+
+                textelement("Terr_Man_Header")
+                {
+
+                }
+
+                textelement("Contract_Code_1_Header")
+                {
+
+                }
+
+                textelement("Top_Level_Header")
+                {
+
+                }
+
+                textelement("Contract_Code_2_Header")
+                {
+
+                }
+
+                textelement("Credit_Limit_Header")
+                {
+
+                }
+
+                textelement("Terms_Desc_Header")
+                {
+
+                }
+
+                textelement("Home_Export_Header")
+                {
+
+                }
+
+                textelement("Created_Date_Header")
+                {
+
+                }
+
+                textelement("Price_List_Header")
+                {
+
+                }
+
+                textelement("Cust_Disc_per_Header")
+                {
+
+                }
+
+                textelement("Stop_Ind_Header")
+                {
+
+                }
+
+                textelement("Op_Code_Header")
+                {
+
+                }
+
+                textelement("Service_Depot_Header")
+                {
+
+                }
+
+                textelement("COD_Ind_Header")
+                {
+
+                }
+
+                textelement("Bako_Cust_Band_Header")
+                {
+
+                }
+
+                textelement("Contract_Code_3_Header")
+                {
+
+                }
+
+                textelement("Contract_Code_4_Header")
+                {
+
+                }
+
+                textelement("Unit_Number_Header")
+                {
+
+                }
+
+                textelement("Sedes_Cust_Code_Header")
+                {
+
+                }
+
+                textelement("Nu_Care_Baseline_Header")
+                {
+
+                }
+
+                textelement("Closed_Header")
+                {
+
+                }
+
+                textelement("Cred_Cont_Header")
+                {
+
+                }
+
+                textelement("Default_Round_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_1_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_2_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_4_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_5_Header")
+                {
+
+                }
+
+                textelement("Cust_Anal_6_Header")
+                {
+
+                }
+
+                textelement("Curr_Code_Header")
+                {
+
+                }
+
+                textelement("Date_Last_Paid_Header")
+                {
+
+                }
+
+                textelement("Last_Pay_Amount_Header")
+                {
+
+                }
+
+                textelement("Email_Header")
+                {
+
+                }
+
+                textelement("Contact__Header")
+                {
+
+                }
+
+                textelement("Contact_Tel_Header")
+                {
+
+                }
+
+                textelement("Contact_Mobile_Header")
+                {
+
+                }
+
+                textelement("Contact_Email_Header")
+                {
+
+                }
+
+                textelement("Company_Header")
+                {
+
+                }
+
+                textelement("Country_Code_Header")
+                {
+
+                }
+
+                trigger OnAfterGetRecord()
+                var
+                    myInt: Integer;
+                begin
+                    "Cust_Code_Header" := 'Cust Code';
+                    "Cust_Name_Header" := 'Cust Name';
+                    "Address_1_Header" := 'Address 1';
+                    "Address_2_Header" := 'Address 2';
+                    "Address_3_Header" := 'Address 3';
+                    "Postcode_Header" := 'Postcode';
+                    "Telephone_No_Header" := 'Telephone No';
+                    "Fax_Number_Header" := 'Fax Number';
+                    "Market_Code_Header" := 'Market Code';
+                    "Cust_Anal_3_Header" := 'Cust Anal 3';
+                    "Rep_Code_Header" := 'Rep Code';
+                    "Terr_Man_Header" := 'Terr Man';
+                    "Contract_Code_1_Header" := 'Contract Code 1';
+                    "Top_Level_Header" := 'Top Level';
+                    "Contract_Code_2_Header" := 'Contract Code 2';
+                    "Credit_Limit_Header" := 'Credit Limit';
+                    "Terms_Desc_Header" := 'Terms Desc';
+                    "Home_Export_Header" := 'Home Export';
+                    "Created_Date_Header" := 'Created Date';
+                    "Price_List_Header" := 'Price List';
+                    "Cust_Disc_per_Header" := 'Cust Disc per';
+                    "Stop_Ind_Header" := 'Stop Ind';
+                    "Op_Code_Header" := 'Op Code';
+                    "Service_Depot_Header" := 'Service Depot';
+                    "COD_Ind_Header" := 'COD Ind';
+                    "Bako_Cust_Band_Header" := 'Bako Cust Band';
+                    "Contract_Code_3_Header" := 'Contract Code 3';
+                    "Contract_Code_4_Header" := 'Contract Code 4';
+                    "Unit_Number_Header" := 'Unit Number';
+                    "Sedes_Cust_Code_Header" := 'Sedes Cust Code';
+                    "Nu_Care_Baseline_Header" := 'Nu Care Baseline';
+                    "Closed_Header" := 'Closed';
+                    "Cred_Cont_Header" := 'Cred Cont';
+                    "Default_Round_Header" := 'Default Round';
+                    "Cust_Anal_1_Header" := 'Cust Anal 1';
+                    "Cust_Anal_2_Header" := 'Cust Anal 2';
+                    "Cust_Anal_4_Header" := 'Cust Anal 4';
+                    "Cust_Anal_5_Header" := 'Cust Anal 5';
+                    "Cust_Anal_6_Header" := 'Cust Anal 6';
+                    "Curr_Code_Header" := 'Curr Code';
+                    "Date_Last_Paid_Header" := 'Date Last Paid';
+                    "Last_Pay_Amount_Header" := 'Last Pay Amount';
+                    "Email_Header" := 'Email';
+                    "Contact__Header" := 'Contact';
+                    "Contact_Tel_Header" := 'Contact Tel';
+                    "Contact_Mobile_Header" := 'Contact Mobile';
+                    "Contact_Email_Header" := 'Contact Email';
+                    "Company_Header" := 'Company';
+                    "Country_Code_Header" := 'Country Code';
+
+
+                end;
+            }
+
             tableelement(Customer; Customer)
             {
 
@@ -326,11 +633,12 @@ xmlport 90002 "mio01"
                     Last_Pay_Amount := '';
                     Email := Customer."E-Mail";
                     companyInfo.Get();
-                    contact.Get(Customer."Primary Contact No.");
-                    Contact_ := contact.Name;
-                    Contact_Tel := Contact."Phone No.";
-                    Contact_Mobile := Contact."Mobile Phone No.";
-                    Contact_Email := contact."E-Mail";
+                    if contact.Get(Customer."Primary Contact No.") then begin
+                        Contact_ := contact.Name;
+                        Contact_Tel := Contact."Phone No.";
+                        Contact_Mobile := Contact."Mobile Phone No.";
+                        Contact_Email := contact."E-Mail";
+                    end;
                     Company := companyInfo.Name;
                     Country_Code := Customer."Currency Code";
 

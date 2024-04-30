@@ -54,7 +54,6 @@ xmlport 90008 "mio06cr"
                 {
                 }
 
-
                 trigger OnAfterGetRecord()
                 var
                     myInt: Integer;
@@ -63,11 +62,6 @@ xmlport 90008 "mio06cr"
                     Reason_Desc := Return_Reason.Description;
                     company := '';
                 end;
-
-
-
-
-
             }
         }
     }

@@ -145,13 +145,13 @@ codeunit 90082 "EDI Invoice"
                 DiscountAmt += salesinvoiceline."Line Discount Amount";
                 LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesinvoiceline.Quantity) + '^' + '2' + '^^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesinvoiceline."VAT %") + '^' + format(salesinvoiceline."Amount Including VAT" - salesinvoiceline.Amount) + '^^^' + CRLF[1];
                 LineInfo2 := '**P' + '^' + 'O' + '^' + salesinvoiceline."No." + '^' + gtin + '^^^^^^' + salesinvoiceline.Description + '^^' + PackSize + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
-                LineInfo3 := '**G^O^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^^^^^^^^^^' + CRLF[1];
+                LineInfo3 := '**G^O^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^^^^^^^^^^^^' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesinvoiceline.Next() = 0;
 
         end;
         HeaderInfoAll := '';
-        HeaderInfo1 := '**!' + '1.02.27' + 'G' + 'INV' + '0000' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
+        HeaderInfo1 := '**!' + '1.02.30' + 'G' + 'INV' + '0000' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + CompanyInfo.GLN + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + '^^^^' + CRLF[1];
         HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
@@ -298,7 +298,7 @@ codeunit 90082 "EDI Invoice"
 
 
             HeaderInfoAll := '';
-            HeaderInfo1 := '**!1.02.27GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
+            HeaderInfo1 := '**!1.02.30GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
             HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + PurchHeader."Purchaser Code" + ',' + P_vendor."No." + ',ORD,FINAL,N,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
             HeaderInfo3 := '*OH,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
             HeaderInfo4 := '**A,0,0,COMPANY,' + CompanyInfo.GLN + ',,,,' + PurchHeader."Purchaser Code" + ',,' + CompanyInfo.Name + ',' + CompanyInfo.Address + ',' + CompanyInfo."Address 2" + ',' + CompanyInfo.City + ',' + CompanyInfo.County + ',' + CompanyInfo."Post Code" + ',' + CompanyInfo."Country/Region Code" + ',' + CRLF[1];
@@ -358,6 +358,7 @@ codeunit 90082 "EDI Invoice"
         salesCRLine: Record "Sales Cr.Memo Line";
         item: Record Item;
         quantityInt: Integer;
+        VATPostingSetup: Record "VAT Posting Setup";
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -381,6 +382,13 @@ codeunit 90082 "EDI Invoice"
         Clear(HeaderInfo9);
         Clear(HeaderInfo10);
         Clear(HeaderInfo11);
+        clear(TaxCode);
+
+        VATPostingSetup.Reset();
+        VATPostingSetup.SetRange("VAT Bus. Posting Group", SalesCrHeader."VAT Bus. Posting Group");
+        if VATPostingSetup.FindFirst() then begin
+            TaxCode := VATPostingSetup."Tax Category";
+        end;
 
         CompanyInfo.get();
         Dateformat := Date2DMY(SalesCrHeader."Posting Date", 1);
@@ -416,37 +424,49 @@ codeunit 90082 "EDI Invoice"
         salesCRLine.SetRange(Type, salesCRLine.Type::Item);
         if salesCRLine.findset() then begin
             repeat
+                clear(TaxCodeLine);
+                VATPostingSetup.Reset();
+                VATPostingSetup.SetRange("VAT Bus. Posting Group", SalesCrHeader."VAT Bus. Posting Group");
+                VATPostingSetup.SetRange("VAT Prod. Posting Group", salesCRLine."VAT Prod. Posting Group");
+                if VATPostingSetup.FindFirst() then begin
+                    TaxCodeLine := VATPostingSetup."Tax Category";
+                end;
                 Clear(LineInfo1);
                 Clear(LineInfo2);
                 Clear(LineInfo3);
                 Clear(item);
                 Clear(gtin);
+
                 item.Reset();
                 if item.Get(salesCRLine."No.") then begin
                     gtin := item.GTIN;
                 end;
+
                 count += 1;
                 TotalAmtIncVat += salesCRLine."Amount Including VAT";
                 TotalAmtExcVat += salesCRLine.Amount;
+                TaxAmount := SalesCrHeader."Amount Including VAT" - SalesCrHeader.Amount;
                 DiscountAmt += salesCRLine."Line Discount Amount";
                 totalqty += salesCRLine.Quantity;
                 Evaluate(quantityInt, DelChr(Format(salesCRLine.Quantity), '<=>', ','));
-                LineInfo1 := '*OL,' + SalesCrHeader."Your Reference" + ',' + format(count) + ',' + format(salesCRLine."Line No.") + ',' + Format(quantityInt) + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
-                LineInfo2 := '**P,O,,,' + gtin + ',,,' + salesCRLine."No." + ',,' + salesCRLine.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
-                LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
+                LineInfo1 := '*CL,' + SalesCrHeader."Your Reference" + ',' + format(count) + ',,,,,,,,,,,,,' + Format(quantityInt) + ',,,' + format(salesCRLine."Unit Price") + ',' + Format(quantityInt * salesCRLine."Unit Price") + ',VAT,' + TaxCode + ',N,' + format(salesCRLine."Line Discount %") + ',,' + CRLF[1];
+                LineInfo2 := '**P,O,,' + gtin + ',,,,,,' + salesCRLine.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo3 := '**G,O,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesCRLine.Next() = 0;
 
-
             HeaderInfoAll := '';
-            HeaderInfo1 := '**!1.02.27GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
-            HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + SalesCrHeader."Salesperson Code" + ',' + P_customer."No." + ',ORD,FINAL,N,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
-            HeaderInfo3 := '*OH,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
-            HeaderInfo4 := '**A,0,0,COMPANY,' + CompanyInfo.GLN + ',,,,' + SalesCrHeader."Salesperson Code" + ',,' + CompanyInfo.Name + ',' + CompanyInfo.Address + ',' + CompanyInfo."Address 2" + ',' + CompanyInfo.City + ',' + CompanyInfo.County + ',' + CompanyInfo."Post Code" + ',' + CompanyInfo."Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo5 := '**A,0,0,SHIP TO,' + CompanyInfo.GLN + ',,,,' + SalesCrHeader."Salesperson Code" + ',,' + SalesCrHeader."Ship-to Name" + ',' + SalesCrHeader."Ship-to Address" + ',' + SalesCrHeader."Ship-to Address 2" + ',' + SalesCrHeader."Ship-to City" + ',' + SalesCrHeader."Ship-to County" + ',' + SalesCrHeader."Ship-to Post Code" + ',' + SalesCrHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo6 := '**A,0,0,PARTNER,' + P_customer.GLN + ',,,,,' + SalesCrHeader."Sell-to Customer No." + ',' + SalesCrHeader."Sell-to Customer Name" + ',' + P_customer.Address + ',' + P_customer."Address 2" + ',' + P_customer.City + ',' + P_customer.County + ',' + P_customer."Post Code" + ',' + P_customer."Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo10 := '*OT,' + SalesCrHeader."Your Reference" + ',' + Format(count) + ',' + format(totalqty) + CRLF[1];
-            HeaderInfo11 := '**@    ' + InvNo + '1    1     ' + Format(count);
+            HeaderInfo1 := '**!1.02.30GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
+            HeaderInfo2 := '**D,' + ',,,' + ',CRN,,O,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
+            HeaderInfo3 := '*CH,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,,,,,,' + ',' + format(TotalAmtExcVat) + ',' + format(TaxAmount) + ',,,B,,INVOICE,' + CRLF[1];
+            HeaderInfo4 := '*IH,' + SalesCrHeader."Applies-to Doc. No." + ',' + DMYPostingFormat + ',' + DMYPostingFormat + ',,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
+            HeaderInfo5 := '*DH,' + SalesCrHeader."External Document No." + ',' + DMYPostingFormat + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+            HeaderInfo6 := '*OH,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+            HeaderInfo7 := '**A,0,0,INVOICE TO,' + CompGLN + ',,,,,,' + SalesCrHeader."Bill-to Name" + ',' + SalesCrHeader."Bill-to Address" + ',' + SalesCrHeader."Bill-to Address 2" + ',' + SalesCrHeader."Bill-to City" + ',' + SalesCrHeader."Bill-to County" + ',' + SalesCrHeader."Bill-to Post Code" + ',' + SalesCrHeader."Bill-to Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo8 := '**A,0,0,SHIP TO,' + CompanyInfo.GLN + ',,,,' + SalesCrHeader."Salesperson Code" + ',,' + SalesCrHeader."Ship-to Name" + ',' + SalesCrHeader."Ship-to Address" + ',' + SalesCrHeader."Ship-to Address 2" + ',' + SalesCrHeader."Ship-to City" + ',' + SalesCrHeader."Ship-to County" + ',' + SalesCrHeader."Ship-to Post Code" + ',' + SalesCrHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
+            HeaderInfo9 := '*CS,' + SalesCrHeader."Your Reference" + ',VAT,' + TaxCode + ',' + format(SalesCrHeader."VAT Base Discount %") + ',' + format(count) + ',' + format(TotalAmtExcVat) + ',0.00,0.00,' + format(TotalAmtExcVat) + ',' + Format(TaxAmount) + ',' + Format(TotalAmtIncVat) + ',' + Format(TaxAmount) + CRLF[1];
+            HeaderInfo10 := '*CT,' + SalesCrHeader."Your Reference" + ',1,' + Format(count) + ',' + format(TotalAmtExcVat) + ',0.00,N,0.00,' + format(TotalAmtExcVat) + ',0.00,' + format(TotalAmtExcVat) + ',' + Format(TaxAmount) + ',' + Format(TotalAmtIncVat) + ',' + Format(TaxAmount) + ',,,,' + CRLF[1];
+            HeaderInfo11 := '**@0000' + InvNo + '1     1     ' + Format(count);
             HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
 
@@ -725,4 +745,6 @@ codeunit 90082 "EDI Invoice"
         TradepartnerRecord: Record "Trade Partner";
         PackSize: Code[20];
         totalqty: Decimal;
+        TaxCode: Code[10];
+        TaxCodeLine: Code[10];
 }
