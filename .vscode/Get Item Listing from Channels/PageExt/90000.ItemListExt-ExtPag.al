@@ -9,6 +9,7 @@ pageextension 90000 "ItemListExt" extends "Item List"
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
+                ToolTip = 'Sucessfull Electronic Orders';
             }
         }
         // Add changes to page layout here

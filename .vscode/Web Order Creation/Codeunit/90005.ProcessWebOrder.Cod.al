@@ -21,7 +21,8 @@ codeunit 90005 "Process Web Order"
 
             CalllType::"Consolidate Order":
                 begin
-                    CreateConsolidateSO.SendRequesttoCreateOrders(Rec);
+                    CreateConsolidateSO.ProcessTemporaryWebOrdertoSalesOrder(Rec);
+                    //CreateConsolidateSO.SendRequesttoCreateOrders(Rec);
                     //Commented Default Code++
                     // CreateConsolidateOrder(Rec);
                     // GenSetupChannels.Get();

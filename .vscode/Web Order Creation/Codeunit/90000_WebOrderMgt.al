@@ -1300,9 +1300,9 @@ codeunit 90000 "Web Order Mgt"
                 Rec_InterimLine.SetFilter("Reason Message", '%1', 'Successful');
                 if Rec_InterimLine.FindFirst() then begin
                     P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+                    P_InterimSalesHeader."Ready to process" := true;
                 end else begin
                     P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
-                    P_InterimSalesHeader."Ready to process" := true;
                 end;
             end;
 

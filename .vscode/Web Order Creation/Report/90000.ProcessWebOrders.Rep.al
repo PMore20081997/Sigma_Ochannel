@@ -317,6 +317,22 @@ report 90000 "Process Web Orders"
     {
     }
 
+    trigger OnPreReport()
+    var
+        L_CreateConsolidateSO: Codeunit "Create Consolidate SO";
+    begin
+        //Only For Sigma process++
+        L_CreateConsolidateSO.ClearVariable();
+    end;
+
+    trigger OnPostReport()
+    var
+        L_CreateConsolidateSO: Codeunit "Create Consolidate SO";
+    begin
+        //Only For Sigma process++
+        L_CreateConsolidateSO.ProcessTemporarySalesLinetoSalesOrder();
+    end;
+
 
     local procedure GetTotalQtyInWebOrder(var P_ISH: Record "Interim Sales Header"): Decimal
     var

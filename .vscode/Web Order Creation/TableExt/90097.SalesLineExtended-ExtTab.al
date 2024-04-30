@@ -39,6 +39,10 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
             DecimalPlaces = 0 : 5;
             Editable = false;
         }
+        field(90005; "Ship-to Code"; Code[20])
+        {
+
+        }
 
     }
 

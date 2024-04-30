@@ -37,12 +37,6 @@ page 90011 "Channel Item Listing"
                     Visible = false;
 
                 }
-                field("Channel Variant"; Rec."Channel Variant")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                    Caption = 'Variant Id';
-                }
 
                 field("Item No."; Rec."Item No.")
                 {
@@ -60,6 +54,12 @@ page 90011 "Channel Item Listing"
                 field("NAV Variant"; Rec."NAV Variant")
                 {
                     ApplicationArea = All;
+                }
+                field("Channel Variant"; Rec."Channel Variant")
+                {
+                    ApplicationArea = All;
+                    //Visible = false;
+                    Caption = 'Variant Id';
                 }
                 field("Item Category Code"; Rec."Item Category Code")
                 {

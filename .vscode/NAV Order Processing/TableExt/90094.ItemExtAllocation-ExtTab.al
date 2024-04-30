@@ -16,10 +16,10 @@ tableextension 90094 "Item Ext Allocation" extends Item
         }
         field(90101; "Qty. on Web Order"; Decimal)
         {
-            Caption = 'Web Orders Qty';
             FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(false)));
+            DecimalPlaces = 0 : 5;
             Editable = false;
-            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(true)));
         }
         field(90105; "Qty. on Resv Web Order"; Decimal)
         {

@@ -7,6 +7,318 @@ codeunit 90066 "Create Consolidate SO"
 
     var
         myInt: Integer;
+        Temporary_SalesLine: Record "Sales Line" temporary; //Dont Remove Temporary propert+++
+        Temporary_SalesLine_ForLoop: Record "Sales Line" temporary; //Dont Remove Temporary propert+++
+        G_TemporaryLineNo: Integer;
+        G_TemporaryLineNo_ForLoop: Integer;
+
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Consolidate Sales +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    procedure ClearVariable()
+    begin
+        Temporary_SalesLine.Reset();
+        Temporary_SalesLine.DeleteAll();
+        Temporary_SalesLine_ForLoop.Reset();
+        Temporary_SalesLine_ForLoop.DeleteAll();
+        Clear(G_TemporaryLineNo);
+        Clear(G_TemporaryLineNo_ForLoop);
+        Clear(G_SNo);
+    end;
+
+    procedure ProcessTemporaryWebOrdertoSalesOrder(_InterimSH: Record "Interim Sales Header")
+    begin
+        //Create Temporary Record++
+        CreateTemporaryOrder(_InterimSH);
+    end;
+
+    local procedure CreateTemporaryOrder(_InterimSH: Record "Interim Sales Header")
+    var
+        L_InterimSL: Record "Interim Sales Line";
+    begin
+        L_InterimSL.Reset();
+        L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
+        L_InterimSL.SetRange("Document No", _InterimSH."No.");
+        L_InterimSL.SetFilter("Reason Message", '%1', 'Successful'); //Need to check partialy quantity filter
+        if L_InterimSL.FindSet() then begin
+            repeat
+                //Create Lines++
+                CreateTemporarySalesLine(L_InterimSL, _InterimSH);
+
+                //Create Lines For Loop++
+                CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+            until L_InterimSL.Next() = 0;
+        end;
+    end;
+
+    local procedure CreateTemporarySalesLine(_InterimSalesLine: Record "Interim Sales Line"; _InterimSH: Record "Interim Sales Header")
+    var
+        L_Item: Record Item;
+    begin
+        Temporary_SalesLine.Reset();
+        Temporary_SalesLine.SetRange("Document Type", _InterimSH."Document Type"::Order);
+        Temporary_SalesLine.SetRange("Sell-to Customer No.", _InterimSH."Sell-to Customer No.");
+        Temporary_SalesLine.SetRange("Ship-to Code", _InterimSH."Ship-to Code");
+        Temporary_SalesLine.SetRange("Shipping Agent Code", _InterimSH."Shipping Agent Code");
+        Temporary_SalesLine.SetRange("Shipping Agent Service Code", _InterimSH."Shipping Agent Service Code");
+        Temporary_SalesLine.SetRange("Shipment Date", _InterimSH."Shipment Date");
+        Temporary_SalesLine.SetRange("No.", _InterimSalesLine."No.");
+        Temporary_SalesLine.SetRange("Location Code", _InterimSH."Location Code");
+        Temporary_SalesLine.SetRange(Type, Temporary_SalesLine.Type::Item);
+        if Temporary_SalesLine.FindFirst() then begin
+            Temporary_SalesLine.Quantity := Temporary_SalesLine.Quantity + _InterimSalesLine."Qty. to Deliver";
+
+            //Update KNAP Line+++
+            if (CheckKnaapCustomer(Temporary_SalesLine."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine."No.") = true) then begin
+                L_Item.Reset();
+                L_Item.SetRange("No.", Temporary_SalesLine."No.");
+                if L_Item.FindFirst() then begin
+                    if Temporary_SalesLine.Quantity <= L_Item."Knapp Threshold Quantity" then
+                        Temporary_SalesLine."Knapp Line" := true;
+                end;
+            end;
+
+            Temporary_SalesLine.Modify();
+        end else begin
+            G_TemporaryLineNo += 10000;
+            Temporary_SalesLine.Init();
+            Temporary_SalesLine."Document Type" := _InterimSH."Document Type"::Order;
+            Temporary_SalesLine.Type := Temporary_SalesLine.Type::Item;
+            Temporary_SalesLine."No." := _InterimSalesLine."No.";
+            Temporary_SalesLine."Line No." := G_TemporaryLineNo;
+            Temporary_SalesLine.Quantity := _InterimSalesLine."Qty. to Deliver";
+            Temporary_SalesLine."Sell-to Customer No." := _InterimSH."Sell-to Customer No.";
+            Temporary_SalesLine."Ship-to Code" := _InterimSH."Ship-to Code";
+            Temporary_SalesLine."Shipping Agent Code" := _InterimSH."Shipping Agent Code";
+            Temporary_SalesLine."Shipping Agent Service Code" := _InterimSH."Shipping Agent Service Code";
+            Temporary_SalesLine."Shipment Date" := _InterimSH."Shipment Date";
+            Temporary_SalesLine."Location Code" := _InterimSH."Location Code";
+            Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
+
+            //Update KNAP Line+++
+            if (CheckKnaapCustomer(Temporary_SalesLine."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine."No.") = true) then begin
+                L_Item.Reset();
+                L_Item.SetRange("No.", Temporary_SalesLine."No.");
+                if L_Item.FindFirst() then begin
+                    if Temporary_SalesLine.Quantity <= L_Item."Knapp Threshold Quantity" then
+                        Temporary_SalesLine."Knapp Line" := true;
+                end;
+            end;
+
+            Temporary_SalesLine.Insert();
+        end;
+    end;
+
+    local procedure CreateTemporarySalesLine_ForLoop(_InterimSalesLine: Record "Interim Sales Line"; _InterimSH: Record "Interim Sales Header")
+    var
+        L_Item: Record Item;
+    begin
+        Temporary_SalesLine_ForLoop.Reset();
+        Temporary_SalesLine_ForLoop.SetRange("Document Type", _InterimSH."Document Type"::Order);
+        Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", _InterimSH."Sell-to Customer No.");
+        Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", _InterimSH."Ship-to Code");
+        Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", _InterimSH."Shipping Agent Code");
+        Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", _InterimSH."Shipping Agent Service Code");
+        Temporary_SalesLine_ForLoop.SetRange("Shipment Date", _InterimSH."Shipment Date");
+        Temporary_SalesLine_ForLoop.SetRange("No.", _InterimSalesLine."No.");
+        Temporary_SalesLine_ForLoop.SetRange("Location Code", _InterimSH."Location Code");
+        Temporary_SalesLine_ForLoop.SetRange(Type, Temporary_SalesLine_ForLoop.Type::Item);
+        if Temporary_SalesLine_ForLoop.FindFirst() then begin
+            Temporary_SalesLine_ForLoop.Quantity := Temporary_SalesLine_ForLoop.Quantity + _InterimSalesLine."Qty. to Deliver";
+
+            //Update KNAP Line+++
+            if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
+                L_Item.Reset();
+                L_Item.SetRange("No.", Temporary_SalesLine_ForLoop."No.");
+                if L_Item.FindFirst() then begin
+                    if Temporary_SalesLine_ForLoop.Quantity <= L_Item."Knapp Threshold Quantity" then
+                        Temporary_SalesLine_ForLoop."Knapp Line" := true;
+                end;
+            end;
+
+            Temporary_SalesLine_ForLoop.Modify();
+        end else begin
+            G_TemporaryLineNo_ForLoop += 10000;
+            Temporary_SalesLine_ForLoop.Init();
+            Temporary_SalesLine_ForLoop."Document Type" := _InterimSH."Document Type"::Order;
+            Temporary_SalesLine_ForLoop.Type := Temporary_SalesLine_ForLoop.Type::Item;
+            Temporary_SalesLine_ForLoop."No." := _InterimSalesLine."No.";
+            Temporary_SalesLine_ForLoop."Line No." := G_TemporaryLineNo_ForLoop;
+            Temporary_SalesLine_ForLoop.Quantity := _InterimSalesLine."Qty. to Deliver";
+            Temporary_SalesLine_ForLoop."Sell-to Customer No." := _InterimSH."Sell-to Customer No.";
+            Temporary_SalesLine_ForLoop."Ship-to Code" := _InterimSH."Ship-to Code";
+            Temporary_SalesLine_ForLoop."Shipping Agent Code" := _InterimSH."Shipping Agent Code";
+            Temporary_SalesLine_ForLoop."Shipping Agent Service Code" := _InterimSH."Shipping Agent Service Code";
+            Temporary_SalesLine_ForLoop."Shipment Date" := _InterimSH."Shipment Date";
+            Temporary_SalesLine_ForLoop."Location Code" := _InterimSH."Location Code";
+            Temporary_SalesLine_ForLoop."FA Posting Date" := _InterimSH."Order Date";
+
+            //Update KNAP Line+++
+            if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
+                L_Item.Reset();
+                L_Item.SetRange("No.", Temporary_SalesLine_ForLoop."No.");
+                if L_Item.FindFirst() then begin
+                    if Temporary_SalesLine_ForLoop.Quantity <= L_Item."Knapp Threshold Quantity" then
+                        Temporary_SalesLine_ForLoop."Knapp Line" := true;
+                end;
+            end;
+
+            Temporary_SalesLine_ForLoop.Insert();
+        end;
+    end;
+
+
+    procedure CheckKnaapShippingAgentServiceFromInterimSalesHeader(_ShippingAgentCode: code[20]; _ShippingAgentServiceCode: Code[20]): Boolean
+    var
+        L_ShippingAgentService: Record "Shipping Agent Services";
+    begin
+        if (_ShippingAgentCode <> '') AND (_ShippingAgentServiceCode <> '') then begin
+            L_ShippingAgentService.Reset();
+            L_ShippingAgentService.SetRange("Shipping Agent Code", _ShippingAgentCode);
+            L_ShippingAgentService.SetRange(Code, _ShippingAgentServiceCode);
+            if L_ShippingAgentService.FindFirst() then begin
+                if L_ShippingAgentService."Knapp Round" = true then
+                    exit(true);
+            end;
+        end;
+
+        exit(false);
+    end;
+
+
+    procedure ProcessTemporarySalesLinetoSalesOrder()
+    begin
+        //For KNAAP Order+++
+        Temporary_SalesLine.Reset();
+        Temporary_SalesLine.SetRange("Knapp Line", true);
+        if Temporary_SalesLine.FindSet() then begin
+            repeat
+                Temporary_SalesLine_ForLoop.Reset();
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //Create Header++
+                    CreateSalesHeaderFromTemporary(Temporary_SalesLine);
+                    repeat
+                        //Create Line++
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                        Temporary_SalesLine_ForLoop.Modify();
+                    until Temporary_SalesLine_ForLoop.Next() = 0;
+                end;
+            until Temporary_SalesLine.Next() = 0;
+        end;
+
+        //For Manual Order++
+        Temporary_SalesLine.Reset();
+        Temporary_SalesLine.SetRange("Knapp Line", false);
+        if Temporary_SalesLine.FindSet() then begin
+            repeat
+                Temporary_SalesLine_ForLoop.Reset();
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //Create Header++
+                    CreateSalesHeaderFromTemporary(Temporary_SalesLine);
+                    repeat
+                        //Create Line++
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                        Temporary_SalesLine_ForLoop.Modify();
+                    until Temporary_SalesLine_ForLoop.Next() = 0;
+                end;
+            until Temporary_SalesLine.Next() = 0;
+        end;
+    end;
+
+    local procedure CreateSalesHeaderFromTemporary(_Temporary_SalesLine: Record "Sales Line" temporary)
+    var
+        SalesRecSetup: Record "Sales & Receivables Setup";
+        NoSeriesManagement: Codeunit NoSeriesManagement;
+        L_Customer: Record Customer;
+    begin
+        Clear(G_SNo);
+        SalesRecSetup.Get();
+        InsertedSH.Reset();
+        InsertedSH.Init();
+        InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
+        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
+        InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
+        InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");
+        InsertedSH.Validate("Order Date", _Temporary_SalesLine."FA Posting Date");
+        InsertedSH.Validate("Document Date", _Temporary_SalesLine."FA Posting Date");
+        InsertedSH.Validate("Knapp Order", _Temporary_SalesLine."Knapp Line");
+
+        L_Customer.Reset();
+        L_Customer.SetRange("No.", _Temporary_SalesLine."Sell-to Customer No.");
+        if L_Customer.FindFirst() then begin
+            InsertedSH."Knapp Customer" := L_Customer."Knapp Customer";
+            InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", L_Customer."Weekend Ship. Agnt. Serv. Code");
+        end;
+        InsertedSH.Validate("IRP Order", true);
+        InsertedSH.Validate("Web Order", true);
+        InsertedSH.Insert(true);
+
+        //Update Shipment date and Location++
+        InsertedSH.Validate("Shipping Agent Code", _Temporary_SalesLine."Shipping Agent Code");
+        InsertedSH.Validate("Shipping Agent Service Code", _Temporary_SalesLine."Shipping Agent Service Code");
+        InsertedSH.Validate("Location Code", _Temporary_SalesLine."Location Code");
+        InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date");
+        InsertedSH.Modify();
+        G_SalesHeaderCreated := true;
+        G_SNo := InsertedSH."No.";
+    end;
+
+
+    local procedure CreateSalesLineFromTemporary(_SalesOrderNo: Code[20]; _Temporary_SalesLine: Record "Sales Line" temporary)
+    var
+        InsertedSL: Record "Sales Line";
+        L_Item: Record Item;
+        CU_KnappGenerateDocuments: Codeunit "Knapp Generate Documents";
+        L_Location: Record Location;
+        L_Zone: Record Zone;
+    begin
+        InsertedSL.Reset();
+        InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
+        InsertedSL.SetRange("Document No.", _SalesOrderNo);
+        InsertedSL.SetRange("No.", _Temporary_SalesLine."No.");
+        InsertedSL.SetRange(Type, InsertedSL.Type::Item);
+        if InsertedSL.FindFirst() then begin
+            InsertedSL.Validate(Quantity, InsertedSL.Quantity + _Temporary_SalesLine.Quantity);
+            InsertedSL.Modify(true);
+        end else begin
+            InsertedSL.Init();
+            InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
+            InsertedSL.VALIDATE("Document No.", _SalesOrderNo);
+            InsertedSL.VALIDATE("Line No.", GetLastLineNo(_SalesOrderNo));
+            InsertedSL.VALIDATE(Type, InsertedSL.Type::Item);
+            InsertedSL.VALIDATE("No.", _Temporary_SalesLine."No.");
+            InsertedSL.VALIDATE(Quantity, _Temporary_SalesLine.Quantity);
+            InsertedSL.Validate("Location Code", _Temporary_SalesLine."Location Code");
+            InsertedSL.Validate("Knapp Line", _Temporary_SalesLine."Knapp Line");
+            L_Item.Reset();
+            L_Item.SetRange("No.", _Temporary_SalesLine."No.");
+            if L_Item.FindFirst() then
+                InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
+            InsertedSL.Insert(true);
+        end;
+    end;
+    //--------------------------------------------------------------Consolidate Sales -------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 
     procedure SendRequesttoCreateOrders(_InterimSH: Record "Interim Sales Header")
     var
@@ -150,7 +462,6 @@ codeunit 90066 "Create Consolidate SO"
         G_SalesHeaderCreated: Boolean;
         G_SNo: Code[20];
         InsertedSH: Record "Sales Header";
-        tes: page "Sales Order";
 
     local procedure CheckSalesHeaderExist_But_InventoryPick_And_PostedInventoryPickNotExist(_InterimSH: Record "Interim Sales Header"): Boolean
     var
