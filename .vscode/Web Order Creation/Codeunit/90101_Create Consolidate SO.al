@@ -67,6 +67,12 @@ codeunit 90066 "Create Consolidate SO"
         if Temporary_SalesLine.FindFirst() then begin
             Temporary_SalesLine.Quantity := Temporary_SalesLine.Quantity + _InterimSalesLine."Qty. to Deliver";
 
+            if Temporary_SalesLine."Temp Web Order No." <> '' then
+                Temporary_SalesLine."Temp Web Order No." := Temporary_SalesLine."Temp Web Order No." + '|' + _InterimSH."No."
+            else
+                Temporary_SalesLine."Temp Web Order No." := _InterimSH."No.";
+
+
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine."No.") = true) then begin
                 L_Item.Reset();
@@ -93,6 +99,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine."Shipment Date" := _InterimSH."Shipment Date";
             Temporary_SalesLine."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
+            Temporary_SalesLine."Temp Web Order No." := _InterimSH."No.";
+
 
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine."No.") = true) then begin
@@ -125,6 +133,11 @@ codeunit 90066 "Create Consolidate SO"
         if Temporary_SalesLine_ForLoop.FindFirst() then begin
             Temporary_SalesLine_ForLoop.Quantity := Temporary_SalesLine_ForLoop.Quantity + _InterimSalesLine."Qty. to Deliver";
 
+            if Temporary_SalesLine_ForLoop."Temp Web Order No." <> '' then
+                Temporary_SalesLine_ForLoop."Temp Web Order No." := Temporary_SalesLine_ForLoop."Temp Web Order No." + '|' + _InterimSH."No."
+            else
+                Temporary_SalesLine_ForLoop."Temp Web Order No." := _InterimSH."No.";
+
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
                 L_Item.Reset();
@@ -151,6 +164,7 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine_ForLoop."Shipment Date" := _InterimSH."Shipment Date";
             Temporary_SalesLine_ForLoop."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine_ForLoop."FA Posting Date" := _InterimSH."Order Date";
+            Temporary_SalesLine_ForLoop."Temp Web Order No." := _InterimSH."No.";
 
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
@@ -186,6 +200,8 @@ codeunit 90066 "Create Consolidate SO"
 
 
     procedure ProcessTemporarySalesLinetoSalesOrder()
+    var
+        L_InterimSalesHeader: Record "Interim Sales Header";
     begin
         //For KNAAP Order+++
         Temporary_SalesLine.Reset();
@@ -207,6 +223,10 @@ codeunit 90066 "Create Consolidate SO"
                     repeat
                         //Create Line++
                         CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+
+                        //Moved Into Web Buffer Table++
+                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
                         Temporary_SalesLine_ForLoop."System-Created Entry" := true;
                         Temporary_SalesLine_ForLoop.Modify();
                     until Temporary_SalesLine_ForLoop.Next() = 0;
@@ -234,6 +254,10 @@ codeunit 90066 "Create Consolidate SO"
                     repeat
                         //Create Line++
                         CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+
+                        //Moved Into Web Buffer Table++
+                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
                         Temporary_SalesLine_ForLoop."System-Created Entry" := true;
                         Temporary_SalesLine_ForLoop.Modify();
                     until Temporary_SalesLine_ForLoop.Next() = 0;
@@ -312,6 +336,29 @@ codeunit 90066 "Create Consolidate SO"
             if L_Item.FindFirst() then
                 InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
             InsertedSL.Insert(true);
+        end;
+    end;
+
+
+    local procedure InsertIntoTempHeaderFromTemporary(_Temporary_SalesLine_ForLoop: Record "Sales Line" temporary; SalesNo: Code[20])
+    var
+        TempSalesHeader: Record "Web Buffer";
+        L_InterimSalesHeader: Record "Interim Sales Header";
+    begin
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetFilter("No.", _Temporary_SalesLine_ForLoop."Temp Web Order No.");
+        if L_InterimSalesHeader.FindSet() then begin
+            repeat
+                TempSalesHeader.RESET;
+                TempSalesHeader.SETRANGE("Web Document No.", L_InterimSalesHeader."No.");
+                TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
+                IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
+                    TempSalesHeader.INIT;
+                    TempSalesHeader."Web Document No." := L_InterimSalesHeader."No.";
+                    TempSalesHeader."Sales Document No." := SalesNo;
+                    TempSalesHeader.INSERT;
+                END;
+            until L_InterimSalesHeader.Next() = 0;
         end;
     end;
     //--------------------------------------------------------------Consolidate Sales -------------------------------------------------------

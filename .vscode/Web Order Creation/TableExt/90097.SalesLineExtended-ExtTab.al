@@ -41,7 +41,11 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         }
         field(90005; "Ship-to Code"; Code[20])
         {
-
+            //FTP Integration
+        }
+        field(90006; "Temp Web Order No."; Code[2048])
+        {
+            //FTP Integration
         }
 
     }
