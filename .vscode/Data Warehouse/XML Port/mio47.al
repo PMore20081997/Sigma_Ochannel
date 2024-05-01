@@ -692,6 +692,7 @@ xmlport 90016 "mio47"
                     Sales_Credit_Memo_Line: Record "Sales Cr.Memo Line";
                     Sales_Credit_Memo_Header: Record "Sales Cr.Memo Header";
                     CompInfo: Record "Company Information";
+                    sales_Shipment_Header: Record "Sales Shipment Header";
 
                 begin
                     Cust_Code := Sales_Invoice_Header."Sell-to Customer No.";
@@ -701,7 +702,7 @@ xmlport 90016 "mio47"
                     Val := format(Sales_Invoice_Line.Amount);
                     Cst := format(Sales_Invoice_Line."Unit Cost (LCY)");
                     Del_Date := format(Sales_Invoice_Header."Shipment Date");
-                    Rep_Code := '';
+                    Rep_Code := Sales_Invoice_Header."Salesperson Code";
                     Terr_Man := '';
                     Price_Type := '';
                     Supp_Dep := Sales_Invoice_Header."Location Code";
@@ -744,6 +745,8 @@ xmlport 90016 "mio47"
                     Inv_Date := format(Sales_Invoice_Header."Document Date");
                     Cust_Ord_No := Sales_Invoice_Header."External Document No.";
                     Inv_No := Sales_Invoice_Header."No.";
+                    sales_Shipment_Header.Reset();
+
                     Promise_Date := '';
                     Account_Year := '';
                     Account_Month := '';
