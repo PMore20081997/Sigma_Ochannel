@@ -728,7 +728,42 @@ xmlport 90000 "mio10"
 
 
                 begin
-                    Supp_Code_Header := 'Supp code';
+                    Supp_Code_Header := 'Supp Code';
+                    Prod_Code_Header := 'Prod Code';
+                    DepotCode_Header := 'DepotCode';
+                    PurchOrdNo_Header := 'PurchOrdNo';
+                    PordQty_Header := 'PordQty';
+                    Pord_Qty_OS_Header := 'Pord Qty OS';
+                    Qty_Desc_Header := 'Qty Desc';
+                    Pord_Value_Header := 'Pord Value';
+                    Price_Desc_Header := 'Price Desc';
+                    Pord_List_Header := 'Pord List';
+                    Pord_Price_Header := 'Pord Price';
+                    Receipt_No_Header := 'Receipt No';
+                    OrderDate_Header := 'OrderDate';
+                    DueDate_Header := 'DueDate';
+                    Orig_Due_Date_Header := 'Orig Due Date';
+                    Period_Header := 'Period';
+                    Days_Late_Header := 'Days Late';
+                    Late_Qty_Header := 'Late Qty';
+                    Company_Header := 'Company';
+                    Trans_Anal_6_Header := 'Trans Anal 6';
+                    Account_Year_Header := 'Account Year';
+                    Account_Month_Header := 'Account Month';
+                    Sell_By_Date_Header := 'Sell By Date';
+                    Cost_in_Currency_Header := 'Cost in Currency';
+                    Weight_Header := 'Weight';
+                    Pord_Type_Header := 'Pord Type';
+                    State_Code_Header := 'State Code';
+                    Master_Ord_No_Header := 'Master Ord No';
+                    Sales_Ord_No_Header := 'Sales Ord No';
+                    Sord_Line_No_Header := 'Sord Line No';
+                    Pord_Line_No_Header := 'Pord Line No';
+                    Pord_Line_Desc_Header := 'Pord Line Desc';
+                    Exch_Rate_Header := 'Exch Rate';
+                    Foreign_Curr_Code_Header := 'Foreign Curr Code';
+                    PO_Operator_Code_Header := 'PO Operator Code';
+
 
                 end;
 
@@ -929,7 +964,7 @@ xmlport 90000 "mio10"
                     L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.");
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
                     Prod_Code := Purchase_Line."No.";
-                    DepotCode := '';
+                    DepotCode := L_PurchHeader."Location Code";
                     PurchOrdNo := L_PurchHeader."No.";
                     PordQty := format(Purchase_Line.Quantity);
                     Pord_Qty_OS := format(Purchase_Line."Outstanding Quantity");
@@ -937,20 +972,22 @@ xmlport 90000 "mio10"
                     Pord_Value := format(Purchase_Line."Outstanding Amount");
                     Price_Desc := '';
                     L_Item.Get(Purchase_Line."No.");
-                    Pord_List := format(L_Item."Unit List Price");
+                    Pord_List := format(L_Item."Unit Price");
                     Pord_Price := format(Purchase_Line."Direct Unit Cost");
                     Receipt_No := '';
                     OrderDate := format(L_PurchHeader."Order Date");
                     DueDate := Format(L_PurchHeader."Due Date");
                     Orig_Due_Date := Format(L_PurchHeader."Due Date");
-                    Period := format(L_PurchHeader."Order Date");
+                    Period := Format(L_PurchHeader."Order Date", 0, '<Month Text>');
+                    Period := CopyStr(Period, 1, 3);
                     Days_Late := '';
                     Late_Qty := '';
                     companyInfo.Get();
                     Company := companyInfo.Name;
                     Trans_Anal_6 := '';
-                    Account_Year := format(L_PurchHeader."Order Date");
-                    Account_Month := format(L_PurchHeader."Order Date");
+                    Account_Year := Format(Date2DMY(L_PurchHeader."Order Date", 3));
+                    Account_Year := CopyStr(Account_Year, 2, 4);
+                    Account_Month := Period;
                     Sell_By_Date := '00/00/00';
                     Cost_in_Currency := format(Purchase_Line."Unit Cost (LCY)");
                     Weight := '';
