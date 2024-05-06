@@ -3,21 +3,6 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
 
     fields
     {
-        modify(Quantity)
-        {
-            trigger OnAfterValidate()
-            var
-                RecUserSetup: Record "User Setup";
-                L_SalesHeader: Record "Sales Header";
-            begin
-                if (Rec.Quantity <> 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
-                    //Check Free Quantity ++
-                    if Rec.Quantity > TotalAvailableQtyForSaleable(Rec) then
-                        Error('Qty. should be less than Free Inventory %1. Order Number: %2, Line Number: %3, Item Number: %4', TotalAvailableQtyForSaleable(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
-                end;
-
-            end;
-        }
         field(90000; "Scanned Date"; DateTime)
         {
 
@@ -49,36 +34,4 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         }
 
     }
-
-
-    trigger OnBeforeDelete()
-    var
-        HISL: Record "Handled Interim Sales Line";
-    begin
-        if Rec.Type = Rec.Type::Item then begin
-            HISL.Reset();
-            HISL.SetRange("Document Type", HISL."Document Type"::Order);
-            HISL.SetRange(Type, HISL.Type::Item);
-            HISL.SetRange(HISL."Document No", Rec."Document No.");
-            HISL.SetRange(HISL."No.", Rec."No.");
-            if HISL.FindFirst() then begin
-                HISL.Delete(true);
-            end;
-        end;
-    end;
-
-    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Sales Line"): Decimal
-    var
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
-    begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty")
-            else
-                exit(0)
-        else
-            exit(0);
-    end;
 }

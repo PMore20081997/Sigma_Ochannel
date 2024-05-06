@@ -2,10 +2,18 @@ pageextension 90021 "OC Purchase Order Subform" extends "Purchase Order Subform"
 {
     layout
     {
-        // Add changes to page layout here
-        addafter(Allocated)
+        addbefore("Total Physical")
         {
-            field("Total Free"; TotalAvailableQty(Rec))
+            field("Web Orders Qty"; Rec."Web Orders Qty")
+            {
+                ApplicationArea = All;
+                DecimalPlaces = 0 : 5;
+                ToolTip = 'Sucessfull Electronic Orders';
+            }
+        }
+        addafter("Total Allocated on SO")
+        {
+            field("Total Free"; TotalFree(Rec))
             {
                 Caption = 'Total Free';
                 ApplicationArea = All;
@@ -16,22 +24,13 @@ pageextension 90021 "OC Purchase Order Subform" extends "Purchase Order Subform"
         }
         addafter("Allocated on SO")
         {
-            field("Free (Saleable)"; TotalAvailableQtyForSaleable(Rec))
+            field(Free; Free(Rec))
             {
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
                 Caption = 'Free';
-            }
-        }
-        addbefore("Direct Unit Cost")
-        {
-            field("Web Orders Qty"; Rec."Web Orders Qty")
-            {
-                ApplicationArea = All;
-                DecimalPlaces = 0 : 5;
-                ToolTip = 'Sucessfull Electronic Orders';
             }
         }
     }
@@ -44,39 +43,23 @@ pageextension 90021 "OC Purchase Order Subform" extends "Purchase Order Subform"
     var
         myInt: Integer;
 
-    local procedure TotalAvailableQty(_Rec: Record "Purchase Line"): Decimal
-    var
-        L_ILE: Record "Item Ledger Entry";
+    local procedure TotalFree(_Rec: Record "Purchase Line") _TotalFree: Decimal
     begin
-        //+++++Formula:- Total Free => "Total Physical - Total SO Allocated - Web Orders Qty"
-        //Inventory is Total Physical
-        //Total SO Allocated is Allocated
-        //Web Orders Qty is Web order Qty------
-        _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty");
-        if (_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty") > 0 then
-            exit(_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty")
+        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
+        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
+        if _TotalFree > 0 then
+            exit(_TotalFree)
         else
             exit(0);
     end;
 
 
-    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Purchase Line"): Decimal
-    var
-        ItemVariant: Record "Item Variant";
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
-        SaleableInventory: Decimal;
-        L_SalesLine: Record "Sales Line";
-        SaleableQtyOnSO: Decimal;
-        item: Record Item;
+    local procedure Free(_Rec: Record "Purchase Line") _Free: Decimal
     begin
-        //Free (Saleable) => Change the formula to "Physical (Saleable) - Allocated on SO (Saleable) - Web Orders Qty"
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)")
-            else
-                exit(0)
+        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
+        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
+        if _Free > 0 then
+            exit(_Free)
         else
             exit(0);
     end;

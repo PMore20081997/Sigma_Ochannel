@@ -7,17 +7,22 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
         {
             trigger OnAfterValidate()
             begin
-                if Rec."Qty. to be added to SO" <> 0 then begin
-                    CurrPage.Update(); //Update Current Quantity++
-                end;
+                CurrPage.Update();
             end;
         }
 
-
-        // Add changes to page layout here
-        addafter(Allocated)
+        addbefore("Total Physical")
         {
-            field("Total Free"; TotalAvailableQty(rec))
+            field("Web Orders Qty"; Rec."Web Orders Qty")
+            {
+                ApplicationArea = All;
+                Editable = false;
+            }
+        }
+
+        addafter("Total Allocated on SO")
+        {
+            field("Total Free"; G_CT_Function.TotalFree(rec))
             {
                 Caption = 'Total Free';
                 ApplicationArea = All;
@@ -30,7 +35,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
         addafter("Allocated on SO")
         {
-            field("Free"; TotalAvailableQtyForSealable(Rec))
+            field(Free; G_CT_Function.Free(Rec))
             {
                 ApplicationArea = All;
                 Editable = false;
@@ -85,42 +90,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
     var
         myInt: Integer;
         G_Colour: Text;
-
-    local procedure TotalAvailableQty(_Rec: Record CustomerTrends): Decimal
-    var
-        L_ILE: Record "Item Ledger Entry";
-    begin
-        //+++++Formula:- Total Free => "Total Physical - Total SO Allocated - Web Orders Qty"
-        //Inventory is Total Physical
-        //Total SO Allocated is Allocated
-        //Web Orders Qty is Web order Qty------
-        _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty", "Qty On Customer Trends");
-        if (_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends") > 0 then
-            exit(_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends")
-        else
-            exit(0);
-    end;
-
-    local procedure TotalAvailableQtyForSealable(_Rec: Record CustomerTrends): Decimal
-    var
-        ItemVariant: Record "Item Variant";
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
-        SaleableInventory: Decimal;
-        L_SalesLine: Record "Sales Line";
-        SaleableQtyOnSO: Decimal;
-        item: Record Item;
-    begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty", "Qty On Customer Trends");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty" - _Rec."Qty On Customer Trends")
-            else
-                exit(0)
-        else
-            exit(0);
-    end;
-
+        G_CT_Function: Codeunit "OC CT Function";
 
     trigger OnAfterGetCurrRecord()
     var

@@ -2,9 +2,42 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
 {
     layout
     {
-        addafter(Allocated)
+        modify(Quantity)
         {
-            field("Total Free"; TotalAvailableQty(rec))
+            trigger OnAfterValidate()
+            begin
+                //Ignore Validation From Web Order and Upload From Tempalte+++ 
+                if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
+                    if Rec.Quantity > CheckFreeQuantity_OnValidate(Rec) then
+                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                end;
+            end;
+        }
+        modify("Variant Code")
+        {
+            trigger OnAfterValidate()
+            begin
+                //Ignore Validation From Web Order and Upload From Tempalte+++
+                if (Rec.Quantity > 0) AND (Rec."Variant Code" <> '') AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
+                    if Rec.Quantity > CheckFreeQuantity_OnValidate(Rec) then
+                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                end;
+            end;
+        }
+
+        addbefore("Total Allocated on SO")
+        {
+            field("Web Orders Qty"; Rec."Web Orders Qty")
+            {
+                ApplicationArea = All;
+                DecimalPlaces = 0 : 5;
+                ToolTip = 'Sucessfull Electronic Orders';
+            }
+        }
+        addafter("Total Allocated on SO")
+        {
+
+            field("Total Free"; TotalFree(rec))
             {
                 Caption = 'Total Free';
                 ApplicationArea = All;
@@ -15,64 +48,16 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         }
         addafter("Allocated on SO")
         {
-            field("Free"; TotalAvailableQtyForSaleable(Rec))
+            field("Free"; Free(Rec))
             {
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
-                //Caption = 'Total Available Quantity(Saleable)';
                 Caption = 'Free';
             }
         }
-        addbefore("Variant Code mandatory")
-        {
-            field("Web Orders Qty"; Rec."Web Orders Qty")
-            {
-                ApplicationArea = All;
-                DecimalPlaces = 0 : 5;
-                ToolTip = 'Sucessfull Electronic Orders';
-            }
-        }
-        modify("Net Weight")
-        {
-            Visible = true;
-
-            trigger OnAfterValidate()
-            begin
-                Rec.TestStatusOpen();
-            end;
-        }
-
     }
-
-    // actions
-    // {
-    //     addafter("Related Information")
-    //     {
-    //         group("Integration")
-    //         {
-    //             action("Web Order")
-    //             {
-    //                 ApplicationArea = All;
-    //                 Image = Navigate;
-
-    //                 trigger OnAction()
-    //                 var
-    //                     L_WebOrderList: Page "Web Order List";
-    //                     L_InterimSalesHeader: Record "Interim Sales Header";
-    //                 begin
-    //                     Clear(L_WebOrderList);
-    //                     L_InterimSalesHeader.Reset();
-    //                     L_InterimSalesHeader.SetFilter("No.", SetWeborderFilter(Rec."Document No."));
-    //                     L_WebOrderList.SetTableView(L_InterimSalesHeader);
-    //                     L_WebOrderList.Run();
-    //                 end;
-    //             }
-    //         }
-    //     }
-    // }
-
     local procedure SetWeborderFilter(_SalesOrderNo: Code[20]): Text
     var
         L_WebBuffer: Record "Web Buffer";
@@ -109,32 +94,44 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         end;
     end;
 
-    local procedure TotalAvailableQty(_Rec: Record "Sales Line"): Decimal
-    var
-        L_ILE: Record "Item Ledger Entry";
+    local procedure TotalFree(_Rec: Record "Sales Line") _TotalFree: Decimal
     begin
-        //+++++Formula:- Total Free => "Total Physical - Total SO Allocated - Web Orders Qty"
-        //Inventory is Total Physical
-        //Total SO Allocated is Allocated
-        //Web Orders Qty is Web order Qty------
-        _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty");
-        if (_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty") > 0 then
-            exit(_Rec.Inventory - _Rec.Allocated - _Rec."Web Orders Qty")
+        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
+        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
+        if _TotalFree > 0 then
+            exit(_TotalFree)
         else
             exit(0);
     end;
 
-    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Sales Line"): Decimal
-    var
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
+    local procedure Free(_Rec: Record "Sales Line") _Free: Decimal
     begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty")
-            else
-                exit(0)
+        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
+        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
+        if _Free > 0 then
+            exit(_Free)
+        else
+            exit(0);
+    end;
+
+    local procedure CheckFreeQuantity_OnValidate(_Rec: Record "Sales Line") _Free: Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        _CurrentLineQty: Decimal;
+    begin
+        CurrPage.Update();
+        Clear(_CurrentLineQty);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", _Rec."Document Type");
+        L_SalesLine.SetRange("Document No.", _Rec."Document No.");
+        L_SalesLine.SetRange("Line No.", _Rec."Line No.");
+        if L_SalesLine.FindFirst() then
+            _CurrentLineQty := L_SalesLine.Quantity;
+
+        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
+        _Free := (_Rec.Physical + _CurrentLineQty) - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
+        if _Free > 0 then
+            exit(_Free)
         else
             exit(0);
     end;

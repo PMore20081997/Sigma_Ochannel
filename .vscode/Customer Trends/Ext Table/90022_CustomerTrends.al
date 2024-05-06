@@ -17,8 +17,8 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
             begin
                 if "Qty. to be added to SO" <> 0 then begin
                     //Check Free Quantity (For Both Promotion and Normal Item)++
-                    if "Qty. to be added to SO" > TotalAvailableQtyForSaleable(Rec) then
-                        Error('Qty. to be added to SO should be less than Free Inventory %1. Item Number: %2.', TotalAvailableQtyForSaleable(Rec), Rec."Item No.");
+                    if "Qty. to be added to SO" > G_CT_Function.Onvalidate_Free(Rec) then
+                        Error('Quantity to be added to SO should be less than Free Inventory: %1. Item Number: %2.', G_CT_Function.Onvalidate_Free(Rec), Rec."Item No.");
                 end;
             end;
         }
@@ -36,24 +36,6 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
 
     var
         myInt: Integer;
+        G_CT_Function: Codeunit "OC CT Function";
 
-    local procedure TotalAvailableQtyForSaleable(_Rec: Record CustomerTrends): Decimal
-    var
-        ItemVariant: Record "Item Variant";
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
-        SaleableInventory: Decimal;
-        L_SalesLine: Record "Sales Line";
-        SaleableQtyOnSO: Decimal;
-        item: Record Item;
-    begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)" - _Rec."Web Orders Qty")
-            else
-                exit(0)
-        else
-            exit(0);
-    end;
 }
