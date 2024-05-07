@@ -188,11 +188,6 @@ table 90011 "Channel Item Listing"
             CaptionML = ENU = 'Status', ENG = 'Status';
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
-            trigger OnLookup()
-            begin
-                IF Rec."Listing Status" = Rec."Listing Status"::Listed THEN
-                    ERROR('Unable to change status of this Record..Item already Listed on Channel');
-            end;
         }
 
         field(22; FeedType; Option)
@@ -297,7 +292,7 @@ table 90011 "Channel Item Listing"
             Description = 'CAS-10666-T7Q5W8';
             Caption = 'BC Variant';
         }
-        field(50002; "Channel Variant"; Text[50])  //Shubham Changed From Code[10] to Text[50] 11052021
+        field(50002; "Channel Variant"; Text[50])
         {
             DataClassification = ToBeClassified;
             Description = 'CAS-10666-T7Q5W8';
@@ -318,9 +313,38 @@ table 90011 "Channel Item Listing"
         {
             DecimalPlaces = 0 : 5;
         }
-
-
+        field(58; "Allcoated on SO"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true), "Variant Code" = FIELD("NAV Variant"), "Shipment Date" = field("Date Filter")));
+            DecimalPlaces = 0 : 5;
+            Editable = false;
+        }
+        field(59; "Web Orders Qty"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line".Quantity where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Message" = const('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            DecimalPlaces = 0 : 5;
+            Editable = false;
+        }
+        field(60; "Physical Inventory"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Variant Code" = FIELD("NAV Variant"), "Daily Priority Exist" = field("Variant Code Mandatory")));
+            DecimalPlaces = 0 : 5;
+            Editable = false;
+        }
+        field(61; "Variant Code Mandatory"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("Item Variant" where("Item No." = field("Item No.")));
+        }
+        field(62; "Date Filter"; Date)
+        {
+            FieldClass = FlowFilter;
+        }
     }
+
     keys
     {
         key(PK; "Channel Code", "Channel SKU", "ASIN No", "Channel Variant")
@@ -330,9 +354,7 @@ table 90011 "Channel Item Listing"
     }
 
     var
-        Rec1: Record "Channel Item Listing";
         SalesPrice: Record "Price List Line";
-        TradePartner: Record "Trade Partner";
         Item: Record Item;
 
 

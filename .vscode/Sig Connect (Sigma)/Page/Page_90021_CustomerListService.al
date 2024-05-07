@@ -61,6 +61,10 @@ page 90021 "Customer List Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Listing Status Setting"; Rec."Listing Status Setting")
+                {
+                    ApplicationArea = All;
+                }
                 field("Listing Status"; Rec."Listing Status")
                 {
                     ApplicationArea = All;
@@ -68,23 +72,4 @@ page 90021 "Customer List Service"
             }
         }
     }
-
-    actions
-    {
-        area(Processing)
-        {
-            action(ActionName)
-            {
-                ApplicationArea = All;
-
-                trigger OnAction()
-                begin
-
-                end;
-            }
-        }
-    }
-
-    var
-        myInt: Integer;
 }

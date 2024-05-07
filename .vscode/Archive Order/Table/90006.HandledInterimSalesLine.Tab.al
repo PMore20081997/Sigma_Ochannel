@@ -428,7 +428,11 @@ table 90006 "Handled Interim Sales Line"
         field(70049; "Sig Channel Item Id"; Integer)
         {
             DataClassification = ToBeClassified;
-
+        }
+        field(90053; "Variant Code Mandatory"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("Item Variant" where("Item No." = field("No.")));
         }
     }
 
@@ -443,29 +447,4 @@ table 90006 "Handled Interim Sales Line"
 
         }
     }
-
-    var
-        myInt: Integer;
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

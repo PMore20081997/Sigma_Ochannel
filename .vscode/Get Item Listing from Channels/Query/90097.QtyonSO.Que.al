@@ -17,6 +17,10 @@ query 90097 "Qty on SO"
             {
 
             }
+            column(Variant_Code; "Variant Code")
+            {
+
+            }
             column(Outstanding_Qty; "Outstanding Quantity")
             {
                 Method = Sum;

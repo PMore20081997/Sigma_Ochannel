@@ -27,7 +27,7 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = All;
                 }
-                field(Status; Rec.Status)
+                field("Listing Status Setting"; Rec.Status)
                 {
                     ApplicationArea = All;
                 }
@@ -63,7 +63,7 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = all;
                 }
-                field("BC Inventory"; rec."Channel Inventory")
+                field("Free Qty"; rec."Channel Inventory")
                 {
                     ApplicationArea = ALL;
                 }
@@ -71,7 +71,6 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = ALL;
                 }
-
             }
         }
     }

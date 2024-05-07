@@ -520,6 +520,11 @@ table 90004 "Interim Sales Line"
             DataClassification = ToBeClassified;
 
         }
+        field(90053; "Variant Code Mandatory"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("Item Variant" where("Item No." = field("No.")));
+        }
     }
 
     keys

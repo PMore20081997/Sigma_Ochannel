@@ -89,6 +89,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                             L_Item.CalcFields(Inventory);
                                             ChannelItemListing.Validate("Channel Inventory", L_Item.Inventory);
                                         end;
+                                        ChannelItemListing.Status := ChannelItemListing.Status::Active;
                                         ChannelItemListing.INSERT;
                                     END;
                                 until L_Variant.Next() = 0;
@@ -114,6 +115,7 @@ codeunit 90013 "Manage Channel Item Listing"
                                     ChannelItemListing.Validate("Pack Size", P_Item."Pack Size");
                                     P_Item.CalcFields(Inventory);
                                     ChannelItemListing.Validate("Channel Inventory", P_Item.Inventory);
+                                    ChannelItemListing.Status := ChannelItemListing.Status::Active;
                                     ChannelItemListing.INSERT;
                                 END;
                             end;

@@ -17,6 +17,11 @@ tableextension 90029 "OC Price List Line" extends "Price List Line"
                 end;
             end;
         }
+        field(90000; "Listing Status Setting"; Option)
+        {
+            OptionMembers = Inactive,Active;
+            OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
+        }
     }
 
     keys

@@ -195,21 +195,17 @@ page 90002 "Web Customer"
                     Caption = 'Job Title';
                     Visible = false;
                 }
+                field("Listing Status Setting"; Rec."Listing Status Setting")
+                {
+                    ApplicationArea = All;
+                }
                 field("Listing Status"; Rec."Listing Status")
                 {
                     ApplicationArea = All;
                 }
-
-
             }
         }
-        area(Factboxes)
-        {
-
-        }
     }
-    //var
-    //OrderRead: Codeunit "Process Order File-Innox";
 
     actions
     {

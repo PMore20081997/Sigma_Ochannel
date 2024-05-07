@@ -4,10 +4,8 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
     {
         addlast(sections)
         {
-
             group("Integration")
             {
-
                 Enabled = true;
 
                 group(CustomSetup)
@@ -26,17 +24,21 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                     }
                     action("Channel Item Listing")
                     {
-                        Caption = 'Items';
+                        Caption = 'Channel Items';
                         RunObject = page "Channel Item Listing";
                         ApplicationArea = All;
                     }
                     action("Web Customer")
                     {
-                        Caption = 'Customers';
+                        Caption = 'Channel Customers';
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }
-
+                    action("Channel Prices")
+                    {
+                        RunObject = page "Sales Price Lists";
+                        ApplicationArea = All;
+                    }
                     action("Shipping Agents")
                     {
                         RunObject = page "Shipping Agents";
@@ -141,7 +143,6 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                         ApplicationArea = all;
                         Caption = 'Return Scan';
                     }
-
                 }
             }
         }

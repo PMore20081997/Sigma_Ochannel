@@ -1,16 +1,11 @@
 pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
 {
-
     actions
     {
         addlast(sections)
         {
-
-
             group("Integration")
             {
-
-
                 action("Channel Partner")
                 {
                     RunObject = page "Trade Partner List";
@@ -23,9 +18,9 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                 }
                 action("Channel Item Listing")
                 {
+                    Caption = 'Channel Items';
                     RunObject = page "Channel Item Listing";
                     ApplicationArea = All;
-
                 }
                 action("Despatch Scan")
                 {
@@ -43,8 +38,14 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                 }
                 action("Web Customer")
                 {
+                    Caption = 'Channel Customers';
                     RunObject = page "Web Customer";
                     ApplicationArea = all;
+                }
+                action("Channel Prices")
+                {
+                    RunObject = page "Sales Price Lists";
+                    ApplicationArea = All;
                 }
                 action("General Setup - Channels")
                 {
@@ -57,7 +58,6 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                     RunObject = page "Shipping Agents";
                     ApplicationArea = all;
                 }
-
                 action("Shipment Tracking")
                 {
                     RunObject = page "Shipment Tracking";
@@ -104,9 +104,7 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                         ApplicationArea = all;
                     }
                 }
-
             }
         }
     }
-
 }

@@ -12,7 +12,6 @@ page 90015 "Customer Price Service"
         {
             group(GroupName)
             {
-
                 field("Source Type"; Rec."Source Type")
                 {
                     ApplicationArea = All;
@@ -37,15 +36,15 @@ page 90015 "Customer Price Service"
                 {
                     ApplicationArea = all;
                 }
-                field("Sync Price"; Rec."Sync Price")
+                field("Listing Status Setting"; Rec."Listing Status Setting")
+                {
+                    ApplicationArea = All;
+                }
+                field("Listing Status"; Rec."Sync Price")
                 {
                     ApplicationArea = All;
                 }
             }
         }
     }
-
-    var
-        myInt: Integer;
-        tes: Page 7016;
 }

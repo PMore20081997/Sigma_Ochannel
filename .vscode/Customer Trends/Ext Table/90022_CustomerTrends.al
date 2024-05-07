@@ -6,7 +6,7 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
         field(90022; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("Item No."), "Reason Message" = const('Successful'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("Item No."), "Reason Message" = const('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             Editable = false;
             DecimalPlaces = 0 : 5;
         }

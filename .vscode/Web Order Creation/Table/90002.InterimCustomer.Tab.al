@@ -289,7 +289,11 @@ table 90002 "Interim Customer"
         {
 
         }
-
+        field(52; "Listing Status Setting"; Option)
+        {
+            OptionMembers = Inactive,Active;
+            OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
+        }
     }
 
     keys

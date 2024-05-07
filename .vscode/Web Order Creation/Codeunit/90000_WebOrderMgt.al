@@ -931,6 +931,7 @@ codeunit 90000 "Web Order Mgt"
         L_OrderLevelResponse: Record "Order Level Response";
         Rec_InterimLine: Record "Interim Sales Line";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1148,71 +1149,71 @@ codeunit 90000 "Web Order Mgt"
                     //Response SEQ9++
                     if L_ErrorRecorded = false then begin
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
-                            L_Item.CalcFields(Inventory);
-                            if L_Item.Inventory = 0 then begin
+                            if CalculateQtyToDeliver(L_InterimSalesLine) = 0 then begin
                                 Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', false, '');
                                 L_ErrorRecorded := TRUE;
                             end;
                         end;
                     end;
 
-                    //Check Partial Quantity Ordered Response SEQ11++
-                    if L_ErrorRecorded = false then begin
-                        #Region Physical Inventory from Item Ledger Entry
-                        Clear(PhysicalInventory);
-                        CLEAR(Query_ItemLedgerEntry);
-                        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Item_No_, L_InterimSalesLine."No.");
-                        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Saleable_Location, true);
-                        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Unit_of_Measure_Code, L_InterimSalesLine."Unit of Measure Code");
+                //Check Partial Quantity Ordered Response SEQ11++
+                // if L_ErrorRecorded = false then begin
+                //     #Region Physical Inventory from Item Ledger Entry
+                //     Clear(PhysicalInventory);
+                //     CLEAR(L_ItemLedgerEntry);
+                //     L_ItemLedgerEntry.SETRANGE("Item No.", L_InterimSalesLine."No.");
+                //     L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+                //     L_ItemLedgerEntry.SETRANGE("Unit of Measure code", L_InterimSalesLine."Unit of Measure Code");
+                //     if L_ItemLedgerEntry.FindSet() then begin
+                //         repeat
+                //             L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
+                //             if L_ItemLedgerEntry."Daily Priority Exist" = true then
+                //                 PhysicalInventory += L_ItemLedgerEntry.Quantity;
+                //         until L_ItemLedgerEntry.Next() = 0;
+                //     end;
+                //     #endregion
 
-                        Query_ItemLedgerEntry.OPEN;
-                        IF Query_ItemLedgerEntry.READ THEN begin
-                            PhysicalInventory := Query_ItemLedgerEntry.Quantity;
-                        END;
-                        Query_ItemLedgerEntry.CLOSE;
-                        #endregion
+                //     #Region Quantity Allocated on Sales Order
+                //     Clear(Query_QtyonSO);
+                //     Clear(QtyOnSO);
+                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.No, L_InterimSalesLine."No.");
+                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
+                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, L_InterimSalesLine."Unit of Measure Code");
 
-                        #Region Quantity Allocated on Sales Order
-                        Clear(Query_QtyonSO);
-                        Clear(QtyOnSO);
-                        Query_QtyonSO.SETRANGE(Query_QtyonSO.No, L_InterimSalesLine."No.");
-                        Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
-                        Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, L_InterimSalesLine."Unit of Measure Code");
+                //     Query_QtyonSO.OPEN;
+                //     IF Query_QtyonSO.READ THEN begin
+                //         QtyOnSO := Query_QtyonSO.Outstanding_Qty;
+                //     END;
+                //     Query_QtyonSO.CLOSE;
+                //     #endregion
 
-                        Query_QtyonSO.OPEN;
-                        IF Query_QtyonSO.READ THEN begin
-                            QtyOnSO := Query_QtyonSO.Outstanding_Qty;
-                        END;
-                        Query_QtyonSO.CLOSE;
-                        #endregion
+                //     #Region Quantity Allocated on Web Orders
+                //     Clear(Query_QtyonWebOrder);
+                //     Clear(QtyonWebOrder);
+                //     Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, L_InterimSalesLine."No.");
 
-                        #Region Quantity Allocated on Web Orders
-                        Clear(Query_QtyonWebOrder);
-                        Clear(QtyonWebOrder);
-                        Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, L_InterimSalesLine."No.");
+                //     Query_QtyonWebOrder.OPEN;
+                //     IF Query_QtyonWebOrder.READ THEN begin
+                //         QtyonWebOrder := Query_QtyonWebOrder.Quantity - L_InterimSalesLine.Quantity;
+                //     END;
+                //     Query_QtyonWebOrder.CLOSE;
+                //     #endregion
 
-                        Query_QtyonWebOrder.OPEN;
-                        IF Query_QtyonWebOrder.READ THEN begin
-                            QtyonWebOrder := Query_QtyonWebOrder.Quantity - L_InterimSalesLine.Quantity;
-                        END;
-                        Query_QtyonWebOrder.CLOSE;
-                        #endregion
+                //     Clear(AvailableInventory);
+                //     AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
 
-                        Clear(AvailableInventory);
-                        AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
-
-                        if AvailableInventory > 0 then begin
-                            if AvailableInventory < L_InterimSalesLine.Quantity then begin
-                                Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
-                                L_ErrorRecorded := TRUE;
-                                L_InterimSalesLine."Qty. to Deliver" := AvailableInventory;
-                            end
-                            else begin
-                                L_InterimSalesLine."Qty. to Deliver" := L_InterimSalesLine.Quantity;
-                            end;
-                            L_InterimSalesLine.Modify();
-                        end;
-                    end;
+                //     if AvailableInventory > 0 then begin
+                //         if AvailableInventory < L_InterimSalesLine.Quantity then begin
+                //             Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
+                //             L_ErrorRecorded := TRUE;
+                //             L_InterimSalesLine."Qty. to Deliver" := AvailableInventory;
+                //         end
+                //         else begin
+                //             L_InterimSalesLine."Qty. to Deliver" := L_InterimSalesLine.Quantity;
+                //         end;
+                //         L_InterimSalesLine.Modify();
+                //     end;
+                // end;
                 //SEQ11--
 
                 UNTIL L_InterimSalesLine.NEXT = 0;
@@ -1269,8 +1270,14 @@ codeunit 90000 "Web Order Mgt"
                             end;
                         end;
                     end else begin
-                        L_Line."Reason Code" := 'Order Line Created';
-                        L_Line."Reason Message" := 'Successful';
+                        if (L_Line."Qty. to Deliver" > 0) and (L_Line."Qty. to Deliver" < L_Line.Quantity) then begin
+                            L_Line."Reason Code" := 'Partial Quantity Delivered';
+                            L_Line."Reason Message" := 'Partial Quantity Delivered';
+                        end
+                        else begin
+                            L_Line."Reason Code" := 'Order Line Created';
+                            L_Line."Reason Message" := 'Successful';
+                        end;
                     end;
 
                     L_Line.Modify();
@@ -1311,11 +1318,11 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    local procedure CalculateQtyToDeliver(var P_InterimSalesLine: Record "Interim Sales Line"): Decimal
+    procedure CalculateQtyToDeliver(var P_InterimSalesLine: Record "Interim Sales Line"): Decimal
     var
-        Query_ItemLedgerEntry: Query "Calculate Inventory";
         PhysicalInventory: Decimal;
-        Query_QtyonSO: Query "Qty on SO";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        L_SalesLine: Record "Sales Line";
         QtyOnSO: Decimal;
         Query_QtyonWebOrder: Query "Qty on Web";
         QtyonWebOrder: Decimal;
@@ -1323,40 +1330,46 @@ codeunit 90000 "Web Order Mgt"
     begin
         #Region Physical Inventory from Item Ledger Entry
         Clear(PhysicalInventory);
-        CLEAR(Query_ItemLedgerEntry);
-        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Item_No_, P_InterimSalesLine."No.");
-        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Saleable_Location, true);
-        Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Unit_of_Measure_Code, P_InterimSalesLine."Unit of Measure Code");
-
-        Query_ItemLedgerEntry.OPEN;
-        IF Query_ItemLedgerEntry.READ THEN begin
-            PhysicalInventory := Query_ItemLedgerEntry.Quantity;
-        END;
-        Query_ItemLedgerEntry.CLOSE;
+        CLEAR(L_ItemLedgerEntry);
+        P_InterimSalesLine.CalcFields("Variant Code Mandatory");
+        L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
+        L_ItemLedgerEntry.SETRANGE("Item No.", P_InterimSalesLine."No.");
+        L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+        L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            PhysicalInventory := L_ItemLedgerEntry.Quantity;
+        end;
         #endregion
 
         #Region Quantity Allocated on Sales Order
-        Clear(Query_QtyonSO);
+        Clear(L_SalesLine);
         Clear(QtyOnSO);
-        Query_QtyonSO.SETRANGE(Query_QtyonSO.No, P_InterimSalesLine."No.");
-        Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
-        Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, P_InterimSalesLine."Unit of Measure Code");
-
-        Query_QtyonSO.OPEN;
-        IF Query_QtyonSO.READ THEN begin
-            QtyOnSO := Query_QtyonSO.Outstanding_Qty;
-        END;
-        Query_QtyonSO.CLOSE;
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", P_InterimSalesLine."No.");
+        L_SalesLine.SETRANGE("Saleable Location", true);
+        L_SalesLine.SETRANGE("Unit of Measure Code", P_InterimSalesLine."Unit of Measure Code");
+        L_SalesLine.SetFilter("Outstanding Qty. (Base)", '>0');
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
         #endregion
 
         #Region Quantity Allocated on Web Orders
         Clear(Query_QtyonWebOrder);
         Clear(QtyonWebOrder);
         Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, P_InterimSalesLine."No.");
+        Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Sales_Order_Created, false);
+        Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Unit_of_Measure_Code, P_InterimSalesLine."Unit of Measure Code");
+        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Reason_Message, 'Successful|Partial Quantity Delivered');
 
         Query_QtyonWebOrder.OPEN;
         IF Query_QtyonWebOrder.READ THEN begin
-            QtyonWebOrder := Query_QtyonWebOrder.Quantity - P_InterimSalesLine.Quantity;
+            QtyonWebOrder := Query_QtyonWebOrder.Qty_to_Deliver - P_InterimSalesLine."Qty. to Deliver";
         END;
         Query_QtyonWebOrder.CLOSE;
         #endregion
@@ -1371,7 +1384,9 @@ codeunit 90000 "Web Order Mgt"
             else begin
                 exit(P_InterimSalesLine.Quantity);
             end;
-        end;
+        end
+        else
+            exit(0);
     end;
 
     procedure OrderValidations(var P_InterimSalesHeader: Record "Interim Sales Header")

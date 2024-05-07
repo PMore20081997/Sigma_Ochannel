@@ -86,6 +86,7 @@ codeunit 90019 "Manage Channel Customer List"
                                     InterimCustomer.Validate("Bill to Customer Name", _Customer.Name);
                                 end;
                                 InterimCustomer.Validate("Listing Status", InterimCustomer."Listing Status"::"Not Listed");
+                                InterimCustomer."Listing Status Setting" := InterimCustomer."Listing Status Setting"::Active;
                                 InterimCustomer.Insert();
                             end;
                         until _Customer.Next() = 0;

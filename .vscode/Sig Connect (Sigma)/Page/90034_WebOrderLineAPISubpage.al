@@ -139,14 +139,15 @@ page 90030 "Web Order Line Subpage"
             //Check Validation+++
             Sigma_LineValidations(MyHeader, Rec);
 
-            if AvailableInventory > 0 then begin
-                if AvailableInventory < Rec.Quantity then begin
-                    Rec."Qty. to Deliver" := AvailableInventory;
-                end
-                else begin
-                    Rec."Qty. to Deliver" := Rec.Quantity;
-                end;
-            end;
+            Rec."Qty. to Deliver" := CU_WebOrderManagement.CalculateQtyToDeliver(Rec);
+            // if AvailableInventory > 0 then begin
+            //     if AvailableInventory < Rec.Quantity then begin
+            //         Rec."Qty. to Deliver" := AvailableInventory;
+            //     end
+            //     else begin
+            //         Rec."Qty. to Deliver" := Rec.Quantity;
+            //     end;
+            // end;
 
             //Update Interim header and Interim Line Response Code and Message++
             //Line++
@@ -168,10 +169,15 @@ page 90030 "Web Order Line Subpage"
                     end;
                 end;
             end else begin
-                Rec."Reason Code" := 'Order Line Created';
-                Rec."Reason Message" := 'Successful';
+                if (Rec."Qty. to Deliver" > 0) and (Rec."Qty. to Deliver" < Rec.Quantity) then begin
+                    Rec."Reason Code" := 'Partial Quantity Delivered';
+                    Rec."Reason Message" := 'Partial Quantity Delivered';
+                end
+                else begin
+                    Rec."Reason Code" := 'Order Line Created';
+                    Rec."Reason Message" := 'Successful';
+                end;
             end;
-
         end;
     end;
 
@@ -228,6 +234,7 @@ page 90030 "Web Order Line Subpage"
         Query_QtyonWebOrder: Query "Qty on Web";
         QtyonWebOrder: Decimal;
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
@@ -306,8 +313,7 @@ page 90030 "Web Order Line Subpage"
             //Response SEQ9++
             if L_ErrorRecorded = false then begin
                 if L_Item.Get(_InterimSalesLine."No.") then begin
-                    L_Item.CalcFields(Inventory);
-                    if L_Item.Inventory = 0 then begin
+                    if CU_WebOrderManagement.CalculateQtyToDeliver(_InterimSalesLine) = 0 then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, _InterimSalesLine, 'SEQ9', false, '');
                         L_ErrorRecorded := TRUE;
                     end;
@@ -315,55 +321,56 @@ page 90030 "Web Order Line Subpage"
             end;
 
             //Check Partial Quantity Ordered Response SEQ11++
-            Clear(AvailableInventory);
-            if L_ErrorRecorded = false then begin
-                #Region Physical Inventory from Item Ledger Entry
-                Clear(PhysicalInventory);
-                CLEAR(Query_ItemLedgerEntry);
-                Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Item_No_, _InterimSalesLine."No.");
-                Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Saleable_Location, true);
-                Query_ItemLedgerEntry.SETRANGE(Query_ItemLedgerEntry.Unit_of_Measure_Code, _InterimSalesLine."Unit of Measure Code");
+            // Clear(AvailableInventory);
+            // if L_ErrorRecorded = false then begin
+            //     #Region Physical Inventory from Item Ledger Entry
+            //     Clear(PhysicalInventory);
+            //     CLEAR(L_ItemLedgerEntry);
+            //     L_ItemLedgerEntry.SETRANGE("Item No.", _InterimSalesLine."No.");
+            //     L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+            //     L_ItemLedgerEntry.SETRANGE("Unit of Measure code", _InterimSalesLine."Unit of Measure Code");
+            //     if L_ItemLedgerEntry.FindSet() then begin
+            //         repeat
+            //             L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
+            //             if L_ItemLedgerEntry."Daily Priority Exist" = true then
+            //                 PhysicalInventory += L_ItemLedgerEntry.Quantity;
+            //         until L_ItemLedgerEntry.Next() = 0;
+            //     end;
+            //     #endregion
 
-                Query_ItemLedgerEntry.OPEN;
-                IF Query_ItemLedgerEntry.READ THEN begin
-                    PhysicalInventory := Query_ItemLedgerEntry.Quantity;
-                END;
-                Query_ItemLedgerEntry.CLOSE;
-                #endregion
+            //     #Region Quantity Allocated on Sales Order
+            //     Clear(Query_QtyonSO);
+            //     Clear(QtyOnSO);
+            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.No, _InterimSalesLine."No.");
+            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
+            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, _InterimSalesLine."Unit of Measure Code");
 
-                #Region Quantity Allocated on Sales Order
-                Clear(Query_QtyonSO);
-                Clear(QtyOnSO);
-                Query_QtyonSO.SETRANGE(Query_QtyonSO.No, _InterimSalesLine."No.");
-                Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
-                Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, _InterimSalesLine."Unit of Measure Code");
+            //     Query_QtyonSO.OPEN;
+            //     IF Query_QtyonSO.READ THEN begin
+            //         QtyOnSO := Query_QtyonSO.Outstanding_Qty;
+            //     END;
+            //     Query_QtyonSO.CLOSE;
+            //     #endregion
 
-                Query_QtyonSO.OPEN;
-                IF Query_QtyonSO.READ THEN begin
-                    QtyOnSO := Query_QtyonSO.Outstanding_Qty;
-                END;
-                Query_QtyonSO.CLOSE;
-                #endregion
+            //     #Region Quantity Allocated on Web Orders
+            //     Clear(Query_QtyonWebOrder);
+            //     Clear(QtyonWebOrder);
+            //     Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, _InterimSalesLine."No.");
 
-                #Region Quantity Allocated on Web Orders
-                Clear(Query_QtyonWebOrder);
-                Clear(QtyonWebOrder);
-                Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, _InterimSalesLine."No.");
+            //     Query_QtyonWebOrder.OPEN;
+            //     IF Query_QtyonWebOrder.READ THEN begin
+            //         QtyonWebOrder := Query_QtyonWebOrder.Quantity - _InterimSalesLine.Quantity;
+            //     END;
+            //     Query_QtyonWebOrder.CLOSE;
+            //     #endregion
 
-                Query_QtyonWebOrder.OPEN;
-                IF Query_QtyonWebOrder.READ THEN begin
-                    QtyonWebOrder := Query_QtyonWebOrder.Quantity - _InterimSalesLine.Quantity;
-                END;
-                Query_QtyonWebOrder.CLOSE;
-                #endregion
+            //     AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
 
-                AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
-
-                if (AvailableInventory > 0) and (AvailableInventory < _InterimSalesLine.Quantity) then begin
-                    CU_WebOrderManagement.Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, _InterimSalesLine, 'SEQ11', false, '');
-                    L_ErrorRecorded := TRUE;
-                end;
-            end;
+            //     if (AvailableInventory > 0) and (AvailableInventory < _InterimSalesLine.Quantity) then begin
+            //         CU_WebOrderManagement.Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, _InterimSalesLine, 'SEQ11', false, '');
+            //         L_ErrorRecorded := TRUE;
+            //     end;
+            // end;
         end;
     end;
 }

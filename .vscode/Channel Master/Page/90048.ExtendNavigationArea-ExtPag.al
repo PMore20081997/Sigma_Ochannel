@@ -2,18 +2,14 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
 {
     actions
     {
-
         addlast(sections)
         {
-
             group("Integration")
             {
-
                 Enabled = true;
 
                 group(Setup)
                 {
-
                     action("Channel Partner")
                     {
                         RunObject = page "Trade Partner List";
@@ -26,17 +22,21 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                     }
                     action("Channel Item Listing")
                     {
-                        Caption = 'Items';
+                        Caption = 'Channel Items';
                         RunObject = page "Channel Item Listing";
                         ApplicationArea = All;
                     }
                     action("Web Customer")
                     {
-                        Caption = 'Customers';
+                        Caption = 'Channel Customers';
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }
-
+                    action("Channel Prices")
+                    {
+                        RunObject = page "Sales Price Lists";
+                        ApplicationArea = All;
+                    }
                     action("Shipping Agents")
                     {
                         RunObject = page "Shipping Agents";
@@ -100,7 +100,6 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         ApplicationArea = All;
                     }
                 }
-
                 Group(Warehouse)
                 {
                     Visible = false;
@@ -121,7 +120,6 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         ApplicationArea = all;
                         Caption = 'Scanned Entries';
                     }
-
                     action("Handled Scanned Entries")
                     {
                         RunObject = page "Archived Scanned Entries";
@@ -134,10 +132,8 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         ApplicationArea = all;
                         Caption = 'Return Scan';
                     }
-
                 }
             }
         }
     }
-
 }

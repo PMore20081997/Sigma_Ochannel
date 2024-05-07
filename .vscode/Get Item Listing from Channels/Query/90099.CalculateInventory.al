@@ -17,6 +17,10 @@ query 90099 "Calculate Inventory"
             {
 
             }
+            column(Daily_Priority_Exist; "Daily Priority Exist")
+            {
+
+            }
             column(Quantity; Quantity)
             {
                 Method = Sum;
