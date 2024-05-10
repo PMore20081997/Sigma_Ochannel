@@ -6,7 +6,7 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
         field(90022; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("Item No."), "Reason Message" = const('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("Item No."), "Reason Message" = filter('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             Editable = false;
             DecimalPlaces = 0 : 5;
         }
@@ -17,8 +17,8 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
             begin
                 if "Qty. to be added to SO" <> 0 then begin
                     //Check Free Quantity (For Both Promotion and Normal Item)++
-                    if "Qty. to be added to SO" > G_CT_Function.Onvalidate_Free(Rec) then
-                        Error('Quantity to be added to SO should be less than Free Inventory: %1. Item Number: %2.', G_CT_Function.Onvalidate_Free(Rec), Rec."Item No.");
+                    if "Qty. to be added to SO" > G_CT_Function.CT_Onvalidate_Free(Rec) then
+                        Error('Quantity to be added to SO should be less than Free Inventory: %1. Item Number: %2.', G_CT_Function.CT_Onvalidate_Free(Rec), Rec."Item No.");
                 end;
             end;
         }
@@ -36,6 +36,6 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
 
     var
         myInt: Integer;
-        G_CT_Function: Codeunit "OC CT Function";
+        G_CT_Function: Codeunit "Inventory Calculation";
 
 }

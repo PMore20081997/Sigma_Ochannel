@@ -7,9 +7,10 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
             trigger OnAfterValidate()
             begin
                 //Ignore Validation From Web Order and Upload From Tempalte+++ 
+                CurrPage.Update();
                 if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
-                    if Rec.Quantity > CheckFreeQuantity_OnValidate(Rec) then
-                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                    if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
+                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
                 end;
             end;
         }
@@ -18,9 +19,10 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
             trigger OnAfterValidate()
             begin
                 //Ignore Validation From Web Order and Upload From Tempalte+++
-                if (Rec.Quantity > 0) AND (Rec."Variant Code" <> '') AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
-                    if Rec.Quantity > CheckFreeQuantity_OnValidate(Rec) then
-                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                CurrPage.Update();
+                if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
+                    if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
+                        Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
                 end;
             end;
         }
@@ -37,7 +39,7 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         addafter("Total Allocated on SO")
         {
 
-            field("Total Free"; TotalFree(rec))
+            field("Total Free"; G_CT_Function.Sales_TotalFree(rec))
             {
                 Caption = 'Total Free';
                 ApplicationArea = All;
@@ -48,7 +50,7 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         }
         addafter("Allocated on SO")
         {
-            field("Free"; Free(Rec))
+            field("Free"; G_CT_Function.Sales_Free(Rec))
             {
                 ApplicationArea = All;
                 Editable = false;
@@ -94,45 +96,7 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         end;
     end;
 
-    local procedure TotalFree(_Rec: Record "Sales Line") _TotalFree: Decimal
-    begin
-        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
-        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
-        if _TotalFree > 0 then
-            exit(_TotalFree)
-        else
-            exit(0);
-    end;
-
-    local procedure Free(_Rec: Record "Sales Line") _Free: Decimal
-    begin
-        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
-        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-    end;
-
-    local procedure CheckFreeQuantity_OnValidate(_Rec: Record "Sales Line") _Free: Decimal
     var
-        L_SalesLine: Record "Sales Line";
-        _CurrentLineQty: Decimal;
-    begin
-        CurrPage.Update();
-        Clear(_CurrentLineQty);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", _Rec."Document Type");
-        L_SalesLine.SetRange("Document No.", _Rec."Document No.");
-        L_SalesLine.SetRange("Line No.", _Rec."Line No.");
-        if L_SalesLine.FindFirst() then
-            _CurrentLineQty := L_SalesLine.Quantity;
+        G_CT_Function: Codeunit "Inventory Calculation";
 
-        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
-        _Free := (_Rec.Physical + _CurrentLineQty) - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-    end;
 }

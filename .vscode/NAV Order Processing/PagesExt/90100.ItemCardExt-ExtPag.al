@@ -2,6 +2,19 @@ pageextension 90100 "ItemCardExt" extends "Item Card"
 {
     layout
     {
+
+        addfirst(factboxes)
+        {
+
+            part("Lot By Item From ILE"; "Lot By Item From ILE")
+            {
+                Caption = 'Lot By Item';
+                SubPageLink = "Item No." = field("No.");
+                ApplicationArea = all;
+            }
+
+        }
+
         addafter("Base Unit of Measure")
         {
             field("WebOrder Status"; Rec."WebOrder Status")

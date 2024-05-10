@@ -3,6 +3,48 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
 
     fields
     {
+        modify(Quantity)
+        {
+            trigger OnAfterValidate()
+            var
+                L_SalesHeader: Record "Sales Header";
+            begin
+                //Only for Sales Order Template+++
+                L_SalesHeader.Reset();
+                L_SalesHeader.SetRange("Document Type", Rec."Document Type");
+                L_SalesHeader.SetRange("No.", Rec."Document No.");
+                if L_SalesHeader.FindFirst() then begin
+                    if L_SalesHeader."Sheet Name" <> '' then begin
+                        if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
+                            if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
+                                Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                        end;
+                    end;
+                end;
+            end;
+        }
+
+        modify("Variant Code")
+        {
+            trigger OnAfterValidate()
+            var
+                L_SalesHeader: Record "Sales Header";
+            begin
+                //Only for Sales Order Template+++
+                L_SalesHeader.Reset();
+                L_SalesHeader.SetRange("Document Type", Rec."Document Type");
+                L_SalesHeader.SetRange("No.", Rec."Document No.");
+                if L_SalesHeader.FindFirst() then begin
+                    if L_SalesHeader."Sheet Name" <> '' then begin
+                        if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
+                            if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
+                                Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                        end;
+                    end;
+                end;
+            end;
+        }
+
         field(90000; "Scanned Date"; DateTime)
         {
 
@@ -20,7 +62,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         field(90004; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = const('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("No."), "Reason Message" = filter('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             DecimalPlaces = 0 : 5;
             Editable = false;
         }
@@ -33,5 +75,8 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
             //FTP Integration
         }
 
+
     }
+    var
+        G_CT_Function: Codeunit "Inventory Calculation";
 }

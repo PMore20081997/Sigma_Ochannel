@@ -22,7 +22,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
         addafter("Total Allocated on SO")
         {
-            field("Total Free"; G_CT_Function.TotalFree(rec))
+            field("Total Free"; G_CT_Function.CT_TotalFree(rec))
             {
                 Caption = 'Total Free';
                 ApplicationArea = All;
@@ -35,7 +35,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
         addafter("Allocated on SO")
         {
-            field(Free; G_CT_Function.Free(Rec))
+            field(Free; G_CT_Function.CT_Free(Rec))
             {
                 ApplicationArea = All;
                 Editable = false;
@@ -90,7 +90,7 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
     var
         myInt: Integer;
         G_Colour: Text;
-        G_CT_Function: Codeunit "OC CT Function";
+        G_CT_Function: Codeunit "Inventory Calculation";
 
     trigger OnAfterGetCurrRecord()
     var
