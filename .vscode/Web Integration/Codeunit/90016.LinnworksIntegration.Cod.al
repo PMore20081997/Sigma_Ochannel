@@ -344,7 +344,7 @@ codeunit 90016 "Linnworks Integration"
             InterimSalesHeader.Validate("Ship-to County", copystr(GetJsonvalue(Address, 'Region').AsText(), 1, 30));
             InterimSalesHeader."Ship-to County" := CopyStr(GetJsonToken(Address, 'Region').AsValue().AsText(), 1, 30);
         end;
-        InterimSalesHeader.status := InterimSalesHeader.status::"In Progress";
+        InterimSalesHeader.status := InterimSalesHeader.status::Accepted;
 
         InterimSalesHeader.Insert();
     end;

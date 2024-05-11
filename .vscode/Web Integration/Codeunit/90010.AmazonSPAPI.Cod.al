@@ -194,7 +194,7 @@ codeunit 90010 "Amazon SP API"
 
                     InterimSalesHeader."Document Type" := InterimSalesHeader."Document Type"::Order;
                     InterimSalesHeader."Trade Partner Code" := ChannelCode;
-                    InterimSalesHeader.Status := InterimSalesHeader.Status::"In Progress";
+                    InterimSalesHeader.Status := InterimSalesHeader.Status::Accepted;
                     InterimSalesHeader."File Name" := FileName;
                     InterimSalesHeader.VALIDATE("Pickup Date", TODAY + 1);
                     InterimSalesHeader.VALIDATE("Pickup Time", 170000T);

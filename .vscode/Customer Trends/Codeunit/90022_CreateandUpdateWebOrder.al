@@ -146,7 +146,7 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader.Init();
         L_InterimSalesHeader.Validate("Document Type", P_InterimSalesHeader."Document Type"::Order);
         L_InterimSalesHeader.Validate("No.", NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE));
-        L_InterimSalesHeader.VALIDATE(Status, P_InterimSalesHeader.Status::"In Progress");
+        L_InterimSalesHeader.VALIDATE(Status, P_InterimSalesHeader.Status::Accepted);
         L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
         L_InterimSalesHeader.validate("Document Date", WorkDate);
         L_InterimSalesHeader.Validate("Order Date", P_InterimSalesHeader."Order Date");

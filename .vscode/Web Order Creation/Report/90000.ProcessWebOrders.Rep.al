@@ -16,8 +16,8 @@ report 90000 "Process Web Orders"
                 DataItemTableView = SORTING("Document Type", "No.")
                                     WHERE("Document Type" = FILTER(Order),
                                           "Destination Doc No." = filter(''),
-                                           Status = FILTER("In Progress"),
-                                          "No of Error" = CONST(0), "Sales Order Created" = const(false));
+                                           Status = FILTER(Accepted),
+                                           "Sales Order Created" = const(false));
 
                 RequestFilterFields = "No.", "Document Date", "Shipping Agent Code", "Shipping Agent Service Code";//"Sell-to Customer No.", "Ship-to Country/Region Code", ; //, "Prime Order", "Premium Order"
                 trigger OnAfterGetRecord()
@@ -62,7 +62,7 @@ report 90000 "Process Web Orders"
                                     Commit();
                                 end;
 
-                                if InterimSH.status = InterimSH.status::"In Progress" then begin
+                                if InterimSH.status = InterimSH.status::Accepted then begin
                                     CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
                                     IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
                                         CreateOrderErrror := GETLASTERRORTEXT();

@@ -40,7 +40,11 @@ page 90015 "Customer Price Service"
                 {
                     ApplicationArea = All;
                 }
-                field("Listing Status"; Rec."Sync Price")
+                field("Listing Status"; Rec."Listing Status")
+                {
+                    ApplicationArea = All;
+                }
+                field("Sync Price"; Rec."Sync Price")
                 {
                     ApplicationArea = All;
                 }

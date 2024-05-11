@@ -132,7 +132,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 HandledInterimSalesHeader.Reset();
                 HandledInterimSalesHeader.SetRange("No.", Rec."No.");
                 if HandledInterimSalesHeader.FindFirst() then begin
-                    if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Processing then
+                    if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::"SO Created" then
                         UpdateHandledWebOrder(Rec);
                 end;
             end;

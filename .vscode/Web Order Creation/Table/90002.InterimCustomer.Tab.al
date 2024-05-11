@@ -49,7 +49,7 @@ table 90002 "Interim Customer"
         field(9; Blocked; Option)
         {
             DataClassification = ToBeClassified;
-            OptionMembers = " ",Ship,Invoice,All; // Need to check for blank option
+            OptionMembers = " ",Ship,Invoice,All;
             OptionCaptionML = ENU = ' ,Ship,Invoice,All', ENG = ',Ship,Invoice,All';
             CaptionML = ENU = 'Blocked', ENG = 'Blocked';
         }
@@ -59,7 +59,6 @@ table 90002 "Interim Customer"
             OptionMembers = New,Update;
             OptionCaptionML = ENU = 'New,Update', ENG = 'New,Update';
             CaptionML = ENU = 'Status', ENG = 'Status';
-
         }
         field(11; "Transaction No."; Integer)
         {
@@ -102,7 +101,6 @@ table 90002 "Interim Customer"
             trigger OnValidate()
             var
                 InterimCustomer: Record "Interim Customer";
-
             begin
                 IF "Customer No." <> '' THEN BEGIN
                     Customer.GET("Customer No.");
@@ -110,23 +108,13 @@ table 90002 "Interim Customer"
                     InterimCustomer.VALIDATE("Customer Posting Group", Customer."Customer Posting Group");
                     InterimCustomer.VALIDATE("Gen. Bus. Posting Group", Customer."Gen. Bus. Posting Group");
                     InterimCustomer.VALIDATE("VAT Bus. Posting Group", Customer."VAT Bus. Posting Group");
-                    //Rec.MODIFY;
-                END
-                ELSE BEGIN
-
-                    // {"Gen. Bus. Posting Group" := '';
-                    // "VAT Bus. Posting Group" := '';
-                    // "Customer Posting Group" := '';}
                 END;
-
             end;
-
         }
         field(18; "Company Name"; Text[250])
         {
             DataClassification = ToBeClassified;
             Caption = 'Company Name';
-
         }
         field(19; "Company Type"; Text[100])
         {
@@ -228,17 +216,17 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
             Caption = 'Job Title';
         }
-        field(39; "Channel Code"; Code[30]) //Shailesh 09032021
+        field(39; "Channel Code"; Code[30])
         {
             DataClassification = ToBeClassified;
             Caption = 'Channel Code';
         }
-        field(40; "Country Name"; Text[100]) //Shailesh 10032021
+        field(40; "Country Name"; Text[100])
         {
             DataClassification = ToBeClassified;
             Caption = 'Country Name';
         }
-        field(41; "Shipping Country Name"; Text[100]) //Shailesh 10032021
+        field(41; "Shipping Country Name"; Text[100])
         {
             DataClassification = ToBeClassified;
             Caption = 'Shipping Country Name';
@@ -246,12 +234,10 @@ table 90002 "Interim Customer"
         field(42; "Bill to Customer No."; Code[20])
         {
             DataClassification = ToBeClassified;
-
         }
         field(43; "Bill to Customer Name"; Code[100])
         {
             DataClassification = ToBeClassified;
-
         }
         field(45; "Listing Status"; Option)
         {
@@ -293,6 +279,18 @@ table 90002 "Interim Customer"
         {
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
+            trigger OnValidate()
+            var
+            begin
+                if Rec."Listing Status Setting" = Rec."Listing Status Setting"::Inactive then
+                    Rec."Customer Sync" := false
+                else
+                    Rec."Customer Sync" := true;
+            end;
+        }
+        field(53; "Customer Sync"; Boolean)
+        {
+            DataClassification = ToBeClassified;
         }
     }
 
@@ -305,8 +303,6 @@ table 90002 "Interim Customer"
     }
 
     var
-
-        PostCode: Record "Post Code";
         Customer: Record "Customer";
 
 
@@ -329,5 +325,4 @@ table 90002 "Interim Customer"
     begin
 
     end;
-
 }

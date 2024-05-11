@@ -6,26 +6,14 @@ table 90011 "Channel Item Listing"
         {
             DataClassification = ToBeClassified;
             TableRelation = "Trade Partner".Code WHERE("Partner Type" = FILTER("Channel"));
-            trigger OnValidate()
-            begin
-
-            end;
         }
         field(2; "Channel SKU"; Text[50])
         {
             DataClassification = ToBeClassified;
-            trigger OnValidate()
-            begin
-
-            end;
         }
         field(3; "ASIN No"; Code[50])
         {
             DataClassification = ToBeClassified;
-            trigger OnValidate()
-            begin
-
-            end;
         }
         field(4; "Item No."; Code[20])
         {
@@ -35,66 +23,20 @@ table 90011 "Channel Item Listing"
             trigger OnValidate()
             var
                 Item1: Record 27;
-                itemvendor: Record 99;
-                Chancode: Code[20];
-                ChannelInventory: Decimal;
             begin
-                //IF Rec."Channel Title" = '' THEN BEGIN  //Commented by Shubham12052022
                 Item1.RESET;
                 IF Item1.GET("Item No.") THEN BEGIN
-                    //ChannelInventory := Item1.Inventory - Item1."Qty. on Sales Order";
-                    //Validate(Rec."Channel Inventory", ChannelInventory);
                     VALIDATE(Rec."Description 2", Item1."Description 2");
                     VALIDATE(Rec.Description, Item1.Description);
-                    //VALIDATE(Rec.UOM, Item1."Base Unit of Measure");
                     VALIDATE(Rec."Channel Unit Price", Item1."Unit Price");
                     VALIDATE(Rec."Unit Price", Item1."Unit Price");
                     Rec.Validate(RRP, Item1.RRP);
-                    // VALIDATE(Rec."Channel Title", Description); commented by pavan 
-                    //  VALIDATE("Channel SKU", Item1."No.");
-                    //VALIDATE(Rec.Brand, Item1.brand);
                     VALIDATE(Rec."Item Category Code", Item1."Item Category Code");
                 END;
-                //END;
-
-                SalesPrice.RESET;
-                //SalesPrice.SETRANGE(SalesPrice."Item No.", Rec."Item No.");
-                //SalesPrice.SETRANGE(SalesPrice."Sales Code", Rec."Channel Code");
-                SalesPrice.SETRANGE("Unit of Measure Code", Rec."Unit of Measure code");
-                IF SalesPrice.FINDSET THEN BEGIN
-                    // VALIDATE(Rec."Channel Unit Price", SalesPrice."Unit Price");
-                END;
-
-                itemvendor.RESET;
-                itemvendor.SETRANGE("Item No.", Rec."Item No.");
-                //itemvendor.SETRANGE(Default, TRUE);
-                IF itemvendor.FINDFIRST THEN BEGIN
-                    Item1.CALCFIELDS(Inventory, "Qty. on Sales Order");
-                    //VALIDATE("Channel Inventory", (Item1.Inventory + itemvendor."Available Stock" - Item1."Qty. on Sales Order"));
-                END;
-                IF "Item No." <> '' THEN
-                    VALIDATE(Rec.Action, Rec.Action::Update)
-                ELSE
-                    VALIDATE(Rec.Action, Rec.Action::Create);
 
                 IF Item1.GET("Item No.") THEN
                     Rec."Unit of Measure code" := Item1."Base Unit of Measure";
 
-                // SalesPrice.RESET;
-                // //SalesPrice.SETRANGE(SalesPrice."Item No.", Rec."Item No.");
-                // //SalesPrice.SETRANGE(SalesPrice."Sales Code", Rec."Channel Code");
-                // SalesPrice.SETRANGE("Unit of Measure Code", Rec."Unit of Measure code");
-                // IF SalesPrice.FINDSET THEN BEGIN
-                //     VALIDATE(Rec."Unit Price", SalesPrice."Unit Price");
-                // END;
-
-                itemvendor.RESET;
-                itemvendor.SETRANGE("Item No.", Rec."Item No.");
-                //itemvendor.SETRANGE(Default, TRUE);
-                IF itemvendor.FINDFIRST THEN BEGIN
-                    Item1.CALCFIELDS(Inventory, "Qty. on Sales Order");
-                    //VALIDATE("Channel Inventory", (Item1.Inventory + itemvendor."Available Stock" - Item1."Qty. on Sales Order"));
-                END;
                 IF "Item No." <> '' THEN
                     VALIDATE(Rec.Action, Rec.Action::Update)
                 ELSE
@@ -117,11 +59,6 @@ table 90011 "Channel Item Listing"
             TableRelation = "Unit of Measure";
             ValidateTableRelation = false;
             CaptionML = ENU = 'Unit of Measure Code', ENG = 'Unit of Measure Code';
-            trigger OnValidate()
-            var
-                UnitOfMeasure: Record 204;
-            begin
-            end;
         }
         field(10; "Channel Inventory"; Decimal)
         {
@@ -131,16 +68,13 @@ table 90011 "Channel Item Listing"
                     Rec.VALIDATE("Inventory Synced", FALSE);
             end;
         }
-
         field(11; "Channel Description"; Text[250])
         {
             DataClassification = ToBeClassified;
-
         }
         field(12; "Channel Title"; Text[250])
         {
             DataClassification = ToBeClassified;
-
         }
         field(13; "Channel Unit Price"; Decimal)
         {
@@ -149,8 +83,6 @@ table 90011 "Channel Item Listing"
             CaptionML = ENU = 'Channel Unit Price', ENG = 'Channel Unit Price';
             trigger OnValidate()
             begin
-                CalculateMargin;
-                //MODIFY;
                 IF xRec."Channel Unit Price" <> Rec."Channel Unit Price" THEN BEGIN
                     VALIDATE("Price Synced", FALSE);
                 END;
@@ -185,11 +117,17 @@ table 90011 "Channel Item Listing"
         }
         field(20; Status; Option)
         {
-            CaptionML = ENU = 'Status', ENG = 'Status';
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
+            trigger OnValidate()
+            var
+            begin
+                if Rec.Status = Rec.Status::Inactive then
+                    Rec."Item Sync" := false
+                else
+                    Rec."Item Sync" := true;
+            end;
         }
-
         field(22; FeedType; Option)
         {
             DataClassification = ToBeClassified;
@@ -199,18 +137,14 @@ table 90011 "Channel Item Listing"
         field(25; Manufacturer; Code[20])
         {
             DataClassification = ToBeClassified;
-
         }
         field(26; Brand; Code[20])
         {
             DataClassification = ToBeClassified;
-
         }
-
         field(31; Remarks; Text[100])
         {
             DataClassification = ToBeClassified;
-
         }
         field(32; EAN; Code[20])
         {
@@ -220,7 +154,6 @@ table 90011 "Channel Item Listing"
         field(33; "Feed Submission ID"; Code[30])
         {
             DataClassification = ToBeClassified;
-
         }
         field(34; Action; Option)
         {
@@ -232,15 +165,11 @@ table 90011 "Channel Item Listing"
         field(35; RemarksPrice; Text[100])
         {
             DataClassification = ToBeClassified;
-
         }
         field(36; "Feed Submission ID Price"; Code[30])
         {
             DataClassification = ToBeClassified;
-
         }
-
-
         field(45; "Price Synced"; Boolean)
         {
 
@@ -258,7 +187,6 @@ table 90011 "Channel Item Listing"
             DataClassification = ToBeClassified;
             TableRelation = "Item Category".Code;
         }
-
         field(51; "Original Inventory"; Decimal)
         {
             DecimalPlaces = 0 : 5;
@@ -281,7 +209,6 @@ table 90011 "Channel Item Listing"
         {
 
         }
-
         field(57; "Qty Per Unit of Measure"; Decimal)
         {
             Caption = 'Qty Per Unit of Measure';
@@ -318,21 +245,18 @@ table 90011 "Channel Item Listing"
             FieldClass = FlowField;
             CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true), "Variant Code" = FIELD("NAV Variant"), "Shipment Date" = field("Date Filter")));
             DecimalPlaces = 0 : 5;
-            Editable = false;
         }
         field(59; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line".Quantity where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Message" = const('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Message" = filter('Successful|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             DecimalPlaces = 0 : 5;
-            Editable = false;
         }
         field(60; "Physical Inventory"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Variant Code" = FIELD("NAV Variant"), "Daily Priority Exist" = field("Variant Code Mandatory")));
             DecimalPlaces = 0 : 5;
-            Editable = false;
         }
         field(61; "Variant Code Mandatory"; Boolean)
         {
@@ -342,6 +266,10 @@ table 90011 "Channel Item Listing"
         field(62; "Date Filter"; Date)
         {
             FieldClass = FlowFilter;
+        }
+        field(63; "Item Sync"; Boolean)
+        {
+            DataClassification = ToBeClassified;
         }
     }
 
@@ -354,27 +282,8 @@ table 90011 "Channel Item Listing"
     }
 
     var
-        SalesPrice: Record "Price List Line";
         Item: Record Item;
 
-
-    PROCEDURE CalculateMargin();
-    VAR
-        unitprice: Decimal;
-    BEGIN
-        IF (("Special Price Start Date" <= WORKDATE) OR ("Special Price End Date" = 0D)) AND (("Special Price End Date" >= WORKDATE) OR ("Special Price End Date" = 0D)) THEN BEGIN
-            IF "Special Price" > 0 THEN
-                unitprice := "Special Price"
-            ELSE BEGIN
-                IF "Channel Unit Price" <> 0 THEN
-                    unitprice := "Channel Unit Price";
-            END;
-        END ELSE BEGIN
-            IF "Channel Unit Price" <> 0 THEN
-                unitprice := "Channel Unit Price";
-        END;
-        //Margin := SalesPrice.UpdateMarginPrice("Item No.", unitprice);
-    END;
 
     procedure UpdateItemNo()
     var
@@ -390,7 +299,6 @@ table 90011 "Channel Item Listing"
             REPEAT
                 NoOfRecs := CIL.COUNT;
                 CLEAR(T_Item);
-                // T_Item := GetItemNoCoupling(CIL."Channel SKU", CIL.EAN, CIL."Channel Code");
                 T_Item := ProcessCouplingItemNo(CIL."Channel SKU", CIL."ASIN No");
                 IF T_Item <> '' THEN BEGIN
                     CIL.VALIDATE("Item No.", T_Item);
@@ -423,7 +331,6 @@ table 90011 "Channel Item Listing"
 
     local procedure CheckAvaliableItem_sku(VAR TxtItem: Text): Code[20]
     var
-
     begin
         if TxtItem <> '' then begin
             IF STRLEN(TxtItem) <= 20 THEN BEGIN
@@ -465,72 +372,6 @@ table 90011 "Channel Item Listing"
         end;
     END;
 
-    procedure GetItemNoCoupling(P_SKU: Text; P_EAN: Text; ChannelCode: Code[20]): Code[20]
-    var
-
-        ItemNo: Code[20];
-    begin
-        Item.RESET;
-
-        IF STRLEN(P_SKU) <= 20 THEN BEGIN
-
-            CLEAR(ItemNo);
-            ItemNo := GetAvailableItem(P_SKU, ChannelCode);
-
-            IF ItemNo <> '' THEN
-                EXIT(ItemNo);
-        END;
-
-        // IF ChannelCode <> 'MAGENTO' THEN BEGIN
-        //     IF P_EAN <> '' THEN BEGIN
-        //         CLEAR(ItemNo);
-        //         ItemNo := GetAvailableItem(P_EAN, ChannelCode);
-        //         IF ItemNo <> '' THEN
-        //             EXIT(ItemNo);
-        //     END;
-
-        // END;
-
-    end;
-
-    local procedure GetAvailableItem(VAR TxtItem: Text; ChannelCode: Code[20]): Code[20]
-    var
-        ItemCrossReference: Record "Item Reference";
-
-    begin
-        IF STRLEN(TxtItem) <= 20 THEN BEGIN
-            Item.RESET;
-            Item.SETRANGE("No.", TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No.");
-
-
-            /*Item.RESET;
-            Item.SETRANGE(EAN, TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No.");
-
-            Item.RESET;
-            Item.SETRANGE(UPC, TxtItem);
-            IF Item.FINDSET THEN
-                EXIT(Item."No.");*/
-
-            // IF STRLEN(TxtItem) <= 14 THEN BEGIN
-            //     Item.RESET;
-            //     Item.SETRANGE(GTIN, TxtItem);
-            //     IF Item.FINDSET THEN
-            //         EXIT(Item."No.");
-            // END;
-
-
-            ItemCrossReference.RESET;
-            ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::"Bar Code");
-            ItemCrossReference.SETRANGE("Reference No.", TxtItem);
-            IF ItemCrossReference.FINDSET THEN
-                EXIT(ItemCrossReference."Item No.");
-        END;
-    end;
-
     trigger OnInsert()
     begin
 
@@ -550,6 +391,4 @@ table 90011 "Channel Item Listing"
     begin
 
     end;
-
-
 }

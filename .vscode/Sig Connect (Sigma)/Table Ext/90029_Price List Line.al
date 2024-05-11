@@ -2,7 +2,6 @@ tableextension 90029 "OC Price List Line" extends "Price List Line"
 {
     fields
     {
-        // Add changes to table fields here
         field(90029; "Sync Price"; Boolean)
         {
 
@@ -19,21 +18,15 @@ tableextension 90029 "OC Price List Line" extends "Price List Line"
         }
         field(90000; "Listing Status Setting"; Option)
         {
+            DataClassification = ToBeClassified;
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
         }
+        field(90001; "Listing Status"; Option)
+        {
+            DataClassification = ToBeClassified;
+            OptionMembers = "Not Listed",Listed;
+            OptionCaptionML = ENU = 'Not Listed,Listed', ENG = 'Not Listed,Listed';
+        }
     }
-
-    keys
-    {
-        // Add changes to keys here
-    }
-
-    fieldgroups
-    {
-        // Add changes to field groups here
-    }
-
-    var
-        myInt: Integer;
 }

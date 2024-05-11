@@ -240,7 +240,7 @@ codeunit 90007 "OnBuy Integration"
             InterimSalesHeader."Ship-to Country/Region Code" := CopyStr(GetJsonToken(deliveryAddressObject, 'country_code').AsValue().AsCode(), 1, 10);
         end;
 
-        InterimSalesHeader.status := InterimSalesHeader.status::"In Progress";
+        InterimSalesHeader.status := InterimSalesHeader.status::Accepted;
 
         InterimSalesHeader.Insert();
     end;
@@ -499,7 +499,7 @@ codeunit 90007 "OnBuy Integration"
         HandledInterimSalesHeader.RESET;
         HandledInterimSalesHeader.SETRANGE("Trade Partner Code", ChannelCode);
         HandledInterimSalesHeader.SETFILTER("FullFillment Status", '<>%1', HandledInterimSalesHeader."FullFillment Status"::Fullfilled);
-        HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
+        //HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
         HandledInterimSalesHeader.SETFILTER("Package Tracking No.", '<>%1', '');
         HandledInterimSalesHeader.SETFILTER("Scanned Date", '>%1', CREATEDATETIME(20210212D, TIME));
 

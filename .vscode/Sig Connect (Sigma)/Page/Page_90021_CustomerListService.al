@@ -69,6 +69,10 @@ page 90021 "Customer List Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Customer Sync"; Rec."Customer Sync")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

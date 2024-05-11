@@ -1,6 +1,8 @@
 table 90004 "Interim Sales Line"
 {
     DataClassification = ToBeClassified;
+    LookupPageId = "Web Order Line List";
+    DrillDownPageId = "Web Order Line List";
 
     fields
     {
@@ -260,9 +262,8 @@ table 90004 "Interim Sales Line"
         }
         field(48; "Order Status"; Option)
         {
-            OptionMembers = Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled,Cancelled,"Ready To Dispatch","No Stock","Partially Scanned";
+            OptionMembers = Rejected,Accepted,"SO Created";
             FieldClass = FlowField;
-            //CalcFormula = Lookup("Interim Sales Header".Status WHERE("No." = field("Document No")));
             CalcFormula = Lookup("Interim Sales Header".Status WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
             Editable = false;
         }
@@ -424,7 +425,7 @@ table 90004 "Interim Sales Line"
         field(90013; Status; Option)
         {
             Editable = false;
-            OptionMembers = Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled,Cancelled,"Ready To Dispatch","No Stock","Partially Scanned";
+            OptionMembers = Rejected,Accepted,"SO Created";
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header".Status WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
         }

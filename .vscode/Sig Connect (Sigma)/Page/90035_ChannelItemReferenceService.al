@@ -4,7 +4,6 @@ page 90035 "Channel Item Reference"
     ApplicationArea = All;
     UsageCategory = Lists;
     SourceTable = "Item Reference";
-    //SourceTableView = where("Reference Type" = filter("PIP Code"));
 
     layout
     {
@@ -15,7 +14,6 @@ page 90035 "Channel Item Reference"
                 field("Item No."; Rec."Item No.")
                 {
                     ApplicationArea = All;
-
                 }
                 field("PIP Code"; Rec."Reference No.")
                 {
@@ -36,5 +34,4 @@ page 90035 "Channel Item Reference"
             }
         }
     }
-
 }

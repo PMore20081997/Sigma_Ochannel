@@ -157,15 +157,15 @@ codeunit 90081 "Get Order Request API"
             L_InsterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
             L_InsterimSalesLine.SetFilter("Reason Message", '%1', 'Successful');
             if L_InsterimSalesLine.FindFirst() then begin
-                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"In Progress";
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Accepted;
                 L_InterimSalesHeader.Modify();
             end else begin
-                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
                 L_InterimSalesHeader."Ready to process" := true;
                 L_InterimSalesHeader.Modify();
             end;
         end else begin
-            L_InterimSalesHeader.status := L_InterimSalesHeader.status::Confirmed;
+            L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
             L_InterimSalesHeader.Modify();
         end;
 

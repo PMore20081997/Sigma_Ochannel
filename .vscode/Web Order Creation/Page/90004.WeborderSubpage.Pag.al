@@ -635,34 +635,6 @@ page 90004 "Web order Subpage"
         }
     }
 
-    actions
-    {
-        area(processing)
-        {
-            action("Cancel Selected Lines")
-            {
-                ApplicationArea = All;
-                Image = Cancel;
-                Visible = false;
-                trigger OnAction()
-                var
-                    L_InterimSalesLine: Record "Interim Sales Line";
-                    UpdateDispatchedOnWebOrder: Report "Update Dispatched On Web Order";
-                    L_InterimSalesHeader: Record "Interim Sales Header";
-                begin
-                    L_InterimSalesHeader.Get(Rec."Document Type", rec."Document No");
-                    if NOT (L_InterimSalesHeader.status IN [L_InterimSalesHeader.status::"Partially Scanned", L_InterimSalesHeader.status::Processing, L_InterimSalesHeader.status::Cancelled]) then
-                        Error('Line can cancel only when order status is Partially Scanned or Processing or Cancelled');
-                    Clear(L_InterimSalesLine);
-                    L_InterimSalesLine := Rec;
-                    CurrPage.SETSELECTIONFILTER(L_InterimSalesLine);
-                    UpdateDispatchedOnWebOrder.CancelSelectedLines(L_InterimSalesLine);
-                end;
-            }
-        }
-    }
-
-
 
     trigger OnDeleteRecord(): Boolean
     var

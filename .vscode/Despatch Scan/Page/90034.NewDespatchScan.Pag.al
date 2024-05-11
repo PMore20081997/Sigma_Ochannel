@@ -671,7 +671,7 @@ page 90034 "New Despatch Scan"
                                 HISH2.SetRange("Document Type", HISH2."Document Type"::Order);
                                 HISH2.SetRange("No.", WSL1."Source No.");
                                 if HISH2.FindFirst() then begin
-                                    HISH2.Validate(status, HISH2.status::Dispatched);
+                                    //HISH2.Validate(status, HISH2.status::Dispatched);
                                     HISH2.Validate("Scanned Date", WSL1."Scanned Date");
                                     HISH2.Validate("Scanned By", WSL1."Scanned By");
                                     HISH2.Modify(true);

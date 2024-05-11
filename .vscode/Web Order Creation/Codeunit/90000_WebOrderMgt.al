@@ -115,7 +115,7 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.INIT;
             L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
             L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
-            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::"In Progress");
+            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::Accepted);
             L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
             L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
             L_InterimSalesHeader.validate("Document Date", WorkDate);
@@ -281,7 +281,7 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.INIT;
             L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
             L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
-            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::"In Progress");
+            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::Accepted);
             L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
             L_InterimSalesHeader.validate("Document Date", P_InterimSalesHeader."Document Date");
             L_InterimSalesHeader.Validate("Order Date", WorkDate);
@@ -935,7 +935,7 @@ codeunit 90000 "Web Order Mgt"
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
+            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
                 exit;
 
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
@@ -1295,7 +1295,7 @@ codeunit 90000 "Web Order Mgt"
                 if L_OrderLevelResponse.FindFirst() then begin
                     P_InterimSalesHeader."Reason Code" := L_OrderLevelResponse.Reason;
                     P_InterimSalesHeader."Reason Message" := L_OrderLevelResponse.Message;
-                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::Rejected;
                 end;
             end else begin
                 P_InterimSalesHeader."Reason Code" := 'Order Created';
@@ -1306,10 +1306,10 @@ codeunit 90000 "Web Order Mgt"
                 Rec_InterimLine.SetRange("Document No", P_InterimSalesHeader."No.");
                 Rec_InterimLine.SetFilter("Reason Message", '%1', 'Successful');
                 if Rec_InterimLine.FindFirst() then begin
-                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::Accepted;
                     P_InterimSalesHeader."Ready to process" := true;
                 end else begin
-                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+                    P_InterimSalesHeader.status := P_InterimSalesHeader.status::Rejected;
                 end;
             end;
 
@@ -1406,7 +1406,7 @@ codeunit 90000 "Web Order Mgt"
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
+            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
                 exit;
 
             PartnerErrorLog.RESET;
@@ -1603,12 +1603,12 @@ codeunit 90000 "Web Order Mgt"
 
 
             If L_ErrorRecorded then begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Confirmed;
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Rejected;
                 P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
 
                 // P_InterimSalesHeader.Modify();
             end Else begin
-                P_InterimSalesHeader.status := P_InterimSalesHeader.status::"In Progress";
+                P_InterimSalesHeader.status := P_InterimSalesHeader.status::Accepted;
                 P_InterimSalesHeader."Total Weight" := CalculateWeight(P_InterimSalesHeader);
 
                 //P_InterimSalesHeader.Modify();
@@ -1664,8 +1664,8 @@ codeunit 90000 "Web Order Mgt"
 
         PartnerErrorLog."Error Text" := CopyStr(P_Text, 1, 250);
         PartnerErrorLog.INSERT;
-        if P_InterimSalesHeader.status <> P_InterimSalesHeader.status::Confirmed then begin
-            P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Confirmed;
+        if P_InterimSalesHeader.status <> P_InterimSalesHeader.status::Rejected then begin
+            P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Rejected;
             P_InterimSalesHeader.MODIFY;
         end;
     end;
@@ -2008,7 +2008,7 @@ codeunit 90000 "Web Order Mgt"
             L_DocNo := INCSTR(P_ISH."No.");
         RecInterimSalesHeader."No." := L_DocNo;
 
-        RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
+        RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::Accepted;
         RecInterimSalesHeader."Pickup Date" := TODAY;
         RecInterimSalesHeader."Document Date" := TODAY;
         RecInterimSalesHeader."Channel Order ID" := P_ISH."Channel Order ID";
@@ -2045,7 +2045,7 @@ codeunit 90000 "Web Order Mgt"
                     CLEAR(InterimSalesLine."Trolley No.");
                     CLEAR(InterimSalesLine."Moved In Handled");
                     Clear(InterimSalesLine."Trolley Closed Quantity");
-                    InterimSalesLine."Order Status" := InterimSalesLine."Order Status"::"In Progress";
+                    InterimSalesLine."Order Status" := InterimSalesLine."Order Status"::Accepted;
                     InterimSalesLine.Reserved := FALSE;
                     InterimSalesLine.INSERT(TRUE);
                 UNTIL L_InterimSalesLine.NEXT = 0;
@@ -2066,7 +2066,7 @@ codeunit 90000 "Web Order Mgt"
             REPEAT
                 L_PartnerErrorLog.DELETE;
             UNTIL L_PartnerErrorLog.NEXT = 0;
-        P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Cancelled;
+        //P_InterimSalesHeader.Status := P_InterimSalesHeader.Status::Cancelled;
         P_InterimSalesHeader.Modify();
 
         L_InterimSalesLine.Reset();

@@ -89,7 +89,11 @@ page 90011 "Channel Item Listing"
                 field("Listing Status"; Rec."Listing Status")
                 {
                     ApplicationArea = All;
-                    ToolTip = 'Status to show if the Item is Listed in the Portal';
+                    ToolTip = 'Status to show if the Item is Listed in the Portal or not';
+                }
+                field("Item Sync"; Rec."Item Sync")
+                {
+                    ApplicationArea = All;
                 }
                 field("Inventory Synced"; Rec."Inventory Synced")
                 {
@@ -139,6 +143,7 @@ page 90011 "Channel Item Listing"
                     ChannelItemListing.SetFilter("Item No.", '<>%1', '');
                     ChannelItemListing.SetRange("Listing Status", ChannelItemListing."Listing Status"::Listed);
                     ChannelItemListing.SetRange(Status, ChannelItemListing.Status::Active);
+                    ChannelItemListing.SetFilter("Date Filter", '>=%1', WorkDate());
                     if ChannelItemListing.FindSet() then begin
                         repeat
                             NoOfRecs := ChannelItemListing.Count;

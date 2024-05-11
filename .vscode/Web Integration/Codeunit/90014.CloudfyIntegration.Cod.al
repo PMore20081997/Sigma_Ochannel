@@ -1177,9 +1177,9 @@ codeunit 90014 "Cloudfy Integration"
         L_HandledInterimSalesHeader.Reset();
         L_HandledInterimSalesHeader.SetRange("Trade Partner Code", ChannelCode);
         if ChannelCode = 'CLOUDFYNXT' then
-            L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Processing)
-        else
-            L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
+            L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::"SO Created");
+        // else
+        //     L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
         if L_HandledInterimSalesHeader.FindSet() then begin
             repeat
                 RequestBody := '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Body><UpdateOrderTracking xmlns="http://tempuri.org/Navision">' +

@@ -1196,7 +1196,7 @@ codeunit 90004 "Ebay Integration"
                 L_HandledInterimSalesHeader.RESET;
                 L_HandledInterimSalesHeader.SETRANGE("Trade Partner Code", L_TradePartner.Code);
                 L_HandledInterimSalesHeader.SETFILTER("FullFillment Status", '<>%1', L_HandledInterimSalesHeader."FullFillment Status"::Fullfilled);
-                L_HandledInterimSalesHeader.SETRANGE(Status, L_HandledInterimSalesHeader.Status::Dispatched);
+                //L_HandledInterimSalesHeader.SETRANGE(Status, L_HandledInterimSalesHeader.Status::Dispatched);
                 L_HandledInterimSalesHeader.SETFILTER("Package Tracking No.", '<>%1', '');
 
                 if L_HandledInterimSalesHeader.FindSet() then begin
@@ -1407,7 +1407,7 @@ codeunit 90004 "Ebay Integration"
         end;
 
         if GetJsonvalue(Orderheaders, 'Status').IsNull = false then begin
-            InterimSalesHeader.status := InterimSalesHeader.status::"In Progress";
+            InterimSalesHeader.status := InterimSalesHeader.status::Accepted;
         end;
 
         InterimSalesHeader.Insert();
@@ -1681,7 +1681,7 @@ codeunit 90004 "Ebay Integration"
         HandledInterimSalesHeader.RESET;
         HandledInterimSalesHeader.SETRANGE("Trade Partner Code", ChannelCode);
         HandledInterimSalesHeader.SETFILTER("FullFillment Status", '<>%1', HandledInterimSalesHeader."FullFillment Status"::Fullfilled);
-        HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
+        //HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
         HandledInterimSalesHeader.SETFILTER("Package Tracking No.", '<>%1', '');
         HandledInterimSalesHeader.SETFILTER("Scanned Date", '>%1', CREATEDATETIME(20210212D, TIME));
 

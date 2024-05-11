@@ -37,6 +37,11 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         RunObject = page "Sales Price Lists";
                         ApplicationArea = All;
                     }
+                    action("Channel Item References")
+                    {
+                        RunObject = page "Channel Item Reference";
+                        ApplicationArea = All;
+                    }
                     action("Shipping Agents")
                     {
                         RunObject = page "Shipping Agents";

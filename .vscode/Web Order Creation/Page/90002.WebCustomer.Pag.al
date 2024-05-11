@@ -198,10 +198,17 @@ page 90002 "Web Customer"
                 field("Listing Status Setting"; Rec."Listing Status Setting")
                 {
                     ApplicationArea = All;
+                    ToolTip = 'This is a user-editable field to enable/disable BC Customers in the portal';
                 }
                 field("Listing Status"; Rec."Listing Status")
                 {
                     ApplicationArea = All;
+                    ToolTip = 'Status to show if the Customer is Listed in the Portal or not';
+                }
+                field("Customer Sync"; Rec."Customer Sync")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Acknowledgment from Portal that Customer has synced on their side';
                 }
             }
         }
@@ -214,7 +221,6 @@ page 90002 "Web Customer"
             action("Process Customer")
             {
                 ApplicationArea = All;
-
                 trigger OnAction();
                 var
                     InterimCustomer: Record "Interim Customer";

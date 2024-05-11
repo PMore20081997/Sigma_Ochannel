@@ -16,6 +16,10 @@ tableextension 90001 "Price List Headers Ext" extends "Price List Header"
                 if L_PriceListLine.FindSet() then begin
                     repeat
                         L_PriceListLine."Listing Status Setting" := Rec."Listing Status Setting";
+                        if Rec."Listing Status Setting" = Rec."Listing Status Setting"::Inactive then
+                            L_PriceListLine."Sync Price" := false
+                        else
+                            L_PriceListLine."Sync Price" := true;
                         L_PriceListLine.Modify();
                     until L_PriceListLine.Next() = 0;
                 end;

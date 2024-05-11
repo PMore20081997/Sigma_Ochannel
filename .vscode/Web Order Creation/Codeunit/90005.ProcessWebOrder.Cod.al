@@ -181,7 +181,7 @@ codeunit 90005 "Process Web Order"
         L_InterimSalesLine.MODIFY;
 
         //Update Interim Header
-        RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::Processing);
+        RecInterimSalesHeader.VALIDATE(Status, RecInterimSalesHeader.Status::"SO Created");
         RecInterimSalesHeader."Destination Doc Type" := RecInterimSalesHeader."Destination Doc Type"::"Internal Pick";
         RecInterimSalesHeader."Destination Doc No." := HeaderNo;
         RecInterimSalesHeader.MODIFY;
@@ -845,8 +845,8 @@ codeunit 90005 "Process Web Order"
                 IF NOT CheckIfLineExistsWithDocNo(RecInterimSalesHeader) THEN BEGIN
                     CLEAR(RecInterimSalesHeader."Destination Doc No.");
                     CLEAR(RecInterimSalesHeader."Destination Doc Type");
-                    IF NOT (RecInterimSalesHeader.Status IN [RecInterimSalesHeader.Status::"No Stock", RecInterimSalesHeader.Status::Cancelled]) THEN
-                        RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
+                    //IF NOT (RecInterimSalesHeader.Status IN [RecInterimSalesHeader.Status::Cancelled]) THEN
+                    RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::Accepted;
                     RecInterimSalesLine."Destination Doc Type" := RecInterimSalesLine."Destination Doc Type"::" ";
                     RecInterimSalesLine."Destination Doc No." := '';
                     RecInterimSalesHeader.ReservedFlag := FALSE;
@@ -919,7 +919,7 @@ codeunit 90005 "Process Web Order"
         L_ISL.SETRANGE("Destination Doc No.", InternalPickNo);
         L_ISL.SETRANGE("Dispatch Scan", FALSE);
         L_ISL.SETRANGE("Scanned Date", 0DT);
-        L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
+        //L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
         L_ISL.SETFILTER("Trolley No.", '<>%1', '');
         IF L_ISL.FINDSET THEN
             ERROR('You can not create Pick.\There is an open Trolley %1 assoiciated with this Whse. Internal Pick %2 ', L_ISL."Trolley No.", L_ISL."Destination Doc No.");
@@ -930,7 +930,7 @@ codeunit 90005 "Process Web Order"
         L_ISL.SETRANGE("Dispatch Scan", FALSE);
         L_ISL.SETRANGE("Scanned Date", 0DT);
         L_ISL.CALCFIELDS(Status);
-        L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
+        //L_ISL.SETFILTER(Status, '<>%1', L_ISL.Status::Cancelled);
         IF L_ISL.FINDSET THEN
             ERROR('This Trolley no is assoiciated with open web order from Whse. Internal Pick %1 ', L_ISL."Destination Doc No.");
 

@@ -15,7 +15,7 @@ report 90002 "Update Dispatched On Web Order"
         NoOfRecs := P_ISL.COUNT;
         P_ISL.CALCFIELDS(Status);
         P_ISL.SETRANGE(Type, P_ISL.Type::Item);
-        P_ISL.SETFILTER(Status, '%1|%2|%3', P_ISL.Status::Processing, P_ISL.Status::"Partially Scanned", P_ISL.Status::Cancelled); //Prathamesh 25112021
+        P_ISL.SETFILTER(Status, '%1', P_ISL.Status::"SO Created");
         P_ISL.SETRANGE("Dispatch Scan", FALSE);
         IF P_ISL.FINDSET THEN
             REPEAT
@@ -69,7 +69,6 @@ report 90002 "Update Dispatched On Web Order"
                 ISH.RESET;
                 ISH.SETRANGE("Document Type", ISH."Document Type"::Order);
                 ISH.SETFILTER("No.", '%1', TempOrderNo."No.");
-                //ISH.SETFILTER("Sales Order No.",'<>%1','');
                 IF ISH.FINDFIRST THEN BEGIN
                     RecScannedISL.RESET;
                     RecScannedISL.SETRANGE("Document No", ISH."No.");
@@ -87,18 +86,13 @@ report 90002 "Update Dispatched On Web Order"
                     IF RecNotScannedISL.FINDSET THEN;
 
                     IF RecScannedISL.COUNT = RecNotScannedISL.COUNT THEN BEGIN
-
-
-
                         IF L_TradePartner.GET(ISH."Trade Partner Code") THEN;
 
-                        //Sofyan++
-                        if P_Status = 5 then
-                            ISH.Status := ISH.Status::Dispatched
-                        else
-                            if P_Status = 8 then
-                                ISH.Status := ISH.Status::Cancelled;
-                        //Sofyan--
+                        // if P_Status = 5 then
+                        //     ISH.Status := ISH.Status::Dispatched
+                        // else
+                        //     if P_Status = 8 then
+                        //         ISH.Status := ISH.Status::Cancelled;
 
                         ISH.MODIFY;
                         IF P_ISH.GET(ISH."Document Type", ISH."No.") THEN
@@ -109,13 +103,12 @@ report 90002 "Update Dispatched On Web Order"
                         R80020.USEREQUESTPAGE(FALSE);
                         R80020.SetChannelpartner(ISH."Trade Partner Code");
                         R80020.RUNMODAL();
-
-                    END ELSE
-                        IF (RecScannedISL.COUNT <> RecNotScannedISL.COUNT) AND (RecScannedISL.COUNT > 0) THEN BEGIN //alok 281220 ++
-                            ISH.Status := ISH.Status::"Partially Scanned";
-                            ISH.MODIFY;
-                        END;
-                    //alok 281220 --
+                    END;
+                    // ELSE
+                    //     IF (RecScannedISL.COUNT <> RecNotScannedISL.COUNT) AND (RecScannedISL.COUNT > 0) THEN BEGIN
+                    //         ISH.Status := ISH.Status::"Partially Scanned";
+                    //         ISH.MODIFY;
+                    //     END;
                 END;
                 CurrRec += 1;
                 IF GUIALLOWED THEN BEGIN
@@ -144,10 +137,9 @@ report 90002 "Update Dispatched On Web Order"
         IF GUIALLOWED THEN
             Window.OPEN('Updating Lines.... @1@@@@@@@@@@');
         NoOfRecs := P_ISL.COUNT;
-        P_ISL.SETRANGE(Type, P_ISL.Type::Item);//Chandan++211220++ISSUE CAUSED IN HI HOUSE ORDER
-        //P_ISL.SETRANGE(P_ISL."Order Status", P_ISL."Order Status"::Processing);
-        P_ISL.SetFilter(P_ISL."Order Status", '%1|%2', P_ISL."Order Status"::Processing, P_ISL."Order Status"::"Partially Scanned");
-        P_ISL.SETRANGE("Dispatch Scan", FALSE);//ak 211120
+        P_ISL.SETRANGE(Type, P_ISL.Type::Item);
+        P_ISL.SetFilter(P_ISL."Order Status", '%1', P_ISL."Order Status"::"SO Created");
+        P_ISL.SETRANGE("Dispatch Scan", FALSE);
         IF P_ISL.FINDSET THEN
             REPEAT
                 IF (P_ISL."Trolley No." = '') AND (NOT UpdateOutOfStock) THEN BEGIN
@@ -182,7 +174,6 @@ report 90002 "Update Dispatched On Web Order"
                     END;
 
                     IF UpdateOutOfStock THEN BEGIN
-                        //P_ISL."Out Of Stock" := TRUE;//NG_No_Need
                         P_ISL."Line Status" := P_ISL."Line Status"::"No Stock";
                         AddOrderNotoTemp(P_ISL."Document No");
                     END;
@@ -199,7 +190,6 @@ report 90002 "Update Dispatched On Web Order"
             UNTIL P_ISL.NEXT = 0;
         IF GUIALLOWED THEN
             Window.CLOSE;
-
     end;
 
     local procedure CheckifInDispatchTable(P_Trolley: Code[10]; P_WebOrderNo: Code[20]; P_ItemNo: Code[20]): Boolean
@@ -222,14 +212,7 @@ report 90002 "Update Dispatched On Web Order"
         NoOfRecs: Integer;
         Window: Dialog;
         ISH: Record "Interim Sales Header";
-
-        ISL: Record "Interim Sales Line";
         TempOrderNo: Record item temporary;
-        G_ArchivedScannedEntries: Record "Archive Scanned Entries";
         CalledFromDispatch: Boolean;
         R80020: Report "Move Scanned Order to Handled";
-        G_ISH: Record "Interim Sales Header";
-
-
 }
-

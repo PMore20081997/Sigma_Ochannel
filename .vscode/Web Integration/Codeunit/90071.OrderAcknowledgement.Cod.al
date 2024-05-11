@@ -112,7 +112,7 @@ codeunit 90071 "Order Acknowledgement"
 
         InterimSalesHeader.RESET;
         InterimSalesHeader.SETRANGE("Trade Partner Code", PartnerCode);
-        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::Processing);
+        InterimSalesHeader.SETRANGE(Status, InterimSalesHeader.Status::"SO Created");
         InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
         TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');
         TimeStr := Format(Time, 0, '<Hours24,2>:<Minutes,2>:<Second,2>');
@@ -201,7 +201,7 @@ codeunit 90071 "Order Acknowledgement"
         //HandledInterimSalesHeader.SetFilter("No.",'%1..%2','WEB0000006','WEB0000007');      
         HandledInterimSalesHeader.SETRANGE("Trade Partner Code", PartnerCode);
         HandledInterimSalesHeader.SetRange("Document Type", HandledInterimSalesHeader."Document Type"::Order);
-        HandledInterimSalesHeader.SetFilter(Status, '%1|%2', HandledInterimSalesHeader.Status::Dispatched, HandledInterimSalesHeader.status::Cancelled);
+        //HandledInterimSalesHeader.SetFilter(Status, '%1|%2', HandledInterimSalesHeader.Status::Dispatched, HandledInterimSalesHeader.status::Cancelled);
         HandledInterimSalesHeader.SETRANGE("Order Fullfilled", FALSE);
         TodayDate := FORMAT(TODAY, 0, '20<Year>-<Month,2>-<Day,2>');
         TimeStr := Format(Time, 0, '<Hours24,2>:<Minutes,2>:<Second,2>');
@@ -215,11 +215,11 @@ codeunit 90071 "Order Acknowledgement"
             repeat
                 L_cust.Get(HandledInterimSalesHeader."Sell-to Customer No.");
                 ExportText += '<STATUS>' + CRLF[1] + '<DATE>' + Format(TodayDate) + 'T00:00:00' + '</DATE>' + CRLF[1] + '<TIME>' + TimeStr + '</TIME>' + CRLF[1];
-                if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
-                    ExportText += '<STATUSCODE>' + '40' + '</STATUSCODE>' + CRLF[1]
-                else
-                    if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Cancelled then
-                        ExportText += '<STATUSCODE>' + '17' + '</STATUSCODE>' + CRLF[1];
+                // if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
+                //     ExportText += '<STATUSCODE>' + '40' + '</STATUSCODE>' + CRLF[1]
+                // else
+                //     if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Cancelled then
+                //         ExportText += '<STATUSCODE>' + '17' + '</STATUSCODE>' + CRLF[1];
 
                 ExportText += '<ORDER>' + CRLF[1] + '<ORDERNUMBER>' + HandledInterimSalesHeader."Channel Order ID"
                + '</ORDERNUMBER>' + CRLF[1] + '<ORDERDATE>' + FORMAT(HandledInterimSalesHeader."Order Placed At", 0, '<Year4>-<Month,2>-<Day,2>T<Hours24,2>:<Minutes,2>:<Second,2>') + '</ORDERDATE>' + CRLF[1] + '<SUPPLIER>' + CRLF[1] + '<BUYERREFERENCE>' + L_cust."Our Account No." + '</BUYERREFERENCE>' + CRLF[1] + '</SUPPLIER>' + CRLF[1] + '</ORDER>' + CRLF[1] + '</STATUS>' + CRLF[1];
@@ -508,7 +508,7 @@ codeunit 90071 "Order Acknowledgement"
 
         HandledInterimSalesHeader.RESET;
         HandledInterimSalesHeader.SETFILTER("Trade Partner Code", PartnerCode);
-        HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
+        //HandledInterimSalesHeader.SETRANGE(Status, HandledInterimSalesHeader.Status::Dispatched);
         //InterimSalesHeader.SETRANGE("Order Ack. Exported", FALSE);
         IF HandledInterimSalesHeader.FindSet() THEN begin
             REPEAT
@@ -522,10 +522,10 @@ codeunit 90071 "Order Acknowledgement"
                 xmlElem6.Add(xmlText.Create(Format(Time)));
 
                 xmlElem12 := XmlElement.Create('STATUSCODE');
-                if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
-                    xmlElem12.Add(xmlText.Create('40'))
-                else
-                    xmlElem12.Add(xmlText.Create('17'));
+                // if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::Dispatched then
+                //     xmlElem12.Add(xmlText.Create('40'))
+                // else
+                //     xmlElem12.Add(xmlText.Create('17'));
                 xmlElem4.Add(xmlElem5);
                 xmlElem4.Add(xmlElem6);
                 xmlElem4.Add(xmlElem12);

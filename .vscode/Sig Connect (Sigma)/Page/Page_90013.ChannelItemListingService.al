@@ -35,6 +35,10 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Item Sync"; Rec."Item Sync")
+                {
+                    ApplicationArea = All;
+                }
                 field("BC Item No."; Rec."Item No.")
                 {
                     ApplicationArea = ALL;

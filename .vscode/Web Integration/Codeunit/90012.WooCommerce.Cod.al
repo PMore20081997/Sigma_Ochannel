@@ -208,10 +208,10 @@ codeunit 90012 "Woo Commerce"
             InterimSalesHeader.VALIDATE(Status, InterimSalesHeader.Status::Rejected);
         end;
         if Status = 'completed' then begin
-            InterimSalesHeader.VALIDATE(Status, InterimSalesHeader.Status::Confirmed);
+            InterimSalesHeader.VALIDATE(Status, InterimSalesHeader.Status::Rejected);
         end;
         if Status = 'pending' then begin
-            InterimSalesHeader.VALIDATE(Status, InterimSalesHeader.Status::"In Progress");
+            InterimSalesHeader.VALIDATE(Status, InterimSalesHeader.Status::Accepted);
         end;
 
 

@@ -296,7 +296,7 @@ page 90075 "Return Order Screen"
                                     Return_HISH.Validate("Sell-to Customer No.", HISH."Sell-to Customer No.");
                                     Return_HISH.Validate("Channel Order ID", HISH."Channel Order ID");
                                     Return_HISH.Validate("Fullfillment Channel", HISH."Fullfillment Channel");
-                                    Return_HISH.Validate(status, Return_HISH.status::Confirmed);
+                                    Return_HISH.Validate(status, Return_HISH.status::Rejected);
                                     Return_HISH.Validate("Trade Partner Code", HISH."Trade Partner Code");
                                     Return_HISH.Validate("Location Code", HISH."Location Code");
                                     Return_HISH."Document Date" := Today;

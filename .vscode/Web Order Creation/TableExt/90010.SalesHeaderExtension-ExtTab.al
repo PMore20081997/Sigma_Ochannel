@@ -60,7 +60,7 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
         if InterimSalesHeader.FindFirst() then begin
             InterimSalesHeader."Destination Doc No." := '';
             Clear(InterimSalesHeader."Destination Doc Type");
-            InterimSalesHeader.status := InterimSalesHeader.status::"In Progress";//Sofyan
+            InterimSalesHeader.status := InterimSalesHeader.status::Accepted;
             InterimSalesHeader.Modify(true);
         end;
     end;

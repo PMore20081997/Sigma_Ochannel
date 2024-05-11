@@ -87,7 +87,7 @@ page 90029 "Web Order Header API Card"
             ChannelPartner.Get(Rec."Trade Partner Code");
             Rec."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
             Rec.Validate("External Document No.", Rec."Channel Order ID");
-            Rec.VALIDATE(Status, Rec.Status::"In Progress");
+            Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("ET Access Code", Rec."ET Access Code");
             Rec.Validate("Order Date", WorkDate);
             if (Rec."Sell-to Customer No." <> '') then begin
@@ -197,50 +197,77 @@ page 90029 "Web Order Header API Card"
 
             //Check Validation+++
             Sigma_SigConnectHeaderValidations(Rec);
-
-            //Update Interim header and Interim Line Response Code and Message++
-            //Header++
-            PartnerErrorLog.RESET;
-            PartnerErrorLog.SETRANGE("Document No.", Rec."No.");
-            PartnerErrorLog.SetFilter("Item No.", '%1', '');
-            PartnerErrorLog.SetCurrentKey("Sequence No.");
-            PartnerErrorLog.Ascending(true);
-            IF PartnerErrorLog.FindFirst() THEN begin
-                L_OrderLevelResponse.Reset();
-                L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
-                if L_OrderLevelResponse.FindFirst() then begin
-                    Rec."Reason Code" := L_OrderLevelResponse.Reason;
-                    Rec."Reason Message" := L_OrderLevelResponse.Message;
-                end;
-            end else begin
-                Rec."Reason Code" := 'Order Created';
-                Rec."Reason Message" := 'Accepted';
-            end;
         end;
     end;
 
     trigger OnAfterGetRecord()
     var
         L_InsterimSalesLine: Record "Interim Sales Line";
+        L_Line: Record "Interim Sales Line";
+        LineCount: Integer;
+        ErrorCount: Integer;
+        CU_WebOrderMgmt: Codeunit "Web Order Mgt";
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_OrderLevelResponse: Record "Order Level Response";
     begin
-        //Update Status in Interim Sales Header++
+        #Region All product lines rejected Error SEQ13
+        Clear(LineCount);
+        L_Line.Reset();
+        L_Line.SetRange("Document Type", Rec."Document Type");
+        L_Line.SetRange("Document No", Rec."No.");
+        L_Line.SetRange(Type, L_Line.Type::Item);
+        if L_Line.FindSet() then
+            LineCount := L_Line.Count;
+
+        Clear(ErrorCount);
+        L_Line.Reset();
+        L_Line.SetRange("Document Type", Rec."Document Type");
+        L_Line.SetRange("Document No", Rec."No.");
+        L_Line.SetRange(Type, L_Line.Type::Item);
+        L_Line.CalcFields("No of Error");
+        L_Line.SetFilter("No of Error", '>%1', 0);
+        if L_Line.FindSet() then
+            ErrorCount := L_Line.Count;
+
+        if LineCount = ErrorCount then begin
+            CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
+            Rec.status := Rec.status::Rejected;
+        end;
+        #endregion
+
+        PartnerErrorLog.RESET;
+        PartnerErrorLog.SETRANGE("Document No.", Rec."No.");
+        PartnerErrorLog.SetFilter("Item No.", '%1', '');
+        PartnerErrorLog.SetCurrentKey("Sequence No.");
+        PartnerErrorLog.Ascending(true);
+        IF PartnerErrorLog.FindFirst() THEN begin
+            L_OrderLevelResponse.Reset();
+            L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            if L_OrderLevelResponse.FindFirst() then begin
+                Rec."Reason Code" := L_OrderLevelResponse.Reason;
+                Rec."Reason Message" := L_OrderLevelResponse.Message;
+            end;
+        end else begin
+            Rec."Reason Code" := 'Order Created';
+            Rec."Reason Message" := 'Accepted';
+        end;
+
         if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
             L_InsterimSalesLine.Reset();
             L_InsterimSalesLine.SetRange("Document Type", Rec."Document Type");
             L_InsterimSalesLine.SetRange("Document No", Rec."No.");
             L_InsterimSalesLine.SetFilter("Reason Message", '%1', 'Successful');
             if L_InsterimSalesLine.FindFirst() then begin
-                Rec.status := Rec.status::"In Progress";
-                Rec.Modify();
+                Rec.status := Rec.status::Accepted;
             end else begin
-                Rec.status := Rec.status::Confirmed;
+                Rec.status := Rec.status::Rejected;
                 Rec."Ready to process" := true;
-                Rec.Modify();
             end;
         end else begin
-            Rec.status := Rec.status::Confirmed;
-            Rec.Modify();
+            Rec.status := Rec.status::Rejected;
         end;
+
+        Rec.Modify();
     end;
 
 
@@ -261,7 +288,7 @@ page 90029 "Web Order Header API Card"
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::Cancelled, P_InterimSalesHeader.status::Processing] then
+            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
                 exit;
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
             PartnerErrorLog.RESET;
@@ -393,32 +420,6 @@ page 90029 "Web Order Header API Card"
                     end;
                 end;
             end;
-
-            //Response SEQ13++
-            // if L_ErrorRecorded = false then begin
-            //     Clear(LineCount);
-            //     L_Line.Reset();
-            //     L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
-            //     L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
-            //     L_Line.SetRange(Type, L_Line.Type::Item);
-            //     if L_Line.FindSet() then
-            //         LineCount := L_Line.Count;
-
-            //     Clear(ErrorCount);
-            //     L_Line.Reset();
-            //     L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
-            //     L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
-            //     L_Line.SetRange(Type, L_Line.Type::Item);
-            //     L_Line.CalcFields("No of Error");
-            //     L_Line.SetFilter("No of Error", '>%1', 0);
-            //     if L_Line.FindSet() then
-            //         ErrorCount := L_Line.Count;
-
-            //     if LineCount = ErrorCount then begin
-            //         Sigma_InsertErrorLog(STRSUBSTNO('All product lines rejected', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ14', true, '');
-            //         L_ErrorRecorded := TRUE;
-            //     end;
-            // end;
         end;
     end;
 }

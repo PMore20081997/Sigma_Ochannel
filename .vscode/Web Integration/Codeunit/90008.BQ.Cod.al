@@ -525,7 +525,7 @@ codeunit 90008 "B&Q"
         HandledInterimSalesHeader.RESET;
         HandledInterimSalesHeader.SETRANGE("Trade Partner Code", ChannelCode);
         HandledInterimSalesHeader.SetRange("Document Type", HandledInterimSalesHeader."Document Type"::Order);
-        HandledInterimSalesHeader.SetFilter(Status, '%1', HandledInterimSalesHeader.Status::Dispatched);
+        //HandledInterimSalesHeader.SetFilter(Status, '%1', HandledInterimSalesHeader.Status::Dispatched);
         HandledInterimSalesHeader.SetRange("Document Date", Today);
         IF HandledInterimSalesHeader.FindSet() THEN begin
             repeat

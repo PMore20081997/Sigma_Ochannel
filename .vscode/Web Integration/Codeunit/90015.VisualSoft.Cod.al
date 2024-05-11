@@ -1996,7 +1996,7 @@ codeunit 90015 "VisualSoft"
         HandledInterimSalesHeader.SetFilter("FullFillment Status", '<>%1', HandledInterimSalesHeader."FullFillment Status"::Fullfilled);
         HandledInterimSalesHeader.SetRange("Document Type", HandledInterimSalesHeader."Document Type"::Order);
         HandledInterimSalesHeader.SetFilter("Package Tracking No.", '<>%1', '');
-        HandledInterimSalesHeader.SetFilter(status, '%1', HandledInterimSalesHeader.status::Dispatched);
+        //HandledInterimSalesHeader.SetFilter(status, '%1', HandledInterimSalesHeader.status::Dispatched);
         //HandledInterimSalesHeader.SetFilter("No.", '%1', 'WEB32600');
         if HandledInterimSalesHeader.FindSet() then begin
             repeat

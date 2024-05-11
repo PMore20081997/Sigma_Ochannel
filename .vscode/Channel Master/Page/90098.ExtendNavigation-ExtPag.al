@@ -47,6 +47,11 @@ pageextension 90098 "ExtendNavigation" extends "Whse. Worker WMS Role Center"
                     RunObject = page "Sales Price Lists";
                     ApplicationArea = All;
                 }
+                action("Channel Item References")
+                {
+                    RunObject = page "Channel Item Reference";
+                    ApplicationArea = All;
+                }
                 action("General Setup - Channels")
                 {
                     RunObject = page "General Setup - Channels";

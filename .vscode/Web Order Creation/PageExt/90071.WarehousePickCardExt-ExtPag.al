@@ -1,6 +1,5 @@
 pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
 {
-    //CourierIntegration++
     layout
     {
         addafter("Sorting Method")
@@ -44,22 +43,18 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
             field("Shipping Agent Code"; Rec."Shipping Agent Code")
             {
                 ApplicationArea = all;
-                //Visible = false;
             }
             field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
             {
                 ApplicationArea = all;
-                //Visible = false;
             }
             field("No. of Boxes"; Rec."No. of Boxes")
             {
                 ApplicationArea = all;
-                //Visible = false;
             }
             field("Total weight (consignment)"; Rec."Total weight (consignment)")
             {
                 ApplicationArea = all;
-                //Visible = false;
             }
             field("SO No."; Rec."SO No.")
             {
@@ -76,47 +71,6 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
             }
         }
     }
-    //CourierIntegration--
-    /* actions
-     {
-         modify(RegisterPick)
-         {
-             trigger OnBeforeAction()
-             var
-                 WAL: Record "Warehouse Activity Line";
-                 ISL: Record "Interim Sales Line";
-                 ISH: Record "Interim Sales Header";
-             begin
-                 WAL.Reset();
-                 WAL.SetRange("No.", Rec."No.");
-                 WAL.SetRange("Activity Type", WAL."Activity Type"::Pick);
-                 if WAL.FindSet() then begin
-                     repeat
-                         ISL.Reset();
-                         ISL.SetRange("Document Type", ISL."Document Type"::Order);
-                         ISL.SetRange("Destination Doc Type", ISL."Destination Doc Type"::"Internal Pick");
-                         ISL.SetRange("Destination Doc No.", WAL."Source No.");
-                         ISL.SetRange("Channel Order ID", WAL."Channel Order ID");
-                         if ISL.FindFirst() then begin
-                             ISL."Picking Status" := ISL."Picking Status"::"In Picking";
-                             ISL.Modify(true);
-                         end;
-                         ISH.Reset();
-                         ISH.SetRange("Document Type", ISH."Document Type"::Order);
-                         ISH.SetRange("Destination Doc Type", ISH."Destination Doc Type"::"Internal Pick");
-                         ISH.SetRange("Destination Doc No.", WAL."Source No.");
-                         ISH.SetRange("Channel Order ID", WAL."Channel Order ID");
-                         if ISH.FindFirst() then begin
-                             ISH.status := ISH.status::"In Picking";
-                             ISH.Modify(true);
-                         end;
-                     until WAL.Next() = 0;
-                 end;
-             end;
-
-         }
-     }*/
-
 
     trigger OnDeleteRecord(): Boolean
     begin
@@ -185,20 +139,20 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
                         UNTIL L_InterimSalesLine.NEXT = 0;
 
                     IF PartialScanned = 0 THEN BEGIN
-                        IF PickedLine > 0 THEN
-                            L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::Picked
-                        ELSE
-                            IF InpickingLine > 0 THEN
-                                L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::"In Picking"
-                            ELSE
-                                L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::Processing;
-                    END ELSE
-                        L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::"Partially Scanned";
+                        // IF PickedLine > 0 THEN
+                        //     L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::Picked
+                        // ELSE
+                        //     IF InpickingLine > 0 THEN
+                        //         L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::"In Picking"
+                        //     ELSE
+                        //         L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::"SO Created";
+                    END;
+                    // END ELSE
+                    //     L_InterimSalesHeader.Status := L_InterimSalesHeader.Status::"Partially Scanned";
                     L_InterimSalesHeader.MODIFY;
 
                 END;
             UNTIL TempOrderNoPick.NEXT = 0;
-
     end;
 
     LOCAL procedure AddOrderNotoTempPick(OrderNo: Code[20])

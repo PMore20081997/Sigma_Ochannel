@@ -302,7 +302,7 @@ page 90019 "Handle Web Order"
                         DocNo := INCSTR(Rec."No.");//+'-01'
                     RecInterimSalesHeader."No." := DocNo;
                     RecInterimSalesHeader."Package Tracking No." := '';
-                    RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::"In Progress";
+                    RecInterimSalesHeader.Status := RecInterimSalesHeader.Status::Accepted;
                     RecInterimSalesHeader."Order Date" := TODAY;
                     RecInterimSalesHeader."Document Date" := TODAY;
                     RecInterimSalesHeader."Channel Order ID" := rec."Channel Order ID" + 'R';
@@ -340,7 +340,7 @@ page 90019 "Handle Web Order"
                                 CLEAR(InterimSalesLine."Pick No");
                                 CLEAR(InterimSalesLine."Picking Status");
                                 CLEAR(InterimSalesLine."Pick Line No");
-                                InterimSalesLine.Status := InterimSalesLine.Status::"In Progress";
+                                InterimSalesLine.Status := InterimSalesLine.Status::Accepted;
                                 InterimSalesLine.Reserved := FALSE;
                                 InterimSalesLine."Channel Order ID" := L_InterimSalesHeader."Channel Order ID";
                                 InterimSalesLine.INSERT(TRUE);
@@ -350,31 +350,7 @@ page 90019 "Handle Web Order"
 
                 end;
             }
-            action(Cancel)
-            {
-                Caption = 'Cancel';
-                ApplicationArea = All;
-                Image = Cancel;
-                trigger OnAction()
-                var
-                    L_HISL: Record "Handled Interim Sales Line";
-                begin
 
-                    rec.Status := rec.Status::Cancelled;
-                    CurrPage.UPDATE;
-
-                    //Prathamesh
-                    L_HISL.Reset();
-                    L_HISL.SetRange("Document No", Rec."No.");
-                    if L_HISL.FindSet() then begin
-                        repeat
-                            L_HISL."Line Status" := L_HISL."Line Status"::Cancelled;
-                            L_HISL.Modify(true);
-                        until L_HISL.Next() = 0;
-                    end;
-                    //Prathamesh
-                end;
-            }
             action("Payment Details")
             {
                 Image = Payment;

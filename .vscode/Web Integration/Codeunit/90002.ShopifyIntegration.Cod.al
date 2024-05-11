@@ -1759,7 +1759,7 @@ codeunit 90002 "Shopify Integration"
         L_HandledInterimSalesHeader.SetFilter("FullFillment Status", '<>%1|%2', L_HandledInterimSalesHeader."FullFillment Status"::Fullfilled, L_HandledInterimSalesHeader."FullFillment Status"::Cancelled);
         L_HandledInterimSalesHeader.SetRange("Document Type", L_HandledInterimSalesHeader."Document Type"::Order);
         L_HandledInterimSalesHeader.SetFilter("Package Tracking No.", '<>%1', '');
-        L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
+        //L_HandledInterimSalesHeader.SetFilter(status, '%1', L_HandledInterimSalesHeader.status::Dispatched);
         //L_HandledInterimSalesHeader.SetFilter("No.", '%1', 'WEB30028');
         //L_HandledInterimSalesHeader.SetFilter("Channel Order ID", '%1', '#LHOME40626');
         if L_HandledInterimSalesHeader.FindSet() then begin
