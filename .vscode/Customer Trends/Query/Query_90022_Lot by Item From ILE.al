@@ -11,10 +11,6 @@ query 90022 "Lot By Item From ILE"
             {
 
             }
-            column(Variant_Code; "Variant Code")
-            {
-
-            }
             column(Lot_No_; "Lot No.")
             {
 

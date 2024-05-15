@@ -55,8 +55,8 @@
     }
   ],
   "screenshots": [],
-  "platform": "22.0.0.0",
-  "application": "22.0.0.0",
+  "platform": "1.0.0.0",
+  "application": "2.0.0.0",
   "idRanges": [
     {
       "from": 90000,
@@ -64,6 +64,6 @@
     }
   ],
   "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",
-  "runtime": "11.0"
+  "runtime": "13.0"
   
 }

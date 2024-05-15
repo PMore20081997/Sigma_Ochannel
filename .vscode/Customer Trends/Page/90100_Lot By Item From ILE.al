@@ -26,10 +26,6 @@ page 90100 "Lot By Item From ILE"
                     ApplicationArea = All;
 
                 }
-                field("Variant Code"; Rec."Variant Code")
-                {
-
-                }
                 field("Lot No."; Rec."Lot No.")
                 {
 
@@ -78,7 +74,6 @@ page 90100 "Lot By Item From ILE"
             Rec.INIT;
             Rec."Location Code" := L_LotByItemFromILE.Location_Code;
             Rec."Item No." := L_LotByItemFromILE.Item_No_;
-            Rec."Variant Code" := L_LotByItemFromILE.Variant_Code;
             Rec."Lot No." := L_LotByItemFromILE.Lot_No_;
             Rec."Qty. (Base)" := L_LotByItemFromILE.Remaining_Quantity;
 
@@ -92,7 +87,6 @@ page 90100 "Lot By Item From ILE"
                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
                 L_SalesLine.SetRange("No.", L_LotByItemFromILE.Item_No_);
                 L_SalesLine.SetRange("Location Code", L_LotByItemFromILE.Location_Code);
-                L_SalesLine.SetRange("Variant Code", L_LotByItemFromILE.Variant_Code);
                 L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
                 if L_SalesLine.FindSet() then begin
                     L_SalesLine.CalcSums("Outstanding Quantity");
