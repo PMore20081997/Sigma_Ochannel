@@ -742,15 +742,17 @@ xmlport 90016 "mio47"
                     Picker_Code := '';
                     Line_Type := '';
                     Volume := '';
-                    Inv_Date := format(Sales_Invoice_Header."Document Date");
+                    Inv_Date := format(Sales_Invoice_Header."Posting Date");
                     Cust_Ord_No := Sales_Invoice_Header."External Document No.";
                     Inv_No := Sales_Invoice_Header."No.";
                     sales_Shipment_Header.Reset();
-
-                    Promise_Date := '';
+                    sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Header."Order No.");
+                    if sales_Shipment_Header.FindFirst() then begin
+                        Promise_Date := format(sales_Shipment_Header."Promised Delivery Date");
+                    end;
                     Account_Year := '';
                     Account_Month := '';
-                    Sell_by_date := '';
+                    Sell_by_date := '00/00/00';
                     CustProdCode := Sales_Invoice_Line."Item Reference No.";
                     SalesAd1 := '';
                     SalesAd2 := '';

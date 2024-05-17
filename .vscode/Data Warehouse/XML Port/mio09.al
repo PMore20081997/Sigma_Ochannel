@@ -150,9 +150,9 @@ xmlport 90019 "mio09"
                     Del_Ad4 := "Ship-to_Address"."Post Code";
                     Del_Contact := "Ship-to_Address".Contact;
                     Del_Tel_No := "Ship-to_Address"."Phone No.";
-                    Del_Contact_Tel_No := '';
-                    Del_Contact_Mobile := '';
-                    Del_Contact_Email := '';
+                    Del_Contact_Tel_No := "Ship-to_Address"."Phone No.";
+                    Del_Contact_Mobile := "Ship-to_Address"."Phone No.";
+                    Del_Contact_Email := "Ship-to_Address"."E-Mail";
 
                 end;
             }

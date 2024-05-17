@@ -452,7 +452,7 @@ xmlport 90015 "mio82"
                     Prod_Code := L_PurchReceiptLine."No.";
                     Depot_Code := '';
                     Grn_No := L_PurchReceiptLine."Document No.";
-                    Prod_Qty := Format(L_PurchReceiptLine.Quantity);
+                    Prod_Qty := '';
                     Grn_Qty := Format(L_PurchReceiptLine.Quantity);
                     Qty_Desc := L_PurchReceiptLine."Unit of Measure";
                     Pord_Value := '';

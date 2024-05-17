@@ -70,6 +70,7 @@ codeunit 90082 "EDI Invoice"
         CompanyInfo: Record "Company Information";
         salesinvoiceline: Record "Sales Invoice Line";
         item: Record Item;
+        test: Record Customer;
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;

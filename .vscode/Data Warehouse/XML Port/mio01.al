@@ -593,7 +593,7 @@ xmlport 90002 "mio01"
                     Cust_Name := Customer.Name;
                     Address_1 := Customer.Address;
                     Address_2 := Customer."Address 2";
-                    Address_3 := '';
+                    Address_3 := Customer.County;
                     Postcode := Customer."Post Code";
                     Telephone_No := Customer."Phone No.";
                     Fax_Number := Customer."Fax No.";

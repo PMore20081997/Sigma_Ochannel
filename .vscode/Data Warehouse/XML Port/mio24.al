@@ -166,7 +166,7 @@ xmlport 90001 "mio24"
                     end;
 
                     Prod_Code := Item."No.";
-                    DepotCode := '';
+                    DepotCode := ''; //location
                     Phys_Stock := format(item.Inventory);
                     Alloc_Stock := '';
                     Alloc_After := '';

@@ -510,6 +510,7 @@ xmlport 90017 "mio03"
 
                 trigger OnAfterGetRecord()
                 var
+                    compInfo: Record "Company Information";
 
                 begin
                     Prod_Code := Item."No.";
@@ -536,7 +537,7 @@ xmlport 90017 "mio03"
                     Pack_Size := Item."Pack Size";
                     Desc_Pack := Item.Description;
                     Spec_Disc := '';
-                    Case_Weight := '';
+                    Case_Weight := Format(Item."Gross Weight");
                     Case_Volume := '';
                     Bin_Loc := '';
                     Own_Brand := '';
@@ -562,8 +563,9 @@ xmlport 90017 "mio03"
                     Average_usage := '';
                     Average_usage_UOM := '';
                     Average_usage_period := '';
-                    Unit_Weight := '';
-                    Company := '';
+                    Unit_Weight := Format(Item."Net Weight");
+                    compInfo.Get();
+                    Company := compInfo.Name;
                     Zero_Discount := '';
 
                 end;
