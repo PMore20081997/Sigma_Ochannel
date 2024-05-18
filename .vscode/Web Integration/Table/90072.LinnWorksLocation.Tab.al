@@ -7,7 +7,6 @@ table 90072 "LinnWorksLocation"
         field(1; "Location Id"; Code[250])
         {
             DataClassification = ToBeClassified;
-
         }
         field(2; StockLocationIntId; Code[250])
         {
@@ -21,10 +20,11 @@ table 90072 "LinnWorksLocation"
         field(5; LocationTag; Code[50])
         {
         }
-        field(6; IsWarehouseManaged; Boolean) { }
+        field(6; IsWarehouseManaged; Boolean)
+        {
+        }
         field(7; "No."; Integer)
         {
-
         }
     }
 
@@ -35,28 +35,4 @@ table 90072 "LinnWorksLocation"
             Clustered = true;
         }
     }
-
-    var
-        myInt: Integer;
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

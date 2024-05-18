@@ -60,7 +60,7 @@ table 90011 "Channel Item Listing"
             ValidateTableRelation = false;
             CaptionML = ENU = 'Unit of Measure Code', ENG = 'Unit of Measure Code';
         }
-        field(10; "Channel Inventory"; Decimal)
+        field(8; "Channel Inventory"; Decimal)
         {
             trigger OnValidate()
             begin
@@ -68,15 +68,15 @@ table 90011 "Channel Item Listing"
                     Rec.VALIDATE("Inventory Synced", FALSE);
             end;
         }
-        field(11; "Channel Description"; Text[250])
+        field(9; "Channel Description"; Text[250])
         {
             DataClassification = ToBeClassified;
         }
-        field(12; "Channel Title"; Text[250])
+        field(10; "Channel Title"; Text[250])
         {
             DataClassification = ToBeClassified;
         }
-        field(13; "Channel Unit Price"; Decimal)
+        field(11; "Channel Unit Price"; Decimal)
         {
             DataClassification = ToBeClassified;
             AutoFormatType = 2;
@@ -88,34 +88,29 @@ table 90011 "Channel Item Listing"
                 END;
             end;
         }
-        field(14; "Listing Status"; Option)
+        field(12; "Listing Status"; Option)
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Listing Status', ENG = 'Listing Status';
             OptionMembers = "Not Listed",Listed;
             OptionCaptionML = ENU = 'Not Listed,Listed', ENG = 'Not Listed,Listed';
         }
-        field(15; "Listing Date"; DateTime)
+        field(13; "Listing Date"; DateTime)
         {
-
         }
-        field(16; "Created On"; DateTime)
+        field(14; "Created On"; DateTime)
         {
-
         }
-        field(17; "Created By"; Code[20])
+        field(15; "Created By"; Code[20])
         {
-
         }
-        field(18; "Modified On"; DateTime)
+        field(16; "Modified On"; DateTime)
         {
-
         }
-        field(19; "Modified By"; Code[20])
+        field(17; "Modified By"; Code[20])
         {
-
         }
-        field(20; Status; Option)
+        field(18; Status; Option)
         {
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
@@ -128,146 +123,143 @@ table 90011 "Channel Item Listing"
                     Rec."Item Sync" := true;
             end;
         }
-        field(22; FeedType; Option)
+        field(19; FeedType; Option)
         {
             DataClassification = ToBeClassified;
             OptionMembers = Product,"Product Inventary",Price;
             OptionCaptionML = ENU = 'Product,Product Inventary,Price', ENG = 'Product,Product Inventary,Price';
         }
-        field(25; Manufacturer; Code[20])
+        field(20; Manufacturer; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(26; Brand; Code[20])
+        field(21; Brand; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(31; Remarks; Text[100])
+        field(22; Remarks; Text[100])
         {
             DataClassification = ToBeClassified;
         }
-        field(32; EAN; Code[20])
+        field(23; EAN; Code[20])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'EAN/UPC/ISBN', ENG = 'EAN/UPC/ISBN';
         }
-        field(33; "Feed Submission ID"; Code[30])
+        field(24; "Feed Submission ID"; Code[30])
         {
             DataClassification = ToBeClassified;
         }
-        field(34; Action; Option)
+        field(25; Action; Option)
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Action', ENG = 'Action';
             OptionMembers = Create,Update,Updated;
             OptionCaptionML = ENU = 'Create,Update,Updated', ENG = 'Create,Update,Updated';
         }
-        field(35; RemarksPrice; Text[100])
+        field(26; RemarksPrice; Text[100])
         {
             DataClassification = ToBeClassified;
         }
-        field(36; "Feed Submission ID Price"; Code[30])
+        field(27; "Feed Submission ID Price"; Code[30])
         {
             DataClassification = ToBeClassified;
         }
-        field(45; "Price Synced"; Boolean)
+        field(28; "Price Synced"; Boolean)
         {
-
         }
-        field(46; "Inventory Synced"; Boolean)
+        field(29; "Inventory Synced"; Boolean)
         {
-
         }
-        field(47; SpecialPriceSynced; Boolean)
+        field(30; SpecialPriceSynced; Boolean)
         {
             InitValue = true;
         }
-        field(48; "Item Category Code"; Code[20])
+        field(31; "Item Category Code"; Code[20])
         {
             DataClassification = ToBeClassified;
             TableRelation = "Item Category".Code;
         }
-        field(51; "Original Inventory"; Decimal)
+        field(32; "Original Inventory"; Decimal)
         {
             DecimalPlaces = 0 : 5;
             Description = 'CAS-08801-S8B5M5';
             Editable = false;
         }
-        field(52; "Special Price"; Decimal)
+        field(33; "Special Price"; Decimal)
         {
             Description = 'CAS-08836-G8V3G1';
         }
-        field(53; "Special Price Start Date"; Date)
+        field(34; "Special Price Start Date"; Date)
         {
             Description = 'CAS-08836-G8V3G1';
         }
-        field(54; "Special Price End Date"; Date)
+        field(35; "Special Price End Date"; Date)
         {
             Description = 'CAS-08836-G8V3G1';
         }
-        field(55; "Unit Price"; Decimal)
+        field(36; "Unit Price"; Decimal)
         {
-
         }
-        field(57; "Qty Per Unit of Measure"; Decimal)
+        field(37; "Qty Per Unit of Measure"; Decimal)
         {
             Caption = 'Qty Per Unit of Measure';
         }
-        field(50001; "NAV Variant"; Code[10])
+        field(38; "NAV Variant"; Code[10])
         {
             DataClassification = ToBeClassified;
             Description = 'CAS-10666-T7Q5W8';
             Caption = 'BC Variant';
         }
-        field(50002; "Channel Variant"; Text[50])
+        field(39; "Channel Variant"; Text[50])
         {
             DataClassification = ToBeClassified;
             Description = 'CAS-10666-T7Q5W8';
         }
-        field(50010; "Inventory Remark"; Text[100])
+        field(40; "Inventory Remark"; Text[100])
         {
             DataClassification = ToBeClassified;
         }
-        field(50011; "Image Url 1"; Text[200])
+        field(41; "Image Url 1"; Text[200])
         {
             DataClassification = ToBeClassified;
         }
-        field(50012; "Pack Size"; Code[20])
+        field(42; "Pack Size"; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(50013; RRP; Decimal)
+        field(43; RRP; Decimal)
         {
             DecimalPlaces = 0 : 5;
         }
-        field(58; "Allcoated on SO"; Decimal)
+        field(44; "Allcoated on SO"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true), "Variant Code" = FIELD("NAV Variant"), "Shipment Date" = field("Date Filter")));
             DecimalPlaces = 0 : 5;
         }
-        field(59; "Web Orders Qty"; Decimal)
+        field(45; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             DecimalPlaces = 0 : 5;
         }
-        field(60; "Physical Inventory"; Decimal)
+        field(46; "Physical Inventory"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Variant Code" = FIELD("NAV Variant"), "Daily Priority Exist" = field("Variant Code Mandatory")));
             DecimalPlaces = 0 : 5;
         }
-        field(61; "Variant Code Mandatory"; Boolean)
+        field(47; "Variant Code Mandatory"; Boolean)
         {
             FieldClass = FlowField;
             CalcFormula = exist("Item Variant" where("Item No." = field("Item No.")));
         }
-        field(62; "Date Filter"; Date)
+        field(48; "Date Filter"; Date)
         {
             FieldClass = FlowFilter;
         }
-        field(63; "Item Sync"; Boolean)
+        field(49; "Item Sync"; Boolean)
         {
             DataClassification = ToBeClassified;
         }

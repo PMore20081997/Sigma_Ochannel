@@ -239,43 +239,42 @@ table 90002 "Interim Customer"
         {
             DataClassification = ToBeClassified;
         }
-        field(45; "Listing Status"; Option)
+        field(44; "Listing Status"; Option)
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Listing Status', ENG = 'Listing Status';
             OptionMembers = "Not Listed",Listed;
             OptionCaptionML = ENU = 'Not Listed,Listed', ENG = 'Not Listed,Listed';
         }
-        field(46; "Customer Price Group 1"; Code[10])
+        field(45; "Customer Price Group 1"; Code[10])
         {
             Caption = 'Customer Price Group 2';
             TableRelation = "Customer Price Group";
         }
-        field(47; "Customer Price Group 2"; Code[10])
+        field(46; "Customer Price Group 2"; Code[10])
         {
             Caption = 'Customer Price Group 2';
             TableRelation = "Customer Price Group";
         }
-        field(48; "Customer Price Group 3"; Code[10])
+        field(47; "Customer Price Group 3"; Code[10])
         {
             Caption = 'Customer Price Group 3';
             TableRelation = "Customer Price Group";
         }
-        field(49; "Customer Price Group 4"; Code[10])
+        field(48; "Customer Price Group 4"; Code[10])
         {
             Caption = 'Customer Price Group 3';
             TableRelation = "Customer Price Group";
         }
-        field(50; "Customer Price Group 5"; Code[10])
+        field(49; "Customer Price Group 5"; Code[10])
         {
             Caption = 'Customer Price Group 3';
             TableRelation = "Customer Price Group";
         }
-        field(51; "Concerto Customer No."; Code[50])
+        field(50; "Concerto Customer No."; Code[50])
         {
-
         }
-        field(52; "Listing Status Setting"; Option)
+        field(51; "Listing Status Setting"; Option)
         {
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
@@ -288,7 +287,7 @@ table 90002 "Interim Customer"
                     Rec."Customer Sync" := true;
             end;
         }
-        field(53; "Customer Sync"; Boolean)
+        field(52; "Customer Sync"; Boolean)
         {
             DataClassification = ToBeClassified;
         }
@@ -304,25 +303,4 @@ table 90002 "Interim Customer"
 
     var
         Customer: Record "Customer";
-
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
 }

@@ -98,7 +98,7 @@ codeunit 90010 "Amazon SP API"
         item: Record Item;
         ItemCrossReference: Record "Item Reference";
         GeneralSetup: record "General Setup - Channels";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
     begin
         Clear(LineNo);
         Rec_ExcelBuffer.DeleteAll();

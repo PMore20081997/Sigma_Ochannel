@@ -21,7 +21,6 @@ table 90007 "Customer Reference"
         }
         field(3; Locked; Boolean)
         {
-
         }
     }
     keys

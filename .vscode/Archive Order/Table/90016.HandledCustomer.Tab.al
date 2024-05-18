@@ -1,4 +1,4 @@
-table 90016 "Handled Customer" //Shailesh 10032021
+table 90016 "Handled Customer"
 {
     DataClassification = ToBeClassified;
 
@@ -203,28 +203,4 @@ table 90016 "Handled Customer" //Shailesh 10032021
             Clustered = true;
         }
     }
-
-    var
-        myInt: Integer;
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

@@ -1,5 +1,3 @@
-//Robosol.MH 
-
 table 90022 "Web Payment"
 {
     DataClassification = ToBeClassified;
@@ -21,7 +19,6 @@ table 90022 "Web Payment"
         }
         field(4; Commission; Decimal)
         {
-
         }
         field(5; "Payment Service Customer No."; code[20])
         {
@@ -36,7 +33,6 @@ table 90022 "Web Payment"
         {
             DataClassification = ToBeClassified;
         }
-
     }
 
     keys
@@ -45,30 +41,5 @@ table 90022 "Web Payment"
         {
             Clustered = true;
         }
-
     }
-
-    var
-        myInt: Integer;
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

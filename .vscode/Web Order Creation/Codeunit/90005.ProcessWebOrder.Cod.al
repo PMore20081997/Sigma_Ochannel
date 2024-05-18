@@ -37,7 +37,7 @@ codeunit 90005 "Process Web Order"
     var
         CreateConsolidateSO: Codeunit "Create Consolidate SO";
         InvDiscountAmount: Decimal;
-        NoSeriesManagement: Codeunit 396;
+        NoSeriesManagement: Codeunit "No. Series";
         HeaderNo: Code[20];
         LineNo: Integer;
         FirstOrder: Boolean;
@@ -338,7 +338,7 @@ codeunit 90005 "Process Web Order"
         "S&R": Record "Sales & Receivables Setup";
         Countryregion: Record "Country/Region";
         Campaigns: Record Campaign;
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         Customer: Record Customer;
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         InterimSalesHeader: Record "Interim Sales Header";

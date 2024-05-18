@@ -10,19 +10,15 @@ table 90004 "Interim Sales Line"
         {
             Caption = 'Document Type';
             DataClassification = ToBeClassified;
-
         }
         field(2; "Document No"; Code[20])
         {
-
             DataClassification = ToBeClassified;
-
         }
         field(3; Type; Enum "Sales Line Type")
         {
             Caption = 'Type';
             DataClassification = ToBeClassified;
-
         }
         field(4; "No."; Code[20])
         {
@@ -34,11 +30,6 @@ table 90004 "Interim Sales Line"
                 L_GLAccount: Record "G/L Account";
             begin
                 CASE Type OF
-                    Type::Item:
-                        BEGIN
-                            /* IF L_Item.GET("No.") THEN
-                                 "VAT Prod. Posting Group" := L_Item."VAT Prod. Posting Group";*/
-                        END;
                     Type::"G/L Account":
                         BEGIN
                             IF L_GLAccount.GET("No.") THEN
@@ -46,17 +37,14 @@ table 90004 "Interim Sales Line"
                         END;
                 END;
             end;
-
         }
         field(5; "Line No."; Integer)
         {
             DataClassification = ToBeClassified;
-
         }
         field(6; "Description"; Text[100])
         {
             DataClassification = ToBeClassified;
-
         }
         field(7; "Unit Price"; Decimal)
         {
@@ -77,10 +65,8 @@ table 90004 "Interim Sales Line"
             DecimalPlaces = 0 : 5;
             trigger OnValidate()
             var
-                myInt: Integer;
             begin
                 IF (Quantity > 0) THEN begin
-                    //"Channel Price" := "Unit Price";
                     CalculateVatAmount(Rec);
 
                     CalculateBaseQuantity(Rec);
@@ -90,184 +76,148 @@ table 90004 "Interim Sales Line"
         field(9; Amount; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
         field(10; Discount; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
         field(11; "VAT amount"; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
         field(12; Description2; Text[50])
         {
             Editable = false;
             DataClassification = ToBeClassified;
-
         }
         field(13; "Order Date"; Date)
         {
             DataClassification = ToBeClassified;
         }
-        field(16; "VAT Prod. Posting Group"; Code[20])
+        field(14; "VAT Prod. Posting Group"; Code[20])
         {
             TableRelation = "VAT Product Posting Group";
             DataClassification = ToBeClassified;
 
             trigger OnValidate()
             var
-
             begin
                 Validate(Quantity);
             end;
         }
-        field(17; "Channel Identifier"; Code[20])
-        {
-            DataClassification = ToBeClassified;
-
-        }
-        field(18; "Channel Item Id"; Code[250])
-        {
-            DataClassification = ToBeClassified;
-
-        }
-        field(19; "Channel SKU"; Text[50])
-        {
-            DataClassification = ToBeClassified;
-
-        }
-
-        field(21; "Shipping Price"; Decimal)
-        {
-            DataClassification = ToBeClassified;
-
-        }
-
-        field(22; "Gift Wrap Price"; Decimal)
-        {
-            DataClassification = ToBeClassified;
-
-        }
-
-        field(24; Weight; Decimal)
+        field(15; "Channel Identifier"; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(25; "VAT%"; Text[30])
+        field(16; "Channel Item Id"; Code[250])
         {
             DataClassification = ToBeClassified;
-
         }
-
-        field(27; "Line Status"; Option)
+        field(17; "Channel SKU"; Text[50])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(18; "Shipping Price"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(19; "Gift Wrap Price"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(20; Weight; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(21; "VAT%"; Text[30])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(22; "Line Status"; Option)
         {
             DataClassification = ToBeClassified;
             OptionMembers = " ","No Stock",Cancelled;
             OptionCaptionML = ENU = ' ,"No Stock",Cancelled',
                               ENG = ' ,"No Stock",Cancelled';
         }
-
-        field(28; "Discount %"; Decimal)
+        field(23; "Discount %"; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
-        field(29; "Gift Wrap"; Boolean)
+        field(24; "Gift Wrap"; Boolean)
         {
             DataClassification = ToBeClassified;
-
         }
-        field(31; "NAV Variant code"; Code[20])
+        field(25; "NAV Variant code"; Code[20])
         {
             DataClassification = ToBeClassified;
             Caption = 'BC Variant Code';
-
         }
-        field(32; "Channel Variant"; Code[20])
+        field(26; "Channel Variant"; Code[20])
         {
             DataClassification = ToBeClassified;
-
         }
-        field(34; "Units per Parcel"; Decimal)
+        field(27; "Units per Parcel"; Decimal)
         {
             DataClassification = ToBeClassified;
-
         }
-        field(35; "Amount Including VAT"; Decimal)
+        field(28; "Amount Including VAT"; Decimal)
         {
-            // Editable = false;
             DataClassification = ToBeClassified;
-
         }
-        field(36; "Currency Code"; Code[10])
+        field(29; "Currency Code"; Code[10])
         {
             Editable = false;
             TableRelation = Currency;
             DataClassification = ToBeClassified;
-
         }
-        field(37; "Shipment Date"; Date)
+        field(30; "Shipment Date"; Date)
         {
             DataClassification = ToBeClassified;
-
         }
-
-        field(39; "Shipping Agent Code"; Code[10])
+        field(31; "Shipping Agent Code"; Code[10])
         {
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header"."Shipping Agent Code" WHERE("No." = field("Document No")));
             TableRelation = "Shipping Agent";
             AccessByPermission = TableData "Shipping Agent Services" = R;
             trigger OnValidate()
-            var
-                myInt: Integer;
             begin
                 IF xRec."Shipping Agent Code" = "Shipping Agent Code" THEN
                     EXIT;
 
                 "Shipping Agent Service Code" := '';
             end;
-
         }
-        field(40; "Shipping Agent Service Code"; Code[10])
+        field(32; "Shipping Agent Service Code"; Code[10])
         {
             TableRelation = "Shipping Agent Services".Code WHERE("Shipping Agent Code" = FIELD("Shipping Agent Code"));
-
-
         }
-        field(41; "Shipping Time"; DateFormula)
+        field(33; "Shipping Time"; DateFormula)
         {
             AccessByPermission = TableData "Sales Shipment Header" = R;
             DataClassification = ToBeClassified;
-
         }
-
-
-        field(45; "Trade Partner Code"; Code[20])
+        field(34; "Trade Partner Code"; Code[20])
         {
             TableRelation = "Trade Partner";
             DataClassification = ToBeClassified;
             ValidateTableRelation = false;
-
         }
-        field(47; "No of Error"; Integer)
+        field(35; "No of Error"; Integer)
         {
             Editable = false;
             FieldClass = FlowField;
             CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No"), "Item No." = field("No.")));
-
         }
-        field(48; "Order Status"; Option)
+        field(36; "Order Status"; Option)
         {
             OptionMembers = Rejected,Accepted,"SO Created";
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header".Status WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
             Editable = false;
         }
-        field(50; "VAT Bus. Posting Group"; Code[20])
+        field(37; "VAT Bus. Posting Group"; Code[20])
         {
             TableRelation = "VAT Business Posting Group";
             DataClassification = ToBeClassified;
@@ -276,16 +226,13 @@ table 90004 "Interim Sales Line"
                 Validate(Quantity);
                 VALIDATE("VAT Prod. Posting Group");
             end;
-
         }
-        field(51; "Tracking No."; Code[30])
+        field(38; "Tracking No."; Code[30])
         {
             FieldClass = FlowField;
             CalcFormula = Lookup("Shipment Tracking"."Tracking No." WHERE("Document Type" = FILTER(Order), "Document No." = field("No.")));
-
-
         }
-        field(53; "Sell-to Customer No."; Code[20])
+        field(39; "Sell-to Customer No."; Code[20])
         {
             Editable = false;
             trigger OnValidate()
@@ -296,232 +243,201 @@ table 90004 "Interim Sales Line"
                     "VAT Bus. Posting Group" := L_Customer."VAT Bus. Posting Group";
             end;
         }
-        field(54; "Channel Order ID"; Code[50])
+        field(40; "Channel Order ID"; Code[50])
         {
             DataClassification = ToBeClassified;
         }
-        field(55; "Unit Cost(LCY)"; Decimal)
+        field(41; "Unit Cost(LCY)"; Decimal)
         {
             DataClassification = ToBeClassified;
         }
-
-        field(50011; "Quantity Allocated"; Decimal)
+        field(42; "Quantity Allocated"; Decimal)
         {
             FieldClass = Normal;
         }
-        field(50015; "Allocated Status"; Option)
+        field(43; "Allocated Status"; Option)
         {
             Editable = false;
             OptionMembers = "Not Allocated","Fully Allocated","Part Allocated","Ready To Dispatch","In Picking",Picked;
             DataClassification = ToBeClassified;
-
         }
-        field(50026; Hazardous; Boolean)
+        field(44; Hazardous; Boolean)
         {
             DataClassification = ToBeClassified;
         }
-
-        field(50028; "Destination Doc. Line No"; Integer)
+        field(45; "Destination Doc. Line No"; Integer)
         {
             DataClassification = ToBeClassified;
-
         }
-        field(50029; Reserved; Boolean)
+        field(46; Reserved; Boolean)
         {
             DataClassification = ToBeClassified;
-
         }
-
-        field(50032; "Unit of Measure Code"; Code[10])
+        field(47; "Unit of Measure Code"; Code[10])
         {
             DataClassification = ToBeClassified;
             TableRelation = IF (Type = CONST(Item), "No." = FILTER(<> '')) "Item Unit of Measure".Code WHERE("Item No." = FIELD("No."));
 
             trigger OnValidate()
-            var
-                myInt: Integer;
             begin
                 If xRec."Unit of Measure Code" <> Rec."Unit of Measure Code" then
                     CalculateBaseQuantity(Rec);
             end;
         }
-        field(50033; "Document Date"; Date)
+        field(48; "Document Date"; Date)
         {
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header"."Document Date" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
-
-
         }
-        field(50034; "Location Code"; Code[20])
+        field(49; "Location Code"; Code[20])
         {
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header"."Location Code" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
         }
-        field(50036; "Scanned Date"; DateTime)
+        field(50; "Scanned Date"; DateTime)
         {
             DataClassification = ToBeClassified;
         }
-        field(50037; "Quantity(Base)"; Decimal)
+        field(51; "Quantity(Base)"; Decimal)
         {
             DataClassification = ToBeClassified;
         }
-        field(50038; "Item Type"; Option)
+        field(52; "Item Type"; Option)
         {
             DataClassification = ToBeClassified;
             OptionMembers = Single,Assembly,Component;
             OptionCaptionML = ENU = 'Single, Assembly, Component',
                               ENG = 'Single, Assembly, Component';
         }
-        field(50039; "BOM Item No."; Code[20])
+        field(53; "BOM Item No."; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(50041; "Moved In Handled"; Boolean)
+        field(54; "Moved In Handled"; Boolean)
         {
             DataClassification = ToBeClassified;
         }
-        field(50042; "Destination Doc Type"; Option)
+        field(55; "Destination Doc Type"; Option)
         {
             DataClassification = ToBeClassified;
             OptionMembers = " ","Sales Order","Internal Pick";
             OptionCaptionML = ENU = ' ,Sales Order,Internal Pick',
                               ENG = ' ,Sales Order,Internal Pick';
         }
-        field(50043; "Destination Doc No."; Code[20])
+        field(56; "Destination Doc No."; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(50044; "Trolley No."; Code[20])
+        field(57; "Trolley No."; Code[20])
         {
             DataClassification = ToBeClassified;
         }
-        field(50045; "Dispatch Scan"; Boolean)
+        field(58; "Dispatch Scan"; Boolean)
         {
             DataClassification = ToBeClassified;
         }
-        field(50046; "Price Authorised"; Boolean)
+        field(59; "Price Authorised"; Boolean)
         {
             DataClassification = ToBeClassified;
         }
-        field(50047; FileName; Text[100])
+        field(60; FileName; Text[100])
         {
             DataClassification = ToBeClassified;
         }
-        field(50048; "Channel Price"; Decimal)
+        field(61; "Channel Price"; Decimal)
         {
             DataClassification = ToBeClassified;
         }
-
-        field(90011; "Pack Description"; Text[50])
+        field(62; "Pack Description"; Text[50])
         {
             Editable = true;
-            // FieldClass = FlowField;
-            // CalcFormula = lookup ("Item Unit of Measure"."Pack Description" WHERE("Item No." = field("No."), Code = field("Base Unit of Measure")));
         }
-        field(90012; "ABV (%)"; Decimal)
+        field(63; "ABV (%)"; Decimal)
         {
-
         }
-        field(90013; Status; Option)
+        field(64; Status; Option)
         {
             Editable = false;
             OptionMembers = Rejected,Accepted,"SO Created";
             FieldClass = FlowField;
             CalcFormula = Lookup("Interim Sales Header".Status WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
         }
-        field(90014; "Pick No"; Code[20])
+        field(65; "Pick No"; Code[20])
         {
-
         }
-        field(90015; "Pick Line No"; Integer)
+        field(66; "Pick Line No"; Integer)
         {
-
         }
-        field(90016; "Picking Status"; Option)
+        field(67; "Picking Status"; Option)
         {
             OptionMembers = " ","In Picking",Picked;
-
         }
-
-        field(90018; "Multiline Order"; Boolean)
+        field(68; "Multiline Order"; Boolean)
         {
-
         }
-        field(90019; "Bay No."; Code[20])
+        field(69; "Bay No."; Code[20])
         {
-
         }
-        field(90020; "Trolley Closed Quantity"; Decimal)
+        field(70; "Trolley Closed Quantity"; Decimal)
         {
             DataClassification = ToBeClassified;
             Caption = 'Quantity Handled';
         }
-        field(90021; "Shelf No."; Code[20])
+        field(71; "Shelf No."; Code[20])
         {
-
         }
-        field(90022; "Reserved Qty"; Decimal)
+        field(72; "Reserved Qty"; Decimal)
         {
-
         }
-        //US-13166++
-        field(90023; "Header Id"; Guid)
+        field(73; "Header Id"; Guid)
         {
             TableRelation = "Interim Sales Header".SystemId;
         }
-        //US-13166--
-        field(90030; "Gift Card"; Boolean)
+        field(74; "Gift Card"; Boolean)
         {
-
         }
-
-        field(90031; order_id; Text[250])
+        field(75; order_id; Text[250])
         {
-
         }
-
-        field(90032; order_line_id; Text[250])
+        field(76; order_line_id; Text[250])
         {
-
         }
-        field(90046; "Reason Code"; Code[50])
+        field(77; "Reason Code"; Code[50])
         {
             DataClassification = ToBeClassified;
         }
-        field(90045; "Reason Message"; Text[250])
+        field(78; "Reason Message"; Text[250])
         {
             DataClassification = ToBeClassified;
         }
-        field(90049; "ET Access Code"; Code[50])
+        field(79; "ET Access Code"; Code[50])
         {
-
         }
-        field(90050; "Sales Order Created"; Boolean)
+        field(80; "Sales Order Created"; Boolean)
         {
             FieldClass = FlowField;
             CalcFormula = exist("Web Buffer" where("Web Document No." = field("Document No")));
         }
-        field(90051; "Qty. to Deliver"; Decimal)
+        field(81; "Qty. to Deliver"; Decimal)
         {
             DecimalPlaces = 0 : 5;
         }
-        field(90052; "Item Category Code"; Code[20])
+        field(82; "Item Category Code"; Code[20])
         {
             Caption = 'Item Category Code';
             TableRelation = "Item Category";
         }
-        field(70048; "Customer Price Group"; Code[10])
+        field(83; "Customer Price Group"; Code[10])
         {
             Caption = 'Customer Price Group';
             Editable = false;
             TableRelation = "Customer Price Group";
         }
-        field(70049; "Sig Channel Item Id"; Integer)
+        field(84; "Sig Channel Item Id"; Integer)
         {
             DataClassification = ToBeClassified;
-
         }
-        field(90053; "Variant Code Mandatory"; Boolean)
+        field(85; "Variant Code Mandatory"; Boolean)
         {
             FieldClass = FlowField;
             CalcFormula = exist("Item Variant" where("Item No." = field("No.")));
@@ -550,18 +466,10 @@ table 90004 "Interim Sales Line"
 
     trigger OnModify()
     begin
-
     end;
 
     trigger OnDelete()
     begin
-
-
-    end;
-
-    trigger OnRename()
-    begin
-
     end;
 
 
@@ -666,5 +574,4 @@ table 90004 "Interim Sales Line"
         ELSE
             P_ISL."Quantity(Base)" := P_ISL.Quantity;
     end;
-
 }

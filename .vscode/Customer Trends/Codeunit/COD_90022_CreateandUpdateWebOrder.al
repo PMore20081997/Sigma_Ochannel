@@ -72,7 +72,7 @@ codeunit 90022 "OC Create & Update WebOrder"
 
     local procedure CreatTemp_Order(_CustomerTrends: Record CustomerTrends; _TradPartner: Record "Trade Partner")
     var
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
     begin
         #Region Insert data in temp table++++
         G_LineNumber += 10000;
@@ -124,7 +124,7 @@ codeunit 90022 "OC Create & Update WebOrder"
 
     local procedure CreateWebOrder(var P_InterimSalesHeader: Record "Interim Sales Header" temporary; var P_InterimSalesLine: Record "Interim Sales Line" temporary; _TradPartner: Record "Trade Partner")
     var
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         BillToCustomer: Record Customer;
         L_OutSTream: OutStream;
         GeneralSetup: record "General Setup - Channels";

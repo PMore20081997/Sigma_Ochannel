@@ -186,7 +186,7 @@ page 90075 "Return Order Screen"
                     L_LineNo: Integer;
                     Return_HISH: Record "Handled Interim Sales Header";
                     Return_HISL: Record "Handled Interim Sales Line";
-                    NoSeriesManagement: Codeunit NoSeriesManagement;
+                    NoSeriesManagement: Codeunit "No. Series";
                     GeneralSetup: Record "General Setup - Channels";
                     DiagProgress: Dialog;
                     L_Flag: Boolean;

@@ -9,42 +9,39 @@ table 90010 "Incoming/Outgoing Error Log"
         {
             Caption = 'Transaction No.';
         }
-        field(3; "Document No."; Code[20])
+        field(2; "Document No."; Code[20])
         {
             Caption = 'Document No.';
         }
-        field(4; "Line No."; Integer)
+        field(3; "Line No."; Integer)
         {
             Caption = 'Line No.';
         }
-        field(5; Date; Date)
+        field(4; Date; Date)
         {
             Caption = 'Date';
         }
-        field(6; Comment; Text[50])
+        field(5; Comment; Text[50])
         {
             Caption = 'Comment';
         }
-        field(8; "Error Text"; Text[250])
+        field(6; "Error Text"; Text[250])
         {
         }
-        field(9; "Error Text2"; Text[250])
+        field(7; "Error Text2"; Text[250])
         {
         }
-        field(10; "Item No."; Code[20])
+        field(8; "Item No."; Code[20])
         {
         }
-        field(11; "Error Code"; Code[20])
+        field(9; "Error Code"; Code[20])
         {
-
         }
-        field(13; "Sequence No."; Integer)
+        field(10; "Sequence No."; Integer)
         {
-
         }
-        field(14; "Attribute"; Code[20])
+        field(11; "Attribute"; Code[20])
         {
-
         }
     }
 
@@ -54,6 +51,4 @@ table 90010 "Incoming/Outgoing Error Log"
         {
         }
     }
-
-
 }

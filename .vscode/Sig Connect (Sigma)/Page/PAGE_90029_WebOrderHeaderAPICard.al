@@ -70,7 +70,7 @@ page 90029 "Web Order Header API Card"
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_OrderLevelResponse: Record "Order Level Response";
         Temp_InterimSalesHeader: Record "Interim Sales Header";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         GeneralSetup: record "General Setup - Channels";
         L_Date: Record Date;
     begin

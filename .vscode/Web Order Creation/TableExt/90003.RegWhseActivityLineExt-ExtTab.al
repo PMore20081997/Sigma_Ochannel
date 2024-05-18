@@ -8,11 +8,9 @@ tableextension 90003 "Reg. Whse. Activity Line Ext" extends "Registered Whse. Ac
         }
         field(90001; "Channel Order ID"; Code[50])
         {
-
         }
         field(90002; "Bay No."; code[20])
         {
-
         }
         field(90003; "Bay Closed"; Boolean)
         {
@@ -20,8 +18,6 @@ tableextension 90003 "Reg. Whse. Activity Line Ext" extends "Registered Whse. Ac
         }
         field(90004; "Channel Code"; code[20])
         {
-
         }
     }
-
 }

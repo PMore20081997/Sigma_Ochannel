@@ -4,7 +4,6 @@ table 90000 "General Setup - Channels"
     {
         field(1; "Primary Key"; Code[10])
         {
-
         }
         field(2; "Web Order Nos"; Code[10])
         {
@@ -18,57 +17,47 @@ table 90000 "General Setup - Channels"
         {
             TableRelation = "G/L Account"."No.";
         }
-
         field(5; "Invoice G/L No."; Code[20])
         {
             TableRelation = "G/L Account"."No.";
         }
-
-        field(7; "Despatch Scan Enabled"; Boolean)
+        field(6; "Despatch Scan Enabled"; Boolean)
         {
         }
-
-        field(19; "Delete Shipment Tracking"; Boolean)
+        field(7; "Delete Shipment Tracking"; Boolean)
         {
-
         }
-        field(25; "Allocate Web Orders"; Boolean)
+        field(8; "Allocate Web Orders"; Boolean)
         {
-
         }
-        field(26; "Enable Carriage credit"; Boolean)
+        field(9; "Enable Carriage credit"; Boolean)
         {
             DataClassification = ToBeClassified;
         }
-        field(27; "Quantity Restriction (SINGLE)"; Decimal)
-        {
-
-        }
-        field(28; "Courier Label Container Name"; Text[250])
-        {
-
-        }
-        field(29; "Courier Label Container Token"; Text[250])
+        field(10; "Quantity Restriction (SINGLE)"; Decimal)
         {
         }
-        field(30; "Courier Container Endpoint"; Text[250])
+        field(11; "Courier Label Container Name"; Text[250])
+        {
+        }
+        field(12; "Courier Label Container Token"; Text[250])
+        {
+        }
+        field(13; "Courier Container Endpoint"; Text[250])
         {
             Caption = 'Courier Label Container Endpoint';
         }
-        field(31; "Courier Container Attribute"; Text[250])
+        field(14; "Courier Container Attribute"; Text[250])
         {
             Caption = 'Courier Label Container Attribute';
         }
-        field(32; "Download Lable on Azure"; Boolean)
+        field(15; "Download Lable on Azure"; Boolean)
         {
             DataClassification = ToBeClassified;
             Caption = 'Download Delivery Lable on Azure';
         }
-        field(33; "Auto Release Sales Orders"; Boolean)
+        field(16; "Auto Release Sales Orders"; Boolean)
         {
-
         }
-
     }
-
 }

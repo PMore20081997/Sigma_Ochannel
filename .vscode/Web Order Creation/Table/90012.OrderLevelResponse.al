@@ -4,15 +4,12 @@ table 90012 "Order Level Response"
     {
         field(1; "Entry No."; Integer)
         {
-            //AutoIncrement = true;
         }
         field(2; Reason; Text[250])
         {
-
         }
         field(3; Message; Text[250])
         {
-
         }
         field(4; "Error Code"; Code[20])
         {
@@ -27,7 +24,6 @@ table 90012 "Order Level Response"
                     if L_OrderLevelResponse.FindFirst() then
                         Error('Error Code %1 already exist', Rec."Error Code");
                 end;
-
             end;
         }
     }
@@ -39,5 +35,4 @@ table 90012 "Order Level Response"
 
         }
     }
-
 }

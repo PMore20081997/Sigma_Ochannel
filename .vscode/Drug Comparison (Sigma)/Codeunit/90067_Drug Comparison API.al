@@ -274,7 +274,7 @@ codeunit 90067 "Drug Comparison API"
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_InterimSalesLine: Record "Interim Sales Line";
         GeneralSetup: record "General Setup - Channels";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         SellToCustomer: Record Customer;
         CountriesRegion: Record "Country/Region";
         L_Item: Record Item;

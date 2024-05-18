@@ -269,7 +269,7 @@ codeunit 90066 "Create Consolidate SO"
     local procedure CreateSalesHeaderFromTemporary(_Temporary_SalesLine: Record "Sales Line" temporary)
     var
         SalesRecSetup: Record "Sales & Receivables Setup";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         L_Customer: Record Customer;
     begin
         Clear(G_SNo);
@@ -579,7 +579,7 @@ codeunit 90066 "Create Consolidate SO"
     local procedure CreateSalesHeader(_InterimSalesHeader: Record "Interim Sales Header")
     var
         SalesRecSetup: Record "Sales & Receivables Setup";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         L_Customer: Record Customer;
     begin
         SalesRecSetup.Get();

@@ -2,13 +2,10 @@ tableextension 90100 "Sales Invoice Header" extends "Sales Invoice Header"
 {
     fields
     {
-        field(50001; Export; Boolean)
+        field(90000; Export; Boolean)
         {
             DataClassification = ToBeClassified;
             Caption = 'Export';
         }
     }
-
-    var
-        myInt: Integer;
 }

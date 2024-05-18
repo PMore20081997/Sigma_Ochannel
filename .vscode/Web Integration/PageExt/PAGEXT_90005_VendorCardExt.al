@@ -12,11 +12,6 @@ pageextension 90005 VendorCardExt extends "Vendor Card"
         }
     }
 
-    actions
-    {
-        // Add changes to page actions here
-    }
-
     var
         L_CurrPageEditable: Boolean;
 

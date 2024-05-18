@@ -1,6 +1,5 @@
 tableextension 90097 "Sales Line Extended" extends "Sales Line"
 {
-
     fields
     {
         modify(Quantity)
@@ -23,7 +22,6 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 end;
             end;
         }
-
         modify("Variant Code")
         {
             trigger OnAfterValidate()
@@ -44,10 +42,8 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 end;
             end;
         }
-
         field(90000; "Scanned Date"; DateTime)
         {
-
         }
         field(90001; "Channel Order ID"; Code[50])
         {
@@ -57,7 +53,6 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         }
         field(90003; "Web Order"; Boolean)
         {
-
         }
         field(90004; "Web Orders Qty"; Decimal)
         {
@@ -74,8 +69,6 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
         {
             //FTP Integration
         }
-
-
     }
     var
         G_CT_Function: Codeunit "Inventory Calculation";

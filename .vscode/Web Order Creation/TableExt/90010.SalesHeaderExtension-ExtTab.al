@@ -2,28 +2,25 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
 {
     fields
     {
-        field(90001; "Web Shipment Method"; Code[50])
-        {
-            DataClassification = ToBeClassified;
-
-        }
-        field(90002; "Channel Code"; Code[20])
+        field(90000; "Web Shipment Method"; Code[50])
         {
             DataClassification = ToBeClassified;
         }
-        field(60006; SalesOrderReturnNo; Code[20])
+        field(90001; "Channel Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90002; SalesOrderReturnNo; Code[20])
         {
             Caption = 'Sales Order Return No.';
             Editable = false;
             DataClassification = ToBeClassified;
         }
-        field(60007; "Web Order"; Boolean)
+        field(90003; "Web Order"; Boolean)
         {
-
         }
-        field(60008; "Marged Web Order"; Boolean)
+        field(90004; "Marged Web Order"; Boolean)
         {
-
         }
     }
 

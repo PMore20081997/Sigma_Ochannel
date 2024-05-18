@@ -14,7 +14,7 @@ codeunit 90076 "JohnlewisEDI"
 
     procedure GetEDIRecords()
     var
-        NoSeriesMgmt: Codeunit NoSeriesManagement;
+        NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
         Salesinvoicehead: Record "Sales Invoice Header";
     begin

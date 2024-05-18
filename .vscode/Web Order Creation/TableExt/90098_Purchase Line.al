@@ -2,7 +2,6 @@ tableextension 90098 "OC Purchase line" extends "Purchase Line"
 {
     fields
     {
-        // Add changes to table fields here
         field(90004; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
@@ -11,17 +10,4 @@ tableextension 90098 "OC Purchase line" extends "Purchase Line"
             DecimalPlaces = 0 : 5;
         }
     }
-
-    keys
-    {
-        // Add changes to keys here
-    }
-
-    fieldgroups
-    {
-        // Add changes to field groups here
-    }
-
-    var
-        myInt: Integer;
 }

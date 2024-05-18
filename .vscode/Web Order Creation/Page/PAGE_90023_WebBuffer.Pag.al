@@ -17,7 +17,6 @@ page 90023 "Web Buffer"
                 field("Web Document No."; Rec."Web Document No.")
                 {
                     ApplicationArea = All;
-
                 }
                 field("Sales Document No."; Rec."Sales Document No.")
                 {
@@ -25,6 +24,5 @@ page 90023 "Web Buffer"
                 }
             }
         }
-
     }
 }

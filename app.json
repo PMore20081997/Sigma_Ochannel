@@ -55,15 +55,14 @@
     }
   ],
   "screenshots": [],
-  "platform": "1.0.0.0",
-  "application": "2.0.0.0",
+  "platform": "23.0.0.0",
+  "application": "23.0.0.0",
   "idRanges": [
     {
       "from": 90000,
-      "to": 90100
+      "to": 90200
     }
   ],
   "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",
   "runtime": "13.0"
-  
 }

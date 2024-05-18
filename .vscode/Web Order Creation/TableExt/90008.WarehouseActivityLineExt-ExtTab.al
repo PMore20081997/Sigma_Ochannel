@@ -8,18 +8,17 @@ tableextension 90008 "Warehouse Activity Line Ext" extends "Warehouse Activity L
         }
         field(90001; "Channel Order ID"; Code[50])
         {
-
         }
         field(90002; "Bay No."; Code[20])
         {
-
+        }
+        field(90003; "Bay Closed"; Boolean)
+        {
+            DataClassification = ToBeClassified;
         }
         field(90004; "Channel Code"; Code[20])
         {
             Caption = 'Channel Code';
         }
     }
-
-    var
-        myInt: Integer;
 }

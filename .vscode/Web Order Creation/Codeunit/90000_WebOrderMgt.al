@@ -89,7 +89,7 @@ codeunit 90000 "Web Order Mgt"
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         GeneralSetup: record "General Setup - Channels";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         SellToCustomer: Record Customer;
         ChannelPartner: Record "Trade Partner";
         IsExist: Boolean;
@@ -257,7 +257,7 @@ codeunit 90000 "Web Order Mgt"
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         GeneralSetup: record "General Setup - Channels";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         SellToCustomer: Record Customer;
         ChannelPartner: Record "Trade Partner";
         ChannelItemList: Record "Channel Item Listing";
@@ -2063,7 +2063,7 @@ codeunit 90000 "Web Order Mgt"
         TradePartner: Record "Trade Partner";
         NoSeries: Record "No. Series";
         NoSeriesLine: Record "No. Series Line";
-        NoSeriesManagement: Codeunit NoSeriesManagement;
+        NoSeriesManagement: Codeunit "No. Series";
         ShiptoAddress: Record "Ship-to Address";
 
     begin

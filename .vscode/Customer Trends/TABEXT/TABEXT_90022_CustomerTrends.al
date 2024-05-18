@@ -2,15 +2,13 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
 {
     fields
     {
-        // Add changes to table fields here
-        field(90022; "Web Orders Qty"; Decimal)
+        field(90000; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = sum("Interim Sales Line".Quantity where(Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             Editable = false;
             DecimalPlaces = 0 : 5;
         }
-
         modify("Qty. to be added to SO")
         {
             trigger OnAfterValidate()
@@ -24,18 +22,6 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
         }
     }
 
-    keys
-    {
-        // Add changes to keys here
-    }
-
-    fieldgroups
-    {
-        // Add changes to field groups here
-    }
-
     var
-        myInt: Integer;
         G_CT_Function: Codeunit "Inventory Calculation";
-
 }

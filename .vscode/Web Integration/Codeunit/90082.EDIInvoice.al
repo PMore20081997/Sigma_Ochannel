@@ -37,7 +37,7 @@ codeunit 90082 "EDI Invoice"
     //Customer EDI
     procedure GetEDIRecords()
     var
-        NoSeriesMgmt: Codeunit NoSeriesManagement;
+        NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
         Salesinvoicehead: Record "Sales Invoice Header";
         //salesHeader: Record "Sales Header";
@@ -182,7 +182,7 @@ codeunit 90082 "EDI Invoice"
 
     procedure GetEDIRecords1()
     var
-        NoSeriesMgmt1: Codeunit NoSeriesManagement;
+        NoSeriesMgmt1: Codeunit "No. Series";
         NextNo1: Code[20];
         //Salesinvoicehead: Record "Sales Invoice Header";
         purchHeader: Record "Purchase Header";
@@ -326,7 +326,7 @@ codeunit 90082 "EDI Invoice"
 
     procedure GetEDIRecords2()
     var
-        NoSeriesMgmt: Codeunit NoSeriesManagement;
+        NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
         SalesCrHeader: Record "Sales Cr.Memo Header";
         //salesHeader: Record "Sales Header";
@@ -485,7 +485,7 @@ codeunit 90082 "EDI Invoice"
 
     procedure GetEDIRecords3()
     var
-        NoSeriesMgmt1: Codeunit NoSeriesManagement;
+        NoSeriesMgmt1: Codeunit "No. Series";
         NextNo1: Code[20];
         //Salesinvoicehead: Record "Sales Invoice Header";
         salesHeader: Record "Sales Header";
