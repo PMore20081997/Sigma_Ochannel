@@ -9,6 +9,10 @@ query 90096 "Qty on Web"
             {
 
             }
+            column(Document_No; "Document No")
+            {
+
+            }
             column(Sales_Order_Created; "Sales Order Created")
             {
 
@@ -18,6 +22,10 @@ query 90096 "Qty on Web"
 
             }
             column(Reason_Message; "Reason Message")
+            {
+
+            }
+            column(Reason_Code; "Reason Code")
             {
 
             }

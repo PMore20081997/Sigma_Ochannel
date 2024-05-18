@@ -27,6 +27,14 @@ page 90035 "Channel Item Reference"
                 {
                     ApplicationArea = All;
                 }
+                field("Listing Status Setting"; Rec."Listing Status Setting")
+                {
+                    ApplicationArea = All;
+                }
+                field("Listing Status"; Rec."Listing Status")
+                {
+                    ApplicationArea = All;
+                }
                 field(Synced; Rec.Synced)
                 {
                     ApplicationArea = All;

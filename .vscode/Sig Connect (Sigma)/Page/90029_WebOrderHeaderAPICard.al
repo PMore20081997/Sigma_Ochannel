@@ -202,7 +202,7 @@ page 90029 "Web Order Header API Card"
 
     trigger OnAfterGetRecord()
     var
-        L_InsterimSalesLine: Record "Interim Sales Line";
+        L_InterimSalesLine: Record "Interim Sales Line";
         L_Line: Record "Interim Sales Line";
         LineCount: Integer;
         ErrorCount: Integer;
@@ -253,15 +253,15 @@ page 90029 "Web Order Header API Card"
         end;
 
         if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
-            L_InsterimSalesLine.Reset();
-            L_InsterimSalesLine.SetRange("Document Type", Rec."Document Type");
-            L_InsterimSalesLine.SetRange("Document No", Rec."No.");
-            L_InsterimSalesLine.SetFilter("Reason Message", '%1', 'Successful');
-            if L_InsterimSalesLine.FindFirst() then begin
+            L_InterimSalesLine.Reset();
+            L_InterimSalesLine.SetRange("Document Type", Rec."Document Type");
+            L_InterimSalesLine.SetRange("Document No", Rec."No.");
+            L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+            if L_InterimSalesLine.FindFirst() then begin
                 Rec.status := Rec.status::Accepted;
+                Rec."Ready to process" := true;
             end else begin
                 Rec.status := Rec.status::Rejected;
-                Rec."Ready to process" := true;
             end;
         end else begin
             Rec.status := Rec.status::Rejected;

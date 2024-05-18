@@ -52,45 +52,11 @@ page 90030 "Web Order Line Subpage"
                 field(Quantity; Rec."Quantity")
                 {
                     ApplicationArea = All;
-                    // trigger OnValidate()
-                    // var
-                    // begin
-                    //     IF (Rec.Quantity > 0) THEN begin
-                    //         Rec."Channel Price" := Rec."Unit Price";
-                    //         Rec.CalculateVatAmount(Rec);
-                    //         Rec.CalculateBaseQuantity(Rec);
-                    //     end;
-                    // end;
                 }
                 field("Qty. to Deliver"; Rec."Qty. to Deliver")
                 {
                     ApplicationArea = All;
                 }
-                // field(ChannelSKU; Rec."Channel SKU")
-                // {
-                //     ApplicationArea = All;
-                //     trigger OnValidate()
-                //     var
-                //         L_Item: Record Item;
-                //         L_ItemUOM: Record "Item Unit of Measure";
-                //     begin
-                //         if Rec."No." = '' then begin
-                //             L_Item.Reset();
-                //             L_Item.SetRange("No.", Rec."Channel SKU");
-                //             if L_Item.FindFirst() then begin
-                //                 Rec.Description := L_Item.Description;
-                //                 Rec."Unit of Measure Code" := L_Item."Base Unit of Measure";
-
-                //                 L_ItemUOM.Reset();
-                //                 L_ItemUOM.SetFilter("Item No.", L_Item."No.");
-                //                 L_ItemUOM.SetFilter(Code, L_Item."Base Unit of Measure");
-                //                 if L_ItemUOM.FindFirst() then begin
-                //                     Rec.Weight := L_ItemUOM.Weight * Rec.Quantity;
-                //                 end;
-                //             end;
-                //         end;
-                //     end;
-                // }
                 field(ReasonCode; Rec."Reason Code")
                 {
                     ApplicationArea = All;
@@ -105,7 +71,6 @@ page 90030 "Web Order Line Subpage"
     var
         IsDeepInsert: Boolean;
         G_LocationCode: Text;
-        AvailableInventory: Decimal;
 
     trigger OnInsertRecord(BelowxRec: Boolean): Boolean
     var
@@ -115,6 +80,9 @@ page 90030 "Web Order Line Subpage"
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_ProductLevelResponse: Record "Product Level Response";
         L_Item: Record Item;
+        AvailableInventory: Decimal;
+        QuotaQuantity: Decimal;
+        CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
     begin
         IsDeepInsert := IsNullGuid(Rec."Header Id");
         if not IsDeepInsert then begin
@@ -133,21 +101,17 @@ page 90030 "Web Order Line Subpage"
                 Rec.Description2 := L_Item."Description 2";
                 Rec."Unit of Measure Code" := L_Item."Sales Unit of Measure";
             end;
-            //WIll check this code ++
             Rec."Shipment Date" := MyHeader."Shipment Date";
 
             //Check Validation+++
             Sigma_LineValidations(MyHeader, Rec);
 
-            Rec."Qty. to Deliver" := CU_WebOrderManagement.CalculateQtyToDeliver(Rec);
-            // if AvailableInventory > 0 then begin
-            //     if AvailableInventory < Rec.Quantity then begin
-            //         Rec."Qty. to Deliver" := AvailableInventory;
-            //     end
-            //     else begin
-            //         Rec."Qty. to Deliver" := Rec.Quantity;
-            //     end;
-            // end;
+            Clear(AvailableInventory);
+            AvailableInventory := CU_WebOrderManagement.CalculateQtyToDeliver(Rec);
+
+            Clear(QuotaQuantity);
+            QuotaQuantity := CU_SalesQuotaQtyValidation.CheckExceededQty(Rec, MyHeader);
+            Rec."Qty. to Deliver" := AvailableInventory;
 
             //Update Interim header and Interim Line Response Code and Message++
             //Line++
@@ -160,7 +124,7 @@ page 90030 "Web Order Line Subpage"
                 L_ProductLevelResponse.Reset();
                 L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                 if L_ProductLevelResponse.FindFirst() then begin
-                    if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
+                    if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
                         Rec."Reason Code" := L_ProductLevelResponse.Reason;
                         Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
                     end else begin
@@ -169,13 +133,48 @@ page 90030 "Web Order Line Subpage"
                     end;
                 end;
             end else begin
-                if (Rec."Qty. to Deliver" > 0) and (Rec."Qty. to Deliver" < Rec.Quantity) then begin
-                    Rec."Reason Code" := 'Partial Quantity Delivered';
-                    Rec."Reason Message" := 'Partial Quantity Delivered';
+                if (AvailableInventory > 0) and (AvailableInventory < Rec.Quantity) then begin
+                    if QuotaQuantity > 0 then begin
+                        if Rec.Quantity > QuotaQuantity then begin
+                            if AvailableInventory <= QuotaQuantity then begin
+                                Rec."Reason Code" := 'Partial Quantity Delivered';
+                                Rec."Reason Message" := 'Partial Quantity Delivered';
+                            end;
+                            if AvailableInventory > QuotaQuantity then begin
+                                Rec."Reason Code" := 'Partial Quantity Delivered';
+                                Rec."Reason Message" := StrSubstNo('Quota is over %1 qty', Rec.Quantity - QuotaQuantity);
+                                Rec."Qty. to Deliver" := QuotaQuantity;
+                            end;
+                        end
+                        else begin
+                            if AvailableInventory < QuotaQuantity then begin
+                                Rec."Reason Code" := 'Partial Quantity Delivered';
+                                Rec."Reason Message" := 'Partial Quantity Delivered';
+                            end;
+                            if AvailableInventory > QuotaQuantity then begin
+                                Rec."Reason Code" := 'Partial Quantity Delivered';
+                                Rec."Reason Message" := StrSubstNo('Quota is over %1 qty', Rec.Quantity - QuotaQuantity);
+                                Rec."Qty. to Deliver" := QuotaQuantity;
+                            end;
+                        end;
+                    end
+                    else begin
+                        if (AvailableInventory > 0) and (AvailableInventory < Rec.Quantity) then begin
+                            Rec."Reason Code" := 'Partial Quantity Delivered';
+                            Rec."Reason Message" := 'Partial Quantity Delivered';
+                        end;
+                    end;
                 end
                 else begin
-                    Rec."Reason Code" := 'Order Line Created';
-                    Rec."Reason Message" := 'Successful';
+                    if (QuotaQuantity > 0) and (Rec.Quantity > QuotaQuantity) and (AvailableInventory > QuotaQuantity) then begin
+                        Rec."Reason Code" := 'Partial Quantity Delivered';
+                        Rec."Reason Message" := StrSubstNo('Quota is over %1 qty', Rec.Quantity - QuotaQuantity);
+                        Rec."Qty. to Deliver" := QuotaQuantity;
+                    end
+                    else begin
+                        Rec."Reason Code" := 'Order Line Created';
+                        Rec."Reason Message" := 'Successful';
+                    end;
                 end;
             end;
         end;
@@ -227,14 +226,7 @@ page 90030 "Web Order Line Subpage"
         L_CompanyLicenseError: Text[100];
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
         SalesQuotaValidation: Codeunit "Web Order Sales Quota";
-        Query_ItemLedgerEntry: Query "Calculate Inventory";
-        PhysicalInventory: Decimal;
-        Query_QtyonSO: Query "Qty on SO";
-        QtyOnSO: Decimal;
-        Query_QtyonWebOrder: Query "Qty on Web";
-        QtyonWebOrder: Decimal;
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
-        L_ItemLedgerEntry: Record "Item Ledger Entry";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
@@ -282,12 +274,12 @@ page 90030 "Web Order Line Subpage"
             end;
 
             // Item Sales Quota SEQ6++
-            if L_ErrorRecorded = false then begin
-                if SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
-                    CU_WebOrderManagement.Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, _InterimSalesLine, 'SEQ6', false, '');
-                    L_ErrorRecorded := TRUE;
-                end;
-            end;
+            // if L_ErrorRecorded = false then begin
+            //     if SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
+            //         CU_WebOrderManagement.Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, _InterimSalesLine, 'SEQ6', false, '');
+            //         L_ErrorRecorded := TRUE;
+            //     end;
+            // end;
 
             //Response SEQ7++
             if L_ErrorRecorded = false then begin
@@ -319,58 +311,6 @@ page 90030 "Web Order Line Subpage"
                     end;
                 end;
             end;
-
-            //Check Partial Quantity Ordered Response SEQ11++
-            // Clear(AvailableInventory);
-            // if L_ErrorRecorded = false then begin
-            //     #Region Physical Inventory from Item Ledger Entry
-            //     Clear(PhysicalInventory);
-            //     CLEAR(L_ItemLedgerEntry);
-            //     L_ItemLedgerEntry.SETRANGE("Item No.", _InterimSalesLine."No.");
-            //     L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-            //     L_ItemLedgerEntry.SETRANGE("Unit of Measure code", _InterimSalesLine."Unit of Measure Code");
-            //     if L_ItemLedgerEntry.FindSet() then begin
-            //         repeat
-            //             L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
-            //             if L_ItemLedgerEntry."Daily Priority Exist" = true then
-            //                 PhysicalInventory += L_ItemLedgerEntry.Quantity;
-            //         until L_ItemLedgerEntry.Next() = 0;
-            //     end;
-            //     #endregion
-
-            //     #Region Quantity Allocated on Sales Order
-            //     Clear(Query_QtyonSO);
-            //     Clear(QtyOnSO);
-            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.No, _InterimSalesLine."No.");
-            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
-            //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, _InterimSalesLine."Unit of Measure Code");
-
-            //     Query_QtyonSO.OPEN;
-            //     IF Query_QtyonSO.READ THEN begin
-            //         QtyOnSO := Query_QtyonSO.Outstanding_Qty;
-            //     END;
-            //     Query_QtyonSO.CLOSE;
-            //     #endregion
-
-            //     #Region Quantity Allocated on Web Orders
-            //     Clear(Query_QtyonWebOrder);
-            //     Clear(QtyonWebOrder);
-            //     Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, _InterimSalesLine."No.");
-
-            //     Query_QtyonWebOrder.OPEN;
-            //     IF Query_QtyonWebOrder.READ THEN begin
-            //         QtyonWebOrder := Query_QtyonWebOrder.Quantity - _InterimSalesLine.Quantity;
-            //     END;
-            //     Query_QtyonWebOrder.CLOSE;
-            //     #endregion
-
-            //     AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
-
-            //     if (AvailableInventory > 0) and (AvailableInventory < _InterimSalesLine.Quantity) then begin
-            //         CU_WebOrderManagement.Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, _InterimSalesLine, 'SEQ11', false, '');
-            //         L_ErrorRecorded := TRUE;
-            //     end;
-            // end;
         end;
     end;
 }

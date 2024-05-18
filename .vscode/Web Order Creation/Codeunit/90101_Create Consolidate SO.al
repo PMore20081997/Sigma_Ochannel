@@ -38,7 +38,7 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.Reset();
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
         L_InterimSL.SetRange("Document No", _InterimSH."No.");
-        L_InterimSL.SetFilter("Reason Message", '%1|%2', 'Successful', 'Partial Quantity Delivered'); //Need to check partialy quantity filter
+        L_InterimSL.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
         if L_InterimSL.FindSet() then begin
             repeat
                 //Create Lines++
@@ -362,6 +362,8 @@ codeunit 90066 "Create Consolidate SO"
                     TempSalesHeader."Sales Document No." := SalesNo;
                     TempSalesHeader.INSERT;
                 END;
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"SO Created";
+                L_InterimSalesHeader.Modify();
             until L_InterimSalesHeader.Next() = 0;
         end;
     end;

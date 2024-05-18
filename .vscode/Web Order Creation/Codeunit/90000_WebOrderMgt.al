@@ -920,22 +920,16 @@ codeunit 90000 "Web Order Mgt"
         LineCount: Integer;
         ErrorCount: Integer;
         SalesQuotaValidation: Codeunit "Web Order Sales Quota";
-        Query_ItemLedgerEntry: Query "Calculate Inventory";
-        PhysicalInventory: Decimal;
-        Query_QtyonSO: Query "Qty on SO";
-        QtyOnSO: Decimal;
-        Query_QtyonWebOrder: Query "Qty on Web";
-        QtyonWebOrder: Decimal;
-        AvailableInventory: Decimal;
         L_ProductLevelResponse: Record "Product Level Response";
         L_OrderLevelResponse: Record "Order Level Response";
         Rec_InterimLine: Record "Interim Sales Line";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
-        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        QuotaQuantity: Decimal;
+        CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
+            if P_InterimSalesHeader.status = P_InterimSalesHeader.status::"SO Created" then
                 exit;
 
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
@@ -1118,12 +1112,12 @@ codeunit 90000 "Web Order Mgt"
                     end;
 
                     // Item Sales Quota SEQ6++
-                    if L_ErrorRecorded = false then begin
-                        if SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
-                            Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', false, '');
-                            L_ErrorRecorded := TRUE;
-                        end;
-                    end;
+                    // if L_ErrorRecorded = false then begin
+                    //     if SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
+                    //         Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', false, '');
+                    //         L_ErrorRecorded := TRUE;
+                    //     end;
+                    // end;
 
                     //Response SEQ7++
                     if L_ErrorRecorded = false then begin
@@ -1155,96 +1149,31 @@ codeunit 90000 "Web Order Mgt"
                             end;
                         end;
                     end;
-
-                //Check Partial Quantity Ordered Response SEQ11++
-                // if L_ErrorRecorded = false then begin
-                //     #Region Physical Inventory from Item Ledger Entry
-                //     Clear(PhysicalInventory);
-                //     CLEAR(L_ItemLedgerEntry);
-                //     L_ItemLedgerEntry.SETRANGE("Item No.", L_InterimSalesLine."No.");
-                //     L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-                //     L_ItemLedgerEntry.SETRANGE("Unit of Measure code", L_InterimSalesLine."Unit of Measure Code");
-                //     if L_ItemLedgerEntry.FindSet() then begin
-                //         repeat
-                //             L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
-                //             if L_ItemLedgerEntry."Daily Priority Exist" = true then
-                //                 PhysicalInventory += L_ItemLedgerEntry.Quantity;
-                //         until L_ItemLedgerEntry.Next() = 0;
-                //     end;
-                //     #endregion
-
-                //     #Region Quantity Allocated on Sales Order
-                //     Clear(Query_QtyonSO);
-                //     Clear(QtyOnSO);
-                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.No, L_InterimSalesLine."No.");
-                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Saleable_Location, true);
-                //     Query_QtyonSO.SETRANGE(Query_QtyonSO.Unit_of_Measure_Code, L_InterimSalesLine."Unit of Measure Code");
-
-                //     Query_QtyonSO.OPEN;
-                //     IF Query_QtyonSO.READ THEN begin
-                //         QtyOnSO := Query_QtyonSO.Outstanding_Qty;
-                //     END;
-                //     Query_QtyonSO.CLOSE;
-                //     #endregion
-
-                //     #Region Quantity Allocated on Web Orders
-                //     Clear(Query_QtyonWebOrder);
-                //     Clear(QtyonWebOrder);
-                //     Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, L_InterimSalesLine."No.");
-
-                //     Query_QtyonWebOrder.OPEN;
-                //     IF Query_QtyonWebOrder.READ THEN begin
-                //         QtyonWebOrder := Query_QtyonWebOrder.Quantity - L_InterimSalesLine.Quantity;
-                //     END;
-                //     Query_QtyonWebOrder.CLOSE;
-                //     #endregion
-
-                //     Clear(AvailableInventory);
-                //     AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
-
-                //     if AvailableInventory > 0 then begin
-                //         if AvailableInventory < L_InterimSalesLine.Quantity then begin
-                //             Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
-                //             L_ErrorRecorded := TRUE;
-                //             L_InterimSalesLine."Qty. to Deliver" := AvailableInventory;
-                //         end
-                //         else begin
-                //             L_InterimSalesLine."Qty. to Deliver" := L_InterimSalesLine.Quantity;
-                //         end;
-                //         L_InterimSalesLine.Modify();
-                //     end;
-                // end;
-                //SEQ11--
-
                 UNTIL L_InterimSalesLine.NEXT = 0;
             end;
 
             //Response SEQ13++
-            if L_ErrorRecorded = false then begin
-                Clear(LineCount);
-                L_Line.Reset();
-                L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
-                L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
-                L_Line.SetRange(Type, L_Line.Type::Item);
-                if L_Line.FindSet() then
-                    LineCount := L_Line.Count;
+            Clear(LineCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+            L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            if L_Line.FindSet() then
+                LineCount := L_Line.Count;
 
-                Clear(ErrorCount);
-                L_Line.Reset();
-                L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
-                L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
-                L_Line.SetRange(Type, L_Line.Type::Item);
-                L_Line.CalcFields("No of Error");
-                L_Line.SetFilter("No of Error", '>%1', 0);
-                if L_Line.FindSet() then
-                    ErrorCount := L_Line.Count;
+            Clear(ErrorCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+            L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            L_Line.CalcFields("No of Error");
+            L_Line.SetFilter("No of Error", '>%1', 0);
+            if L_Line.FindSet() then
+                ErrorCount := L_Line.Count;
 
-                if LineCount = ErrorCount then begin
-                    Sigma_InsertErrorLog(STRSUBSTNO('All product lines rejected', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ13', true, '');
-                    L_ErrorRecorded := TRUE;
-                end;
+            if LineCount = ErrorCount then begin
+                Sigma_InsertErrorLog('All product lines rejected', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ13', true, '');
             end;
-
 
             #Region Update Interim header and Interim Line Reason Code and Message++
             L_Line.Reset();
@@ -1261,7 +1190,7 @@ codeunit 90000 "Web Order Mgt"
                         L_ProductLevelResponse.Reset();
                         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                         if L_ProductLevelResponse.FindFirst() then begin
-                            if L_ProductLevelResponse."Error Code" = 'SEQ9' then begin
+                            if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
                                 L_Line."Reason Code" := L_ProductLevelResponse.Reason;
                                 L_Line."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
                             end else begin
@@ -1270,13 +1199,50 @@ codeunit 90000 "Web Order Mgt"
                             end;
                         end;
                     end else begin
+                        Clear(QuotaQuantity);
+                        QuotaQuantity := CU_SalesQuotaQtyValidation.CheckExceededQty(L_Line, P_InterimSalesHeader);
                         if (L_Line."Qty. to Deliver" > 0) and (L_Line."Qty. to Deliver" < L_Line.Quantity) then begin
-                            L_Line."Reason Code" := 'Partial Quantity Delivered';
-                            L_Line."Reason Message" := 'Partial Quantity Delivered';
+                            if QuotaQuantity > 0 then begin
+                                if L_Line.Quantity > QuotaQuantity then begin
+                                    if L_Line."Qty. to Deliver" <= QuotaQuantity then begin
+                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                        L_Line."Reason Message" := 'Partial Quantity Delivered';
+                                    end;
+                                    if L_Line."Qty. to Deliver" > QuotaQuantity then begin
+                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                        L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
+                                        L_Line."Qty. to Deliver" := QuotaQuantity;
+                                    end;
+                                end
+                                else begin
+                                    if L_Line."Qty. to Deliver" < QuotaQuantity then begin
+                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                        L_Line."Reason Message" := 'Partial Quantity Delivered';
+                                    end;
+                                    if L_Line."Qty. to Deliver" > QuotaQuantity then begin
+                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                        L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
+                                        L_Line."Qty. to Deliver" := QuotaQuantity;
+                                    end;
+                                end;
+                            end
+                            else begin
+                                if (L_Line."Qty. to Deliver" > 0) and (L_Line."Qty. to Deliver" < L_Line.Quantity) then begin
+                                    L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                    L_Line."Reason Message" := 'Partial Quantity Delivered';
+                                end;
+                            end;
                         end
                         else begin
-                            L_Line."Reason Code" := 'Order Line Created';
-                            L_Line."Reason Message" := 'Successful';
+                            if (QuotaQuantity > 0) and (L_Line.Quantity > QuotaQuantity) and (L_Line."Qty. to Deliver" > QuotaQuantity) then begin
+                                L_Line."Reason Code" := 'Partial Quantity Delivered';
+                                L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
+                                L_Line."Qty. to Deliver" := QuotaQuantity;
+                            end
+                            else begin
+                                L_Line."Reason Code" := 'Order Line Created';
+                                L_Line."Reason Message" := 'Successful';
+                            end;
                         end;
                     end;
 
@@ -1304,7 +1270,7 @@ codeunit 90000 "Web Order Mgt"
                 Rec_InterimLine.Reset();
                 Rec_InterimLine.SetRange("Document Type", P_InterimSalesHeader."Document Type");
                 Rec_InterimLine.SetRange("Document No", P_InterimSalesHeader."No.");
-                Rec_InterimLine.SetFilter("Reason Message", '%1', 'Successful');
+                Rec_InterimLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
                 if Rec_InterimLine.FindFirst() then begin
                     P_InterimSalesHeader.status := P_InterimSalesHeader.status::Accepted;
                     P_InterimSalesHeader."Ready to process" := true;
@@ -1365,11 +1331,12 @@ codeunit 90000 "Web Order Mgt"
         Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, P_InterimSalesLine."No.");
         Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Sales_Order_Created, false);
         Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Unit_of_Measure_Code, P_InterimSalesLine."Unit of Measure Code");
-        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Reason_Message, 'Successful|Partial Quantity Delivered');
+        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Reason_Code, 'Order line created|Partial Quantity Delivered');
+        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Document_No, '<>%1', P_InterimSalesLine."Document No");
 
         Query_QtyonWebOrder.OPEN;
         IF Query_QtyonWebOrder.READ THEN begin
-            QtyonWebOrder := Query_QtyonWebOrder.Qty_to_Deliver - P_InterimSalesLine."Qty. to Deliver";
+            QtyonWebOrder := Query_QtyonWebOrder.Qty_to_Deliver;
         END;
         Query_QtyonWebOrder.CLOSE;
         #endregion

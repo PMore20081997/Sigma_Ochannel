@@ -127,11 +127,8 @@ page 90011 "Channel Item Listing"
                     L_Item: Record Item;
                     AvailableInventory: Decimal;
                     ChannelItemListing: Record "Channel Item Listing";
-                    L_ItemLedgerEntry: Record "Item Ledger Entry";
                     PhysicalInventory: Decimal;
-                    L_SalesLine: Record "Sales Line";
                     QtyOnSO: Decimal;
-                    Query_QtyonWebOrder: Query "Qty on Web";
                     QtyonWebOrder: Decimal;
                     Windows: Dialog;
                     ProgressCount: Integer;
@@ -159,8 +156,18 @@ page 90011 "Channel Item Listing"
                             Clear(L_Item);
                             if L_Item.Get(ChannelItemListing."Item No.") then begin
                                 ChannelItemListing.CalcFields("Physical Inventory", "Allcoated on SO", "Web Orders Qty");
+
+                                Clear(PhysicalInventory);
+                                PhysicalInventory := ChannelItemListing."Physical Inventory";
+
+                                Clear(QtyOnSO);
+                                QtyOnSO := ChannelItemListing."Allcoated on SO";
+
+                                Clear(QtyonWebOrder);
+                                QtyonWebOrder := ChannelItemListing."Web Orders Qty";
+
                                 Clear(AvailableInventory);
-                                AvailableInventory := ChannelItemListing."Physical Inventory" - (ChannelItemListing."Allcoated on SO" + ChannelItemListing."Web Orders Qty");
+                                AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
 
                                 if AvailableInventory <> ChannelItemListing."Channel Inventory" then begin
                                     if AvailableInventory > 0 then begin

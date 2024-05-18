@@ -189,6 +189,48 @@ page 90003 "Web Order List"
                     end;
                 end;
             }
+            action("Check Exceeded Qty")
+            {
+                ApplicationArea = All;
+                Image = Check;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                Visible = false;
+
+                trigger OnAction()
+                var
+                    L_InterimSalesHeader: Record "Interim Sales Header";
+                    InterimSalesLine: Record "Interim Sales Line";
+                    QuotaQuantity: Decimal;
+                    CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
+                    AvailableInventory: Decimal;
+                    CU_WebOrderManagement: Codeunit "Web Order Mgt";
+                begin
+                    Clear(L_InterimSalesHeader);
+                    L_InterimSalesHeader := Rec;
+                    CurrPage.SetSelectionFilter(L_InterimSalesHeader);
+
+                    if L_InterimSalesHeader.FindSet() then begin
+                        repeat
+                            InterimSalesLine.Reset();
+                            InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+                            InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+                            if InterimSalesLine.FindSet() then begin
+                                repeat
+                                    Clear(AvailableInventory);
+                                    AvailableInventory := CU_WebOrderManagement.CalculateQtyToDeliver(InterimSalesLine);
+                                    AvailableInventory := AvailableInventory - InterimSalesLine."Qty. to Deliver";
+                                    Clear(QuotaQuantity);
+                                    QuotaQuantity := CU_SalesQuotaQtyValidation.CheckExceededQty(InterimSalesLine, L_InterimSalesHeader);
+                                    Message(StrSubstNo('Item No - %1\Line Qty - %2\Available Inv - %3\Quota Quantity - %4', InterimSalesLine."No.", InterimSalesLine.Quantity, AvailableInventory, QuotaQuantity));
+                                until InterimSalesLine.Next() = 0;
+                            end;
+                        until L_InterimSalesHeader.Next() = 0;
+                    end;
+                end;
+            }
             action(BulkDelete)
             {
                 ApplicationArea = All;
@@ -289,7 +331,6 @@ page 90003 "Web Order List"
                 RunObject = Page 21;
                 RunPageLink = "No." = FIELD("Sell-to Customer No.");
             }
-
             action("Web Buffer")
             {
                 ApplicationArea = All;
@@ -301,18 +342,6 @@ page 90003 "Web Order List"
 
         // area(Creation)
         // {
-        //     // action(Test)
-        //     // {
-        //     //     ApplicationArea = All;
-        //     //     Image = Import;
-
-        //     //     trigger OnAction()
-        //     //     var
-        //     //         L_Codeunit: Codeunit "Get Order Request API";
-        //     //     begin
-        //     //         L_Codeunit.Run();
-        //     //     end;
-        //     // }
         //     // action(Process)
         //     // {
         //     //     Caption = 'Process';
@@ -507,31 +536,6 @@ page 90003 "Web Order List"
         //     //         CurrPage.Update();
         //     //     end;
         //     // }
-        //     // action(ExportOrderAckCopy)
-        //     // {
-        //     //     ApplicationArea = All;
-        //     //     Caption = 'ExportOrderAckCopy';
-        //     //     Image = Export;
-        //     //     Promoted = true;
-        //     //     PromotedCategory = Process;
-        //     //     PromotedIsBig = true;
-        //     //     PromotedOnly = true;
-        //     //     trigger OnAction()
-        //     //     var
-        //     // InterimSalesHeader: Record "Interim Sales Header";
-        //     //     begin
-        //     // Clear(InterimSalesHeader);
-        //     // InterimSalesHeader := Rec;
-        //     // CurrPage.SetSelectionFilter(InterimSalesHeader);
-        //     // InterimSalesHeader.SETRANGE("Trade Partner Code", 'SHOPDIRECT');
-        //     // if InterimSalesHeader.FindSet() then begin
-        //     //     repeat
-        //     //         OrderAck.OrderAckConvertTextCopy();
-        //     //         Message('%1', InterimSalesHeader."Channel Order ID");
-        //     //     until InterimSalesHeader.Next() = 0;
-        //     //     CurrPage.Update();
-        //     // end;
-        // }
         // area(Navigation)
         // {
         //     action("Payment Details")
@@ -591,36 +595,6 @@ page 90003 "Web Order List"
         //                 end;
         //             END;
         //         end;
-        //     }
-        //     action(DeliveryNoteNew)
-        //     {
-        //         ApplicationArea = Basic, Suite;
-        //         Caption = 'Delivery Note';
-        //         Image = Print;
-        //         Visible = false;
-
-
-        //         trigger OnAction()
-        //         var
-        //             L_InterimSalesHeader: Record "Interim Sales Header";
-        //             NewDeliveryNote: Report "Web Delivery Note";
-        //         begin
-        //             InterimSalesHeader.RESET;
-        //             InterimSalesHeader.SETRANGE("No.", Rec."No.");
-        //             IF InterimSalesHeader.FINDSET THEN BEGIN
-        //                 CLEAR(NewDeliveryNote);
-        //                 NewDeliveryNote.SETTABLEVIEW(InterimSalesHeader);
-        //                 NewDeliveryNote.RUN;
-        //             END;
-        //         end;
-        //     }
-        //     action(ShowCustomer)
-        //     {
-        //         ApplicationArea = All;
-        //         Caption = 'Show Customer';
-        //         Image = Customer;
-        //         RunObject = Page 21;
-        //         RunPageLink = "No." = FIELD("Sell-to Customer No.");
         //     }
         //     action(ReOrder)
         //     {
