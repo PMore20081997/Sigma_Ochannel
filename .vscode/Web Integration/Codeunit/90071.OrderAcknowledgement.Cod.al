@@ -61,7 +61,7 @@ codeunit 90071 "Order Acknowledgement"
               containerName := TradePartner."Order Acknow. Conatiner Name";
               sasToken := TradePartner."Order Acknow. Token";
             */
-            CU_90000.UploadFilefromBCTOAzureBlob(P_FileInstream, P_FileName, TradePartner."API Endpoint", TradePartner."Order Acknow. Conatiner Name", TradePartner."Order Acknow. Token", true);
+            CU_90000.UploadFilefromBCTOAzureBlob(P_FileInstream, P_FileName, TradePartner."API Endpoint", TradePartner."Order Acknow. Container Name", TradePartner."Order Acknow. Container Token", true);
         end;
 
         /*below code is blocked because it is moved inot cu 90000 Web order Mgt which we can call from any where

@@ -65,7 +65,7 @@ tableextension 90092 "Item Templ Ext" extends "Item Templ."
 
     local procedure InitItemNo(var Item: Record Item; ConfigTemplateHeader: Record "Config. Template Header")
     var
-        NoSeriesMgt: Codeunit NoSeriesManagement;
+        //NoSeriesMgt: Codeunit NoSeriesManagement;
         IsHandled: Boolean;
     begin
         IsHandled := false;
@@ -75,7 +75,7 @@ tableextension 90092 "Item Templ Ext" extends "Item Templ."
 
         if ConfigTemplateHeader."Instance No. Series" = '' then
             exit;
-        NoSeriesMgt.InitSeries(ConfigTemplateHeader."Instance No. Series", '', 0D, Item."No.", Item."No. Series");
+        //NoSeriesMgt.InitSeries(ConfigTemplateHeader."Instance No. Series", '', 0D, Item."No.", Item."No. Series");
     end;
 
     local procedure OnBeforeInitItemNo(var Item: Record Item; ConfigTemplateHeader: Record "Config. Template Header"; var IsHandled: Boolean)

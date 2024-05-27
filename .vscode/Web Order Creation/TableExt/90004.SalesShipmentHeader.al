@@ -22,5 +22,10 @@ tableextension 90004 "Sales Shipment Header Ext" extends "Sales Shipment Header"
         field(90004; "Marged Web Order"; Boolean)
         {
         }
+        field(90005; Export; Boolean)
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Export';
+        }
     }
 }

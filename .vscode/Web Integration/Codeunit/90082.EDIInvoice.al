@@ -668,8 +668,8 @@ codeunit 90082 "EDI Invoice"
         TradePartner.SetRange(Code, P__ChannelCode);
         if TradePartner.FindFirst() then begin
             apiEndPoint := TradePartner."API Endpoint";
-            containerName := TradePartner."Order Acknow. Conatiner Name";
-            sasToken := TradePartner."Order Acknow. Token";
+            containerName := TradePartner."Order Acknow. Container Name";
+            sasToken := TradePartner."Order Acknow. Container Token";
         end;
 
         // apiEndPoint := 'https://shopdirect.blob.core.windows.net';

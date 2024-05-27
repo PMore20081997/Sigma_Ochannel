@@ -44,8 +44,8 @@ codeunit 90072 "Update Status"
         if TradePartner.FindFirst() then begin
             apiEndPoint := TradePartner."API Endpoint";
             apiattribute := TradePartner."API Attribute";
-            containerName := TradePartner."Status Conatiner Name";
-            sasToken := TradePartner."Status Token";
+            containerName := TradePartner."Storage Account Name";
+            sasToken := TradePartner."Shared Access Key";
         end;
         // apiEndPoint := 'https://shopdirect.blob.core.windows.net';
         // containerName := 'teststupdout';

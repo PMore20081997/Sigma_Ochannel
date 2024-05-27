@@ -44,8 +44,8 @@ codeunit 90070 "Shopdirect Integration"
         if TradePartner.FindFirst() then begin
             apiEndPoint := TradePartner."API Endpoint";
             apiattribute := TradePartner."API Attribute";
-            containerName := TradePartner."Incoming Orders Conatiner Name";
-            sasToken := TradePartner."Incoming Orders Token";
+            containerName := TradePartner."Incoming Order Container Name";
+            sasToken := TradePartner."Incoming Order Container Token";
         end;
         //apiEndPoint := 'https://shopdirect.blob.core.windows.net';
         //containerName := 'testin';
@@ -134,7 +134,7 @@ codeunit 90070 "Shopdirect Integration"
         Clear(L_TradePartner);
         L_TradePartner.Get(ChannelCode);
         L_ApiEndpoint := L_TradePartner."API Endpoint";
-        L_ContainerName := L_TradePartner."Incoming Orders Conatiner Name";
+        L_ContainerName := L_TradePartner."Incoming Order Container Name";
         L_ApiUrl := L_ApiEndpoint + '/' + L_ContainerName + '/' + FileName;
         L_HttpClient.Get(L_ApiUrl, L_HttpResponse);
         if L_HttpResponse.HttpStatusCode = 200 then begin

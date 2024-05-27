@@ -12,9 +12,10 @@
             "environmentType": "Sandbox",
             "startupObjectType": "Page",
             "startupObjectId": 22,
-            "environmentName": "Sigma_UAT",
+            //"environmentName": "Sigma_UAT",
+            //"environmentName": "Sigma_KNAPP",
             //"environmentName": "Robosol_Dev",
-            //"environmentName": "Sandbox_Beta",
+            "environmentName": "Sandbox_Beta",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"ForceSync",
         }

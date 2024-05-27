@@ -22,6 +22,11 @@ tableextension 90010 "Sales Header Extension" extends "Sales Header"
         field(90004; "Marged Web Order"; Boolean)
         {
         }
+        field(90005; Export; Boolean)
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Export';
+        }
     }
 
 

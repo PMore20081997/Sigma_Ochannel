@@ -27,6 +27,9 @@ codeunit 90022 "OC Create & Update WebOrder"
         Temp_InterimSalesHeader.Reset();
         Temp_InterimSalesHeader.DeleteAll();
 
+        Temp_InterimSalesLine.Reset();
+        Temp_InterimSalesLine.DeleteAll();
+
         //Get TradPartner Code++
         L_TradPartner.Reset();
         L_TradPartner.SetRange("Customer Trend Code", true);

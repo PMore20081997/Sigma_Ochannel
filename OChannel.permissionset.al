@@ -96,7 +96,6 @@ permissionset 90000 OChannel
         codeunit "Shop Direct Courier"=X,
         codeunit "Shopdirect Integration"=X,
         codeunit "Shopify Integration"=X,
-        codeunit "Sigma FTP Integration"=X,
         codeunit "TNT Courier"=X,
         codeunit "Update Channel Item Inventory"=X,
         codeunit "Update Inventory Channel Item"=X,

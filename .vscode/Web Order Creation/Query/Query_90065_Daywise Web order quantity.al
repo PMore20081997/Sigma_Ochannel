@@ -1,13 +1,12 @@
 query 90065 "Daywise Web order quantity"
 {
-
     elements
     {
         dataitem(QueryElement1000000000; "Interim Sales Header")
         {
+            DataItemTableFilter = status = const(Accepted);
             column(Sales_Order_Created; "Sales Order Created")
             {
-
             }
             column(Document_Type; "Document Type")
             {
@@ -27,23 +26,19 @@ query 90065 "Daywise Web order quantity"
             dataitem(QueryElement1000000001; "Interim Sales Line")
             {
                 DataItemLink = "Document Type" = "QueryElement1000000000"."Document Type", "Document No" = "QueryElement1000000000"."No.";
-                DataItemTableFilter = Type = FILTER(Item), "Reason Message" = const('Successful');
+                DataItemTableFilter = Type = FILTER(Item), "Reason Code" = filter('Order line created|PARTIAL QUANTITY DELIVERED');
                 column(No; "No.")
                 {
                 }
                 column(Line_No_; "Line No.")
                 {
-
                 }
                 column(Item_Category_Code; "Item Category Code")
                 {
-
                 }
                 column(Customer_Price_Group; "Customer Price Group")
                 {
-
                 }
-                //Azhar--
                 column(Sum_Quantity; "Qty. to Deliver")
                 {
                     Method = Sum;
@@ -58,4 +53,3 @@ query 90065 "Daywise Web order quantity"
         CurrQuery.SetFilter(Sales_Order_Created, '%1', false);
     end;
 }
-

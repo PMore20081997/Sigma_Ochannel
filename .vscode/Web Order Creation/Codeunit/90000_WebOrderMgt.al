@@ -89,7 +89,7 @@ codeunit 90000 "Web Order Mgt"
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         GeneralSetup: record "General Setup - Channels";
-        NoSeriesManagement: Codeunit "No. Series";
+        NoSeriesManagement: Codeunit "No. Series - Batch";
         SellToCustomer: Record Customer;
         ChannelPartner: Record "Trade Partner";
         IsExist: Boolean;
@@ -115,6 +115,7 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesHeader.INIT;
             L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
             L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
+            NoSeriesManagement.SaveState();
             L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::Accepted);
             L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
             L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
@@ -240,10 +241,7 @@ codeunit 90000 "Web Order Mgt"
             //Insert Line++
             If P_InterimSalesLine.FindSet() then begin
                 repeat
-                    if P_InterimSalesLine."Gift Card" = false then
-                        InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent)
-                    else
-                        InsertGiftGlLine(P_InterimSalesLine, L_InterimSalesHeader);
+                    InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent);
                 until P_InterimSalesLine.Next() = 0;
             end;
 
@@ -781,16 +779,20 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesLine."Item Category Code" := Rec_Item."Item Category Code";
         end;
 
+        L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
+
         L_InterimSalesLine.Description2 := P_InterimSalesLine.Description2;
         L_InterimSalesLine."NAV Variant code" := GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No.");
         L_InterimSalesLine.Validate(Quantity, P_InterimSalesLine.Quantity);
         L_InterimSalesLine.Validate("Unit of Measure Code", FindUOM(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU"
          , L_InterimSalesLine."No.", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner));
-        //L_InterimSalesLine.Validate("Qty. to Deliver", P_InterimSalesLine.Quantity);
-        L_InterimSalesLine."Qty. to Deliver" := CalculateQtyToDeliver(L_InterimSalesLine);
+
+        if L_TradePartner."Customer Trend Code" = true then
+            L_InterimSalesLine.Validate("Qty. to Deliver", P_InterimSalesLine.Quantity)
+        else
+            L_InterimSalesLine."Qty. to Deliver" := CalculateQtyToDeliver(L_InterimSalesLine);
 
         L_InterimSalesLine."Channel Price" := P_InterimSalesLine."Unit Price";
-        L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
         case L_TradePartner."Price Pick From" of
             L_TradePartner."Price Pick From"::"Order Source":
                 L_InterimSalesLine.Validate("Unit Price", P_InterimSalesLine."Unit Price");
@@ -822,8 +824,6 @@ codeunit 90000 "Web Order Mgt"
                 L_InterimSalesLine.Validate(Description, Rec_Item.Description);
         end;
 
-        if P_InterimSalesLine."Gift Card" then
-            L_InterimSalesLine."Gift Card" := true;
         L_InterimSalesLine.Insert(true);
     end;
 
@@ -926,6 +926,7 @@ codeunit 90000 "Web Order Mgt"
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
         QuotaQuantity: Decimal;
         CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
+        ItemBlockedError: Text;
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -989,7 +990,7 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
+                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) then begin
                         Sigma_InsertErrorLog('Customer locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
@@ -1041,17 +1042,6 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
-            //Response SEQ11++
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        Sigma_InsertErrorLog('Account Closed *****', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
-
             //Response SEQ12++
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
@@ -1073,9 +1063,11 @@ codeunit 90000 "Web Order Mgt"
 
                     //Response SEQ3++
                     if L_ErrorRecorded = false then begin
+                        Clear(ItemBlockedError);
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
-                            if L_Item.Blocked = true then begin
-                                Sigma_InsertErrorLog('Record Locked (stock or depot stock file)', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', false, '');
+                            if (L_Item.Blocked = true) or (L_Item."Sales Blocked" = true) or (L_Item."Ops Sales Blocked" = true) or (L_Item.Status = L_Item.Status::Open) or (L_Item."QAU Approved" = false) then begin
+                                ItemBlockedError := CheckItemBlockedError(L_Item);
+                                Sigma_InsertErrorLog(ItemBlockedError, P_InterimSalesHeader, L_InterimSalesLine, 'SEQ3', false, '');
                                 L_ErrorRecorded := TRUE;
                             end;
                         end;
@@ -1111,14 +1103,6 @@ codeunit 90000 "Web Order Mgt"
                         end;
                     end;
 
-                    // Item Sales Quota SEQ6++
-                    // if L_ErrorRecorded = false then begin
-                    //     if SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
-                    //         Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', false, '');
-                    //         L_ErrorRecorded := TRUE;
-                    //     end;
-                    // end;
-
                     //Response SEQ7++
                     if L_ErrorRecorded = false then begin
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
@@ -1145,6 +1129,16 @@ codeunit 90000 "Web Order Mgt"
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
                             if CalculateQtyToDeliver(L_InterimSalesLine) = 0 then begin
                                 Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end;
+
+                    //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
                                 L_ErrorRecorded := TRUE;
                             end;
                         end;
@@ -1293,6 +1287,7 @@ codeunit 90000 "Web Order Mgt"
         Query_QtyonWebOrder: Query "Qty on Web";
         QtyonWebOrder: Decimal;
         AvailableInventory: Decimal;
+        L_InterimSalesLine: Record "Interim Sales Line";
     begin
         #Region Physical Inventory from Item Ledger Entry
         Clear(PhysicalInventory);
@@ -1326,19 +1321,20 @@ codeunit 90000 "Web Order Mgt"
         #endregion
 
         #Region Quantity Allocated on Web Orders
-        Clear(Query_QtyonWebOrder);
+        Clear(L_InterimSalesLine);
         Clear(QtyonWebOrder);
-        Query_QtyonWebOrder.SETRANGE(Query_QtyonWebOrder.No_, P_InterimSalesLine."No.");
-        Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Sales_Order_Created, false);
-        Query_QtyonWebOrder.SetRange(Query_QtyonWebOrder.Unit_of_Measure_Code, P_InterimSalesLine."Unit of Measure Code");
-        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Reason_Code, 'Order line created|Partial Quantity Delivered');
-        Query_QtyonWebOrder.SetFilter(Query_QtyonWebOrder.Document_No, '<>%1', P_InterimSalesLine."Document No");
-
-        Query_QtyonWebOrder.OPEN;
-        IF Query_QtyonWebOrder.READ THEN begin
-            QtyonWebOrder := Query_QtyonWebOrder.Qty_to_Deliver;
+        L_InterimSalesLine.Reset();
+        L_InterimSalesLine.SetRange("Document Type", L_InterimSalesLine."Document Type"::Order);
+        L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+        L_InterimSalesLine.SETRANGE("No.", P_InterimSalesLine."No.");
+        L_InterimSalesLine.SetRange("Sales Order Created", false);
+        L_InterimSalesLine.SetRange("Unit of Measure Code", P_InterimSalesLine."Unit of Measure Code");
+        L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'PARTIAL QUANTITY DELIVERED');
+        L_InterimSalesLine.SetFilter("Document No", '<>%1', P_InterimSalesLine."Document No");
+        if L_InterimSalesLine.FindSet() then begin
+            L_InterimSalesLine.CalcSums("Qty. to Deliver");
+            QtyonWebOrder := L_InterimSalesLine."Qty. to Deliver";
         END;
-        Query_QtyonWebOrder.CLOSE;
         #endregion
 
         Clear(AvailableInventory);
@@ -2523,6 +2519,69 @@ codeunit 90000 "Web Order Mgt"
                 WarehouseShipmentHeader.Validate("Shipping Agent Code", SalesLine."Shipping Agent Code");
                 WarehouseShipmentHeader.validate("Shipping Agent Service Code", SalesLine."Shipping Agent Service Code");
                 WarehouseShipmentHeader.Modify(true);
+            end;
+        end;
+    end;
+
+    #Region Checking Shipping Agent Service Item Restriction++
+    procedure CheckShippingAgentServiceRestriction(P_ItemNo: Code[20]; P_ShippingAgentCode: Code[20]; P_ShippingAgentServiceCode: Code[20]): Boolean
+    var
+        L_RecItemAttValMap: Record "Item Attribute Value Mapping";
+        L_ItemAttribute: Record "Item Attribute";
+        L_ItemAttributeValue: Record "Item Attribute Value";
+        ShippingAgentRestrictItem: Record "Shipping Agent Restrict Item";
+    begin
+        L_RecItemAttValMap.Reset();
+        L_RecItemAttValMap.SetRange("Table ID", 27);
+        L_RecItemAttValMap.SetRange("No.", P_ItemNo);
+        if L_RecItemAttValMap.FindSet() then begin
+            repeat
+                L_ItemAttribute.Reset();
+                L_ItemAttribute.SetRange(ID, L_RecItemAttValMap."Item Attribute ID");
+                if L_ItemAttribute.FindFirst() then begin
+                    L_ItemAttributeValue.SetRange("Attribute ID", L_ItemAttribute.ID);
+                    L_ItemAttributeValue.SetRange(ID, L_RecItemAttValMap."Item Attribute Value ID");
+                    if L_ItemAttributeValue.FindFirst() then begin
+                        if L_ItemAttributeValue.Value <> '' then begin
+                            ShippingAgentRestrictItem.Reset();
+                            ShippingAgentRestrictItem.SetRange("Shipping Agent Code", P_ShippingAgentCode);
+                            ShippingAgentRestrictItem.SetRange("Shipping Agent Service Code", P_ShippingAgentServiceCode);
+                            ShippingAgentRestrictItem.SetRange("Attribute ID", L_ItemAttribute.ID);
+                            ShippingAgentRestrictItem.SetRange("Attribute value ID", L_RecItemAttValMap."Item Attribute Value ID");
+                            if ShippingAgentRestrictItem.FindFirst() then begin
+                                //Error('CD and Fridge items are not allowed for Shipping agent service code %1.Item No. %2', _ShippingAgentServiceCode, _ItemNo);
+                                exit(true);
+                            end;
+                        end;
+                    end;
+                end;
+            until L_RecItemAttValMap.Next() = 0;
+        end;
+        exit(false);
+    end;
+    #endregion Checking Shipping Agent Service Item Restriction++
+
+    procedure CheckItemBlockedError(var P_Item: Record Item): Text
+    var
+        ItemBlockedError: Text;
+    begin
+        Clear(ItemBlockedError);
+        if P_Item.Blocked = true then
+            exit('Item is Blocked')
+        else begin
+            if P_Item."Sales Blocked" = true then
+                exit('Item is Sales Blocked')
+            else begin
+                if P_Item."Ops Sales Blocked" = true then
+                    exit('Item is Ops Sales Blocked')
+                else begin
+                    if P_Item.Status = P_Item.Status::Open then
+                        exit('Item is in Open Status')
+                    else begin
+                        if P_Item."QAU Approved" = false then
+                            exit('Item is not QAU Approved');
+                    end;
+                end;
             end;
         end;
     end;

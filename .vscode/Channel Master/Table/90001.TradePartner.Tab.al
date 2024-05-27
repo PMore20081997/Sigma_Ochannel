@@ -198,13 +198,13 @@ table 90001 "Trade Partner"
         {
             Editable = false;
         }
-        field(47; "Incoming Orders Conatiner Name"; Text[250])
+        field(47; "Incoming Order Container Name"; Text[250])
         {
-            Caption = 'Incoming Container 1 Name';
+            DataClassification = ToBeClassified;
         }
-        field(48; "Incoming Orders Token"; Text[250])
+        field(48; "Incoming Order Container Token"; Text[250])
         {
-            Caption = 'Incoming Container 1 Token';
+            DataClassification = ToBeClassified;
         }
         field(49; "API Endpoint"; Text[250])
         {
@@ -212,21 +212,21 @@ table 90001 "Trade Partner"
         field(50; "API Attribute"; Text[250])
         {
         }
-        field(51; "Status Conatiner Name"; Text[20])
+        field(51; "Storage Account Name"; Text[250])
         {
-            Caption = 'Incoming Container 2 Name';
+            DataClassification = ToBeClassified;
         }
-        field(52; "Status Token"; Text[250])
+        field(52; "Shared Access Key"; Text[250])
         {
-            Caption = 'Incoming Container 2 Token';
+            DataClassification = ToBeClassified;
         }
-        field(53; "Order Acknow. Conatiner Name"; Text[250])
+        field(53; "Order Acknow. Container Name"; Text[250])
         {
-            Caption = 'Outgoing Container Name';
+            DataClassification = ToBeClassified;
         }
-        field(54; "Order Acknow. Token"; Text[250])
+        field(54; "Order Acknow. Container Token"; Text[250])
         {
-            Caption = 'Outgoing Container Token';
+            DataClassification = ToBeClassified;
         }
         field(55; "Export Invoice"; Boolean)
         {

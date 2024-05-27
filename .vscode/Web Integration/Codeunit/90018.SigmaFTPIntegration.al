@@ -12,8 +12,8 @@ codeunit 90018 "GOY File Integration"
         CASE RunType OF
             SyncOrderLabel:
                 BEGIN
-                    GetFileNameFromAzure(StartParameter);
-                    //ImportOrders(StartParameter);
+                    //GetFileNameFromAzure(StartParameter);
+                    ImportOrders(StartParameter);
 
                     G_TradePartner.Reset();
                     if G_TradePartner.Get(StartParameter) then begin
@@ -37,6 +37,8 @@ codeunit 90018 "GOY File Integration"
         IncomingSasToken: Text;
         OutgoingContainerName: Text;
         OutgoingSasToken: Text;
+        StorageAccountName: Text;
+        SharedAccessKey: Text;
 
     local procedure GetCredentials(ChannelCode: Code[20])
     var
@@ -46,11 +48,43 @@ codeunit 90018 "GOY File Integration"
         if TradePartner.Get(ChannelCode) then begin
             ApiEndPoint := TradePartner."API Endpoint";
             ApiAttribute := TradePartner."API Attribute";
-            IncomingContainerName := TradePartner."Incoming Orders Conatiner Name";
-            IncomingSasToken := TradePartner."Incoming Orders Token";
-            OutgoingContainerName := TradePartner."Outgoing Container 2 Name";
-            OutgoingSasToken := TradePartner."Outgoing Container 2 Token";
+            IncomingContainerName := TradePartner."Incoming Order Container Name";
+            IncomingSasToken := TradePartner."Incoming Order Container Token";
+            OutgoingContainerName := TradePartner."Order Acknow. Container Name";
+            OutgoingSasToken := TradePartner."Order Acknow. Container Token";
+            StorageAccountName := TradePartner."Storage Account Name";
+            SharedAccessKey := TradePartner."Shared Access Key";
         End;
+    end;
+
+    local procedure ImportOrders(P_ChannelCode: Code[20])
+    var
+        ABSBlobClient: Codeunit "ABS Blob Client";
+        StorageServiceAuthorization: Interface "Storage Service Authorization";
+        StorageServiceAuthorizationCodeunit: Codeunit "Storage Service Authorization";
+        Response: Codeunit "ABS Operation Response";
+        ABSContainerContent: Record "ABS Container Content";
+        BlobInstream: InStream;
+    begin
+        GetCredentials(P_ChannelCode);
+
+        //SharedAccessKey := 'ZJiEt/NKlLT1jvt1O38DQdJ0cnEjIEdEmCpTQHUc9W2W8C77XeL26zWUbyRrEt7b2+rh7sCpNZOW+AStHx0KLw==';
+        StorageServiceAuthorization := StorageServiceAuthorizationCodeunit.CreateSharedKey(SharedAccessKey);
+        ABSBlobClient.Initialize(StorageAccountName, IncomingContainerName, StorageServiceAuthorization);
+
+        Response := ABSBlobClient.ListBlobs(ABSContainerContent);
+        if Response.IsSuccessful() then begin
+            ABSContainerContent.Reset();
+            if ABSContainerContent.FindSet() then
+                repeat
+                    Response := ABSBlobClient.GetBlobAsStream(ABSContainerContent."Full Name", BlobInstream);
+                    if Response.IsSuccessful() then begin
+                        CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name");
+                    end else
+                        Error(GetLastErrorText());
+                until ABSContainerContent.Next() = 0;
+        end else
+            Error(GetLastErrorText());
     end;
 
     local procedure GetFileNameFromAzure(P_ChannelCode: Code[20])
@@ -68,7 +102,6 @@ codeunit 90018 "GOY File Integration"
         L_Node2: XmlNode;
         L_Orders3: XmlNodeList;
         L_Node3: XmlNode;
-        TradePartner: Record "Trade Partner";
     begin
         ClearLastError();
         GetCredentials(P_ChannelCode);
@@ -116,7 +149,6 @@ codeunit 90018 "GOY File Integration"
         CSVOutstream: OutStream;
         CUTempoBlob: Codeunit "Temp Blob";
         CSVInstream: InStream;
-        L_InterimSalesHeader: Record "Interim Sales Header";
         CU_WebOrderMgmt: Codeunit "Web Order Mgt";
     begin
         if CU_WebOrderMgmt.CheckOrderNotExist(ChannelCode, FileName) then begin
@@ -153,11 +185,6 @@ codeunit 90018 "GOY File Integration"
         LineNo: Integer;
         Qty: Decimal;
         L_InterimHeader: Record "Interim Sales Header";
-        L_Line: Record "Interim Sales Line";
-        Rec_InterimLine: Record "Interim Sales Line";
-        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
-        L_OrderLevelResponse: Record "Order Level Response";
-        L_ProductLevelResponse: Record "Product Level Response";
         CustomerRef: Record "Customer Reference";
         K: Integer;
     begin
@@ -181,7 +208,7 @@ codeunit 90018 "GOY File Integration"
                 K += 1;
 
             Clear(LineNo);
-            if GetCellValue(RowNo, 7) <> '' then
+            if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) then
                 if GetCellValue(RowNo, 7).Contains('-') then
                     Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
                 else
@@ -274,8 +301,31 @@ codeunit 90018 "GOY File Integration"
 
             outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + '_' + L_Line."ET Access Code" + '_' + Header."Channel Order ID";
             //DownloadFromStream(FileInStream, '', '', '', outputFileName);
-            UploadFileToAzureBlob(FileInStream, outputFileName, P_ChannelCode);
+            //UploadFileToAzureBlob(FileInStream, outputFileName, P_ChannelCode);
+            UploadFileToAzureContainer(FileInStream, outputFileName, P_ChannelCode);
         end;
+    end;
+
+    local procedure UploadFileToAzureContainer(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    var
+        Authorization: Interface "Storage Service Authorization";
+        StorageServiceAuthorization: Codeunit "Storage Service Authorization";
+        ABSBlobClient: Codeunit "ABS Blob Client";
+        Response: Codeunit "ABS Operation Response";
+    begin
+        GetCredentials(P_ChannelCode);
+
+        Clear(Authorization);
+        Clear(StorageServiceAuthorization);
+        Authorization := StorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
+
+        Clear(ABSBlobClient);
+        ABSBlobClient.Initialize(StorageAccountName, OutgoingContainerName, Authorization);
+
+        Clear(Response);
+        Response := ABSBlobClient.PutBlobBlockBlobStream(P_FileName, P_FileInstream);
+        if not Response.IsSuccessful() then
+            Error(Response.GetError());
     end;
 
     local procedure UploadFileToAzureBlob(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
@@ -285,7 +335,6 @@ codeunit 90018 "GOY File Integration"
         ApiURL: Text;
         L_httpClient: HttpClient;
         L_httpContent: HttpContent;
-        L_Partner: Record "Trade Partner";
     begin
         ClearLastError();
         GetCredentials(P_ChannelCode);
@@ -307,42 +356,6 @@ codeunit 90018 "GOY File Integration"
         ApiURL := ApiEndPoint + '/' + OutgoingContainerName + '/' + P_FileName + '?' + OutgoingSasToken;
         L_httpClient.Put(ApiURL, L_httpContent, L_httpResponse);
         if L_httpResponse.HttpStatusCode = 201 then;
-    end;
-
-    local procedure ImportOrders(StartParameter: Text)
-    var
-        ChannelPartnerSetup: Record "Trade Partner";
-        ABSBlobClient: Codeunit "ABS Blob Client";
-        StorageServiceAuthorization: Interface "Storage Service Authorization";
-        StorageServiceAuthorizationCodeunit: Codeunit "Storage Service Authorization";
-        Response: Codeunit "ABS Operation Response";
-        ABSContainerContent: Record "ABS Container Content";
-        SharedKey: Text;
-        EndPoint: Text;
-        StoratgeAccount: Text;
-        ContainerName: Text;
-        BlobInstream: InStream;
-    begin
-        ChannelPartnerSetup.Get(StartParameter);
-        SharedKey := ChannelPartnerSetup."Incoming Orders Token";
-        StoratgeAccount := ChannelPartnerSetup."API Endpoint";
-        ContainerName := ChannelPartnerSetup."Incoming Orders Conatiner Name";
-        StorageServiceAuthorization := StorageServiceAuthorizationCodeunit.CreateSharedKey(SharedKey);
-        ABSBlobClient.Initialize(StoratgeAccount, ContainerName, StorageServiceAuthorization);
-
-        Response := ABSBlobClient.ListBlobs(ABSContainerContent);
-        if Response.IsSuccessful() then begin
-            ABSContainerContent.Reset();
-            if ABSContainerContent.FindSet() then
-                repeat
-                    Response := ABSBlobClient.GetBlobAsStream(ABSContainerContent."Full Name", BlobInstream);
-                    if Response.IsSuccessful() then begin
-                        CreateOrder(BlobInstream, StartParameter, ABSContainerContent."Full Name");
-                    end else
-                        Error(GetLastErrorText());
-                until ABSContainerContent.Next() = 0;
-        end else
-            Error(GetLastErrorText());
     end;
 
     local procedure GetCellValue(RowNo: Integer; ColNo: Integer): Text

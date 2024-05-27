@@ -10,10 +10,8 @@ page 90016 "Trade Partner card"
     {
         area(Content)
         {
-
             group(General)
             {
-
                 field(Code; rec.Code)
                 {
                     ApplicationArea = all;
@@ -34,7 +32,6 @@ page 90016 "Trade Partner card"
                 field("Inbox Type"; rec."Inbox Type")
                 {
                     ApplicationArea = all;
-                    //Visible = false;
 
                     trigger OnValidate()
                     begin
@@ -58,10 +55,8 @@ page 90016 "Trade Partner card"
                 }
                 field(Blocked; rec.Blocked)
                 {
-                    //Visible = false;
                     ApplicationArea = All;
                 }
-
                 field("Process Order Type"; rec."Process Order Type")
                 {
                     ApplicationArea = all;
@@ -72,34 +67,28 @@ page 90016 "Trade Partner card"
                         EnableInvoiceTypeSelection := Rec."Process Order Type" = Rec."Process Order Type"::"Internal Pick";
                     end;
                 }
-
                 field(Logo; rec.Logo)
                 {
                     ApplicationArea = all;
                 }
-
                 field("Prices Including VAT"; rec."Prices Including VAT")
                 {
                     ApplicationArea = all;
                 }
-
                 field("Invoicing Method"; rec."Invoicing Method")
                 {
                     ApplicationArea = all;
                     Editable = EnableInvoiceTypeSelection;
                 }
-
                 field("Order Item By"; Rec."Order Item By")
                 {
                     ApplicationArea = All;
                 }
-
                 field("Order Import Codeunit"; Rec."Order Import Codeunit")
                 {
                     Caption = 'Procesing Codeunit';
                     ApplicationArea = All;
                 }
-
                 group("Customer trends")
                 {
                     field("Customer Trend Code"; Rec."Customer Trend Code")
@@ -111,11 +100,8 @@ page 90016 "Trade Partner card"
                         ApplicationArea = All;
                     }
                 }
-
             }
 
-
-            //Sofyan++
             group(Conatiner)
             {
                 Caption = 'Container Details';
@@ -128,50 +114,31 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = all;
                 }
-                field("Incoming Orders Conatiner Name"; Rec."Incoming Orders Conatiner Name")
-                {
-                    ApplicationArea = all;
-
-                }
-                field("Incoming Orders Token"; Rec."Incoming Orders Token")
-                {
-                    ApplicationArea = all;
-                    ExtendedDatatype = Masked;
-                }
-                field("Status Conatiner Name"; Rec."Status Conatiner Name")
+                field("Incoming Order Container Name"; Rec."Incoming Order Container Name")
                 {
                     ApplicationArea = all;
                 }
-                field("Status Token"; Rec."Status Token")
+                field("Incoming Order Container Token"; Rec."Incoming Order Container Token")
                 {
                     ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
-                field("Order Acknow. Conatiner Name"; Rec."Order Acknow. Conatiner Name")
+                field("Storage Account Name"; Rec."Storage Account Name")
                 {
                     ApplicationArea = all;
                 }
-                field("Order Acknow. Token"; Rec."Order Acknow. Token")
+                field("Shared Access Key"; Rec."Shared Access Key")
                 {
                     ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
-                field("Outgoing Container 2 Name"; rec."Outgoing Container 2 Name")
+                field("Order Acknow. Container Name"; Rec."Order Acknow. Container Name")
                 {
-                    ApplicationArea = All;
+                    ApplicationArea = all;
                 }
-                field("Outgoing Container 2 Token"; rec."Outgoing Container 2 Token")
+                field("Order Acknow. Container Token"; Rec."Order Acknow. Container Token")
                 {
-                    ApplicationArea = All;
-                    ExtendedDatatype = Masked;
-                }
-                field("Outgoing Container 3 Name"; rec."Outgoing Container 3 Name")
-                {
-                    ApplicationArea = All;
-                }
-                field("Outgoing Container 3 Token"; rec."Outgoing Container 3 Token")
-                {
-                    ApplicationArea = All;
+                    ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
             }
@@ -210,9 +177,7 @@ page 90016 "Trade Partner card"
                 field(Token; rec.Token)
                 {
                     ApplicationArea = all;
-
                 }
-
             }
 
             group("Feature Setup")
@@ -248,14 +213,11 @@ page 90016 "Trade Partner card"
                 field(MyField; Rec."Tracking No Valid. Required")
                 {
                     ApplicationArea = All;
-
                 }
-
                 field("Update Tracking Information"; Rec."Update Tracking Information")
                 {
                     ApplicationArea = All;
                 }
-
                 field("Order Acknowledgement Codeunit"; Rec."Order Acknowledgement Codeunit")
                 {
                     ApplicationArea = All;
@@ -280,7 +242,6 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                 }
-
                 field("Price Pick From"; Rec."Price Pick From")
                 {
                     ApplicationArea = All;
@@ -293,33 +254,10 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = all;
                 }
-                field("GiftWrap G/L No."; rec."GiftWrap G/L No.")
-                {
-                    ApplicationArea = all;
-                }
                 field("Positng G/L No."; rec."Positng G/L No.")
                 {
                     ApplicationArea = all;
                 }
-
-                field("Maximum Inventory"; rec."Maximum Inventory")
-                {
-                    ApplicationArea = all;
-                }
-                field("Minimum Inventory"; rec."Minimum Inventory")
-                {
-                    ApplicationArea = all;
-                }
-                //CAS-27945-M1R5J2.MH -->
-                field("Post auto payment"; Rec."Post auto payment")
-                {
-                    ApplicationArea = All;
-                }
-                field("Bank Account Code"; Rec."Bank Account Code")
-                {
-                    ApplicationArea = All;
-                }
-                //CAS-27945-M1R5J2.MH <--
             }
 
 
@@ -357,7 +295,6 @@ page 90016 "Trade Partner card"
                     ApplicationArea = all;
                 }
             }
-
         }
     }
 
@@ -393,8 +330,8 @@ page 90016 "Trade Partner card"
                             MESSAGE('Please enable the Sync Order feature.');
                     end;
                 end;
-
             }
+
             action("Sync Shipment")
             {
                 ApplicationArea = All;
@@ -408,8 +345,6 @@ page 90016 "Trade Partner card"
 
                 trigger OnAction()
                 var
-                    Channelcode: Code[10];
-
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -424,8 +359,8 @@ page 90016 "Trade Partner card"
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
                 end;
-
             }
+
             action("Sync Customer")
             {
                 ApplicationArea = All;
@@ -451,10 +386,10 @@ page 90016 "Trade Partner card"
                                 Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                                 JobQueueEntry.Delete();
                             end;
-
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Sync Item")
             {
                 ApplicationArea = All;
@@ -486,6 +421,7 @@ page 90016 "Trade Partner card"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Update Inventory")
             {
                 ApplicationArea = All;
@@ -516,7 +452,6 @@ page 90016 "Trade Partner card"
                 end;
             }
 
-
             action("Update Price")
             {
                 ApplicationArea = All;
@@ -546,6 +481,7 @@ page 90016 "Trade Partner card"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Sync Location")
             {
                 Caption = 'Sync Location';
@@ -569,33 +505,8 @@ page 90016 "Trade Partner card"
                         until TradePartnerList.Next() = 0;
                 end;
             }
-
-            action("Import Web Order")
-            {
-                Caption = 'Import Web Order';
-                ApplicationArea = All;
-                Image = Import;
-                trigger OnAction()
-                var
-                begin
-                    Clear(TradePartnerList);
-                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then begin
-                        if TradePartnerList.Count = 1 then begin
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';ImportOrder';
-                            JobQueueEntry.Insert;
-                            Codeunit.Run(90078, JobQueueEntry);
-                            JobQueueEntry.Delete();
-                        end else begin
-                            exit;
-                        end;
-                    end;
-                end;
-            }
-
         }
+
         area(Navigation)
         {
             action("Channel Orders")
@@ -609,16 +520,8 @@ page 90016 "Trade Partner card"
                 ApplicationArea = All;
                 RunObject = page "Web Order List";
                 RunPageLink = "Trade Partner Code" = field(code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
+
             action("Channel Order Lines")
             {
                 Caption = 'Channel Order Lines';
@@ -630,18 +533,9 @@ page 90016 "Trade Partner card"
                 ApplicationArea = All;
                 RunObject = page "Web Order Line List";
                 RunPageLink = "Trade Partner Code" = field(code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
-            action("Item Cross Reference")
+            action("Item Reference")
             {
                 Caption = 'Item Reference';
                 Image = Change;
@@ -653,15 +547,6 @@ page 90016 "Trade Partner card"
                 RunObject = Page "Item Reference Entries";
                 RunPageView = WHERE("Reference Type" = FILTER(Customer));
                 RunPageLink = "Reference Type No." = FIELD("Customer No.");
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
             action("Handeled Orders")
@@ -675,15 +560,6 @@ page 90016 "Trade Partner card"
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order List";
                 RunPageLink = "Trade Partner Code" = FIELD(Code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
             action("Handeled Order Lines")
@@ -697,19 +573,8 @@ page 90016 "Trade Partner card"
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order Line";
                 RunPageLink = "Trade Partner Code" = FIELD(Code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
-
         }
-
     }
 
 
@@ -730,8 +595,6 @@ page 90016 "Trade Partner card"
         InboxTypeFile := rec."Inbox Type" = rec."Inbox Type"::"File Location";
         InboxTypeAPI := rec."Inbox Type" = rec."Inbox Type"::"Web service";
         EnableInvoiceTypeSelection := Rec."Process Order Type" = Rec."Process Order Type"::"Internal Pick";
-
-
     end;
 
     var
@@ -741,10 +604,5 @@ page 90016 "Trade Partner card"
         JobQueueEntry: Record 472;
         TokenText: Text;
         Instr: InStream;
-        MyText: Text[1000];
-        NewText: Text[1000];
-        OutStr: OutStream;
-
         EnableInvoiceTypeSelection: Boolean;
-        Flag: Boolean;
 }

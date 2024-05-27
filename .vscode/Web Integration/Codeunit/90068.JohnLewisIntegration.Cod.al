@@ -45,8 +45,8 @@ codeunit 90068 "John Lewis Integration"
         if TradePartner.FindFirst() then begin
             apiEndPoint := TradePartner."API Endpoint";
             apiattribute := TradePartner."API Attribute";
-            containerName := TradePartner."Incoming Orders Conatiner Name";
-            sasToken := TradePartner."Incoming Orders Token";
+            containerName := TradePartner."Incoming Order Container Name";
+            sasToken := TradePartner."Incoming Order Container Token";
         end;
         //apiEndPoint := 'https://johnlewis1.blob.core.windows.net';
         //containerName := 'jlptest';

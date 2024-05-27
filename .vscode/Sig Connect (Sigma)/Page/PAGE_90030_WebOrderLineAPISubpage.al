@@ -227,6 +227,7 @@ page 90030 "Web Order Line Subpage"
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
         SalesQuotaValidation: Codeunit "Web Order Sales Quota";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
+        ItemBlockedError: Text;
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
@@ -236,9 +237,11 @@ page 90030 "Web Order Line Subpage"
             Clear(L_ErrorRecorded);
             //Response SEQ3++
             if L_ErrorRecorded = false then begin
+                Clear(ItemBlockedError);
                 if L_Item.Get(_InterimSalesLine."No.") then begin
-                    if L_Item.Blocked = true then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Record Locked (stock or depot stock file)', P_InterimSalesHeader, _InterimSalesLine, 'SEQ3', false, '');
+                    if (L_Item.Blocked = true) or (L_Item."Sales Blocked" = true) or (L_Item."Ops Sales Blocked" = true) or (L_Item.Status = L_Item.Status::Open) or (L_Item."QAU Approved" = false) then begin
+                        ItemBlockedError := CU_WebOrderManagement.CheckItemBlockedError(L_Item);
+                        CU_WebOrderManagement.Sigma_InsertErrorLog(ItemBlockedError, P_InterimSalesHeader, _InterimSalesLine, 'SEQ3', false, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;
@@ -273,14 +276,6 @@ page 90030 "Web Order Line Subpage"
                 end;
             end;
 
-            // Item Sales Quota SEQ6++
-            // if L_ErrorRecorded = false then begin
-            //     if SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) = SalesQuotaValidation.CheckExceededQty(_InterimSalesLine, P_InterimSalesHeader) ::"Exceeded Qty" then begin
-            //         CU_WebOrderManagement.Sigma_InsertErrorLog('Maximum ordered exceeded', P_InterimSalesHeader, _InterimSalesLine, 'SEQ6', false, '');
-            //         L_ErrorRecorded := TRUE;
-            //     end;
-            // end;
-
             //Response SEQ7++
             if L_ErrorRecorded = false then begin
                 if L_Item.Get(_InterimSalesLine."No.") then begin
@@ -307,6 +302,16 @@ page 90030 "Web Order Line Subpage"
                 if L_Item.Get(_InterimSalesLine."No.") then begin
                     if CU_WebOrderManagement.CalculateQtyToDeliver(_InterimSalesLine) = 0 then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, _InterimSalesLine, 'SEQ9', false, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
+            //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
+            if L_ErrorRecorded = false then begin
+                if L_Item.Get(_InterimSalesLine."No.") then begin
+                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;

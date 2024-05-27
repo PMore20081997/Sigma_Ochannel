@@ -28,7 +28,6 @@ page 90001 "Trade Partner List"
                     Visible = false;
                     ApplicationArea = all;
                 }
-
                 field("Customer No."; rec."Customer No.")
                 {
                     ApplicationArea = all;
@@ -102,17 +101,6 @@ page 90001 "Trade Partner List"
                 {
                     ApplicationArea = all;
                 }
-                //CAS-27945-M1R5J2.MH -->
-                field("Post auto payment"; Rec."Post auto payment")
-                {
-                    ApplicationArea = All;
-                }
-                field("Bank Account Code"; Rec."Bank Account Code")
-                {
-                    ApplicationArea = All;
-                }
-                //CAS-27945-M1R5J2.MH <--
-
             }
         }
     }
@@ -134,19 +122,11 @@ page 90001 "Trade Partner List"
                 PromotedOnly = true;
                 trigger OnAction()
                 var
-                    CUAmazon: Codeunit "Amazon Integration";
-                    CUSopify: Codeunit "Shopify Integration";
-                    CUOnBuy: Codeunit "OnBuy Integration";
-                    CUMagento: Codeunit "Magento Integration";
-                    CUEbay: Codeunit "Ebay Integration";
-                    CUWooCommerce: Codeunit "Woo Commerce";
-                    CUB2B: Codeunit "B2B";
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
                     if TradePartnerList.FindFirst then begin
                         if TradePartnerList.SyncOrder = true then begin
-
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
                             JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncOrder';
@@ -154,12 +134,12 @@ page 90001 "Trade Partner List"
 
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
-
                         end else
                             MESSAGE('Please enable the Sync Order feature.');
                     end;
                 end;
             }
+
             action("Sync Test Order")
             {
                 ApplicationArea = All;
@@ -172,19 +152,11 @@ page 90001 "Trade Partner List"
                 PromotedOnly = true;
                 trigger OnAction()
                 var
-                    CUAmazon: Codeunit "Amazon Integration";
-                    CUSopify: Codeunit "Shopify Integration";
-                    CUOnBuy: Codeunit "OnBuy Integration";
-                    CUMagento: Codeunit "Magento Integration";
-                    CUEbay: Codeunit "Ebay Integration";
-                    CUWooCommerce: Codeunit "Woo Commerce";
-                    CUB2B: Codeunit "B2B";
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
                     if TradePartnerList.FindFirst then begin
                         if TradePartnerList.SyncOrder = true then begin
-
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
                             JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncOrder';
@@ -192,12 +164,12 @@ page 90001 "Trade Partner List"
 
                             Codeunit.Run(90030, JobQueueEntry);
                             JobQueueEntry.Delete();
-
                         end else
                             MESSAGE('Please enable the Sync Order feature.');
                     end;
                 end;
             }
+
             action("Sync Shipment")
             {
                 ApplicationArea = All;
@@ -210,7 +182,6 @@ page 90001 "Trade Partner List"
                 PromotedOnly = true;
                 trigger OnAction()
                 var
-                    Channelcode: Code[10];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -226,6 +197,7 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Sync Customer")
             {
                 ApplicationArea = All;
@@ -237,11 +209,6 @@ page 90001 "Trade Partner List"
                 Enabled = Rec.SyncPrice;
                 trigger OnAction()
                 var
-                    myInt: Integer;
-                    B2B: Codeunit B2B;
-                    TradePartner: Record "Trade Partner";
-                    Shopify: Codeunit "Shopify Integration";
-                    ChannelCode: Text;
                 begin
                     if TradePartnerList.FindSet() then
                         repeat
@@ -256,6 +223,7 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Sync Item")
             {
                 ApplicationArea = All;
@@ -268,10 +236,6 @@ page 90001 "Trade Partner List"
                 Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 var
-                    ItemChannelCode: Code[10];
-                    ChannelCode: Code[10];
-                    TradePartner: Record "Trade Partner";
-                    CUShopify: Codeunit "Shopify Integration";
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -287,6 +251,7 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Update Inventory")
             {
                 ApplicationArea = All;
@@ -299,8 +264,6 @@ page 90001 "Trade Partner List"
                 PromotedOnly = true;
                 trigger OnAction()
                 var
-                    UpdateInventoryChannelCode: Code[10];
-                    ChannelCode: code[20];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -317,7 +280,6 @@ page 90001 "Trade Partner List"
                 end;
             }
 
-
             action("Update Price")
             {
                 ApplicationArea = All;
@@ -330,8 +292,6 @@ page 90001 "Trade Partner List"
                 PromotedOnly = true;
                 trigger OnAction()
                 var
-                    UpdatePriceChannelCode: Code[10];
-                    ChannelCode: code[20];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
@@ -347,11 +307,13 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Sync Location")
             {
                 Caption = 'Sync Location';
                 Image = CreateInteraction;
                 ApplicationArea = All;
+                Visible = false;
                 Enabled = Rec.SyncInventory;
                 trigger OnAction()
                 begin
@@ -368,7 +330,6 @@ page 90001 "Trade Partner List"
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
                 end;
-
             }
 
             action("Import Web Order")
@@ -376,6 +337,7 @@ page 90001 "Trade Partner List"
                 Caption = 'Import Web Order';
                 ApplicationArea = All;
                 Image = Import;
+                Visible = false;
                 trigger OnAction()
                 var
                 begin
@@ -441,6 +403,7 @@ page 90001 "Trade Partner List"
                         until TradePartnerList.Next() = 0;
                 end;
             }
+
             action("Export Stock Status")
             {
                 Image = OrderPromising;
@@ -464,6 +427,7 @@ page 90001 "Trade Partner List"
                 end;
             }
         }
+
         area(Navigation)
         {
             action("Channel Orders")
@@ -477,16 +441,8 @@ page 90001 "Trade Partner List"
                 ApplicationArea = All;
                 RunObject = page "Web Order List";
                 RunPageLink = "Trade Partner Code" = field(code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
+
             action("Channel Order Lines")
             {
                 Caption = 'Channel Order Lines';
@@ -498,15 +454,6 @@ page 90001 "Trade Partner List"
                 ApplicationArea = All;
                 RunObject = page "Web Order Line List";
                 RunPageLink = "Trade Partner Code" = field(code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
             action("Item Cross Reference")
@@ -521,15 +468,6 @@ page 90001 "Trade Partner List"
                 RunObject = Page "Item Reference Entries";
                 RunPageView = WHERE("Reference Type" = FILTER(Customer));
                 RunPageLink = "Reference Type No." = FIELD("Customer No.");
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
             action("Handeled Orders")
@@ -543,15 +481,6 @@ page 90001 "Trade Partner List"
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order List";
                 RunPageLink = "Trade Partner Code" = FIELD(Code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
 
             action("Handeled Order Lines")
@@ -565,26 +494,11 @@ page 90001 "Trade Partner List"
                 ApplicationArea = All;
                 RunObject = Page "Handled Web Order Line";
                 RunPageLink = "Trade Partner Code" = FIELD(Code);
-
-                trigger OnAction()
-
-                var
-
-                begin
-
-                end;
-
             }
-
         }
-
     }
 
     var
-
         JobQueueEntry: Record "Job Queue Entry" temporary;
         TradePartnerList: Record "Trade Partner";
-
-
-
 }

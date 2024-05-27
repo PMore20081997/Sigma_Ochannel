@@ -347,7 +347,7 @@ page 90029 "Web Order Header API Card"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
+                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog('Customer locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
@@ -394,17 +394,6 @@ page 90029 "Web Order Header API Card"
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
                     if L_Cust."Payment Terms Code" = 'COD' then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog('COD Account *********', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
-
-            //Response SEQ11++
-            if L_ErrorRecorded = false then begin
-                L_Cust.Reset();
-                if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::All then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Account Closed *****', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
                 end;

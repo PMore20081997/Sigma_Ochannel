@@ -54,29 +54,19 @@ page 90003 "Web Order List"
                     ApplicationArea = All;
                     Editable = false;
                 }
-
                 field(Status; Rec.Status)
                 {
                     ApplicationArea = all;
                     Caption = 'Status';
                 }
-                // field("Order Status"; Rec."Order Status")
-                // {
-                //     ApplicationArea = All;
-                //     ToolTip = 'Specifies the value of the Order Status field.';
-                //     Visible = false;
-                // }
-
                 field("Shipment Date"; Rec."Shipment Date")
                 {
                     ApplicationArea = All;
                 }
-
                 field("Order Date"; Rec."Order Date")
                 {
                     ApplicationArea = all;
                 }
-
                 field("Document Date"; Rec."Document Date")
                 {
                     CaptionML = ENU = 'Document Date', ENG = 'Document Date';
@@ -103,33 +93,6 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
-                // field("Shipping Agent Code"; Rec."Shipping Agent Code")
-                // {
-                //     ApplicationArea = all;
-                // }
-                // field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
-                // {
-                //     ApplicationArea = all;
-                // }
-
-                // field("Gift Card"; Rec."Gift Card")
-                // {
-                //     ApplicationArea = All;
-                //     ToolTip = 'Specifies the value of the Gift Card field.';
-                //     Visible = false;
-                // }
-                // field("Gift Order Amount"; Rec."Gift Order Amount")
-                // {
-                //     ApplicationArea = All;
-                //     ToolTip = 'Specifies the value of the Gift Order Amount field.';
-                //     Visible = false;
-                // }
-                // field("Payment Method"; Rec."Payment Method")
-                // {
-                //     ApplicationArea = All;
-                //     Visible = false;
-                // }
-
             }
         }
     }
@@ -152,7 +115,6 @@ page 90003 "Web Order List"
                 trigger OnAction()
                 var
                     R90000: Report "Process Web Orders";
-                    ReportParams: Text;
                 begin
                     Clear(R90000);
                     InterimSalesHeader.Reset();
@@ -189,6 +151,7 @@ page 90003 "Web Order List"
                     end;
                 end;
             }
+
             action("Check Exceeded Qty")
             {
                 ApplicationArea = All;
@@ -231,10 +194,10 @@ page 90003 "Web Order List"
                     end;
                 end;
             }
-            action(BulkDelete)
+
+            action("Bulk Delete")
             {
                 ApplicationArea = All;
-                Caption = 'Bulk Delete';
                 Ellipsis = true;
                 Image = Delete;
                 Promoted = true;
@@ -246,21 +209,25 @@ page 90003 "Web Order List"
                     InterimSalesHeader: Record "Interim Sales Header";
                     InterimSalesLine: Record "Interim Sales Line";
                 begin
-                    Clear(InterimSalesHeader);
-                    InterimSalesHeader := Rec;
-                    CurrPage.SetSelectionFilter(InterimSalesHeader);
+                    if Confirm('Do you really want to delete Selected Orders?') then begin
+                        Clear(InterimSalesHeader);
+                        InterimSalesHeader := Rec;
+                        CurrPage.SetSelectionFilter(InterimSalesHeader);
 
-                    if InterimSalesHeader.FindSet() then
-                        repeat
-                            InterimSalesLine.Reset();
-                            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-                            InterimSalesLine.SetRange("Document Type", InterimSalesHeader."Document Type");
-                            if InterimSalesLine.FindSet() then
-                                InterimSalesLine.DeleteAll(true);
-                            InterimSalesHeader.Delete(true);
-                        until InterimSalesHeader.Next() = 0;
+                        if InterimSalesHeader.FindSet() then begin
+                            repeat
+                                InterimSalesLine.Reset();
+                                InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+                                InterimSalesLine.SetRange("Document Type", InterimSalesHeader."Document Type");
+                                if InterimSalesLine.FindSet() then
+                                    InterimSalesLine.DeleteAll(true);
+                                InterimSalesHeader.Delete(true);
+                            until InterimSalesHeader.Next() = 0;
+                        end;
+                    end;
                 end;
             }
+
             // action("Update Reason Code")
             // {
             //     ApplicationArea = All;
@@ -414,45 +381,6 @@ page 90003 "Web Order List"
         //         end;
         //     }
 
-        //     // action("Eliminate Selected  Error")
-        //     // {
-        //     //     Caption = 'Eliminate Selected  Error';
-        //     //     Image = ErrorLog;
-        //     //     Promoted = true;
-        //     //     PromotedCategory = Process;
-        //     //     PromotedOnly = true;
-        //     //     PromotedIsBig = true;
-        //     //     ApplicationArea = all;
-        //     //     trigger OnAction()
-        //     //     begin
-        //     //         CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
-        //     //         if InterimSalesHeader.FindSet() then begin
-        //     //             IF InterimSalesHeader.FIND('-') THEN
-        //     //                 REPEAT
-        //     //                     //WebOrdMngt.OrderValidations(InterimSalesHeader);
-        //     //                     WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
-        //     //                 UNTIL InterimSalesHeader.NEXT = 0;
-        //     //         end;
-        //     //     end;
-        //     // }
-
-        //     action("Process Shipping Rule")
-        //     {
-        //         Caption = 'Process Shipping Rule';
-        //         Image = Track;
-        //         Promoted = true;
-        //         Visible = false; //07/07/2020
-        //         ApplicationArea = All;
-
-
-        //         trigger OnAction()
-        //         begin
-        //             REPORT.RUN(50100, TRUE, FALSE, InterimSalesHeader);
-        //             CurrPage.UPDATE(TRUE);
-        //         end;
-        //     }
-
-
         //     action(MovetoHandled)
         //     {
         //         Caption = 'MovetoHandled';
@@ -468,25 +396,7 @@ page 90003 "Web Order List"
         //             //R80020.SETTABLEVIEW(Rec);
         //             R80020.USEREQUESTPAGE(true);
         //             R80020.RUNMODAL();
-
         //         end;
-        //     }
-        //     action("Dispatch Scanning")
-        //     {
-        //         Caption = 'Dispatch Scanning';
-        //         Promoted = true;
-        //         Visible = false;//07/07/2020
-        //         ApplicationArea = All;
-        //         trigger OnAction()
-        //         var
-        //             myInt: Integer;
-        //             ISH: Record "Interim Sales Header";
-        //         //DispatchScan: Page "Dispatch Scanning new";
-        //         begin
-
-        //             //DispatchScan.Run();
-        //         end;
-
         //     }
         //     action("Delivery Note A6")
         //     {
@@ -519,7 +429,6 @@ page 90003 "Web Order List"
         //             END;
         //         end;
         //     }
-
         //     // action(ExportOrderAck)
         //     // {
         //     //     ApplicationArea = All;
@@ -659,27 +568,10 @@ page 90003 "Web Order List"
     var
         RecStatus: Option Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled,Error;
         InterimSalesHeader: Record "Interim Sales Header";
-        //OrderRead: Codeunit "Process Order File-Innox";
-        //AmazonIntegration: Codeunit "Amazon Integration"; //Commented By Pavan 20072020
-        HeaderNo: Code[20];
-        ShipmentTracking: Record "Shipment Tracking";
-        LineNo: Integer;
-        Temp_SalesHeader: Record "Sales Header" temporary;
-        SalesLine: Record "Sales Line";
         EnableEliminateSelectedError: Boolean;
         EnableReject: Boolean;
-        EnableAccept: Boolean;
         WebOrdMngt: Codeunit "Web Order Mgt";
-        SalesHeader: Record "Sales Header";
-        WhseInternalPickHeader: Record "Whse. Internal Pick Header";
         OrderAck: Codeunit "Order Acknowledgement";
-
-
-
-    procedure GetStatus(L_Status: Option Confirmed,"In Progress",Processing,"In Picking",Picked,Dispatched,Rejected,Throttled; L_InterimSalesHeader: Record "Interim Sales Header")
-    begin
-        RecStatus := L_Status;
-    end;
 
 
     //Abdul+++ 02/10/2021
@@ -691,29 +583,4 @@ page 90003 "Web Order List"
             TextVar += Separator + Comparator + Addendum;
     end;
     //Abdul---
-
-
-    local procedure OpenDestinationDocument(InterimSalesHeader: Record "Interim Sales Header")
-    begin
-        CASE InterimSalesHeader."Destination Doc Type" OF
-            InterimSalesHeader."Destination Doc Type"::"Internal Pick":
-                BEGIN
-                    WhseInternalPickHeader.RESET;
-                    WhseInternalPickHeader.SETRANGE("No.", InterimSalesHeader."Destination Doc No.");
-                    IF WhseInternalPickHeader.FINDFIRST THEN
-                        PAGE.RUN(7357, WhseInternalPickHeader);
-                END;
-            InterimSalesHeader."Destination Doc Type"::"Sales Order":
-                BEGIN
-                    SalesHeader.RESET;
-                    SalesHeader.SETRANGE("No.", InterimSalesHeader."Destination Doc No.");
-                    IF SalesHeader.FINDFIRST THEN
-                        PAGE.RUN(42, SalesHeader);
-                END;
-        END;
-    end;
-
-
-
 }
-
