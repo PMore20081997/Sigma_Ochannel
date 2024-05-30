@@ -45,6 +45,183 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
     {
         addafter(Release)
         {
+            action("Update Variant On Lines")
+            {
+                ApplicationArea = All;
+                Image = Insert;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                var
+                    L_SalesLine: Record "Sales Line";
+                    CustomeCodeunit: Codeunit "Udate Variant on SO";
+                    RemQty: Decimal;
+                    QtyToApply: Decimal;
+                    L_ItemVariant: Record "Item Variant";
+                    L_Count: Integer;
+                    L_NewLineRequired: Boolean;
+                    L_Item: Record Item;
+                    Window: Dialog;
+                    Counter: Integer;
+                    Text005: TextConst ENU = 'Updating the Variant Code...\\', ENG = 'Updating the Variant Code...\\';
+                    Text006: TextConst ENU = 'Progress', ENG = 'Progress';
+                    NoOfRecords: Integer;
+                begin
+                    //Check Order Type++
+                    Rec.TestField("Web Order", true);
+
+                    //Check Status++
+                    Rec.TestField(Status, Rec.Status::Open);
+
+
+                    //Start Process to Update Variant Code++
+                    Clear(NoOfRecords);
+                    Clear(Counter);
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", Rec."Document Type");
+                    L_SalesLine.SetRange("Document No.", Rec."No.");
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    L_SalesLine.SetFilter("Variant Code", '%1', '');
+                    L_SalesLine.SetRange("Variant Code mandatory", true);
+                    L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
+                    L_SalesLine.SetFilter("Location Code", '<>%1', '');
+                    if L_SalesLine.FindSet() then begin
+                        NoOfRecords := L_SalesLine.Count;
+                        Window.OPEN(Text005 + Text006 + ' @1@@@@@@@@@@@@@\' + L_SalesLine.FIELDCAPTION("No.") + ' #3##########');
+                        repeat
+                            Counter += 1;
+                            Window.UPDATE(1, ROUND(Counter / NoOfRecords * 10000, 1));
+                            Window.UPDATE(3, L_SalesLine."No.");
+
+                            Clear(L_NewLineRequired);
+                            Clear(RemQty);
+                            if CustomeCodeunit.CheckTotalAvailablityQty(L_SalesLine) > 0 then begin
+                                //Total required quantity 
+                                RemQty := L_SalesLine.Quantity;
+
+                                //Update Availbale Qty on Item Variant Table(This is temproray Calculating at run time)
+                                CustomeCodeunit.UpdateAvaibleQty(L_SalesLine);
+
+                                //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                //Set PriorityWithoutZero++
+                                Clear(L_ItemVariant);
+                                L_ItemVariant.Reset();
+                                CustomeCodeunit.SetPriorityWithoutZero(L_SalesLine, L_ItemVariant);
+                                Clear(L_Count);
+                                L_Count := L_ItemVariant.Count;
+
+                                //Process to update variant code and create new line if required++
+                                if L_Count > 0 then begin
+                                    while (RemQty > 0) AND (L_Count > 0) do begin
+                                        if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) > 0 then begin
+                                            if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then begin
+                                                if L_NewLineRequired = false then begin
+                                                    L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                                    L_SalesLine.Validate("Original Quantity", L_SalesLine.Quantity);
+                                                    L_SalesLine.Validate("Variant Created By", L_SalesLine."Line No."); //Original Line Number
+                                                    L_SalesLine.Modify();
+                                                    RemQty := RemQty - L_SalesLine.Quantity;
+                                                end else begin
+                                                    Clear(QtyToApply);
+                                                    if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+                                                        QtyToApply := RemQty
+                                                    else
+                                                        QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+
+                                                    CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+                                                    RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                                end;
+                                            end else begin
+                                                if L_NewLineRequired = false then begin
+                                                    L_SalesLine.Validate(Quantity, CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant));
+                                                    L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                                    L_SalesLine.Validate("Original Quantity", RemQty);
+                                                    L_SalesLine.Modify();
+                                                    RemQty := RemQty - L_SalesLine.Quantity;
+                                                    L_NewLineRequired := true;
+                                                end else begin
+                                                    Clear(QtyToApply);
+                                                    if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+                                                        QtyToApply := RemQty
+                                                    else
+                                                        QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                                    CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+                                                    RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                                end;
+                                            end;
+                                        end;
+
+                                        L_Count := L_Count - 1;
+                                        L_ItemVariant.Next();
+                                    end;
+                                end;
+                                //Without Zero and based on priority--------------------------------------------------------------------
+
+                                //As Discussed dont need to check Higher Qty process+++++++++++
+                                // //With Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // //Set PriorityWitZero++
+                                // Clear(L_ItemVariant);
+                                // L_ItemVariant.Reset();
+                                // CustomeCodeunit.SetPriorityWithZeroandHigherQty(L_SalesLine, L_ItemVariant);
+                                // Clear(L_Count);
+                                // L_Count := L_ItemVariant.Count;
+
+                                // //Process to update variant code and create new line if required++
+                                // if L_Count > 0 then begin
+                                //     while (RemQty > 0) AND (L_Count > 0) do begin
+                                //         if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) > 0 then begin
+                                //             if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then begin
+                                //                 if L_NewLineRequired = false then begin
+                                //                     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                //                     L_SalesLine.Validate("Original Quantity", RemQty);
+                                //                     L_SalesLine.Modify();
+                                //                     RemQty := RemQty - L_SalesLine.Quantity;
+                                //                 end else begin
+                                //                     Clear(QtyToApply);
+                                //                     if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+                                //                         QtyToApply := RemQty
+                                //                     else
+                                //                         QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+
+                                //                     CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+                                //                     RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                //                 end;
+                                //             end else begin
+                                //                 if L_NewLineRequired = false then begin
+                                //                     L_SalesLine.Validate(Quantity, CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant));
+                                //                     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                //                     L_SalesLine.Validate("Original Quantity", RemQty);
+                                //                     L_SalesLine.Modify();
+                                //                     RemQty := RemQty - L_SalesLine.Quantity;
+                                //                     L_NewLineRequired := true;
+                                //                 end else begin
+                                //                     Clear(QtyToApply);
+                                //                     if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+                                //                         QtyToApply := RemQty
+                                //                     else
+                                //                         QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                //                     CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+                                //                     RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                                //                 end;
+                                //             end;
+                                //         end;
+
+                                //         L_Count := L_Count - 1;
+                                //         L_ItemVariant.Next();
+                                //     end;
+                                // end;
+                                // //With Zero and based on priority--------------------------------------------------------------------
+                                //As Discussed dont need to check Higher Qty process+++++++++++
+                            end else begin
+                                // if not Confirm(StrSubstNo('Inventory does not exist for item number %1 line number. Click Yes to continue without variant code ', L_SalesLine."No.", L_SalesLine."Line No."), false) then
+                                //     Error('')
+                            end;
+                        until L_SalesLine.Next() = 0;
+                        Window.CLOSE;
+                    end;
+                end;
+            }
+
             action("Web Order")
             {
                 Promoted = true;
@@ -78,65 +255,21 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     end;
                 end;
             }
-            // action("Handled Web Order")
-            // {
-            //     Image = Navigate;
-            //     Promoted = true;
-            //     PromotedCategory = Process;
-            //     PromotedIsBig = true;
-            //     ApplicationArea = All;
-
-            //     trigger OnAction()
-            //     var
-            //         HandledWebOrderList: Page "Handled Web Order List";
-            //         L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-            //     begin
-            //         Clear(HandledWebOrderList);
-            //         L_HandledInterimSalesHeader.Reset();
-            //         L_HandledInterimSalesHeader.SetFilter("No.", SetHandledWeborderFilter(Rec."No."));
-            //         HandledWebOrderList.SetTableView(L_HandledInterimSalesHeader);
-            //         HandledWebOrderList.Run();
-            //     end;
-            // }
-            action("Shipment Tracking")
-            {
-                Image = Track;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                ApplicationArea = All;
-                trigger OnAction()
-                var
-                    L_ShipTrack: Record "Shipment Tracking";
-                    L_ShipPage: Page "Shipment Tracking";
-                begin
-                    Clear(L_ShipPage);
-                    L_ShipTrack.Reset();
-                    L_ShipTrack.SetRange("Document No.", Rec."No.");
-                    if L_ShipTrack.FindFirst() then begin
-                        L_ShipPage.SetTableView(L_ShipTrack);
-                        L_ShipPage.Run();
-                    end;
-                end;
-            }
-
-
         }
-
-        modify(Release)
-        {
-            trigger OnAfterAction()
-            var
-                HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-            begin
-                HandledInterimSalesHeader.Reset();
-                HandledInterimSalesHeader.SetRange("No.", Rec."No.");
-                if HandledInterimSalesHeader.FindFirst() then begin
-                    if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::"SO Created" then
-                        UpdateHandledWebOrder(Rec);
-                end;
-            end;
-        }
+        // modify(Release)
+        // {
+        //     trigger OnAfterAction()
+        //     var
+        //         HandledInterimSalesHeader: Record "Handled Interim Sales Header";
+        //     begin
+        //         HandledInterimSalesHeader.Reset();
+        //         HandledInterimSalesHeader.SetRange("No.", Rec."No.");
+        //         if HandledInterimSalesHeader.FindFirst() then begin
+        //             if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::"SO Created" then
+        //                 UpdateHandledWebOrder(Rec);
+        //         end;
+        //     end;
+        // }
     }
 
     local procedure UpdateHandledWebOrder(Rec: Record "Sales Header")

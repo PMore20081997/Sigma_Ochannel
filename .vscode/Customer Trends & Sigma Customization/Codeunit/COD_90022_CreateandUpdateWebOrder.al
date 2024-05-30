@@ -238,6 +238,7 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
         L_InterimSalesHeader.Validate("Order Status", P_InterimSalesHeader."Order Status");
         L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
+        L_InterimSalesHeader."Salesperson Code" := P_InterimSalesHeader."Salesperson Code";
         L_InterimSalesHeader."Reason Code" := 'Order Created';
         L_InterimSalesHeader."Reason Message" := 'Accepted';
         L_InterimSalesHeader."Ready to process" := true;
