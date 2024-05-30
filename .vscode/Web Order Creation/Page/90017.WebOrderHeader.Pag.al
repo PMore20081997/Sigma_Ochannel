@@ -101,12 +101,16 @@ page 90017 "Web Order Header"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("Salesperson Code"; Rec."Salesperson Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field(Status; Rec.Status)
                 {
                     Editable = false;
                     ApplicationArea = all;
                 }
-
                 field("Reason Code"; Rec."Reason Code")
                 {
                     ApplicationArea = All;
@@ -117,105 +121,6 @@ page 90017 "Web Order Header"
                     ApplicationArea = All;
                     Editable = false;
                 }
-                //     group("Shipping Details")
-                //     {
-                //         Visible = false;
-                //         Caption = 'Shipping Details';
-                //         Editable = false;
-                //         field("Web Shipment Method"; rec."Web Shipment Method")
-                //         {
-                //             Editable = false;
-                //             Enabled = false;
-                //             Visible = true;
-                //             ApplicationArea = all;
-                //         }
-                //         field("Shipment Date"; rec."Shipment Date")
-                //         {
-                //             ApplicationArea = all;
-                //         }
-                //         field("Tracking No."; rec."Package Tracking No.")
-                //         {
-                //             ApplicationArea = all;
-                //             Editable = false;
-                //             CaptionML = ENU = 'Tracking No.', ENG = 'Tracking No.';
-                //         }
-                //         field(Remarks; rec.Remarks)
-                //         {
-                //             Caption = 'Shipment Remark';
-                //             ApplicationArea = all;
-                //             Editable = false;
-                //         }
-                //         field("Total Weight"; rec."Total Weight")
-                //         {
-                //             ApplicationArea = all;
-                //             Editable = false;
-                //         }
-                //         field("Pickup Date"; rec."Pickup Date")
-                //         {
-                //             ApplicationArea = all;
-                //             Visible = false;
-                //         }
-                //         field("Pickup Time"; rec."Pickup Time")
-                //         {
-                //             ApplicationArea = all;
-                //             Visible = false;
-                //         }
-                //         field("No. of Items"; rec."No. of Items")
-                //         {
-                //             ApplicationArea = all;
-                //             Editable = false;
-                //             Caption = 'No. of Item Lines';
-                //         }
-                //         field("Total No. of Items"; Rec."Total No. of Items")
-                //         {
-                //             ApplicationArea = All;
-                //             Editable = false;
-                //         }
-                //         field("No. Of Parcels"; rec."No. Of Parcels")
-                //         {
-                //             ApplicationArea = all;
-                //             Editable = true;
-
-                //             trigger OnValidate()
-                //             var
-                //                 L_InterimSalesLine: Record "Interim Sales Line";
-                //                 TotalItems: Integer;
-                //                 ShippingAgentService: Record "Shipping Agent Services";
-                //             begin
-                //                 if ((Rec."No." <> '') and (Rec."No. Of Parcels" <> 0)) then begin
-                //                     TotalItems := 0;
-                //                     L_InterimSalesLine.Reset();
-                //                     L_InterimSalesLine.SetRange("Document No", Rec."No.");
-                //                     L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
-                //                     if L_InterimSalesLine.FindSet() then begin
-                //                         repeat
-                //                             TotalItems += L_InterimSalesLine.Quantity;
-                //                         until L_InterimSalesLine.Next() = 0;
-                //                     end;
-
-                //                     if TotalItems < Rec."No. Of Parcels" then begin
-                //                         Error('Number of Parcels cannot be greater than Total no. of Items');
-                //                     end;
-
-                //                     if ((Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') and (Rec."Ship-to Country/Region Code" <> 'GB')) then begin
-                //                         ShippingAgentService.Reset();
-                //                         ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                //                         ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                //                         if ShippingAgentService.FindFirst() then begin
-                //                             if Rec."No. Of Parcels" > ShippingAgentService."Max. No. of Parcel" then begin
-                //                                 Error(StrSubstNo('Number of Parcels cannot be greater than %1 for International Orders.', ShippingAgentService."Max. No. of Parcel"));
-                //                             end;
-                //                         end;
-                //                     end;
-                //                 end;
-                //             end;
-                //         }
-                //         field("Location Code"; rec."Location Code")
-                //         {
-                //             ApplicationArea = all;
-                //             Editable = false;
-                //         }
-                //     }
             }
             group(Shipping)
             {
@@ -285,7 +190,6 @@ page 90017 "Web Order Header"
                 {
                     ApplicationArea = All;
                 }
-
                 field("Ship-to Phone"; Rec."Ship-to Phone")
                 {
                     ApplicationArea = All;
@@ -310,30 +214,6 @@ page 90017 "Web Order Header"
                         ApplicationArea = All;
                     }
                 }
-
-                // field("Earliest Delivery date"; rec."Earliest Delivery date")
-                // {
-                //     Visible = true;
-                //     ApplicationArea = all;
-                // }
-                // field("Earliest Ship Date"; rec."Earliest Ship Date")
-                // {
-                //     Visible = true;
-                //     ApplicationArea = all;
-                // }
-                // field("Shipment Method Code"; rec."Shipment Method Code")
-                // {
-                //     ApplicationArea = all;
-                // }
-                // field("Shipping Agent Code"; rec."Shipping Agent Code")
-                // {
-                //     ApplicationArea = all;
-                // }
-                // field("Shipping Agent Service Code"; rec."Shipping Agent Service Code")
-                // {
-                //     ApplicationArea = all;
-                // }
-
             }
 
             part("Web Header Subform"; "Web order Subpage")
@@ -343,7 +223,6 @@ page 90017 "Web Order Header"
                 Editable = EditPage;
                 UpdatePropagation = Both;
             }
-
         }
     }
 
@@ -366,7 +245,6 @@ page 90017 "Web Order Header"
                 trigger OnAction()
                 var
                     R90000: Report "Process Web Orders";
-                    ReportParams: Text;
                 begin
                     Clear(R90000);
                     InterimSalesHeader.Reset();
@@ -395,16 +273,16 @@ page 90017 "Web Order Header"
                 begin
                     CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
                     if InterimSalesHeader.FindSet() then begin
-                        IF InterimSalesHeader.FIND('-') THEN
-                            REPEAT
-                                //WebOrdMngt.OrderValidations(InterimSalesHeader);
+                        IF InterimSalesHeader.FIND('-') then begin
+                            repeat
                                 WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
-                            UNTIL InterimSalesHeader.NEXT = 0;
+                            until InterimSalesHeader.NEXT = 0;
+                        end;
                     end;
                 end;
             }
-
         }
+
         area(Navigation)
         {
             action(ShowCustomer)
@@ -428,8 +306,6 @@ page 90017 "Web Order Header"
 
         // area(processing)
         // {
-
-
         //     action("Generate Shipment")
         //     {
         //         Image = Shipment;
@@ -461,108 +337,6 @@ page 90017 "Web Order Header"
         //             end;
         //         end;
         //     }
-        //     action("Eliminate Selected  Error")
-        //     {
-        //         Caption = 'Eliminate Selected  Error';
-        //         Image = ErrorLog;
-        //         Promoted = true;
-        //         PromotedCategory = Process;
-        //         PromotedOnly = true;
-        //         PromotedIsBig = true;
-        //         ApplicationArea = all;
-        //         trigger OnAction()
-        //         begin
-        //             CurrPage.SETSELECTIONFILTER(InterimSalesHeader);
-        //             if InterimSalesHeader.FindSet() then begin
-        //                 IF InterimSalesHeader.FIND('-') THEN
-        //                     REPEAT
-        //                         WebOrdMngt.Sigma_OrderValidations(InterimSalesHeader);
-        //                     UNTIL InterimSalesHeader.NEXT = 0;
-        //             end;
-        //         end;
-        //     }
-
-        //     action(Process)
-        //     {
-        //         Caption = 'Process';
-        //         Ellipsis = true;
-        //         Image = CompleteLine;
-        //         Promoted = true;
-        //         PromotedCategory = Process;
-        //         PromotedIsBig = true;
-        //         PromotedOnly = true;
-        //         ApplicationArea = all;
-
-        //         trigger OnAction()
-        //         var
-        //             R90000: Report "Process Web Orders";
-        //             ReportParams: Text;
-        //         begin
-        //             Clear(R90000);
-        //             InterimSalesHeader.Reset();
-        //             InterimSalesHeader.SetRange("No.", Rec."No.");
-        //             InterimSalesHeader.SetRange("Document Type", Rec."Document Type");
-        //             InterimSalesHeader.SetRange("Trade Partner Code", Rec."Trade Partner Code");
-        //             if InterimSalesHeader.FindFirst() then begin
-        //                 R90000.SetTotalNoOfOrders(InterimSalesHeader.Count);
-        //                 R90000.SetTableView(InterimSalesHeader);
-        //                 if Rec."Trade Partner Code" = 'B&Q' then
-        //                     R90000.SetBnQChannel(Rec."Trade Partner Code");
-        //                 R90000.UseRequestPage(true);
-        //                 R90000.Run();
-        //             end;
-        //         end;
-        //     }
-        //     action("MarkAsZeroPrice")
-        //     {
-        //         Caption = 'Mark As Zero Price';
-        //         Image = PriceAdjustment;
-        //         Promoted = true;
-        //         PromotedCategory = Process;
-        //         PromotedOnly = true;
-        //         PromotedIsBig = true;
-        //         ApplicationArea = all;
-        //         Visible = false;
-        //         trigger OnAction()
-        //         var
-        //             InterimSalesLine: Record "Interim Sales Line";
-        //         begin
-        //             InterimSalesLine.Reset();
-        //             InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
-        //             InterimSalesLine.SetRange("Document No", Rec."No.");
-        //             if InterimSalesLine.FindSet() then begin
-        //                 InterimSalesLine.ModifyAll("Gift Wrap", true);
-        //             end;
-
-        //         end;
-        //     }
-        //     action("Authorize price")
-        //     {
-        //         ApplicationArea = All;
-        //         Visible = false;
-
-        //         trigger OnAction()
-        //         begin
-        //             WebOrdMngt.AuthoriseWebOrderPrice(Rec);
-        //         end;
-        //     }
-        //     action("Remove MultiLine Order Ref. ShopDirect")
-        //     {
-        //         Caption = 'Remove MultiLine Order Ref. ShopDirect';
-        //         Ellipsis = true;
-        //         Image = ClearLog;
-        //         Promoted = true;
-        //         PromotedCategory = Process;
-        //         PromotedIsBig = true;
-        //         PromotedOnly = true;
-        //         ApplicationArea = all;
-        //         Visible = false;
-        //         trigger OnAction()
-        //         begin
-        //             RemoveMLOrderRef();
-        //         end;
-        //     }
-        // }
         // area(Navigation)
         // {
         //     action("Payment Details")
@@ -589,7 +363,6 @@ page 90017 "Web Order Header"
         //             ChannelOrderId1 := CopyStr(ChannelOrderId, 1, Length - 1);
         //             ChannelMedia.ShowPaymentDetails(ChannelOrderId1, InterimSalesHeader."Channel Order ID", 0, Rec."Trade Partner Code");
         //         end;
-
         //     }
         //     action("Direct Printing Label")
         //     {
@@ -629,7 +402,6 @@ page 90017 "Web Order Header"
         //         Image = Print;
         //         Visible = false;
 
-
         //         trigger OnAction()
         //         var
         //             L_InterimSalesHeader: Record "Interim Sales Header";
@@ -643,14 +415,6 @@ page 90017 "Web Order Header"
         //                 NewDeliveryNote.RUN;
         //             END;
         //         end;
-        //     }
-        //     action(ShowCustomer)
-        //     {
-        //         ApplicationArea = All;
-        //         Caption = 'Show Customer';
-        //         Image = Customer;
-        //         RunObject = Page 21;
-        //         RunPageLink = "No." = FIELD("Sell-to Customer No.");
         //     }
         //     action(ReOrder)
         //     {
@@ -672,7 +436,6 @@ page 90017 "Web Order Header"
         //         ApplicationArea = All;
         //         Visible = false;
 
-
         //         trigger OnAction()
         //         var
         //             RecInterimSalesLine: Record "Interim Sales Line";
@@ -685,26 +448,19 @@ page 90017 "Web Order Header"
         //             CurrPage.SetSelectionFilter(InterimSalesHeader);
         //             if InterimSalesHeader.FindFirst() then
         //                 WebOrdMngt.CancelOrder(InterimSalesHeader);
-
-
         //         end;
         //     }
         // }
     }
 
     var
-        //  Delivery_Note: Report "80010"; Ps Not found 
         InterimSalesHeader: Record "Interim Sales Header";
-        //   CN22: Report "90105"; Ps Not found 
-        //    Delivery_Note2: Report "80011"; Ps not found 
-
         WebOrdMngt: Codeunit "Web Order Mgt";
         SalesHeader: Record "Sales Header";
         WhseInternalPickHeader: Record "Whse. Internal Pick Header";
         EditPage: Boolean;
 
 
-    //Nikhil_31/05/2022_User Story 6536: Web Order edit functionality
     trigger OnOpenPage()
     var
         CU_WebOrderMgmt: Codeunit "Web Order Mgt";
@@ -716,52 +472,10 @@ page 90017 "Web Order Header"
 
         CurrPage.Update(false);
     end;
-    //Nikhil_31/05/2022_User Story 6536: Web Order edit functionality
 
     trigger OnDeleteRecord(): Boolean
     begin
         if Rec."Destination Doc No." <> '' then
             Error('%1 Document exists. Cannot delete the order', Rec."Destination Doc No.");
     end;
-
-    local procedure GetLastTranastionNo(): Integer
-    var
-        L_InterimSalesHeader: Record "Interim Sales Header";
-        L_InterimSalesLine: Record "Interim Sales Line";
-    begin
-    end;
-
-    local procedure OpenDestinationDocument(InterimSalesHeader: Record "Interim Sales Header")
-    begin
-        CASE InterimSalesHeader."Destination Doc Type" OF
-            InterimSalesHeader."Destination Doc Type"::"Internal Pick":
-                BEGIN
-                    WhseInternalPickHeader.RESET;
-                    WhseInternalPickHeader.SETRANGE("No.", InterimSalesHeader."Destination Doc No.");
-                    IF WhseInternalPickHeader.FINDFIRST THEN
-                        PAGE.RUN(7357, WhseInternalPickHeader);
-                END;
-            InterimSalesHeader."Destination Doc Type"::"Sales Order":
-                BEGIN
-                    SalesHeader.RESET;
-                    SalesHeader.SETRANGE("No.", InterimSalesHeader."Destination Doc No.");
-                    IF SalesHeader.FINDFIRST THEN
-                        PAGE.RUN(42, SalesHeader);
-                END;
-        END;
-    end;
-
-    local procedure RemoveMLOrderRef()
-    var
-        _InterimSalesHeader: Record "Interim Sales Header";
-    begin
-        _InterimSalesHeader.GET(Rec."Document Type", Rec."No.");
-        IF (_InterimSalesHeader."MultiLine Order No." <> '') THEN BEGIN
-            _InterimSalesHeader."Old MultiLine Order No." := _InterimSalesHeader."MultiLine Order No.";
-            CLEAR(_InterimSalesHeader."MultiLine Order No.");
-            _InterimSalesHeader.MODIFY();
-            CurrPage.UPDATE(FALSE);
-        END;
-    end;
 }
-

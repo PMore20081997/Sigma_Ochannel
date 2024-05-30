@@ -525,7 +525,7 @@ codeunit 90000 "Web Order Mgt"
         end;
     end;
 
-    procedure calculateNoofItems(P_InterimSalesHeader: record "Interim Sales Header"): Integer
+    procedure CalculateNoofItems(P_InterimSalesHeader: record "Interim Sales Header"): Integer
     var
         L_InterimSalesLine: Record "Interim Sales Line";
     begin
@@ -1273,6 +1273,7 @@ codeunit 90000 "Web Order Mgt"
                 end;
             end;
 
+            P_InterimSalesHeader."No. of Items" := CalculateNoofItems(P_InterimSalesHeader);
             P_InterimSalesHeader.Modify();
             #endregion
         end;

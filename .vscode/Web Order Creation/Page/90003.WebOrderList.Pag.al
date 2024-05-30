@@ -1,8 +1,6 @@
 page 90003 "Web Order List"
 {
-    // version In Use
-
-    ApplicationArea = All;//Basic, Suite, Assembly;
+    ApplicationArea = All;
     CaptionML = ENU = 'Web Orders',
                 ENG = 'Web Orders';
     CardPageID = "Web Order Header";
@@ -73,6 +71,10 @@ page 90003 "Web Order List"
                     ApplicationArea = All;
                 }
                 field("Order Created On"; rec."Order Created On")
+                {
+                    ApplicationArea = All;
+                }
+                field("Salesperson Code"; Rec."Salesperson Code")
                 {
                     ApplicationArea = All;
                 }
@@ -309,35 +311,6 @@ page 90003 "Web Order List"
 
         // area(Creation)
         // {
-        //     // action(Process)
-        //     // {
-        //     //     Caption = 'Process';
-        //     //     Ellipsis = true;
-        //     //     Image = CompleteLine;
-        //     //     Promoted = true;
-        //     //     PromotedCategory = Process;
-        //     //     PromotedIsBig = true;
-        //     //     PromotedOnly = true;
-        //     //     ApplicationArea = all;
-
-        //     //     trigger OnAction()
-        //     //     var
-        //     //         R90000: Report "Process Web Orders";
-        //     //         ReportParams: Text;
-        //     //     begin
-        //     //         Clear(R90000);
-        //     //         InterimSalesHeader.Reset();
-        //     //         CurrPage.SetSelectionFilter(InterimSalesHeader);
-        //     //         if InterimSalesHeader.FindSet() then begin
-        //     //             R90000.SetTotalNoOfOrders(InterimSalesHeader.Count);
-        //     //             R90000.SetTableView(InterimSalesHeader);
-        //     //             if Rec."Trade Partner Code" = 'B&Q' then
-        //     //                 R90000.SetBnQChannel(Rec."Trade Partner Code");
-        //     //             R90000.UseRequestPage(true);
-        //     //             R90000.Run();
-        //     //         end;
-        //     //     end;
-        //     // }
         //     action("Generate Shipment")
         //     {
         //         Image = Shipment;

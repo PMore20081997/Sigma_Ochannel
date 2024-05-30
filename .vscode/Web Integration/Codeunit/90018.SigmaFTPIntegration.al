@@ -65,6 +65,7 @@ codeunit 90018 "GOY File Integration"
         Response: Codeunit "ABS Operation Response";
         ABSContainerContent: Record "ABS Container Content";
         BlobInstream: InStream;
+        CU_WebOrderMgmt: Codeunit "Web Order Mgt";
     begin
         GetCredentials(P_ChannelCode);
 
@@ -72,17 +73,21 @@ codeunit 90018 "GOY File Integration"
         StorageServiceAuthorization := StorageServiceAuthorizationCodeunit.CreateSharedKey(SharedAccessKey);
         ABSBlobClient.Initialize(StorageAccountName, IncomingContainerName, StorageServiceAuthorization);
 
+        Clear(Response);
+        Clear(ABSContainerContent);
         Response := ABSBlobClient.ListBlobs(ABSContainerContent);
         if Response.IsSuccessful() then begin
             ABSContainerContent.Reset();
-            if ABSContainerContent.FindSet() then
+            if ABSContainerContent.FindSet() then begin
                 repeat
                     Response := ABSBlobClient.GetBlobAsStream(ABSContainerContent."Full Name", BlobInstream);
                     if Response.IsSuccessful() then begin
-                        CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name");
-                    end else
-                        Error(GetLastErrorText());
+                        if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin
+                            CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name");
+                        end;
+                    end;
                 until ABSContainerContent.Next() = 0;
+            end;
         end else
             Error(GetLastErrorText());
     end;

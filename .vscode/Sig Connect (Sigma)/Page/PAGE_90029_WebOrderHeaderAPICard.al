@@ -267,6 +267,7 @@ page 90029 "Web Order Header API Card"
             Rec.status := Rec.status::Rejected;
         end;
 
+        Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
         Rec.Modify();
     end;
 
