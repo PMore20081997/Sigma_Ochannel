@@ -23,12 +23,6 @@ codeunit 90005 "Process Web Order"
                 begin
                     CreateConsolidateSO.ProcessTemporaryWebOrdertoSalesOrder(Rec);
                     //CreateConsolidateSO.SendRequesttoCreateOrders(Rec);
-                    //Commented Default Code++
-                    // CreateConsolidateOrder(Rec);
-                    // GenSetupChannels.Get();
-                    // if GenSetupChannels."Despatch Scan Enabled" = false then
-                    //     MovedToHandled(Rec, true);
-                    //Commented Default Codde--
                 end;
         end;
 
@@ -48,8 +42,6 @@ codeunit 90005 "Process Web Order"
         ResCen: Record "Responsibility Center";
         CalllType: Option "Internal Pick","Single Order","Consolidate Order";
         GenSetupChannels: Record "General Setup - Channels";
-        TempOrderNoPick: Record 27 temporary;
-        G_BayNo: Code[20];
         G_TotalQty: Decimal;
         Window: Dialog;
         CurrRec: Integer;
@@ -776,21 +768,20 @@ codeunit 90005 "Process Web Order"
         OnAfterCreateInternalPick(Rec);
     end;
 
-    local procedure MovedToHandled(P_Rec: Record "Interim Sales Header"; skipfilter: boolean)
+    procedure MovedToHandled(P_Rec: Record "Interim Sales Header"; skipfilter: boolean)
     var
-        R80020: Report "Move Scanned Order to Handled";
+        REP_90001: Report "Move Scanned Order to Handled";
         ISH: Record "Interim Sales Header";
     begin
-        ISH.Reset;
+        ISH.Reset();
         ISH.SetRange("Document Type", P_Rec."Document Type");
         ISH.SetRange("No.", P_Rec."No.");
         If ISH.FindFirst() then begin
-            CLEAR(R80020);
-            R80020.SETTABLEVIEW(ISH);
-            R80020.USEREQUESTPAGE(FALSE);
-            R80020.SetWebOrder(ISH, ISH."Trade Partner Code");
-            //R80020.Setskipfilter(skipfilter);
-            R80020.RunModal();
+            Clear(REP_90001);
+            REP_90001.SetTableView(ISH);
+            REP_90001.UseRequestPage(false);
+            REP_90001.SetWebOrder(ISH, ISH."Trade Partner Code");
+            REP_90001.RunModal();
         end;
     end;
 

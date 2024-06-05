@@ -303,6 +303,11 @@ codeunit 90066 "Create Consolidate SO"
         end;
         InsertedSH.Validate("Location Code", _Temporary_SalesLine."Location Code");
         InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date");
+
+        if InsertedSH."Knapp Order" = true then begin
+            InsertedSH.Validate("Posting No.", NoSeriesManagement.GetNextNo(InsertedSH."Posting No. Series", WORKDATE, TRUE));
+        end;
+
         InsertedSH.Modify();
         G_SalesHeaderCreated := true;
         G_SNo := InsertedSH."No.";

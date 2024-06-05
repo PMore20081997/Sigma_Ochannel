@@ -101,7 +101,6 @@ codeunit 90000 "Web Order Mgt"
         CountriesRegion: Record "Country/Region";
         L_PaymentDetails: Record "Channel Media";
         ShipmentTracking: Record "Shipment Tracking";
-        Regex: Codeunit Regex;
         L_ShiptoAddress: Record "Ship-to Address";
         BillToCustomer: Record Customer;
         L_Date: Record Date;
@@ -591,11 +590,9 @@ codeunit 90000 "Web Order Mgt"
     procedure FindItemNo(P_CrossRefNo: Code[20]; P_ASINNo: Code[50]; P_ChannelSKU: Text[50]; P_CustNo: Code[20]; P_ChannelPartner: Record "Trade Partner"): Code[20]
     //Code to Find a item no based on customer cross ref.
     var
-        ItemCrossReference: Record "Item Reference";
-        L_Item: Record Item;
+        ItemReference: Record "Item Reference";
         ChannelItemList: Record "Channel Item Listing";
     begin
-
         IF P_ChannelPartner."Order Item By" IN [P_ChannelPartner."Order Item By"::ASIN, P_ChannelPartner."Order Item By"::"Channel SKU"] Then begin
             ChannelItemList.SetRange("Channel Code", P_ChannelPartner.Code);
             CASE P_ChannelPartner."Order Item By" OF
@@ -609,25 +606,22 @@ codeunit 90000 "Web Order Mgt"
 
         End Else Begin
             if P_ChannelPartner."Inbox Type" = P_ChannelPartner."Inbox Type"::"File Location" then begin
-                ItemCrossReference.RESET;
-                ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::"Bar Code");
-                ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
-                IF ItemCrossReference.FINDFIRST THEN
-                    EXIT(ItemCrossReference."Item No.")
+                ItemReference.Reset();
+                //ItemReference.SETRANGE("Reference Type", ItemReference."Reference Type"::"Bar Code");
+                ItemReference.SetRange("Reference Type", ItemReference."Reference Type"::"PIP Code");
+                ItemReference.SetRange("Reference No.", P_CrossRefNo);
+                IF ItemReference.FindFirst() then
+                    exit(ItemReference."Item No.");
+            end else begin
+                ItemReference.RESET;
+                ItemReference.SETRANGE("Reference Type", ItemReference."Reference Type"::Customer);
+                ItemReference.SETRANGE("Reference Type No.", P_CustNo);
+                ItemReference.SETRANGE("Reference No.", P_CrossRefNo);
+                IF ItemReference.FindFirst() then
+                    exit(ItemReference."Item No.")
                 else
                     exit(P_ChannelSKU);
-            end else begin
-                ItemCrossReference.RESET;
-                ItemCrossReference.SETRANGE("Reference Type", ItemCrossReference."Reference Type"::Customer);
-                ItemCrossReference.SETRANGE("Reference Type No.", P_CustNo);
-                ItemCrossReference.SETRANGE("Reference No.", P_CrossRefNo);
-                IF ItemCrossReference.FINDFIRST THEN
-                    EXIT(ItemCrossReference."Item No.")
-                else
-                    exit(P_ChannelSKU); //For Sigma++
             end;
-
-
         End;
     end;
 
@@ -880,7 +874,7 @@ codeunit 90000 "Web Order Mgt"
         OnAfterExplodeBoM(P_InterimSalesLine);
     end;
 
-    procedure CheckOrderNotExist(P_ChannelCode: Code[20]; P_ChannelOrderId: Code[50]): Boolean
+    procedure CheckOrderNotExist(P_ChannelCode: Code[20]; P_ChannelOrderId: Code[250]): Boolean
     //Code to check if channel order id already exists in interim sales header or Handled interim sales header 
     var
         L_InterimSalesH: Record "Interim Sales Header";
@@ -1061,6 +1055,19 @@ codeunit 90000 "Web Order Mgt"
                 REPEAT
                     Clear(L_ErrorRecorded);
 
+                    if L_InterimSalesLine."No." = '' then begin
+                        L_InterimSalesLine.Validate("No.", FindItemNo(L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Sell-to Customer No.", L_TradePartner));
+                        L_InterimSalesLine.Validate("Unit of Measure Code", FindUOM(L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU"
+                        , L_InterimSalesLine."No.", L_InterimSalesLine."Sell-to Customer No.", L_TradePartner));
+                        if L_InterimSalesLine."No." <> '' then begin
+                            L_Item.Reset();
+                            if L_Item.Get(L_InterimSalesLine."No.") then begin
+                                L_InterimSalesLine.Description := L_Item.Description;
+                                L_InterimSalesLine."Item Category Code" := L_Item."Item Category Code";
+                            end;
+                        end;
+                    end;
+
                     //Response SEQ3++
                     if L_ErrorRecorded = false then begin
                         Clear(ItemBlockedError);
@@ -1143,6 +1150,8 @@ codeunit 90000 "Web Order Mgt"
                             end;
                         end;
                     end;
+
+                    L_InterimSalesLine.Modify(true);
                 UNTIL L_InterimSalesLine.NEXT = 0;
             end;
 
@@ -2299,7 +2308,6 @@ codeunit 90000 "Web Order Mgt"
         containerName := P_containerName;
         sasToken := P_sasToken;
 
-
         apiUrl := apiEndPoint + '/' + containerName + '/' + P_FileName + sasToken;
         L_httpClient.Put(apiUrl, L_httpContent, L_httpResponse);
         if Showmessage then begin
@@ -2310,7 +2318,6 @@ codeunit 90000 "Web Order Mgt"
     end;
 
 
-    //Irshad 11052022
     [IntegrationEvent(false, false)]
     local procedure OnAfterInsertInterimSalesHeader(var L_InterimSalesHeader: Record "Interim Sales Header")
     begin
@@ -2338,10 +2345,6 @@ codeunit 90000 "Web Order Mgt"
         L_PrintText: Text;
         Base64Convert: Codeunit "Base64 Convert";
         EPLCommands: Text;
-        TempBlobMgmnt: Codeunit "Temp Blob";
-        TempInStream: InStream;
-        TempOutStream: OutStream;
-        TempLabelPDF: Text;
     begin
         Clear(L_Instream);
         Clear(L_PrintText);
@@ -2349,14 +2352,11 @@ codeunit 90000 "Web Order Mgt"
         L_ShipmentTracking.Reset();
         L_ShipmentTracking.SetRange("Document Type", L_ShipmentTracking."Document Type"::Order);
         L_ShipmentTracking.SetRange("Document No.", P_No);
-        // if L_ShipmentTracking.FindFirst() then begin
         if L_ShipmentTracking.FindSet() then begin
             repeat
-                //if L_ShipmentTracking."RAW Text" <> '' then begin
                 if L_ShipmentTracking.Label.HasValue() then begin
                     L_ShipmentTracking.CalcFields(Label);
                     L_ShipmentTracking.Label.CreateInStream(L_Instream);
-
 
                     //Message(EPLCommands);
                     L_PrinterSelection.Reset();
@@ -2374,9 +2374,6 @@ codeunit 90000 "Web Order Mgt"
                                 EPLCommands := Base64Convert.FromBase64(L_PrintText);
                                 DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::RAW, EPLCommands, 1);// RAW Text function
                             end;
-                            //  DirectPrint(IWXPrintNodePrinter.ID, 'Courier Label', penumPrintType::PDF, L_Instrem, 1);// Instream function
-
-
                         end;
                     end;
                 end;
@@ -2443,23 +2440,6 @@ codeunit 90000 "Web Order Mgt"
                 G_GiftBool := true;
             until G_InterimSalesLine.Next() = 0;
         exit(GiftOderAmount);
-    end;
-
-    local procedure UpdateTrackingNoForOnlyGiftCardGlLines(L_InterimSalesHeader: Record "Interim Sales Header"): Boolean
-    var
-        GiftCard: Boolean;
-    begin
-        GiftCard := true;
-        G_InterimSalesLine.Reset();
-        G_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-        if G_InterimSalesLine.FindSet() then begin
-            repeat
-                if G_InterimSalesLine.Type = G_InterimSalesLine.Type::Item then begin
-                    GiftCard := false;
-                end;
-            until G_InterimSalesLine.Next() = 0;
-            exit(GiftCard)
-        end;
     end;
 
     local procedure DeleteRefundPaymentDetails(var PaymentDetail: Record "Channel Media" temporary)

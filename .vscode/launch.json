@@ -14,10 +14,10 @@
             "startupObjectId": 22,
             "environmentName": "Sigma_UAT",
             //"environmentName": "Sigma_KNAPP",
-            //"environmentName": "Robosol_Dev",
+            //"environmentName": "Copy_03062024",
             //"environmentName": "Sandbox_Beta",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
-            "schemaUpdateMode":"ForceSync",
+            "schemaUpdateMode":"Synchronize",
         }
     ]
 }

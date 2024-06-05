@@ -182,7 +182,7 @@ table 90006 "Handled Interim Sales Line"
         {
             Editable = false;
         }
-        field(40; "Channel Order ID"; Code[50])
+        field(40; "Channel Order ID"; Code[250])
         {
             DataClassification = ToBeClassified;
         }
@@ -273,7 +273,7 @@ table 90006 "Handled Interim Sales Line"
         {
             DataClassification = ToBeClassified;
         }
-        field(60; FileName; Text[100])
+        field(60; FileName; Text[250])
         {
             DataClassification = ToBeClassified;
         }

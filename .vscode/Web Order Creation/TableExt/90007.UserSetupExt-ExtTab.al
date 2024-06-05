@@ -11,5 +11,9 @@ tableextension 90007 "OC UserSetupExt" extends "User Setup"
         {
             DataClassification = ToBeClassified;
         }
+        field(90002; "Allow Edit Order/Product Resp."; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }

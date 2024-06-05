@@ -140,36 +140,6 @@ page 90001 "Trade Partner List"
                 end;
             }
 
-            action("Sync Test Order")
-            {
-                ApplicationArea = All;
-                Caption = 'Sync Test Order';
-                Enabled = Rec.SyncOrder;
-                Image = NewTransferOrder;
-                Promoted = true;
-                PromotedIsBig = true;
-                PromotedCategory = Process;
-                PromotedOnly = true;
-                trigger OnAction()
-                var
-                begin
-                    Clear(TradePartnerList);
-                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindFirst then begin
-                        if TradePartnerList.SyncOrder = true then begin
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';SyncOrder';
-                            JobQueueEntry.Insert;
-
-                            Codeunit.Run(90030, JobQueueEntry);
-                            JobQueueEntry.Delete();
-                        end else
-                            MESSAGE('Please enable the Sync Order feature.');
-                    end;
-                end;
-            }
-
             action("Sync Shipment")
             {
                 ApplicationArea = All;

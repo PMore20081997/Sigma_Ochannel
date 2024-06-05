@@ -20,7 +20,7 @@ codeunit 90078 "ImportWebOrder"
         DialoCaption: Text;
         UploadResult: Boolean;
         InStr: InStream;
-        FileName: Text[100];
+        FileName: Text[250];
         SheetName: Text[100];
         Rec_ExcelBuffer: Record "Excel Buffer";
         Rows: Integer;

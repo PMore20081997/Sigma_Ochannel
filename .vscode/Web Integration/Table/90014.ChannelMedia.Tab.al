@@ -9,7 +9,7 @@ table 90014 "Channel Media"
         field(2; "Channel Code"; Code[20])
         {
         }
-        field(3; "Channel Order ID"; Code[50])
+        field(3; "Channel Order ID"; Code[250])
         {
         }
         field(4; Amount; Decimal)

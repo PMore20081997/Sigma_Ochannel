@@ -2,10 +2,8 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
 {
     layout
     {
-        // Add changes to page layout here
         addlast(Control1)
         {
-
             field("Allow to Auth. Web Order Price"; Rec."Allow to Auth. Web Order Price")
             {
                 ApplicationArea = All;
@@ -17,13 +15,13 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
                 Visible = false;
             }
         }
+        addafter("Allowed Quota Manag. for CD")
+        {
+            field("Allow Edit Order/Product Resp."; Rec."Allow Edit Order/Product Resp.")
+            {
+                ApplicationArea = All;
+                ToolTip = 'Specifies if the user has permission to change the Order or Product Responses for Web Orders.';
+            }
+        }
     }
-
-    actions
-    {
-        // Add changes to page actions here
-    }
-
-    var
-        myInt: Integer;
 }

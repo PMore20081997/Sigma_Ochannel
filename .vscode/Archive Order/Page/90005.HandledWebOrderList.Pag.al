@@ -1,7 +1,5 @@
 page 90005 "Handled Web Order List"
 {
-    // version INTE1.0
-
     CardPageID = "Handle Web Order";
     DeleteAllowed = false;
     Editable = false;
@@ -19,8 +17,11 @@ page 90005 "Handled Web Order List"
         {
             repeater(Group)
             {
-
                 field("Trade Partner Code"; Rec."Trade Partner Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("ET Access Code"; Rec."ET Access Code")
                 {
                     ApplicationArea = All;
                 }
@@ -32,105 +33,46 @@ page 90005 "Handled Web Order List"
                 {
                     ApplicationArea = All;
                 }
-                field("MultiLine Order No."; Rec."MultiLine Order No.")
+                field("Channel Order ID"; Rec."Channel Order ID")
                 {
                     ApplicationArea = All;
-                    Visible = false;
                 }
-                field("<Channel Order ID>"; Rec."Channel Order ID")
+                field("Sell-to Customer No."; Rec."Sell-to Customer No.")
                 {
                     ApplicationArea = All;
-                    Caption = 'Channel Order ID';
+                    Editable = false;
                 }
-
+                field("Ship-to Code"; Rec."Ship-to Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Status; Rec.Status)
+                {
+                    ApplicationArea = all;
+                    Caption = 'Status';
+                }
+                field("Shipment Date"; Rec."Shipment Date")
+                {
+                    ApplicationArea = All;
+                }
+                field("Order Date"; Rec."Order Date")
+                {
+                    ApplicationArea = all;
+                }
                 field("Document Date"; Rec."Document Date")
                 {
                     ApplicationArea = All;
                 }
-                field(MyField; rec."Package Tracking No.")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Destination Doc Type"; Rec."Destination Doc Type")
+                field("Salesperson Code"; Rec."Salesperson Code")
                 {
                     ApplicationArea = All;
                 }
-                field("Destination Doc No."; Rec."Destination Doc No.")
+                field("No. of Items"; rec."No. of Items")
                 {
                     ApplicationArea = All;
+                    Caption = 'No. of Item Lines';
                 }
-                field(status; Rec.status)
-                {
-                    ApplicationArea = All;
-                }
-                field("Order Status"; Rec."Order Status")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field("Shipping Agent Code"; Rec."Shipping Agent Code")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Scanned Date"; Rec."Scanned Date")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Scanned By"; Rec."Scanned By")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field("Order Amount"; Rec."Order Amount")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field("Order Discount Amount"; Rec."Order Discount Amount")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field("Gift Order Amount"; Rec."Gift Order Amount")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Order Amount field.';
-                    Visible = false;
-                }
-
-                field("FullFillment Status"; Rec."FullFillment Status")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field(Remarks; Rec.Remarks)
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-
-                field("Gift Card"; Rec."Gift Card")
-                {
-                    Editable = false;
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the value of the Gift Card field.';
-                    Visible = false;
-                }
-
-
             }
         }
     }
@@ -139,48 +81,6 @@ page 90005 "Handled Web Order List"
     // {
     //     area(processing)
     //     {
-    //         // action(BulkDelete)
-
-    //         // {
-
-    //         //     ApplicationArea = All;
-
-    //         //     Caption = 'Bulk Delete';
-
-
-
-
-    //         //     trigger OnAction()
-
-    //         //     var
-
-    //         //         InterimSalesHeader: Record "Handled Interim Sales Header";
-
-    //         //         InterimSalesLine: Record "Handled Interim Sales Line";
-
-    //         //     begin
-
-    //         //         Clear(InterimSalesHeader);
-
-    //         //         CurrPage.SetSelectionFilter(InterimSalesHeader);
-
-    //         //         if InterimSalesHeader.FindSet() then
-    //         //             repeat
-
-    //         //                 InterimSalesLine.Reset();
-
-    //         //                 InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-
-    //         //                 if InterimSalesLine.FindSet() then
-    //         //                     InterimSalesLine.DeleteAll(true);
-
-    //         //                 InterimSalesHeader.Delete(true);
-
-    //         //             until InterimSalesHeader.Next() = 0;
-
-    //         //     end;
-
-    //         // }
     //         action("Direct Printing Label")
     //         {
     //             ApplicationArea = All;
@@ -389,68 +289,6 @@ page 90005 "Handled Web Order List"
 
     //             end;
     //         }
-    //         action("Eliminate Error")
-    //         {
-    //             Caption = 'Eliminate Error';
-    //             RunPageOnRec = false;
-    //             ApplicationArea = All;
-    //             Visible = false;
-    //             trigger OnAction()
-    //             var
-    //                 Rec_ChannelItemListing: Record "Channel Item Listing";
-    //                 ChannelItemList: Page "Channel Item Listing";
-    //                 Channelitemlisting: Record "Channel Item Listing";
-    //             //HandleIncomingMessage: Record "Handled Incoming Message";
-    //             begin
-    //                 // CurrPage.SETSELECTIONFILTER(HandleIncomingMessage);
-    //                 //IF HandleIncomingMessage.FINDSET THEN
-    //                 //  REPEAT
-    //                 BEGIN
-    //                     //IF (HandleIncomingMessage.Remarks <> 'Success') AND (HandleIncomingMessage."Feed Submission ID" <> '') THEN BEGIN
-    //                     //HandleIncomingMessage.VALIDATE("Feed Submission ID", '');
-    //                     //HandleIncomingMessage.VALIDATE(Remarks, '');
-    //                     //END;
-    //                     // HandleIncomingMessage.MODIFY;
-    //                 END;
-    //                 //UNTIL HandleIncomingMessage.NEXT = 0;
-    //             end;
-    //         }
-
-    //         action("Update Shipping")
-    //         {
-    //             Image = Add;
-    //             ApplicationArea = All;
-    //             Visible = false;
-    //             trigger OnAction()
-    //             begin
-    //                 /*    IF Rec."Channel Order ID" <> '' THEN BEGIN
-
-
-
-    //                         //Rec.CALCFIELDS("Dispatch No.");
-    //                         Rec.SETRANGE("Trade Partner Code", 'MAGENTO');
-    //                         Rec.SETFILTER("Channel Order ID", '<>%1', '');
-    //                         //Rec.SETFILTER("Dispatch No.", '<>%1', '');
-    //                         //Rec.SETRANGE("Nav Order No", '');
-
-
-    //                         CLEAR(TradePartnerList);
-    //                         TradePartnerList.SETFILTER(Code, '%1', AMAZON);
-    //                         IF TradePartnerList.FINDFIRST THEN 
-    //                           REPEAT                            
-    //                            IF TradePartnerList.OrderFullFilment THEN BEGIN
-    //                              IF Rec."Trade Partner Code" = TradePartnerList.Code THEN BEGIN
-    //                                //     AmazonCodeUnit.OrderFullFillmentAmazon(Rec."Trade Partner Code", Rec); //PS
-    //                              END;
-    //                            END;
-    //                           UNTIL TradePartnerList.NEXT = 0;
-    //                         //End;
-
-
-    //                     END;
-    //                 */
-    //             end;
-    //         }
     //         action("Sales Document")
     //         {
     //             Caption = '&Sales Document';
@@ -487,10 +325,5 @@ page 90005 "Handled Web Order List"
         SalesShipmentHeader: Record "Sales Shipment Header";
         SalesOrder: Page "Sales Order";
         PostedSalesShipment: Page "Posted Sales Shipment";
-        // MagentoOrderFulfillment: Codeunit "Magento Integration-Innox"; //Commented By Pavan 20072020
-        TradePartnerList: Record "Trade Partner";
-        AMAZON: Label 'AMAZON*';
         HandledOrder: Record "Handled Interim Sales Header";
-
 }
-

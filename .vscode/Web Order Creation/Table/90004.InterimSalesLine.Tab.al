@@ -243,7 +243,7 @@ table 90004 "Interim Sales Line"
                     "VAT Bus. Posting Group" := L_Customer."VAT Bus. Posting Group";
             end;
         }
-        field(40; "Channel Order ID"; Code[50])
+        field(40; "Channel Order ID"; Code[250])
         {
             DataClassification = ToBeClassified;
         }
@@ -340,7 +340,7 @@ table 90004 "Interim Sales Line"
         {
             DataClassification = ToBeClassified;
         }
-        field(60; FileName; Text[100])
+        field(60; FileName; Text[250])
         {
             DataClassification = ToBeClassified;
         }

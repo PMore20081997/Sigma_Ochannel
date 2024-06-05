@@ -774,7 +774,7 @@ codeunit 90012 "Woo Commerce"
         ResponseMessage: HttpResponseMessage;
         TrackingNo: Text;
         id: Code[50];
-        TrackingNumber: Code[30];
+        TrackingNumber: Code[50];
         responseText: Text;
         SalesShptHdr: Record "Sales Shipment Header";
         IsHandled: Boolean;

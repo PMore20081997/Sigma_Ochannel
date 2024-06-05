@@ -39,6 +39,7 @@ codeunit 90018 "GOY File Integration"
         OutgoingSasToken: Text;
         StorageAccountName: Text;
         SharedAccessKey: Text;
+        ArchiveContainerName: Text;
 
     local procedure GetCredentials(ChannelCode: Code[20])
     var
@@ -54,6 +55,7 @@ codeunit 90018 "GOY File Integration"
             OutgoingSasToken := TradePartner."Order Acknow. Container Token";
             StorageAccountName := TradePartner."Storage Account Name";
             SharedAccessKey := TradePartner."Shared Access Key";
+            ArchiveContainerName := TradePartner."Outgoing Container 2 Name";
         End;
     end;
 
@@ -80,10 +82,12 @@ codeunit 90018 "GOY File Integration"
             ABSContainerContent.Reset();
             if ABSContainerContent.FindSet() then begin
                 repeat
+                    Clear(BlobInstream);
                     Response := ABSBlobClient.GetBlobAsStream(ABSContainerContent."Full Name", BlobInstream);
                     if Response.IsSuccessful() then begin
                         if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin
-                            CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name");
+                            if not CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name") then
+                                Error(GetLastErrorText() + '\For File ' + ABSContainerContent."Full Name");
                         end;
                     end;
                 until ABSContainerContent.Next() = 0;
@@ -177,7 +181,8 @@ codeunit 90018 "GOY File Integration"
         end;
     end;
 
-    local procedure CreateOrder(BlobInstream: InStream; ChannelCode: Text; FileName: Text)
+    [TryFunction]
+    local procedure CreateOrder(var BlobInstream: InStream; P_ChannelCode: Text; FileName: Text)
     var
         RowNo: Integer;
         ColNo: Integer;
@@ -192,6 +197,7 @@ codeunit 90018 "GOY File Integration"
         L_InterimHeader: Record "Interim Sales Header";
         CustomerRef: Record "Customer Reference";
         K: Integer;
+        ErrorText: Text;
     begin
         InterimSalesHeader.DeleteAll();
         InterimSalesLine.DeleteAll();
@@ -206,82 +212,91 @@ codeunit 90018 "GOY File Integration"
             MaxRow := TempCSVBuffer."Line No.";
 
         Clear(K);
-        for RowNo := 1 to MaxRow do begin
-            if K = 0 then
-                K := 1
-            else
-                K += 1;
-
-            Clear(LineNo);
-            if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) then
-                if GetCellValue(RowNo, 7).Contains('-') then
-                    Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
+        if MaxRow > 0 then begin
+            for RowNo := 1 to MaxRow do begin
+                if K = 0 then
+                    K := 1
                 else
-                    Evaluate(LineNo, GetCellValue(RowNo, 7))
-            else
-                LineNo := K;
+                    K += 1;
 
-            #Region Insert data in temp table++++
-            InterimSalesHeader.Reset();
-            InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
-            InterimSalesHeader.SetRange("File Name", FileName);
-            if NOT InterimSalesHeader.FindFirst() then begin
-                InterimSalesHeader.Init();
-                InterimSalesHeader.Validate("Document Type", InterimSalesHeader."Document Type"::Order);
-                InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
-                InterimSalesHeader.Validate("Trade Partner Code", ChannelCode);
-                InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
-                InterimSalesHeader.Validate("Channel Order ID", FileName);
-                CustomerRef.Reset();
-                CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
-                if CustomerRef.FindFirst() then
-                    InterimSalesHeader.Validate("Sell-to Customer No.", CustomerRef."Customer No.");
-                InterimSalesHeader.Validate("File Name", FileName);
-                InterimSalesHeader.Insert();
+                Clear(LineNo);
+                if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) then
+                    if GetCellValue(RowNo, 7).Contains('-') then
+                        Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
+                    else
+                        Evaluate(LineNo, GetCellValue(RowNo, 7))
+                else
+                    LineNo := K;
+
+                #Region Insert data in temp table++++
+                InterimSalesHeader.Reset();
+                InterimSalesHeader.SetRange("Document Type", InterimSalesHeader."Document Type"::Order);
+                InterimSalesHeader.SetRange("File Name", FileName);
+                if NOT InterimSalesHeader.FindFirst() then begin
+                    InterimSalesHeader.Init();
+                    InterimSalesHeader.Validate("Document Type", InterimSalesHeader."Document Type"::Order);
+                    InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
+                    InterimSalesHeader.Validate("Trade Partner Code", P_ChannelCode);
+                    InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
+                    InterimSalesHeader.Validate("Channel Order ID", FileName);
+                    CustomerRef.Reset();
+                    CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
+                    if CustomerRef.FindFirst() then
+                        InterimSalesHeader.Validate("Sell-to Customer No.", CustomerRef."Customer No.");
+                    InterimSalesHeader.Validate("File Name", FileName);
+                    InterimSalesHeader.Insert();
+                end;
+
+                //Lines++
+                InterimSalesLine.Reset();
+                InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
+                InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+                InterimSalesLine.SetRange("Line No.", LineNo);
+                if NOT InterimSalesLine.FindFirst() then begin
+                    InterimSalesLine.Init();
+                    InterimSalesLine.Validate("Document Type", InterimSalesLine."Document Type"::Order);
+                    InterimSalesLine.Validate("Document No", InterimSalesHeader."No.");
+                    InterimSalesLine.Validate("Line No.", LineNo);
+                    InterimSalesLine.Validate(Type, InterimSalesLine.Type::Item);
+                    InterimSalesLine.Validate("Trade Partner Code", P_ChannelCode);
+                    InterimSalesLine.Validate("ET Access Code", GetCellValue(RowNo, 1));
+                    InterimSalesLine.Validate("Channel Order ID", InterimSalesHeader."Channel Order ID");
+                    InterimSalesLine.Validate("Channel SKU", GetCellValue(RowNo, 8));
+                    Clear(Qty);
+                    if GetCellValue(RowNo, 9) <> '' then
+                        Evaluate(Qty, GetCellValue(RowNo, 9));
+                    InterimSalesLine.Quantity := Qty;
+                    InterimSalesLine.Insert();
+                end;
+                #endregion
             end;
 
-            //Lines++
-            InterimSalesLine.Reset();
-            InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
-            InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-            InterimSalesLine.SetRange("Line No.", LineNo);
-            if NOT InterimSalesLine.FindFirst() then begin
-                InterimSalesLine.Init();
-                InterimSalesLine.Validate("Document Type", InterimSalesLine."Document Type"::Order);
-                InterimSalesLine.Validate("Document No", InterimSalesHeader."No.");
-                InterimSalesLine.Validate("Line No.", LineNo);
-                InterimSalesLine.Validate(Type, InterimSalesLine.Type::Item);
-                InterimSalesLine.Validate("Trade Partner Code", ChannelCode);
-                InterimSalesLine.Validate("ET Access Code", GetCellValue(RowNo, 1));
-                InterimSalesLine.Validate("Channel Order ID", InterimSalesHeader."Channel Order ID");
-                InterimSalesLine.Validate("Channel SKU", GetCellValue(RowNo, 8));
-                Clear(Qty);
-                if GetCellValue(RowNo, 9) <> '' then
-                    Evaluate(Qty, GetCellValue(RowNo, 9));
-                InterimSalesLine.Quantity := Qty;
-                InterimSalesLine.Insert();
+            #Region Insert Order in actual table++++
+            if RowNo = MaxRow then begin
+                Clear(InterimSalesLine);
+                InterimSalesLine.Reset();
+                if InterimSalesLine.FindSet() then begin
+                    CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmentTracking, PaymentDetails);
+
+                    //Send Response (Store Response File in Container)
+                    L_InterimHeader.Reset();
+                    L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
+                    L_InterimHeader.SetRange("Channel Order ID", InterimSalesHeader."Channel Order ID");
+                    if L_InterimHeader.FindFirst() then begin
+                        ExportFile(L_InterimHeader, P_ChannelCode);
+
+                        //Procedure to move file from Order to Archive Container
+                        UploadFileToArchiveAzureContainer(BlobInstream, FileName, P_ChannelCode);
+                    end;
+                    Commit();
+                end;
             end;
             #endregion
+        end
+        else begin
+            //Procedure to move file from Order to Archive Container
+            UploadFileToArchiveAzureContainer(BlobInstream, FileName, P_ChannelCode);
         end;
-
-        #Region Insert Order in actual table++++
-        if RowNo = MaxRow then begin
-            Clear(InterimSalesLine);
-            InterimSalesLine.Reset();
-            if InterimSalesLine.FindSet() then begin
-                CUWebOrderMgt.Sigma_CreateWebOrder(InterimSalesHeader, InterimSalesLine, ShipmentTracking, PaymentDetails);
-
-                //Send Response (Store Response File in Container)
-                L_InterimHeader.Reset();
-                L_InterimHeader.SetRange("Document Type", L_InterimHeader."Document Type"::Order);
-                L_InterimHeader.SetRange("Channel Order ID", InterimSalesHeader."Channel Order ID");
-                if L_InterimHeader.FindFirst() then
-                    ExportFile(L_InterimHeader, ChannelCode);
-
-                Commit();
-            end;
-        end;
-        #endregion
     end;
 
     procedure ExportFile(Header: Record "Interim Sales Header"; P_ChannelCode: Code[20])
@@ -305,13 +320,13 @@ codeunit 90018 "GOY File Integration"
             TempBlob.CREATEINSTREAM(FileInStream);
 
             outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + '_' + L_Line."ET Access Code" + '_' + Header."Channel Order ID";
-            //DownloadFromStream(FileInStream, '', '', '', outputFileName);
-            //UploadFileToAzureBlob(FileInStream, outputFileName, P_ChannelCode);
-            UploadFileToAzureContainer(FileInStream, outputFileName, P_ChannelCode);
+
+            //Procedure to Upload Reply (Order Acknowledgement) File to Container and then Delete File From Order Container
+            UploadFileToReplyAzureContainer(FileInStream, outputFileName, P_ChannelCode);
         end;
     end;
 
-    local procedure UploadFileToAzureContainer(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    local procedure UploadFileToReplyAzureContainer(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
     var
         Authorization: Interface "Storage Service Authorization";
         StorageServiceAuthorization: Codeunit "Storage Service Authorization";
@@ -331,6 +346,52 @@ codeunit 90018 "GOY File Integration"
         Response := ABSBlobClient.PutBlobBlockBlobStream(P_FileName, P_FileInstream);
         if not Response.IsSuccessful() then
             Error(Response.GetError());
+    end;
+
+    local procedure UploadFileToArchiveAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    var
+        ArchiveAuthorization: Interface "Storage Service Authorization";
+        ArchiveStorageServiceAuthorization: Codeunit "Storage Service Authorization";
+        GetFileABSBlobClient: Codeunit "ABS Blob Client";
+        GetFileResponse: Codeunit "ABS Operation Response";
+        FileInstream: InStream;
+        ArchiveABSBlobClient: Codeunit "ABS Blob Client";
+        DeleteABSBlobClient: Codeunit "ABS Blob Client";
+        ArchiveResponse: Codeunit "ABS Operation Response";
+        DeleteResponse: Codeunit "ABS Operation Response";
+    begin
+        GetCredentials(P_ChannelCode);
+
+        Clear(ArchiveAuthorization);
+        Clear(ArchiveStorageServiceAuthorization);
+        ArchiveAuthorization := ArchiveStorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
+
+        #Region Getting File in Instream from Order Container
+        Clear(GetFileABSBlobClient);
+        GetFileABSBlobClient.Initialize(StorageAccountName, IncomingContainerName, ArchiveAuthorization);
+
+        Clear(GetFileResponse);
+        Clear(FileInstream);
+        GetFileResponse := GetFileABSBlobClient.GetBlobAsStream(P_FileName, FileInstream);
+        #endregion
+
+        #Region Upload File in Archive Container and Delete from Order Container
+        Clear(ArchiveABSBlobClient);
+        ArchiveABSBlobClient.Initialize(StorageAccountName, ArchiveContainerName, ArchiveAuthorization);
+
+        Clear(ArchiveResponse);
+        ArchiveResponse := ArchiveABSBlobClient.PutBlobBlockBlobStream(P_FileName, FileInstream);
+        if ArchiveResponse.IsSuccessful() then begin
+            //Code to Delete File From Order Container
+            Clear(DeleteABSBlobClient);
+            DeleteABSBlobClient.Initialize(StorageAccountName, IncomingContainerName, ArchiveAuthorization);
+
+            Clear(DeleteResponse);
+            DeleteResponse := DeleteABSBlobClient.DeleteBlob(P_FileName);
+            if not DeleteResponse.IsSuccessful() then
+                Error(DeleteResponse.GetError());
+        end;
+        #endregion
     end;
 
     local procedure UploadFileToAzureBlob(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])

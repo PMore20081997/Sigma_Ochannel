@@ -1,4 +1,3 @@
-#pragma implicitwith disable
 page 90006 "Handled Web Order Subpage"
 {
     Editable = true;
@@ -16,6 +15,7 @@ page 90006 "Handled Web Order Subpage"
         {
             repeater(Group)
             {
+                Editable = false;
                 field(Type; Rec.Type)
                 {
                     ApplicationArea = All;
@@ -29,156 +29,38 @@ page 90006 "Handled Web Order Subpage"
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
-
-                    trigger OnValidate()
-                    var
-                        HISH: Record "Handled Interim Sales Header";
-                    begin
-                        HISH.Reset();
-                        HISH.SetRange("No.", Rec."Document No");
-                        HISH.SetRange("Document Type", Rec."Document Type");
-                        if HISH.FindFirst() then begin
-                            if Rec."Trade Partner Code" = '' then begin
-                                Rec.Validate("Trade Partner Code", HISH."Trade Partner Code");
-                                Rec.Validate("Channel Order ID", HISH."Channel Order ID");
-                            end;
-                        end;
-                    end;
-
-                }
-                field("Channel Variant"; Rec."Channel Variant")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("NAV Variant"; Rec."NAV Variant code")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                    Editable = false;
-                }
-                field(Quantity; Rec.Quantity)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
                 }
                 field("Unit of Measure Code"; Rec."Unit of Measure Code")
                 {
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field("Channel Price"; Rec."Channel Price")
+                field("Item Category Code"; Rec."Item Category Code")
+                {
+                    ApplicationArea = All;
+                }
+                field(Quantity; Rec.Quantity)
+                {
+                    ApplicationArea = All;
+                }
+                field("Qty. to Deliver"; Rec."Qty. to Deliver")
+                {
+                    ApplicationArea = All;
+                }
+                field("Reason Code"; Rec."Reason Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Reason Message"; Rec."Reason Message")
+                {
+                    ApplicationArea = All;
+                }
+                field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field("Unit Price"; Rec."Unit Price")
-                {
-                    Caption = 'Unit Price Ex. VAT';
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field(Weight; Rec.Weight)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("VAT amount"; Rec."VAT amount")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Shipping Price"; Rec."Shipping Price")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Gift Wrap Price"; Rec."Gift Wrap Price")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field(Discount; Rec.Discount)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field(Amount; Rec.Amount)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Amount Including VAT"; Rec."Amount Including VAT")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field(SKU; Rec."Channel SKU")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Channel Order ID"; Rec."Channel Order ID")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Location Code"; Rec."Location Code")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-
-                }
-
-                field("Reserved Qty"; Rec."Reserved Qty")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                    Visible = false;
-                }
-
-                field(Reserved; Rec.Reserved)
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                    Visible = false;
-                }
-                field("VAT Bus. Posting Group"; Rec."VAT Bus. Posting Group")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("VAT Prod. Posting Group"; Rec."VAT Prod. Posting Group")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-
-                field("Gift Wrap"; Rec."Gift Wrap")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                    CaptionML = ENU = 'Gift', ENG = 'Gift';
-                }
-                field("Gift Card"; Rec."Gift Card")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Line Status"; Rec."Line Status")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-
             }
         }
     }
-
-    actions
-    {
-    }
 }
-
-#pragma implicitwith restore
-

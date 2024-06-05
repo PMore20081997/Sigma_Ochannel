@@ -42,11 +42,6 @@ page 90003 "Web Order List"
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field("Bill-to Customer No."; Rec."Bill-to Customer No.")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
                 field("Ship-to Code"; Rec."Ship-to Code")
                 {
                     ApplicationArea = All;
@@ -226,6 +221,29 @@ page 90003 "Web Order List"
                                 InterimSalesHeader.Delete(true);
                             until InterimSalesHeader.Next() = 0;
                         end;
+                    end;
+                end;
+            }
+
+            action(MovetoHandled)
+            {
+                Caption = 'MovetoHandled';
+                Ellipsis = true;
+                Image = CompleteLine;
+                ApplicationArea = all;
+                Visible = true;
+                trigger OnAction()
+                var
+                    ProcessOrder: Codeunit "Process Web Order";
+                    ISH: Record "Interim Sales Header";
+                begin
+                    Clear(ISH);
+                    ISH := Rec;
+                    CurrPage.SetSelectionFilter(ISH);
+                    if ISH.FindSet() then begin
+                        repeat
+                            ProcessOrder.MovedToHandled(ISH, true);
+                        until ISH.Next() = 0;
                     end;
                 end;
             }

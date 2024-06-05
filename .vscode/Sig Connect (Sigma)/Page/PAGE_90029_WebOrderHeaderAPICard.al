@@ -86,7 +86,7 @@ page 90029 "Web Order Header API Card"
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
             Rec."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
-            Rec.Validate("External Document No.", Rec."Channel Order ID");
+            //Rec.Validate("External Document No.", Rec."Channel Order ID");
             Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("ET Access Code", Rec."ET Access Code");
             Rec.Validate("Order Date", WorkDate);

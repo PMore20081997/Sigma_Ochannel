@@ -54,7 +54,4 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
             }
         }
     }
-
-    var
-        myInt: Integer;
 }

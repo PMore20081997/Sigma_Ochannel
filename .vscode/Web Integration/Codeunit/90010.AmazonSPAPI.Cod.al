@@ -80,7 +80,7 @@ codeunit 90010 "Amazon SP API"
         Columns: Integer;
         DialogCaption: Text;
         UploadResult: Boolean;
-        FileName: Text[100];
+        FileName: Text[250];
         InStr: InStream;
         SheetName: Text[100];
         CustomerNo: Code[20];

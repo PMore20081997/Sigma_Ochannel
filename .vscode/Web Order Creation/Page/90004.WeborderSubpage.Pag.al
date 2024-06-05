@@ -479,7 +479,7 @@ page 90004 "Web order Subpage"
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
-                    Visible = false;
+                    Editable = false;
                 }
                 field("Channel Order ID"; Rec."Channel Order ID")
                 {

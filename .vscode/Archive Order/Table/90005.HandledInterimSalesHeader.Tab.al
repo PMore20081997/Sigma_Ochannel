@@ -130,7 +130,7 @@ table 90005 "Handled Interim Sales Header"
             TableRelation = "Payment Method".Code;
             DataClassification = ToBeClassified;
         }
-        field(31; "Channel Order ID"; Code[50])
+        field(31; "Channel Order ID"; Code[250])
         {
             DataClassification = ToBeClassified;
         }
@@ -393,7 +393,7 @@ table 90005 "Handled Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
-        field(96; "File Name"; Text[100])
+        field(96; "File Name"; Text[250])
         {
             DataClassification = ToBeClassified;
         }

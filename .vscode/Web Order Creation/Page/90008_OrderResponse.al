@@ -23,7 +23,6 @@ page 90008 "Order Response"
                 field(Reason; Rec.Reason)
                 {
                     ApplicationArea = All;
-
                 }
                 field(Message; Rec.Message)
                 {
@@ -43,17 +42,19 @@ page 90008 "Order Response"
                 ApplicationArea = All;
             }
         }
-
     }
 
 
     trigger OnOpenPage()
     begin
-        if UpperCase(UserId) = UpperCase('ABDUL.K') then
+        G_UserSetup.Reset();
+        if G_UserSetup.Get(UserId) then;
+        if G_UserSetup."Allow Edit Order/Product Resp." = true then
             CurrPage.Editable := true
         else
             CurrPage.Editable := false;
-
     end;
 
+    var
+        G_UserSetup: Record "User Setup";
 }

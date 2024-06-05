@@ -141,6 +141,11 @@ page 90016 "Trade Partner card"
                     ApplicationArea = all;
                     ExtendedDatatype = Masked;
                 }
+                field("Outgoing Container 2 Name"; Rec."Outgoing Container 2 Name")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Archive Container Name';
+                }
             }
 
             group(Authentication)
