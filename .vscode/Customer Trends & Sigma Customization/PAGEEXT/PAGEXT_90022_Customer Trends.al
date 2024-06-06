@@ -78,7 +78,9 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
                         if L_Customertrends."Customer No." = '' then
                             Error('Customer Account No. should not be blank');
-                    end;
+                    end
+                    else
+                        exit;
 
                     //Create and Update Web Order++
                     CreateUpdateWebOrder.CreateAndUpdateWebOrder(Rec."Customer No.", Rec."Salesperson Code");

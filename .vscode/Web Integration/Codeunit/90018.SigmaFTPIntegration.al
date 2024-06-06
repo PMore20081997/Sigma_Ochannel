@@ -87,7 +87,7 @@ codeunit 90018 "GOY File Integration"
                     if Response.IsSuccessful() then begin
                         if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin
                             if not CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name") then
-                                Error(GetLastErrorText() + '\For File ' + ABSContainerContent."Full Name");
+                                Error(GetLastErrorText() + '\For File - ' + ABSContainerContent."Full Name");
                         end;
                     end;
                 until ABSContainerContent.Next() = 0;
@@ -220,7 +220,7 @@ codeunit 90018 "GOY File Integration"
                     K += 1;
 
                 Clear(LineNo);
-                if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) then
+                if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) and (CheckIfAllNumbers(GetCellValue(RowNo, 7)) = true) then
                     if GetCellValue(RowNo, 7).Contains('-') then
                         Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
                     else
@@ -431,5 +431,16 @@ codeunit 90018 "GOY File Integration"
             exit(TempCSVBuffer.Value)
         else
             exit('')
+    end;
+
+    procedure CheckIfAllNumbers(Value: Text): Boolean
+    var
+        Regex: Codeunit Regex;
+    begin
+        Value := Value.Trim();
+        if Regex.IsMatch(Value, '^[0-9]+$') = true then
+            exit(true)
+        else
+            exit(false);
     end;
 }
