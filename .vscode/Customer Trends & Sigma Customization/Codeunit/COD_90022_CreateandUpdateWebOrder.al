@@ -127,7 +127,7 @@ codeunit 90022 "OC Create & Update WebOrder"
 
     local procedure CreateWebOrder(var P_InterimSalesHeader: Record "Interim Sales Header" temporary; var P_InterimSalesLine: Record "Interim Sales Line" temporary; _TradPartner: Record "Trade Partner")
     var
-        NoSeriesManagement: Codeunit "No. Series";
+        NoSeriesManagement: Codeunit "No. Series - Batch";
         BillToCustomer: Record Customer;
         L_OutSTream: OutStream;
         GeneralSetup: record "General Setup - Channels";
@@ -142,13 +142,15 @@ codeunit 90022 "OC Create & Update WebOrder"
     begin
         //Get General Setup++
         GeneralSetup.Get;
-        GeneralSetup.TestField("Web Order Nos");
+        //GeneralSetup.TestField("Web Order Nos");
+        _TradPartner.TestField("Channel Order No. Series");
 
         //Insert Header++
         L_InterimSalesHeader.Reset();
         L_InterimSalesHeader.Init();
         L_InterimSalesHeader.Validate("Document Type", P_InterimSalesHeader."Document Type"::Order);
-        L_InterimSalesHeader.Validate("No.", NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE));
+        L_InterimSalesHeader.Validate("No.", NoSeriesManagement.GetNextNo(_TradPartner."Channel Order No. Series", Today, true));
+        NoSeriesManagement.SaveState();
         L_InterimSalesHeader.VALIDATE(Status, P_InterimSalesHeader.Status::Accepted);
         L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
         L_InterimSalesHeader.validate("Document Date", WorkDate);

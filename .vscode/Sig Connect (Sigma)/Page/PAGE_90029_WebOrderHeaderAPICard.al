@@ -70,12 +70,12 @@ page 90029 "Web Order Header API Card"
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_OrderLevelResponse: Record "Order Level Response";
         Temp_InterimSalesHeader: Record "Interim Sales Header";
-        NoSeriesManagement: Codeunit "No. Series";
+        NoSeriesManagement: Codeunit "No. Series - Batch";
         GeneralSetup: record "General Setup - Channels";
         L_Date: Record Date;
     begin
         GeneralSetup.Get();
-        GeneralSetup.TestField("Web Order Nos");
+        //GeneralSetup.TestField("Web Order Nos");
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
             IsExist := CU_WebOrderManagement.CheckOrderNotExist(Rec."Trade Partner Code", Rec."Channel Order ID");
@@ -85,7 +85,9 @@ page 90029 "Web Order Header API Card"
 
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
-            Rec."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
+            ChannelPartner.TestField("Channel Order No. Series");
+            Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
+            NoSeriesManagement.SaveState();
             //Rec.Validate("External Document No.", Rec."Channel Order ID");
             Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("ET Access Code", Rec."ET Access Code");

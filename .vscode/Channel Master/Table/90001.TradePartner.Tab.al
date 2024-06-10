@@ -303,6 +303,12 @@ table 90001 "Trade Partner"
             //This is used at the time of Creating Temp Order++
             TableRelation = "No. Series".Code;
         }
+        field(72; "Channel Order No. Series"; Code[20])
+        {
+            //Channel Specific No. Series
+            DataClassification = ToBeClassified;
+            TableRelation = "No. Series".Code;
+        }
     }
     keys
     {

@@ -107,13 +107,14 @@ codeunit 90000 "Web Order Mgt"
     Begin
         If CheckOrderNotExist(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Channel Order ID") then begin
             ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
+            ChannelPartner.TestField("Channel Order No. Series");
             GeneralSetup.Get;
-            GeneralSetup.TestField("Web Order Nos");
+            //GeneralSetup.TestField("Web Order Nos");
 
             //Insert Header+++
             L_InterimSalesHeader.INIT;
             L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
-            L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(GeneralSetup."Web Order Nos", TODAY, TRUE);
+            L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
             NoSeriesManagement.SaveState();
             L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::Accepted);
             L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");

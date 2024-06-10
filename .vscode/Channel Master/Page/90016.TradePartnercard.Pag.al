@@ -89,6 +89,11 @@ page 90016 "Trade Partner card"
                     Caption = 'Procesing Codeunit';
                     ApplicationArea = All;
                 }
+                field("Channel Order No. Series"; Rec."Channel Order No. Series")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Channel Specific Web Order No. Series';
+                }
                 group("Customer trends")
                 {
                     field("Customer Trend Code"; Rec."Customer Trend Code")
