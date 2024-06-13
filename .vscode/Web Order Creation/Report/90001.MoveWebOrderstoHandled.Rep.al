@@ -8,13 +8,14 @@ report 90001 "Move Scanned Order to Handled"
         {
             DataItemTableView = SORTING("Document Type", "No.")
                                 ORDER(Ascending)
-                                WHERE("Moved In Handled" = CONST(false),
-                                "Sales Order Created" = const(true));
+                                WHERE("Moved In Handled" = CONST(false));
             RequestFilterFields = "Document Date", "No.", "Trade Partner Code";
 
             trigger OnAfterGetRecord()
             begin
-                ProcessData("Interim Sales Header");
+                "Interim Sales Header".SetAutoCalcFields("Sales Order Created");
+                if ("Interim Sales Header".status = "Interim Sales Header".status::Rejected) or ("Interim Sales Header"."Sales Order Created" = true) then
+                    ProcessData("Interim Sales Header");
             end;
 
             trigger OnPostDataItem()
@@ -75,7 +76,7 @@ report 90001 "Move Scanned Order to Handled"
             //**************Update Header****************
             P_InterimSalesHeader."Moved In Handled" := TRUE;
             P_InterimSalesHeader.Modify();
-            UpdateMovedFlag(P_InterimSalesHeader);
+            //UpdateMovedFlag(P_InterimSalesHeader);
             //**************Update Header****************
         END;
         CurrRec += 1;
@@ -93,7 +94,7 @@ report 90001 "Move Scanned Order to Handled"
         L_HandledInterimHeader: Record "Handled Interim Sales Header";
     begin
         L_HandledInterimHeader.Init();
-        ISH.CalcFields("No of Error", "Error Text", ISH."Error Text2", ISH."Amount Including VAT", ISH."Tracking No.");
+        ISH.SetAutoCalcFields("No of Error", "Error Text", ISH."Error Text2", ISH."Amount Including VAT", ISH."Tracking No.");
         L_HandledInterimHeader.TransferFields(ISH);
         L_HandledInterimHeader.Insert(true);
     end;

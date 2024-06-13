@@ -524,7 +524,6 @@ table 90003 "Interim Sales Header"
 
     var
         IntrimSalesLine: Record "Interim Sales Line";
-        ChannelMedia: Record "Channel Media";
         ErrorLog: Record "Incoming/Outgoing Error Log";
 
     trigger OnInsert()
@@ -545,27 +544,11 @@ table 90003 "Interim Sales Header"
 
     trigger OnDelete()
     var
-        ShipmentTracking: Record "Shipment Tracking";
-        HandledInterimSalesHeader: Record "Handled Interim Sales Header";
     begin
         IntrimSalesLine.RESET;
         IntrimSalesLine.SetRange("Document Type", Rec."Document Type");
         IntrimSalesLine.SETRANGE("Document No", Rec."No.");
         IntrimSalesLine.DELETEALL(TRUE);
-
-        ShipmentTracking.Reset();
-        ShipmentTracking.SetRange("Agent Shipment No.", "Channel Order ID");
-        ShipmentTracking.DeleteAll(true);
-
-        HandledInterimSalesHeader.Reset();
-        HandledInterimSalesHeader.SetRange("Channel Order ID", Rec."Channel Order ID");
-        if not HandledInterimSalesHeader.FindFirst() then begin
-            ChannelMedia.Reset();
-            ChannelMedia.SetRange("Web Order No.", Rec."No.");
-            ChannelMedia.SetRange("Channel Order ID", "Channel Order ID");
-            if ChannelMedia.FindSet() then
-                ChannelMedia.DeleteAll(true);
-        end;
 
         //code to delete error log
         ErrorLog.RESET;
