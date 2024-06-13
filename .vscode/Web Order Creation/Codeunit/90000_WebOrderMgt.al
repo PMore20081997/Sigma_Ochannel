@@ -155,6 +155,7 @@ codeunit 90000 "Web Order Mgt"
                     L_InterimSalesHeader.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
                     L_InterimSalesHeader.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
                     L_InterimSalesHeader.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
+                    L_InterimSalesHeader.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
                     L_InterimSalesHeader.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
 
                     //Update Shipment Date++
@@ -752,6 +753,8 @@ codeunit 90000 "Web Order Mgt"
         PriceListIntegration: Codeunit "Price List Integration";
         L_TradePartner: Record "Trade Partner";
     begin
+        L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
+
         L_InterimSalesLine.INIT;
         L_InterimSalesLine."Document Type" := L_InterimSalesLine."Document Type"::Order;
         L_InterimSalesLine."Document No" := P_InterimSalesHeader."No.";
@@ -764,17 +767,22 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine.VALIDATE("Channel Identifier", P_InterimSalesLine."Channel Identifier");
         L_InterimSalesLine."Channel SKU" := P_InterimSalesLine."Channel SKU";
         L_InterimSalesLine."Channel Item Id" := P_InterimSalesLine."Channel Item Id";
-        L_ItemNo := FindItemNo(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner);
-        L_InterimSalesLine.Validate("No.", L_ItemNo);
-        L_InterimSalesLine.Validate("Customer Price Group", P_InterimSalesHeader."Customer Price Group");
 
+        Clear(L_ItemNo);
+        if L_TradePartner."Customer Trend Code" = false then begin
+            L_ItemNo := FindItemNo(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner);
+            L_InterimSalesLine.Validate("No.", L_ItemNo);
+        end else
+            L_InterimSalesLine.Validate("No.", L_InterimSalesLine."Channel SKU");
+
+        L_InterimSalesLine.Validate("Customer Price Group", P_InterimSalesHeader."Customer Price Group");
         Rec_Item.Reset();
         if Rec_Item.Get(L_ItemNo) then begin
             L_InterimSalesLine.Description := Rec_Item.Description;
             L_InterimSalesLine."Item Category Code" := Rec_Item."Item Category Code";
         end;
 
-        L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
+
 
         L_InterimSalesLine.Description2 := P_InterimSalesLine.Description2;
         L_InterimSalesLine."NAV Variant code" := GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No.");
@@ -925,7 +933,8 @@ codeunit 90000 "Web Order Mgt"
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
-            if P_InterimSalesHeader.status = P_InterimSalesHeader.status::"SO Created" then
+            P_InterimSalesHeader.CalcFields("Sales Order Created");
+            if P_InterimSalesHeader."Sales Order Created" = true then
                 exit;
 
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");

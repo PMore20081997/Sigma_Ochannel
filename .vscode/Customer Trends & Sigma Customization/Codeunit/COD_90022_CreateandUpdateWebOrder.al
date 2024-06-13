@@ -97,6 +97,7 @@ codeunit 90022 "OC Create & Update WebOrder"
             Temp_InterimSalesHeader.Validate("Order Date", _CustomerTrends."Order Date");
             Temp_InterimSalesHeader.Validate("Shipping Agent Code", _CustomerTrends."Shipping Agent Code");
             Temp_InterimSalesHeader.Validate("Shipping Agent Service Code", _CustomerTrends."Shipping Agent Service Code");
+            Temp_InterimSalesHeader.Validate("Weekend Shipping Agent Code", _CustomerTrends."Weekend Shipping Agent Code");
             Temp_InterimSalesHeader.Validate("Weekend Ship Agent Serv Code", _CustomerTrends."Weekend Ship. Agnt. Serv. Code");
             Temp_InterimSalesHeader.Validate("Shipment Date", _CustomerTrends."Delivery Date");
             Temp_InterimSalesHeader.Validate("Ship-to Code", _CustomerTrends."Ship-to Code");

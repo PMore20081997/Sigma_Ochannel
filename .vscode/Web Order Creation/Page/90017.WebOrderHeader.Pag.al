@@ -209,6 +209,10 @@ page 90017 "Web Order Header"
                     {
                         ApplicationArea = All;
                     }
+                    field("Weekend Shipping Agent Code"; Rec."Weekend Shipping Agent Code")
+                    {
+                        ApplicationArea = All;
+                    }
                     field("Weekend Ship Agent Serv Code"; Rec."Weekend Ship Agent Serv Code")
                     {
                         ApplicationArea = All;

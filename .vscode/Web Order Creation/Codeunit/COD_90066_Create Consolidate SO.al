@@ -269,7 +269,7 @@ codeunit 90066 "Create Consolidate SO"
     local procedure CreateSalesHeaderFromTemporary(_Temporary_SalesLine: Record "Sales Line" temporary)
     var
         SalesRecSetup: Record "Sales & Receivables Setup";
-        NoSeriesManagement: Codeunit "No. Series";
+        NoSeriesManagement: Codeunit "No. Series - Batch";
         L_Customer: Record Customer;
     begin
         Clear(G_SNo);
@@ -278,6 +278,7 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
         InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
+        NoSeriesManagement.SaveState();
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
         InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");
         InsertedSH.Validate("Order Date", _Temporary_SalesLine."FA Posting Date");
@@ -299,6 +300,7 @@ codeunit 90066 "Create Consolidate SO"
         L_Customer.Reset();
         L_Customer.SetRange("No.", _Temporary_SalesLine."Sell-to Customer No.");
         if L_Customer.FindFirst() then begin
+            InsertedSH.Validate("Weekend Shipping Agent Code", L_Customer."Weekend Shipping Agent Code");
             InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", L_Customer."Weekend Ship. Agnt. Serv. Code");
         end;
         InsertedSH.Validate("Location Code", _Temporary_SalesLine."Location Code");
@@ -367,8 +369,6 @@ codeunit 90066 "Create Consolidate SO"
                     TempSalesHeader."Sales Document No." := SalesNo;
                     TempSalesHeader.INSERT;
                 END;
-                L_InterimSalesHeader.status := L_InterimSalesHeader.status::"SO Created";
-                L_InterimSalesHeader.Modify();
             until L_InterimSalesHeader.Next() = 0;
         end;
     end;

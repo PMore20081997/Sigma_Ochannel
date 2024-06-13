@@ -230,8 +230,6 @@ page 90030 "Web Order Line Subpage"
         ItemBlockedError: Text;
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
-                exit;
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
 
             Clear(L_ErrorRecorded);

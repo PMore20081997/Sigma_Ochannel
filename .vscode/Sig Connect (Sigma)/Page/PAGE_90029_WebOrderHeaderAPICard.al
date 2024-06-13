@@ -119,6 +119,7 @@ page 90029 "Web Order Header API Card"
                 Rec.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
                 Rec.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
                 Rec.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
+                Rec.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
                 Rec.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
 
                 //Update Shipment Date++
@@ -291,8 +292,6 @@ page 90029 "Web Order Header API Card"
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
-            if P_InterimSalesHeader.status in [P_InterimSalesHeader.status::"SO Created"] then
-                exit;
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
             PartnerErrorLog.RESET;
             PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");

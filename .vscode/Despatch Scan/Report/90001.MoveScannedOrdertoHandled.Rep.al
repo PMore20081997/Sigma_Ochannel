@@ -9,7 +9,6 @@ report 90001 "Move Scanned Order to Handled"
             DataItemTableView = SORTING("Document Type", "No.")
                                 ORDER(Ascending)
                                 WHERE("Moved In Handled" = CONST(false),
-                                status = filter("SO Created"),
                                 "Sales Order Created" = const(true));
             RequestFilterFields = "Document Date", "No.", "Trade Partner Code";
 

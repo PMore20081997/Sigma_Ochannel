@@ -41,6 +41,29 @@ pageextension 90020 SalesOrdListExt extends "Sales Order List"
 
         addafter(Release)
         {
+            action("Custom Release")
+            {
+                ApplicationArea = ALl;
+                Image = ReleaseDoc;
+                Promoted = true;
+                PromotedCategory = Process;
+
+                trigger OnAction()
+                var
+                    L_SalesHeader: Record "Sales Header";
+                    BatchProcessingMgt: Codeunit "Batch Processing Mgt.";
+                    RecRef: RecordRef;
+                begin
+                    L_SalesHeader.Reset();
+                    CurrPage.SetSelectionFilter(L_SalesHeader);
+                    BatchProcessingMgt.BatchProcess(L_SalesHeader, Codeunit::"Sales Manual Release", Enum::"Error Handling Options"::"Show Notification", L_SalesHeader.Count, 0);
+                    // RecRef.GetTable(L_SalesHeader);
+                    // BatchProcessingMgt.BatchProcess(RecRef);
+                end;
+            }
+
+
+
             //GHST Customization++
             action("Update Variant On Lines")
             {

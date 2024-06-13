@@ -11,40 +11,40 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
             end;
         }
 
-        addbefore("Total Physical")
-        {
-            field("Web Orders Qty"; Rec."Web Orders Qty")
-            {
-                ApplicationArea = All;
-                Editable = false;
-            }
-        }
+        // addbefore("Total Physical")
+        // {
+        //     field("Web Orders Qty"; Rec."Web Orders Qty")
+        //     {
+        //         ApplicationArea = All;
+        //         Editable = false;
+        //     }
+        // }
 
-        addafter("Total Allocated on SO")
-        {
-            field("Total Free"; G_CT_Function.CT_TotalFree(rec))
-            {
-                Caption = 'Total Free';
-                ApplicationArea = All;
-                Editable = false;
-                DecimalPlaces = 0 : 5;
-                ToolTip = 'Total Physical - Total SO Allocated - Web Order Qty';
-                StyleExpr = G_Colour;
-            }
-        }
+        // addafter("Total Allocated on SO")
+        // {
+        //     field("Total Free"; G_CT_Function.CT_TotalFree(rec))
+        //     {
+        //         Caption = 'Total Free';
+        //         ApplicationArea = All;
+        //         Editable = false;
+        //         DecimalPlaces = 0 : 5;
+        //         ToolTip = 'Total Physical - Total SO Allocated - Web Order Qty';
+        //         StyleExpr = G_Colour;
+        //     }
+        // }
 
-        addafter("Allocated on SO")
-        {
-            field(Free; G_CT_Function.CT_Free(Rec))
-            {
-                ApplicationArea = All;
-                Editable = false;
-                DecimalPlaces = 0 : 5;
-                ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
-                Caption = 'Free';
-                StyleExpr = G_Colour;
-            }
-        }
+        // addafter("Allocated on SO")
+        // {
+        //     field(Free; G_CT_Function.CT_Free(Rec))
+        //     {
+        //         ApplicationArea = All;
+        //         Editable = false;
+        //         DecimalPlaces = 0 : 5;
+        //         ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
+        //         Caption = 'Free';
+        //         StyleExpr = G_Colour;
+        //     }
+        // }
     }
 
     actions
