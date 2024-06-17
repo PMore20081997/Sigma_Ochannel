@@ -15,7 +15,7 @@
             //"environmentName": "Copy_13062024",
             "environmentName": "Sigma_UAT",
             //"environmentName": "Copy_03062024",
-            //"environmentName": "Sandbox_Beta",
+            //"environmentName": "Sandbox_Beta_Adhoc",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"Synchronize"
         }

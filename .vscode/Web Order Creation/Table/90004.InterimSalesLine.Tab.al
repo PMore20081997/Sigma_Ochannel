@@ -449,6 +449,7 @@ table 90004 "Interim Sales Line"
         key(PK; "Document Type", "Document No", "Line No.")
         {
             Clustered = true;
+            SumIndexFields = "Qty. to Deliver";
         }
         key(key2; "Bay No.")
         {
