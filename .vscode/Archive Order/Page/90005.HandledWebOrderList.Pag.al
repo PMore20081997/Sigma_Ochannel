@@ -79,6 +79,16 @@ page 90005 "Handled Web Order List"
 
     actions
     {
+        area(Navigation)
+        {
+            action("Web Buffer")
+            {
+                ApplicationArea = All;
+                Image = Navigate;
+                RunObject = page "Web Buffer";
+                RunPageLink = "Web Document No." = field("No.");
+            }
+        }
         area(processing)
         {
             action("Re-Order")

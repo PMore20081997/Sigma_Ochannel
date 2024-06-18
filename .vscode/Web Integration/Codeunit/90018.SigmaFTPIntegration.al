@@ -220,13 +220,13 @@ codeunit 90018 "GOY File Integration"
                     K += 1;
 
                 Clear(LineNo);
-                if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) and (CheckIfAllNumbers(GetCellValue(RowNo, 7)) = true) then
-                    if GetCellValue(RowNo, 7).Contains('-') then
-                        Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
-                    else
-                        Evaluate(LineNo, GetCellValue(RowNo, 7))
-                else
-                    LineNo := K;
+                // if (GetCellValue(RowNo, 7) <> '') and (StrLen(GetCellValue(RowNo, 7)) <= 7) and (CheckIfAllNumbers(GetCellValue(RowNo, 7)) = true) then
+                //     if GetCellValue(RowNo, 7).Contains('-') then
+                //         Evaluate(LineNo, GetCellValue(RowNo, 7).Replace('-', ''))
+                //     else
+                //         Evaluate(LineNo, GetCellValue(RowNo, 7))
+                // else
+                LineNo := K;
 
                 #Region Insert data in temp table++++
                 InterimSalesHeader.Reset();
