@@ -13,9 +13,10 @@ page 90000 "General Setup - Channels"
         {
             group(General)
             {
-                field("Sales Channel Order Id"; Rec."Web Order Nos")
+                field("Consolidated Sales No. Series"; Rec."Consolidated Sales No. Series")
                 {
                     ApplicationArea = All;
+                    Caption = 'Consolidated Sales Order No. Series';
                 }
                 field("Shipping G/L No."; Rec."Shipping G/L No.")
                 {

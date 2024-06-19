@@ -59,5 +59,10 @@ table 90000 "General Setup - Channels"
         field(16; "Auto Release Sales Orders"; Boolean)
         {
         }
+        field(17; "Consolidated Sales No. Series"; Code[10])
+        {
+            TableRelation = "No. Series";
+            DataClassification = ToBeClassified;
+        }
     }
 }

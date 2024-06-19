@@ -78,6 +78,9 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
 
                         if L_Customertrends."Customer No." = '' then
                             Error('Customer Account No. should not be blank');
+
+                        if L_Customertrends."Shipping Agent Service Code" = '' then
+                            Error('Shipping Agent Service should not be blank');
                     end
                     else
                         exit;

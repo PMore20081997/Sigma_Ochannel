@@ -575,7 +575,7 @@ codeunit 90000 "Web Order Mgt"
         exit(TotalWeight);
     end;
 
-    local procedure FindLastLineNo(P_InterimSalesH: Record "Interim Sales Header"): Integer
+    procedure FindLastLineNo(P_InterimSalesH: Record "Interim Sales Header"): Integer
     //Code to find a last line no in web order
     var
         L_InterimSalesLine: Record "Interim Sales Line";

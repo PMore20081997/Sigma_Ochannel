@@ -6,9 +6,6 @@ codeunit 90022 "OC Create & Update WebOrder"
 
     end;
 
-    var
-        myInt: Integer;
-
     procedure CreateAndUpdateWebOrder(_CustNumber: Code[100]; _SalesPersonCode: Code[20])
     var
         CustmerTrend: Record CustomerTrends;
@@ -35,7 +32,6 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_TradPartner.SetRange("Customer Trend Code", true);
         if L_TradPartner.FindFirst() then;
 
-
         //Make it Ready to Process++
         CustmerTrend.Reset();
         CustmerTrend.SetRange("Customer No.", _CustNumber);
@@ -61,16 +57,14 @@ codeunit 90022 "OC Create & Update WebOrder"
         if CustmerTrend.FindSet() then
             CustmerTrend.DeleteAll();
         //end;
-
     end;
-
 
     var
         Temp_InterimSalesHeader: Record "Interim Sales Header" temporary; //Dont Remove Temp propert++
         G_InterimHeaderCreated: Boolean;
         Temp_InterimSalesLine: Record "Interim Sales Line" temporary; //Dont Remove Temp propert++
         G_LineNumber: Integer;
-
+        G_WebOrderMgt: Codeunit "Web Order Mgt";
 
 
     local procedure CreatTemp_Order(_CustomerTrends: Record CustomerTrends; _TradPartner: Record "Trade Partner")
@@ -103,7 +97,6 @@ codeunit 90022 "OC Create & Update WebOrder"
             Temp_InterimSalesHeader.Validate("Ship-to Code", _CustomerTrends."Ship-to Code");
             G_InterimHeaderCreated := Temp_InterimSalesHeader.Insert();
         end;
-
 
         //Lines++
         Temp_InterimSalesLine.Reset();
@@ -141,9 +134,6 @@ codeunit 90022 "OC Create & Update WebOrder"
         Update_InterimSalesHeader: Record "Interim Sales Header";
         Update_InterimSalesLine: Record "Interim Sales Line";
     begin
-        //Get General Setup++
-        GeneralSetup.Get;
-        //GeneralSetup.TestField("Web Order Nos");
         _TradPartner.TestField("Channel Order No. Series");
 
         //Insert Header++
@@ -175,8 +165,6 @@ codeunit 90022 "OC Create & Update WebOrder"
             L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
             L_InterimSalesHeader.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
             L_InterimSalesHeader.Validate("Customer Price Group", SellToCustomer."Customer Price Group");
-
-
 
             //Update Shipping Details++
             L_ShiptoAddress.Reset();
@@ -221,9 +209,8 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader."Package Tracking No." := P_InterimSalesHeader."Package Tracking No.";
         L_InterimSalesHeader."Web Shipping Agent" := P_InterimSalesHeader."Web Shipping Agent";
         L_InterimSalesHeader."Web Shipment Method" := P_InterimSalesHeader."Web Shipment Method";
-        L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";  //Added By Shubham 05082022
+        L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";
         L_InterimSalesHeader."Currency Code" := P_InterimSalesHeader."Currency Code";
-
         L_InterimSalesHeader.VALIDATE("Buyer Email", P_InterimSalesHeader."Buyer Email");
         L_InterimSalesHeader."Buyer Name" := P_InterimSalesHeader."Buyer Name";
         L_InterimSalesHeader.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
@@ -234,8 +221,8 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader."Order Created On" := CurrentDateTime;
         L_InterimSalesHeader."User ID" := UserId;
         L_InterimSalesHeader."File Name" := P_InterimSalesHeader."File Name";
-        L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No."; //Added By Shubham 06052021
-        L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");  //Added By Shubham 19072021
+        L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No.";
+        L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");
         L_InterimSalesHeader.Validate("Order Discount Amount", P_InterimSalesHeader."Order Discount Amount");
         L_InterimSalesHeader.Validate("Fullfillment Channel", P_InterimSalesHeader."Fullfillment Channel");
         L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
@@ -247,23 +234,105 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader."Ready to process" := true;
         L_InterimSalesHeader.Insert(True);
 
-
         //Insert Line++
-        If P_InterimSalesLine.FindSet() then
+        If P_InterimSalesLine.FindSet() then begin
             repeat
-                WebOrderMgt.InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, _TradPartner, 0)
+                InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, _TradPartner)
             until P_InterimSalesLine.Next() = 0;
+        end;
 
         //Update Status, Reason Code, Reason Message on Header and Line++
-        Update_InterimSalesLine.Reset();
-        Update_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
-        Update_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
-        if Update_InterimSalesLine.FindSet() then begin
-            repeat
-                Update_InterimSalesLine."Reason Code" := 'Order Line Created';
-                Update_InterimSalesLine."Reason Message" := 'Successful';
-                Update_InterimSalesLine.Modify();
-            until Update_InterimSalesLine.Next() = 0;
+        // Update_InterimSalesLine.Reset();
+        // Update_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+        // Update_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+        // if Update_InterimSalesLine.FindSet() then begin
+        //     repeat
+        //         Update_InterimSalesLine."Reason Code" := 'Order Line Created';
+        //         Update_InterimSalesLine."Reason Message" := 'Successful';
+        //         Update_InterimSalesLine.Modify();
+        //     until Update_InterimSalesLine.Next() = 0;
+        // end;
+    end;
+
+    local procedure InsertSalesLine(P_InterimSalesHeader: Record "Interim Sales Header"; P_InterimSalesLine: Record "Interim Sales Line" temporary; P_ChannelPartner: Record "Trade Partner")
+    var
+        L_InterimSalesLine: Record "Interim Sales Line";
+        L_ItemNo: Code[20];
+        Rec_Item: Record Item;
+        L_ItemVariant: Record "Item Variant";
+        PriceListIntegration: Codeunit "Price List Integration";
+        L_TradePartner: Record "Trade Partner";
+    begin
+        L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
+
+        L_InterimSalesLine.Init();
+        L_InterimSalesLine."Document Type" := L_InterimSalesLine."Document Type"::Order;
+        L_InterimSalesLine."Document No" := P_InterimSalesHeader."No.";
+        L_InterimSalesLine."Order Date" := P_InterimSalesHeader."Order Date";
+        L_InterimSalesLine.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+        L_InterimSalesLine.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
+        L_InterimSalesLine.Validate("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+        L_InterimSalesLine."Line No." := G_WebOrderMgt.FindLastLineNo(P_InterimSalesHeader);
+        L_InterimSalesLine.Type := L_InterimSalesLine.Type::Item;
+        L_InterimSalesLine.Validate("Channel Identifier", P_InterimSalesLine."Channel Identifier");
+        L_InterimSalesLine."Channel SKU" := P_InterimSalesLine."Channel SKU";
+        L_InterimSalesLine."Channel Item Id" := P_InterimSalesLine."Channel Item Id";
+
+        Clear(L_ItemNo);
+        L_ItemNo := L_InterimSalesLine."Channel SKU";
+        L_InterimSalesLine.Validate("No.", L_ItemNo);
+
+        L_InterimSalesLine.Validate("Customer Price Group", P_InterimSalesHeader."Customer Price Group");
+        Rec_Item.Reset();
+        if Rec_Item.Get(L_ItemNo) then begin
+            L_InterimSalesLine.Description := Rec_Item.Description;
+            L_InterimSalesLine."Item Category Code" := Rec_Item."Item Category Code";
         end;
+
+        L_InterimSalesLine.Description2 := P_InterimSalesLine.Description2;
+        L_InterimSalesLine."NAV Variant code" := G_WebOrderMgt.GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No.");
+        L_InterimSalesLine.Validate(Quantity, P_InterimSalesLine.Quantity);
+        L_InterimSalesLine.Validate("Unit of Measure Code", G_WebOrderMgt.FindUOM(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU"
+         , L_InterimSalesLine."No.", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner));
+
+        if L_TradePartner."Customer Trend Code" = true then
+            L_InterimSalesLine.Validate("Qty. to Deliver", P_InterimSalesLine.Quantity)
+        else
+            L_InterimSalesLine."Qty. to Deliver" := G_WebOrderMgt.CalculateQtyToDeliver(L_InterimSalesLine);
+
+        L_InterimSalesLine."Channel Price" := P_InterimSalesLine."Unit Price";
+        case L_TradePartner."Price Pick From" of
+            L_TradePartner."Price Pick From"::"Order Source":
+                L_InterimSalesLine.Validate("Unit Price", P_InterimSalesLine."Unit Price");
+            L_TradePartner."Price Pick From"::"channel Price":
+                G_WebOrderMgt.ItemLinePrice(L_InterimSalesLine, true);
+            L_TradePartner."Price Pick From"::"Sales Price":
+                PriceListIntegration.CalculateUnitPrice(P_InterimSalesHeader, L_InterimSalesLine);
+        end;
+
+        L_InterimSalesLine.Hazardous := P_InterimSalesLine.Hazardous;
+        L_InterimSalesLine.FileName := P_InterimSalesLine.FileName;
+        L_InterimSalesLine.Weight := P_InterimSalesLine.Weight;
+        L_InterimSalesLine."Channel Order ID" := P_InterimSalesLine."Channel Order ID";
+        L_InterimSalesLine."Currency Code" := P_InterimSalesLine."Currency Code";
+        L_InterimSalesLine."Shipment Date" := P_InterimSalesHeader."Shipment Date";
+        L_InterimSalesLine.Discount := P_InterimSalesLine.Discount;
+
+        L_ItemVariant.Reset();
+        L_ItemVariant.SetRange(Code, L_InterimSalesLine."NAV Variant code");
+        L_ItemVariant.SetRange("Item No.", L_ItemNo);
+        if L_ItemVariant.FindFirst() then
+            L_InterimSalesLine.Validate(Description, L_ItemVariant.Description)
+        else begin
+            Rec_Item.Reset();
+            Rec_Item.SetRange("No.", L_ItemNo);
+            if Rec_Item.FindFirst() then
+                L_InterimSalesLine.Validate(Description, Rec_Item.Description);
+        end;
+
+        L_InterimSalesLine."Reason Code" := 'Order Line Created';
+        L_InterimSalesLine."Reason Message" := 'Successful';
+
+        L_InterimSalesLine.Insert(true);
     end;
 }

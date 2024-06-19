@@ -271,13 +271,17 @@ codeunit 90066 "Create Consolidate SO"
         SalesRecSetup: Record "Sales & Receivables Setup";
         NoSeriesManagement: Codeunit "No. Series - Batch";
         L_Customer: Record Customer;
+        L_GeneralSetupChannels: Record "General Setup - Channels";
     begin
         Clear(G_SNo);
         SalesRecSetup.Get();
+        L_GeneralSetupChannels.Get();
+        L_GeneralSetupChannels.TestField("Consolidated Sales No. Series");
         InsertedSH.Reset();
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
-        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
+        //InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
+        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(L_GeneralSetupChannels."Consolidated Sales No. Series", WORKDATE, TRUE));
         NoSeriesManagement.SaveState();
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
         InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");

@@ -16,11 +16,11 @@ codeunit 90025 "Manual/KNAAP SO Process"
         L_SalesHeader.Reset();
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
-        L_SalesHeader.SetFilter("No.", '%1|%2', '105593', '105595');
+        //L_SalesHeader.SetFilter("No.", '%1|%2', '105593', '105595');
         L_SalesHeader.SetRange("Web Order", true);
         // RecRef.GetTable(L_SalesHeader);
         // BatchProcessingMgt.BatchProcess(RecRef);
-        BatchProcessingMgt.BatchProcess(L_SalesHeader, Codeunit::"Sales Manual Release", Enum::"Error Handling Options"::"Do nothing", L_SalesHeader.Count, 0);
+        BatchProcessingMgt.BatchProcess(L_SalesHeader, Codeunit::"Sales Manual Release", Enum::"Error Handling Options"::"Show Notification", L_SalesHeader.Count, 0);
         Commit();
 
         //Create InventoryPick
