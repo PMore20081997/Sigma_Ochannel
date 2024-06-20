@@ -479,8 +479,9 @@ table 90005 "Handled Interim Sales Header"
         }
         field(119; "Weekend Ship Agent Serv Code"; Code[250])
         {
-            TableRelation = "Shipping Agent Services".Code WHERE("Shipping Agent Code" = FIELD("Shipping Agent Code"));
+            TableRelation = "Shipping Agent Services".Code WHERE("Shipping Agent Code" = FIELD("Weekend Shipping Agent Code"));
             Caption = 'Weekend Shipping Agent Service Code';
+            ValidateTableRelation = false;
         }
         field(120; "Customer Price Group"; Code[10])
         {
@@ -492,6 +493,10 @@ table 90005 "Handled Interim Sales Header"
         {
             TableRelation = "Salesperson/Purchaser";
             Caption = 'SalesPerson/Purchaser Code';
+        }
+        field(122; "Weekend Shipping Agent Code"; Code[10])
+        {
+            TableRelation = "Shipping Agent";
         }
     }
 

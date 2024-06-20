@@ -64,6 +64,10 @@ page 90005 "Handled Web Order List"
                 {
                     ApplicationArea = All;
                 }
+                field("Order Created On"; Rec."Order Created On")
+                {
+                    ApplicationArea = All;
+                }
                 field("Salesperson Code"; Rec."Salesperson Code")
                 {
                     ApplicationArea = All;
@@ -72,6 +76,18 @@ page 90005 "Handled Web Order List"
                 {
                     ApplicationArea = All;
                     Caption = 'No. of Item Lines';
+                }
+                field("No of Error"; Rec."No of Error")
+                {
+                    ApplicationArea = All;
+                }
+                field("Error Text"; Rec."Error Text")
+                {
+                    ApplicationArea = all;
+                }
+                field("Sales Order Created"; Rec."Sales Order Created")
+                {
+                    ApplicationArea = All;
                 }
             }
         }

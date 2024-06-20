@@ -31,14 +31,6 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
         {
             Editable = false;
         }
-        // addafter("External Document No.")
-        // {
-        //     field("Channel Code"; Rec."Channel Code")
-        //     {
-        //         ApplicationArea = All;
-        //         Editable = false;
-        //     }
-        // }
     }
 
     actions
@@ -229,6 +221,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 PromotedIsBig = true;
                 ApplicationArea = All;
                 Image = Navigate;
+                Visible = false;
 
                 trigger OnAction()
                 var
@@ -256,43 +249,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 end;
             }
         }
-        // modify(Release)
-        // {
-        //     trigger OnAfterAction()
-        //     var
-        //         HandledInterimSalesHeader: Record "Handled Interim Sales Header";
-        //     begin
-        //         HandledInterimSalesHeader.Reset();
-        //         HandledInterimSalesHeader.SetRange("No.", Rec."No.");
-        //         if HandledInterimSalesHeader.FindFirst() then begin
-        //             if HandledInterimSalesHeader.status = HandledInterimSalesHeader.status::"SO Created" then
-        //                 UpdateHandledWebOrder(Rec);
-        //         end;
-        //     end;
-        // }
     }
-
-    local procedure UpdateHandledWebOrder(Rec: Record "Sales Header")
-    var
-        HandledInterimSalesLine: Record "Handled Interim Sales Line";
-        SalesLine: Record "Sales Line";
-        IsHandled: Boolean;
-    begin
-        OnBeforeUpdateHandledWebOrder(IsHandled);
-        if IsHandled then
-            exit;
-
-        SalesLine.Reset();
-        SalesLine.SetRange("Document Type", SalesLine."Document Type"::Order);
-        SalesLine.SetRange("Document No.", Rec."No.");
-        if SalesLine.FindSet() then begin
-            repeat
-                UpdateHandledInterimSalesLine(SalesLine);
-            until SalesLine.Next() = 0;
-            UpdateHandledInterimSalesHeader(SalesLine);
-        end;
-        OnAfterUpdateHandledWebOrder();
-    end;
 
     local procedure SetWeborderFilter(_SalesOrderNo: Code[20]): Text
     var
