@@ -785,10 +785,9 @@ codeunit 90000 "Web Order Mgt"
 
 
         L_InterimSalesLine.Description2 := P_InterimSalesLine.Description2;
-        L_InterimSalesLine."NAV Variant code" := GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No.");
+        //L_InterimSalesLine."NAV Variant code" := GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No."); //Commneted by Abdul for Performance issue (Not using Variant code on Web Order for Sigma)
         L_InterimSalesLine.Validate(Quantity, P_InterimSalesLine.Quantity);
-        L_InterimSalesLine.Validate("Unit of Measure Code", FindUOM(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU"
-         , L_InterimSalesLine."No.", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner));
+        //L_InterimSalesLine.Validate("Unit of Measure Code", FindUOM(L_InterimSalesLine."Channel SKU", P_InterimSalesLine."Channel Identifier", L_InterimSalesLine."Channel SKU", L_InterimSalesLine."No.", L_InterimSalesLine."Sell-to Customer No.", P_ChannelPartner)); //Commneted by Abdul for Performance issue ()
 
         if L_TradePartner."Customer Trend Code" = true then
             L_InterimSalesLine.Validate("Qty. to Deliver", P_InterimSalesLine.Quantity)
