@@ -205,18 +205,10 @@ codeunit 90022 "OC Create & Update WebOrder"
             end;
         end;
 
-        L_InterimSalesHeader."Job Reference" := P_InterimSalesHeader."Job Reference";
-        L_InterimSalesHeader."Package Tracking No." := P_InterimSalesHeader."Package Tracking No.";
-        L_InterimSalesHeader."Web Shipping Agent" := P_InterimSalesHeader."Web Shipping Agent";
         L_InterimSalesHeader."Web Shipment Method" := P_InterimSalesHeader."Web Shipment Method";
         L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";
         L_InterimSalesHeader."Currency Code" := P_InterimSalesHeader."Currency Code";
-        L_InterimSalesHeader.VALIDATE("Buyer Email", P_InterimSalesHeader."Buyer Email");
-        L_InterimSalesHeader."Buyer Name" := P_InterimSalesHeader."Buyer Name";
         L_InterimSalesHeader.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
-        L_InterimSalesHeader.VALIDATE("No. Of Parcels", P_InterimSalesHeader."No. Of Parcels");
-        L_InterimSalesHeader."Earliest Delivery date" := P_InterimSalesHeader."Earliest Delivery date";
-        L_InterimSalesHeader."Promised Delivery Date" := P_InterimSalesHeader."Promised Delivery Date";
         L_InterimSalesHeader."Order Placed At" := CurrentDateTime;
         L_InterimSalesHeader."Order Created On" := CurrentDateTime;
         L_InterimSalesHeader."User ID" := UserId;
@@ -224,10 +216,6 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No.";
         L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");
         L_InterimSalesHeader.Validate("Order Discount Amount", P_InterimSalesHeader."Order Discount Amount");
-        L_InterimSalesHeader.Validate("Fullfillment Channel", P_InterimSalesHeader."Fullfillment Channel");
-        L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
-        L_InterimSalesHeader.Validate("Order Status", P_InterimSalesHeader."Order Status");
-        L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
         L_InterimSalesHeader."Salesperson Code" := P_InterimSalesHeader."Salesperson Code";
         L_InterimSalesHeader."Reason Code" := 'Order Created';
         L_InterimSalesHeader."Reason Message" := 'Accepted';

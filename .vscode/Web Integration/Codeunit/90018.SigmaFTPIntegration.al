@@ -85,10 +85,10 @@ codeunit 90018 "GOY File Integration"
                     Clear(BlobInstream);
                     Response := ABSBlobClient.GetBlobAsStream(ABSContainerContent."Full Name", BlobInstream);
                     if Response.IsSuccessful() then begin
-                        //if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin //Commented by Abdul for Performance issue++ Same function we are checking at the time creating Web Order(Sigma_CreateWebOrder)++
-                        if not CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name") then
-                            Error(GetLastErrorText() + '\For File - ' + ABSContainerContent."Full Name");
-                        //end;
+                        if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin
+                            if not CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name") then
+                                Error(GetLastErrorText() + '\For File - ' + ABSContainerContent."Full Name");
+                        end;
                     end;
                 until ABSContainerContent.Next() = 0;
             end;

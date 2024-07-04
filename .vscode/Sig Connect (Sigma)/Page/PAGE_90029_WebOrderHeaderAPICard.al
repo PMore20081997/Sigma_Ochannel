@@ -177,26 +177,15 @@ page 90029 "Web Order Header API Card"
                 Rec."Customer Price Group" := SellToCustomer."Customer Price Group";
             end;
 
-            Rec."Job Reference" := Rec."Job Reference";
-            Rec."Package Tracking No." := Rec."Package Tracking No.";
-            Rec."Web Shipping Agent" := Rec."Web Shipping Agent";
             Rec."Web Shipment Method" := Rec."Web Shipment Method";
             Rec."Payment Method" := Rec."Payment Method";
             Rec."Currency Code" := Rec."Currency Code";
-            Rec.VALIDATE("Buyer Email", Rec."Buyer Email");
-            Rec."Buyer Name" := Rec."Buyer Name";
-            Rec.VALIDATE("No. Of Parcels", Rec."No. Of Parcels");
-            Rec."Earliest Delivery date" := Rec."Earliest Delivery date";
-            Rec."Promised Delivery Date" := Rec."Promised Delivery Date";
             Rec."Order Placed At" := CurrentDateTime;
             Rec."Order Created On" := CurrentDateTime;
             Rec."User ID" := UserId;
             Rec."File Name" := 'API';
             Rec.Validate("Order Amount", Rec."Order Amount");
             Rec.Validate("Order Discount Amount", Rec."Order Discount Amount");
-            Rec.Validate("Fullfillment Channel", Rec."Fullfillment Channel");
-            Rec.Validate("Web Customer No.", Rec."Web Customer No.");
-            Rec.Validate("Order Status", Rec."Order Status");
 
             //Check Validation+++
             Sigma_SigConnectHeaderValidations(Rec);

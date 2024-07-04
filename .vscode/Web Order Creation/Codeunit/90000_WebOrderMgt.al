@@ -88,14 +88,10 @@ codeunit 90000 "Web Order Mgt"
     //Code to create a web Order and Line based on the data coming from diffrent channel integration code unit
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
-        GeneralSetup: record "General Setup - Channels";
         NoSeriesManagement: Codeunit "No. Series - Batch";
         SellToCustomer: Record Customer;
         ChannelPartner: Record "Trade Partner";
-        IsExist: Boolean;
         Discountperscent: Decimal;
-        salesLine: record "Sales Line";
-        Query_OrderAmt: Query "Get Order item Amount";
         L_InterimSalesLine: Record "Interim Sales Line";
         L_Item: Record Item;
         CountriesRegion: Record "Country/Region";
@@ -105,150 +101,134 @@ codeunit 90000 "Web Order Mgt"
         BillToCustomer: Record Customer;
         L_Date: Record Date;
     Begin
-        If CheckOrderNotExist(P_InterimSalesHeader."Trade Partner Code", P_InterimSalesHeader."Channel Order ID") then begin
-            ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
-            ChannelPartner.TestField("Channel Order No. Series");
-            GeneralSetup.Get;
-            //GeneralSetup.TestField("Web Order Nos");
+        ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
+        ChannelPartner.TestField("Channel Order No. Series");
 
-            //Insert Header+++
-            L_InterimSalesHeader.INIT;
-            L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
-            L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
-            NoSeriesManagement.SaveState();
-            L_InterimSalesHeader.VALIDATE(Status, L_InterimSalesHeader.Status::Accepted);
-            L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
-            L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
-            L_InterimSalesHeader.validate("Document Date", WorkDate);
-            L_InterimSalesHeader.Validate("Order Date", WorkDate);
+        //Insert Header+++
+        L_InterimSalesHeader.Init();
+        L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
+        L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
+        NoSeriesManagement.SaveState();
+        L_InterimSalesHeader.Validate(Status, L_InterimSalesHeader.Status::Accepted);
+        L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
+        L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");
+        L_InterimSalesHeader.validate("Document Date", WorkDate);
+        L_InterimSalesHeader.Validate("Order Date", WorkDate);
 
-            if (P_InterimSalesHeader."Sell-to Customer No." <> '') then begin
-                Case ChannelPartner."Customer Mapping" OF
-                    ChannelPartner."Customer Mapping"::"Default Customer":
-                        SellToCustomer.GET(ChannelPartner."Customer No.");
-                    ChannelPartner."Customer Mapping"::"Order Customer":
-                        SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
-                End;
+        if (P_InterimSalesHeader."Sell-to Customer No." <> '') then begin
+            Case ChannelPartner."Customer Mapping" OF
+                ChannelPartner."Customer Mapping"::"Default Customer":
+                    SellToCustomer.GET(ChannelPartner."Customer No.");
+                ChannelPartner."Customer Mapping"::"Order Customer":
+                    SellToCustomer.GET(P_InterimSalesHeader."Sell-to Customer No.");
+            End;
 
-                if ChannelPartner."Customer Mapping" = ChannelPartner."Customer Mapping"::"ET Access Customer" then begin
-                    SellToCustomer.Reset();
-                    SellToCustomer.SetRange("No.", P_InterimSalesHeader."Sell-to Customer No.");
-                    if SellToCustomer.FindFirst() then;
-                end;
-
-                if SellToCustomer."No." = '' then begin
-                    L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
-                    L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location);
-                end else begin
-                    L_InterimSalesHeader.VALIDATE("Sell-to Customer No.", SellToCustomer."No.");
-                    L_InterimSalesHeader.VALIDATE(Address, SellToCustomer.Address);
-                    L_InterimSalesHeader.VALIDATE("Address 2", SellToCustomer."Address 2");
-                    L_InterimSalesHeader.VALIDATE(City, SellToCustomer.City);
-                    L_InterimSalesHeader.VALIDATE("Post Code", SellToCustomer."Post Code");
-                    L_InterimSalesHeader.VALIDATE("Sell to Country", SellToCustomer."Country/Region Code");
-                    if ChannelPartner.Location <> '' then
-                        L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location)
-                    else
-                        L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code");
-
-                    L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
-                    L_InterimSalesHeader.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
-                    L_InterimSalesHeader.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
-                    L_InterimSalesHeader.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
-                    L_InterimSalesHeader.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
-                    L_InterimSalesHeader.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
-
-                    //Update Shipment Date++
-                    L_Date.Reset();
-                    L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
-                    L_Date.SetRange(L_Date."Period Start", Today);
-                    if L_Date.FindFirst() then begin
-                        if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                            if L_InterimSalesHeader."Weekend Ship Agent Serv Code" <> '' then
-                                //Update Saturday++
-                                L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                            else begin
-                                //Update Monday
-                                L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
-                            end;
-                        end else
-                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today));
-                    end;
-                end;
+            if ChannelPartner."Customer Mapping" = ChannelPartner."Customer Mapping"::"ET Access Customer" then begin
+                SellToCustomer.Reset();
+                SellToCustomer.SetRange("No.", P_InterimSalesHeader."Sell-to Customer No.");
+                if SellToCustomer.FindFirst() then;
             end;
 
-            L_ShiptoAddress.Reset();
-            L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
-            if L_ShiptoAddress.FindFirst() then begin
-                L_InterimSalesHeader.Validate("Ship-to Code", L_ShiptoAddress.Code);
-                L_InterimSalesHeader.VALIDATE("Ship-to Name", L_ShiptoAddress.Name);
-                L_InterimSalesHeader.VALIDATE("Ship-to Address", L_ShiptoAddress.Address);
-                L_InterimSalesHeader.VALIDATE("Ship-to Address 2", L_ShiptoAddress."Address 2");
-                L_InterimSalesHeader.VALIDATE("Ship-to City", L_ShiptoAddress.City);
-                L_InterimSalesHeader.VALIDATE("Ship-to County", L_ShiptoAddress.County);
-                L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", L_ShiptoAddress."Country/Region Code");
-                L_InterimSalesHeader.VALIDATE("Ship-to Post Code", L_ShiptoAddress."Post Code");
-                L_InterimSalesHeader.VALIDATE("Ship-to Phone", L_ShiptoAddress."Phone No.");
-                L_InterimSalesHeader.VALIDATE("Ship-to Email", L_ShiptoAddress."E-Mail");
-                L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+            if SellToCustomer."No." = '' then begin
+                L_InterimSalesHeader.Validate("Sell-to Customer No.", P_InterimSalesHeader."Sell-to Customer No.");
+                L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location);
             end else begin
-                L_InterimSalesHeader.VALIDATE("Ship-to Name", SellToCustomer.Name);
-                L_InterimSalesHeader.VALIDATE("Ship-to Address", SellToCustomer.Address);
-                L_InterimSalesHeader.VALIDATE("Ship-to Address 2", SellToCustomer."Address 2");
-                L_InterimSalesHeader.VALIDATE("Ship-to City", SellToCustomer.City);
-                L_InterimSalesHeader.VALIDATE("Ship-to County", SellToCustomer.County);
-                L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
-                L_InterimSalesHeader.VALIDATE("Ship-to Post Code", SellToCustomer."Post Code");
-                L_InterimSalesHeader.VALIDATE("Ship-to Phone", SellToCustomer."Phone No.");
-                L_InterimSalesHeader.VALIDATE("Ship-to Email", SellToCustomer."E-Mail");
-                L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+                L_InterimSalesHeader.Validate("Sell-to Customer No.", SellToCustomer."No.");
+                L_InterimSalesHeader.Validate(Address, SellToCustomer.Address);
+                L_InterimSalesHeader.Validate("Address 2", SellToCustomer."Address 2");
+                L_InterimSalesHeader.Validate(City, SellToCustomer.City);
+                L_InterimSalesHeader.Validate("Post Code", SellToCustomer."Post Code");
+                L_InterimSalesHeader.Validate("Sell to Country", SellToCustomer."Country/Region Code");
+                if ChannelPartner.Location <> '' then
+                    L_InterimSalesHeader.Validate("Location Code", ChannelPartner.Location)
+                else
+                    L_InterimSalesHeader.validate("Location Code", SellToCustomer."Location Code");
+
+                L_InterimSalesHeader.Validate("MultiLine Order No.", P_InterimSalesHeader."MultiLine Order No.");
+                L_InterimSalesHeader.Validate("Shipment Method Code", SellToCustomer."Shipment Method Code");
+                L_InterimSalesHeader.Validate("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
+                L_InterimSalesHeader.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
+                L_InterimSalesHeader.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
+                L_InterimSalesHeader.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
+
+                //Update Shipment Date++
+                L_Date.Reset();
+                L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                L_Date.SetRange(L_Date."Period Start", Today);
+                if L_Date.FindFirst() then begin
+                    if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                        if L_InterimSalesHeader."Weekend Ship Agent Serv Code" <> '' then
+                            //Update Saturday++
+                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                        else begin
+                            //Update Monday
+                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
+                        end;
+                    end else
+                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today));
+                end;
             end;
-            L_InterimSalesHeader."Customer Price Group" := SellToCustomer."Customer Price Group";
-
-            BillToCustomer.Reset();
-            BillToCustomer.SetRange("No.", SellToCustomer."Bill-to Customer No.");
-            if BillToCustomer.FindFirst() then begin
-                L_InterimSalesHeader."Bill-to Customer No." := BillToCustomer."No.";
-                L_InterimSalesHeader."Bill- to Name" := BillToCustomer.Name;
-                L_InterimSalesHeader."Bill-to County" := P_InterimSalesHeader."Bill-to County";
-                L_InterimSalesHeader."Bill-to County" := BillToCustomer.County;
-            end;
-
-            L_InterimSalesHeader."Job Reference" := P_InterimSalesHeader."Job Reference";
-            L_InterimSalesHeader."Package Tracking No." := P_InterimSalesHeader."Package Tracking No.";
-            L_InterimSalesHeader."Web Shipping Agent" := P_InterimSalesHeader."Web Shipping Agent";
-            L_InterimSalesHeader."Web Shipment Method" := P_InterimSalesHeader."Web Shipment Method";
-            L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";
-            L_InterimSalesHeader."Currency Code" := P_InterimSalesHeader."Currency Code";
-            L_InterimSalesHeader.VALIDATE("Buyer Email", P_InterimSalesHeader."Buyer Email");
-            L_InterimSalesHeader."Buyer Name" := P_InterimSalesHeader."Buyer Name";
-            L_InterimSalesHeader.VALIDATE("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
-            L_InterimSalesHeader.VALIDATE("No. Of Parcels", P_InterimSalesHeader."No. Of Parcels");
-            L_InterimSalesHeader."Earliest Delivery date" := P_InterimSalesHeader."Earliest Delivery date";
-            L_InterimSalesHeader."Promised Delivery Date" := P_InterimSalesHeader."Promised Delivery Date";
-            L_InterimSalesHeader."Order Placed At" := CurrentDateTime;
-            L_InterimSalesHeader."Order Created On" := CurrentDateTime;
-            L_InterimSalesHeader."User ID" := UserId;
-            L_InterimSalesHeader."File Name" := P_InterimSalesHeader."File Name";
-            L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No.";
-            L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");
-            L_InterimSalesHeader.Validate("Order Discount Amount", P_InterimSalesHeader."Order Discount Amount");
-            L_InterimSalesHeader.Validate("Fullfillment Channel", P_InterimSalesHeader."Fullfillment Channel");
-            L_InterimSalesHeader.Validate("Web Customer No.", P_InterimSalesHeader."Web Customer No.");
-            L_InterimSalesHeader.Validate("Order Status", P_InterimSalesHeader."Order Status");
-            L_InterimSalesHeader.Validate(order_id, P_InterimSalesHeader.order_id);
-            L_InterimSalesHeader.Insert(True);
-
-            //Insert Line++
-            If P_InterimSalesLine.FindSet() then begin
-                repeat
-                    InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent);
-                until P_InterimSalesLine.Next() = 0;
-            end;
-
-            //Code to Validate order
-            Sigma_OrderValidations(L_InterimSalesHeader);
         end;
+
+        L_ShiptoAddress.Reset();
+        L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
+        if L_ShiptoAddress.FindFirst() then begin
+            L_InterimSalesHeader.Validate("Ship-to Code", L_ShiptoAddress.Code);
+            L_InterimSalesHeader.VALIDATE("Ship-to Name", L_ShiptoAddress.Name);
+            L_InterimSalesHeader.VALIDATE("Ship-to Address", L_ShiptoAddress.Address);
+            L_InterimSalesHeader.VALIDATE("Ship-to Address 2", L_ShiptoAddress."Address 2");
+            L_InterimSalesHeader.VALIDATE("Ship-to City", L_ShiptoAddress.City);
+            L_InterimSalesHeader.VALIDATE("Ship-to County", L_ShiptoAddress.County);
+            L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", L_ShiptoAddress."Country/Region Code");
+            L_InterimSalesHeader.VALIDATE("Ship-to Post Code", L_ShiptoAddress."Post Code");
+            L_InterimSalesHeader.VALIDATE("Ship-to Phone", L_ShiptoAddress."Phone No.");
+            L_InterimSalesHeader.VALIDATE("Ship-to Email", L_ShiptoAddress."E-Mail");
+            L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+        end else begin
+            L_InterimSalesHeader.VALIDATE("Ship-to Name", SellToCustomer.Name);
+            L_InterimSalesHeader.VALIDATE("Ship-to Address", SellToCustomer.Address);
+            L_InterimSalesHeader.VALIDATE("Ship-to Address 2", SellToCustomer."Address 2");
+            L_InterimSalesHeader.VALIDATE("Ship-to City", SellToCustomer.City);
+            L_InterimSalesHeader.VALIDATE("Ship-to County", SellToCustomer.County);
+            L_InterimSalesHeader.VALIDATE("Ship-to Country/Region Code", SellToCustomer."Country/Region Code");
+            L_InterimSalesHeader.VALIDATE("Ship-to Post Code", SellToCustomer."Post Code");
+            L_InterimSalesHeader.VALIDATE("Ship-to Phone", SellToCustomer."Phone No.");
+            L_InterimSalesHeader.VALIDATE("Ship-to Email", SellToCustomer."E-Mail");
+            L_InterimSalesHeader."Customer Posting Group" := SellToCustomer."Customer Posting Group";
+        end;
+        L_InterimSalesHeader."Customer Price Group" := SellToCustomer."Customer Price Group";
+
+        BillToCustomer.Reset();
+        BillToCustomer.SetRange("No.", SellToCustomer."Bill-to Customer No.");
+        if BillToCustomer.FindFirst() then begin
+            L_InterimSalesHeader."Bill-to Customer No." := BillToCustomer."No.";
+            L_InterimSalesHeader."Bill- to Name" := BillToCustomer.Name;
+            L_InterimSalesHeader."Bill-to County" := P_InterimSalesHeader."Bill-to County";
+            L_InterimSalesHeader."Bill-to County" := BillToCustomer.County;
+        end;
+
+        L_InterimSalesHeader."Web Shipment Method" := P_InterimSalesHeader."Web Shipment Method";
+        L_InterimSalesHeader."Payment Method" := P_InterimSalesHeader."Payment Method";
+        L_InterimSalesHeader."Currency Code" := P_InterimSalesHeader."Currency Code";
+        L_InterimSalesHeader.Validate("Channel Order ID", P_InterimSalesHeader."Channel Order ID");
+        L_InterimSalesHeader."Order Placed At" := CurrentDateTime;
+        L_InterimSalesHeader."Order Created On" := CurrentDateTime;
+        L_InterimSalesHeader."User ID" := UserId;
+        L_InterimSalesHeader."File Name" := P_InterimSalesHeader."File Name";
+        L_InterimSalesHeader."External Document No." := P_InterimSalesHeader."External Document No.";
+        L_InterimSalesHeader.Validate("Order Amount", P_InterimSalesHeader."Order Amount");
+        L_InterimSalesHeader.Validate("Order Discount Amount", P_InterimSalesHeader."Order Discount Amount");
+        L_InterimSalesHeader.Insert(True);
+
+        //Insert Line++
+        If P_InterimSalesLine.FindSet() then begin
+            repeat
+                InsertSalesLine(L_InterimSalesHeader, P_InterimSalesLine, ChannelPartner, Discountperscent);
+            until P_InterimSalesLine.Next() = 0;
+        end;
+
+        //Code to Validate order
+        Sigma_OrderValidations(L_InterimSalesHeader);
     End;
 
     procedure CreateWebOrder(var P_InterimSalesHeader: Record "Interim Sales Header" temporary; var P_InterimSalesLine: Record "Interim Sales Line" temporary; P_ShipmentTracking: Record "Shipment Tracking" temporary; var P_PaymentDetail: Record "Channel Media" temporary)
@@ -782,8 +762,6 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesLine."Item Category Code" := Rec_Item."Item Category Code";
         end;
 
-
-
         L_InterimSalesLine.Description2 := P_InterimSalesLine.Description2;
         L_InterimSalesLine."NAV Variant code" := GetNavVariantCode(P_InterimSalesLine."Channel SKU", P_ChannelPartner, P_InterimSalesLine."Channel Identifier", P_InterimSalesHeader."Sell-to Customer No."); //Commneted by Abdul for Performance issue (Not using Variant code on Web Order for Sigma)
         L_InterimSalesLine.Validate(Quantity, P_InterimSalesLine.Quantity);
@@ -888,21 +866,21 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesH: Record "Interim Sales Header";
         L_HandeltedInterimSalesH: Record "Handled Interim Sales Header";
     begin
-        L_InterimSalesH.RESET;
-        L_InterimSalesH.SETRANGE("Trade Partner Code", P_ChannelCode);
-        L_InterimSalesH.SETRANGE("Channel Order ID", P_ChannelOrderId);
-        IF L_InterimSalesH.FINDFIRST THEN BEGIN
-            EXIT(FALSE);
+        L_InterimSalesH.Reset();
+        L_InterimSalesH.SetRange("Trade Partner Code", P_ChannelCode);
+        L_InterimSalesH.SetRange("Channel Order ID", P_ChannelOrderId);
+        IF L_InterimSalesH.FindFirst() THEN BEGIN
+            exit(FALSE);
         END;
 
-        L_HandeltedInterimSalesH.RESET;
-        L_HandeltedInterimSalesH.SETRANGE("Trade Partner Code", P_ChannelCode);
-        L_HandeltedInterimSalesH.SETRANGE("Channel Order ID", P_ChannelOrderId);
-        IF L_HandeltedInterimSalesH.FINDFIRST THEN BEGIN
-            EXIT(FALSE);
+        L_HandeltedInterimSalesH.Reset();
+        L_HandeltedInterimSalesH.SetRange("Trade Partner Code", P_ChannelCode);
+        L_HandeltedInterimSalesH.SetRange("Channel Order ID", P_ChannelOrderId);
+        IF L_HandeltedInterimSalesH.FindFirst() THEN BEGIN
+            exit(FALSE);
         END;
 
-        EXIT(TRUE);
+        exit(TRUE);
     end;
 
     procedure Sigma_OrderValidations(var P_InterimSalesHeader: Record "Interim Sales Header")
