@@ -312,6 +312,7 @@ codeunit 90066 "Create Consolidate SO"
 
         if InsertedSH."Knapp Order" = true then begin
             InsertedSH.Validate("Posting No.", NoSeriesManagement.GetNextNo(InsertedSH."Posting No. Series", WORKDATE, TRUE));
+            NoSeriesManagement.SaveState();
         end;
 
         InsertedSH.Modify();

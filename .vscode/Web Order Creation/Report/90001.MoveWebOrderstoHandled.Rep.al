@@ -13,7 +13,7 @@ report 90001 "Move Scanned Order to Handled"
 
             trigger OnAfterGetRecord()
             begin
-                "Interim Sales Header".SetAutoCalcFields("Sales Order Created");
+                "Interim Sales Header".CalcFields("Sales Order Created");
                 if ("Interim Sales Header".status = "Interim Sales Header".status::Rejected) or ("Interim Sales Header"."Sales Order Created" = true) then
                     ProcessData("Interim Sales Header");
             end;

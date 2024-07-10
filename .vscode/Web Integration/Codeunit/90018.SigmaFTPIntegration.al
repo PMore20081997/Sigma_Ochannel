@@ -313,9 +313,10 @@ codeunit 90018 "GOY File Integration"
             Xmlport.Export(Xmlport::"Export File", FileOutStream, L_Line);
             TempBlob.CREATEINSTREAM(FileInStream);
 
-            outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + '_' + L_Line."ET Access Code" + '_' + Header."Channel Order ID";
+            //outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + '_' + L_Line."ET Access Code" + '_' + Header."Channel Order ID";
+            outputFileName := Header."Channel Order ID";
 
-            //Procedure to Upload Reply (Order Acknowledgement) File to Container and then Delete File From Order Container
+            //Procedure to Upload Reply (Order Acknowledgement) File to Reply Container
             UploadFileToReplyAzureContainer(FileInStream, outputFileName, P_ChannelCode);
         end;
     end;
