@@ -203,13 +203,13 @@ codeunit 90066 "Create Consolidate SO"
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
     begin
-        //For KNAAP Order+++
+        //For Manual Order++
         Temporary_SalesLine.Reset();
-        Temporary_SalesLine.SetRange("Knapp Line", true);
+        Temporary_SalesLine.SetRange("Knapp Line", false);
         if Temporary_SalesLine.FindSet() then begin
             repeat
                 Temporary_SalesLine_ForLoop.Reset();
-                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
                 Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
                 Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
                 Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
@@ -234,13 +234,13 @@ codeunit 90066 "Create Consolidate SO"
             until Temporary_SalesLine.Next() = 0;
         end;
 
-        //For Manual Order++
+        //For KNAAP Order+++
         Temporary_SalesLine.Reset();
-        Temporary_SalesLine.SetRange("Knapp Line", false);
+        Temporary_SalesLine.SetRange("Knapp Line", true);
         if Temporary_SalesLine.FindSet() then begin
             repeat
                 Temporary_SalesLine_ForLoop.Reset();
-                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
                 Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
                 Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
                 Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");

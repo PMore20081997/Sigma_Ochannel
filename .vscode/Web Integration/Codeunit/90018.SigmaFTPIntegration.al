@@ -38,7 +38,7 @@ codeunit 90018 "GOY File Integration"
         OutgoingContainerName: Text;
         OutgoingSasToken: Text;
         StorageAccountName: Text;
-        SharedAccessKey: Text;
+        SharedAccessKey: SecretText;
         ArchiveContainerName: Text;
 
     local procedure GetCredentials(ChannelCode: Code[20])
