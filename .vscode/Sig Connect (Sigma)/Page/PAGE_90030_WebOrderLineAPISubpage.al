@@ -13,7 +13,7 @@ page 90030 "Web Order Line Subpage"
         {
             repeater(lines)
             {
-                field(id; Format(Rec.SystemId, 0, 4).ToLower())
+                field(id; Rec.SystemId)
                 {
                     ApplicationArea = All;
                 }

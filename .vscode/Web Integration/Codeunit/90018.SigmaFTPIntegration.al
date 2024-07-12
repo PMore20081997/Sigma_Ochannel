@@ -88,6 +88,9 @@ codeunit 90018 "GOY File Integration"
                         if CU_WebOrderMgmt.CheckOrderNotExist(P_ChannelCode, ABSContainerContent."Full Name") then begin
                             if not CreateOrder(BlobInstream, P_ChannelCode, ABSContainerContent."Full Name") then
                                 Error(GetLastErrorText() + '\For File - ' + ABSContainerContent."Full Name");
+                        end
+                        else begin
+                            UploadFileToArchiveAzureContainer(BlobInstream, ABSContainerContent."Full Name", P_ChannelCode);
                         end;
                     end;
                 until ABSContainerContent.Next() = 0;

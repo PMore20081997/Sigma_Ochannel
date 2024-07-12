@@ -1643,7 +1643,10 @@ codeunit 90000 "Web Order Mgt"
 
         PartnerErrorLog."Error Code" := _ErrorCode;
         if P_Header = false then begin
-            PartnerErrorLog."Item No." := P_InterimSalesLine."No.";
+            If P_InterimSalesLine."No." <> '' then
+                PartnerErrorLog."Item No." := P_InterimSalesLine."No."
+            else
+                PartnerErrorLog."Item No." := CopyStr(P_InterimSalesLine."Channel SKU", 1, 20);
             PartnerErrorLog.Attribute := _AttributeCode;
             L_ProductLevelResponse.Reset();
             L_ProductLevelResponse.SetRange("Error Code", _ErrorCode);
@@ -2516,6 +2519,7 @@ codeunit 90000 "Web Order Mgt"
                             ShippingAgentRestrictItem.SetRange("Shipping Agent Service Code", P_ShippingAgentServiceCode);
                             ShippingAgentRestrictItem.SetRange("Attribute ID", L_ItemAttribute.ID);
                             ShippingAgentRestrictItem.SetRange("Attribute value ID", L_RecItemAttValMap."Item Attribute Value ID");
+                            ShippingAgentRestrictItem.SetRange("QAU Approved", true);
                             if ShippingAgentRestrictItem.FindFirst() then begin
                                 //Error('CD and Fridge items are not allowed for Shipping agent service code %1.Item No. %2', _ShippingAgentServiceCode, _ItemNo);
                                 exit(true);
