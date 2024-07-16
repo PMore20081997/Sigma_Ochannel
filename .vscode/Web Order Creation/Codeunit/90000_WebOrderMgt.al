@@ -915,6 +915,8 @@ codeunit 90000 "Web Order Mgt"
                 exit;
 
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
+            if L_TradePartner."Customer Trend Code" = true then
+                exit;
 
             PartnerErrorLog.RESET;
             PartnerErrorLog.SETRANGE("Document No.", P_InterimSalesHeader."No.");

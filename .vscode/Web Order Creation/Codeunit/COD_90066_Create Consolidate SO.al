@@ -301,12 +301,14 @@ codeunit 90066 "Create Consolidate SO"
         //Update Shipment date and Location++
         InsertedSH.Validate("Shipping Agent Code", _Temporary_SalesLine."Shipping Agent Code");
         InsertedSH.Validate("Shipping Agent Service Code", _Temporary_SalesLine."Shipping Agent Service Code");
-        L_Customer.Reset();
-        L_Customer.SetRange("No.", _Temporary_SalesLine."Sell-to Customer No.");
-        if L_Customer.FindFirst() then begin
-            InsertedSH.Validate("Weekend Shipping Agent Code", L_Customer."Weekend Shipping Agent Code");
-            InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", L_Customer."Weekend Ship. Agnt. Serv. Code");
-        end;
+
+        // L_Customer.Reset();
+        // L_Customer.SetRange("No.", _Temporary_SalesLine."Sell-to Customer No.");
+        // if L_Customer.FindFirst() then begin
+        //     InsertedSH.Validate("Weekend Shipping Agent Code", L_Customer."Weekend Shipping Agent Code");
+        //     InsertedSH.Validate("Weekend Ship. Agnt. Serv. Code", L_Customer."Weekend Ship. Agnt. Serv. Code");
+        // end;
+
         InsertedSH.Validate("Location Code", _Temporary_SalesLine."Location Code");
         InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date");
 
