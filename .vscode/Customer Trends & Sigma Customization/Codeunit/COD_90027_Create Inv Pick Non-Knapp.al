@@ -1,0 +1,27 @@
+codeunit 90027 "Create Inv Pick Non-Knapp"
+{
+    trigger OnRun()
+    var
+        L_SalesHeader: Record "Sales Header";
+        WhseRequest: Record "Warehouse Request";
+    begin
+        Clear(L_SalesHeader);
+        L_SalesHeader.Reset();
+        L_SalesHeader.CalcFields("Inv. Pick Exist");
+        L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+        L_SalesHeader.SetRange("Knapp Order", false);
+        L_SalesHeader.SetRange("Web Order", true);
+        L_SalesHeader.SetRange("Inv. Pick Exist", false);
+        L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Released);
+        if L_SalesHeader.FindSet() then begin
+            repeat
+                WhseRequest.Reset();
+                WhseRequest.SetCurrentKey("Source Document", "Source No.");
+                WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
+                WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
+                REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
+                Commit();
+            until L_SalesHeader.Next() = 0;
+        end;
+    end;
+}
