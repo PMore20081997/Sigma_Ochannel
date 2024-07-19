@@ -1,10 +1,5 @@
 pageextension 90020 SalesOrdListExt extends "Sales Order List"
 {
-    layout
-    {
-        // Add changes to page layout here
-    }
-
     actions
     {
         // addafter("&Print")
@@ -62,8 +57,6 @@ pageextension 90020 SalesOrdListExt extends "Sales Order List"
                 end;
             }
 
-
-
             //GHST Customization++
             action("Update Variant On Lines")
             {
@@ -75,19 +68,22 @@ pageextension 90020 SalesOrdListExt extends "Sales Order List"
                 var
                     L_SalesHeader: Record "Sales Header";
                     UdateVariantonSO: Codeunit "Udate Variant on SO";
+                    L_Location: Record Location;
                 begin
                     L_SalesHeader.Reset();
                     CurrPage.SetSelectionFilter(L_SalesHeader);
                     L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
-                    L_SalesHeader.SetRange("Web Order", true);
-                    if L_SalesHeader.FindSet() then
-                        UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
-
+                    if L_SalesHeader.FindSet() then begin
+                        repeat
+                            L_Location.Reset();
+                            if L_Location.Get(L_SalesHeader."Location Code") then begin
+                                if (L_SalesHeader."Web Order" = true) or (L_Location."Saleable Location" = true) then
+                                    UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
+                            end;
+                        until L_SalesHeader.Next() = 0;
+                    end;
                 end;
             }
         }
     }
-
-    var
-        myInt: Integer;
 }

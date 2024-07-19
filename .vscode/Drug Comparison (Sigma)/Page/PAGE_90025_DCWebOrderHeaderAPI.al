@@ -74,11 +74,15 @@ page 90025 "DC Web Order Header API Card"
         NoSeriesManagement: Codeunit "No. Series - Batch";
         L_Date: Record Date;
         L_CustomerRef: Record "Customer Reference";
+        OrderResponse: Text;
     begin
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
             IsExist := CU_WebOrderManagement.CheckOrderNotExist(Rec."Trade Partner Code", Rec."Channel Order ID");
             if IsExist = false then begin
+                //Clear(OrderResponse);
+                //OrderResponse := GenerateOrderResponse(Rec."Trade Partner Code", Rec."Channel Order ID");
+                //Error(OrderResponse);
                 Error(StrSubstNo('Order Already Exists With Order Id %1 For Channel Partner %2', Rec."Channel Order ID", Rec."Trade Partner Code"));
             end;
 
@@ -406,5 +410,55 @@ page 90025 "DC Web Order Header API Card"
                 end;
             end;
         end;
+    end;
+
+    local procedure GenerateOrderResponse(ChannelCode: Code[250]; ChannelOrderID: Code[250]): Text
+    var
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        OrderResponse: Text;
+        ProductResponse: Text;
+    begin
+        Clear(OrderResponse);
+        Clear(ProductResponse);
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
+        L_InterimSalesHeader.SetRange("Trade Partner Code", ChannelCode);
+        L_InterimSalesHeader.SetRange("Channel Order ID", ChannelOrderID);
+        if L_InterimSalesHeader.FindFirst() then begin
+            ProductResponse := GenerateProductResponse(L_InterimSalesHeader);
+
+            OrderResponse := StrSubstNo('{"value": [{"ChannelCode": "%1","ChannelOrderId": "%2","OrderReferenceNo": "%3",' +
+            '"DocumentType": "Order","ETAccessCode": "%4","SelltoCustomerNo": "%5","DocumentDate": "%6",' +
+            '"ReasonCode": "%7","ReasonMessage": "%8","lines": [%9]}]}', ChannelCode, ChannelOrderID, L_InterimSalesHeader."No.",
+            L_InterimSalesHeader."ET Access Code", L_InterimSalesHeader."Sell-to Customer No.", L_InterimSalesHeader."Document Date",
+            L_InterimSalesHeader."Reason Code", L_InterimSalesHeader."Reason Message", ProductResponse);
+        end;
+
+        exit(OrderResponse);
+    end;
+
+    local procedure GenerateProductResponse(P_InterimSalesHeader: Record "Interim Sales Header"): Text
+    var
+        L_InterimSalesLine: Record "Interim Sales Line";
+        ProductResponse: Text;
+    begin
+        Clear(ProductResponse);
+        L_InterimSalesLine.Reset();
+        L_InterimSalesLine.SetRange("Document Type", P_InterimSalesHeader."Document Type");
+        L_InterimSalesLine.SetRange("Document No", P_InterimSalesHeader."No.");
+        if L_InterimSalesLine.FindSet() then begin
+            repeat
+                ProductResponse += StrSubstNo('{"DocumentNo": "%1","TradePartnerCode": "%2","DocumentType": "Order",' +
+                '"Type": "%3","LineNo": %4,"No": "%5","Description": "%6","ChannelItemId": %7,"Quantity": %8,"Qty_to_Deliver": %9,' +
+                '"ReasonCode": "%10","ReasonMessage": "%11"},', L_InterimSalesLine."Document No", P_InterimSalesHeader."Trade Partner Code",
+                Format(L_InterimSalesLine.Type), L_InterimSalesLine."Line No.", L_InterimSalesLine."No.", L_InterimSalesLine.Description,
+                L_InterimSalesLine."Channel Item Id", L_InterimSalesLine.Quantity, L_InterimSalesLine."Qty. to Deliver",
+                L_InterimSalesLine."Reason Code", L_InterimSalesLine."Reason Message");
+            until L_InterimSalesLine.Next() = 0;
+        end;
+        if ProductResponse <> '' then
+            ProductResponse := ProductResponse.TrimEnd(',');
+
+        exit(ProductResponse);
     end;
 }

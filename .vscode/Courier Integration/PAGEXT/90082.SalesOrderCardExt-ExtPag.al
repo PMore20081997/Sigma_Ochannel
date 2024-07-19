@@ -46,15 +46,17 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 trigger OnAction()
                 var
                     UdateVariantonSO: Codeunit "Udate Variant on SO";
+                    L_Location: Record Location;
                 begin
-                    //Check Order Type++
-                    Rec.TestField("Web Order", true);
-
                     //Check Status++
                     Rec.TestField(Status, Rec.Status::Open);
 
                     //Update Variant Code++
-                    UdateVariantonSO.UpdateVariantOnSalesOrder(Rec);
+                    L_Location.Reset();
+                    if L_Location.Get(Rec."Location Code") then begin
+                        if (Rec."Web Order" = true) or (L_Location."Saleable Location" = true) then
+                            UdateVariantonSO.UpdateVariantOnSalesOrder(Rec);
+                    end;
                 end;
             }
 
