@@ -78,9 +78,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         RecRef: RecordRef;
         UdateVariantonSO: Codeunit "Udate Variant on SO";
         ApprovalMgmt: Codeunit "Approvals Mgmt.";
-        Counter: Integer;
     begin
-        Clear(Counter);
         Clear(L_SalesHeader);
         L_SalesHeader.Reset();
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
@@ -90,7 +88,6 @@ codeunit 90025 "Manual/KNAAP SO Process"
         L_SalesHeader.SetFilter("Document Date", '%1', WorkDate());
         if L_SalesHeader.FindSet() then begin
             repeat
-                Counter += 1;
                 Rec_SalesHeader.Reset();
                 Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
                 Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
@@ -105,10 +102,6 @@ codeunit 90025 "Manual/KNAAP SO Process"
                         RecRef.GetTable(Rec_SalesHeader);
                         BatchProcessingMgt.BatchProcess(RecRef, Enum::"Error Handling Options"::"Show Notification");
                     end;
-
-                    //Code to process only 500 Orders then exit the code
-                    if Counter = 500 then
-                        exit;
                 end;
             until L_SalesHeader.Next() = 0;
         end;

@@ -178,7 +178,6 @@ codeunit 90024 "Sales Quota Qty Validation"
         end;
         #endregion
 
-
         #Region Per Day all 12 validation
         //-------------1: Selected Customer, Selected Item, ErrorCode(SCSIPDQ)-------------
         RemainingQuantity := PerDaySelCustomerSelItemQty(_InterimSalesLine, _InterimSalesHeader, Recitem."Item Category Code");
@@ -251,7 +250,6 @@ codeunit 90024 "Sales Quota Qty Validation"
             end;
         end;
         #endregion
-
 
         #Region Per Month all 12 validation
         //-------------1: Selected Customer, Selected Item, ErrorCode(SCSIPMQ)-------------
@@ -346,7 +344,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //Calculate Existing Order Quantity++
@@ -398,7 +396,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -450,7 +448,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -516,7 +514,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                         //PerDay Web orders Qty++++++
@@ -599,7 +597,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                         //PerDay Web orders Qty++++++
@@ -684,7 +682,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                         //PerDay Web orders Qty++++++
@@ -752,7 +750,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -800,7 +798,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -849,7 +847,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -899,7 +897,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -948,7 +946,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //PerDay Web orders Qty++++++
@@ -998,7 +996,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Exception Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") and (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
                 //Perday Web orders Qty++++++
@@ -1065,7 +1063,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1151,7 +1149,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1237,7 +1235,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1307,7 +1305,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1358,7 +1356,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1410,7 +1408,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0); 
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1461,7 +1459,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1511,7 +1509,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1562,7 +1560,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1615,7 +1613,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1669,7 +1667,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1724,7 +1722,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Month");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
@@ -1778,7 +1776,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //Perday Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");
@@ -1826,7 +1824,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");
@@ -1873,7 +1871,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");
@@ -1937,7 +1935,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
@@ -2018,7 +2016,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0) ;
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
@@ -2100,7 +2098,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
@@ -2168,7 +2166,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");
@@ -2218,7 +2216,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");
@@ -2267,7 +2265,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");
@@ -2315,7 +2313,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(L_DayWiseWebOrderQty.Document_Type, _InterimSalesHeader."Document Type");
@@ -2362,7 +2360,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");
@@ -2408,7 +2406,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Day");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             //PerDay Web orders Qty++++++
             L_DayWiseWebOrderQty.SetRange(Document_Type, _InterimSalesHeader."Document Type");
@@ -2452,7 +2450,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2474,7 +2472,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2495,7 +2493,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2518,7 +2516,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2540,7 +2538,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2571,7 +2569,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", ItemCat);
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
                     exit(L_RemainingQuantity);
@@ -2603,7 +2601,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
                     exit(L_RemainingQuantity);
@@ -2636,7 +2634,7 @@ codeunit 90024 "Sales Quota Qty Validation"
                 L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
                 L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-                L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+                //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
                     exit(L_RemainingQuantity);
@@ -2659,7 +2657,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Ship-to Code", _InterimSalesHeader."Ship-to Code");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2679,7 +2677,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", ItemCat);
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2699,7 +2697,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Type", L_MaxOrderQty."Item Type"::"All Items");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;
@@ -2720,7 +2718,7 @@ codeunit 90024 "Sales Quota Qty Validation"
         L_MaxOrderQty.SetRange("Item Code", _InterimSalesLine."No.");
         L_MaxOrderQty.SetRange("Quantity Restriction", L_MaxOrderQty."Quantity Restriction"::"Per Order");
         L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
-        L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
+        //L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
         IF L_MaxOrderQty.FINDFIRST THEN BEGIN
             L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity";
         end;

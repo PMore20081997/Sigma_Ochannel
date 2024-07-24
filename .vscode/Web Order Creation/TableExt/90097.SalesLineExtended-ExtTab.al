@@ -13,7 +13,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 L_SalesHeader.SetRange("Document Type", Rec."Document Type");
                 L_SalesHeader.SetRange("No.", Rec."Document No.");
                 if L_SalesHeader.FindFirst() then begin
-                    if L_SalesHeader."Sheet Name" <> '' then begin
+                    if (L_SalesHeader."Sheet Name" <> '') and (Rec."Variant Code" <> '') then begin
                         if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
                             if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
                                 Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
@@ -33,7 +33,7 @@ tableextension 90097 "Sales Line Extended" extends "Sales Line"
                 L_SalesHeader.SetRange("Document Type", Rec."Document Type");
                 L_SalesHeader.SetRange("No.", Rec."Document No.");
                 if L_SalesHeader.FindFirst() then begin
-                    if L_SalesHeader."Sheet Name" <> '' then begin
+                    if (L_SalesHeader."Sheet Name" <> '') and (Rec."Variant Code" <> '') then begin
                         if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
                             if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
                                 Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");

@@ -13,7 +13,7 @@
             "startupObjectType": "Page",
             "startupObjectId": 22,
             //"environmentName": "Sigma_UAT",
-            "environmentName": "BetaCopy_170724",
+            "environmentName": "Copy_24072024",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"Synchronize"
         }
