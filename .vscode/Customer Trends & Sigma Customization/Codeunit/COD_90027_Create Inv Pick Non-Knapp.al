@@ -13,6 +13,7 @@ codeunit 90027 "Create Inv Pick Non-Knapp"
         L_SalesHeader.SetRange("Web Order", true);
         L_SalesHeader.SetRange("Inv. Pick Exist", false);
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Released);
+        L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
         if L_SalesHeader.FindSet() then begin
             repeat
                 WhseRequest.Reset();

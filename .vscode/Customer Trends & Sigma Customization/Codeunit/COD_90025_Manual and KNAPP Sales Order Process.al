@@ -43,7 +43,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
         L_SalesHeader.SetRange("Web Order", true);
         L_SalesHeader.SetRange("Knapp Order", true);
-        L_SalesHeader.SetFilter("Document Date", '%1', WorkDate());
+        L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
         if L_SalesHeader.FindSet() then begin
             repeat
                 Counter += 1;
@@ -85,7 +85,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
         L_SalesHeader.SetRange("Web Order", true);
         L_SalesHeader.SetRange("Knapp Order", false);
-        L_SalesHeader.SetFilter("Document Date", '%1', WorkDate());
+        L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
         if L_SalesHeader.FindSet() then begin
             repeat
                 Rec_SalesHeader.Reset();

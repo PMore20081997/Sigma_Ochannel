@@ -15,6 +15,33 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
     {
         addafter(Release)
         {
+
+            action("Bulk Delete")
+            {
+                ApplicationArea = All;
+                Promoted = true;
+                PromotedIsBig = true;
+                Image = Delete;
+                trigger OnAction()
+                var
+                    L_SalesHeader: Record "Sales Header";
+                begin
+                    Clear(L_SalesHeader);
+                    L_SalesHeader := Rec;
+                    CurrPage.SetSelectionFilter(L_SalesHeader);
+
+                    L_SalesHeader.SetRange("Web Order", true);
+                    L_SalesHeader.SetRange("Knapp Order", false);
+                    L_SalesHeader.SetFilter("Posting No.", '<>%1', '');
+                    if L_SalesHeader.FindSet() then begin
+                        repeat
+                            L_SalesHeader.Delete(true);
+                            Commit();
+                        until L_SalesHeader.Next() = 0;
+                    end;
+                end;
+            }
+
             action("EDI File")
             {
                 ApplicationArea = All;
