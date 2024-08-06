@@ -10,7 +10,7 @@ page 90015 "Customer Price Service"
     {
         area(Content)
         {
-            group(GroupName)
+            repeater("Customer Prices")
             {
                 field("Source Type"; Rec."Source Type")
                 {

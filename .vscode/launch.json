@@ -12,8 +12,8 @@
             "environmentType": "Sandbox",
             "startupObjectType": "Page",
             "startupObjectId": 22,
-            //"environmentName": "BetaCopy_150724",
-            "environmentName": "Copy_25072024",
+            "environmentName": "KNAPP_DEV",
+            //"environmentName": "SIGCONNECT_DEV",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"Synchronize"
         }

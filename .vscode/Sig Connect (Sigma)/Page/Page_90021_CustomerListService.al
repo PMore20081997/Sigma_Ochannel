@@ -6,12 +6,11 @@ page 90021 "Customer List Service"
     SourceTable = "Interim Customer";
     SourceTableView = where("Channel Code" = filter('SIGCONNECT'));
 
-
     layout
     {
         area(Content)
         {
-            group(GroupName)
+            repeater("Customer List")
             {
                 field("Sell to Customer No."; Rec."No.")
                 {

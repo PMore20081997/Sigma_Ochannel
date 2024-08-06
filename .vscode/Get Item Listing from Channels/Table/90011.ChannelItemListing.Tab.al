@@ -118,9 +118,7 @@ table 90011 "Channel Item Listing"
             var
             begin
                 if Rec.Status = Rec.Status::Inactive then
-                    Rec."Item Sync" := false
-                else
-                    Rec."Item Sync" := true;
+                    Rec."Item Sync" := false;
             end;
         }
         field(19; FeedType; Option)

@@ -11,9 +11,7 @@ tableextension 90030 "OC Item Reference" extends "Item Reference"
             var
             begin
                 if Rec."Listing Status Setting" = Rec."Listing Status Setting"::Inactive then
-                    Rec.Synced := false
-                else
-                    Rec.Synced := true;
+                    Rec.Synced := false;
             end;
         }
         field(90001; "Listing Status"; Option)

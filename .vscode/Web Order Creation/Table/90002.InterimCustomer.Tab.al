@@ -65,19 +65,19 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Transaction No.', ENG = 'Transaction No.';
         }
-        field(12; "Customer Posting Group"; Code[10])
+        field(12; "Customer Posting Group"; Code[20])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Customer Posting Group', ENG = 'Customer Posting Group';
             TableRelation = "Customer Posting Group";
         }
-        field(13; "Gen. Bus. Posting Group"; Code[10])
+        field(13; "Gen. Bus. Posting Group"; Code[20])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Gen. Bus. Posting Group', ENG = 'Gen. Bus. Posting Group';
             TableRelation = "Gen. Business Posting Group";
         }
-        field(14; "VAT Bus. Posting Group"; Code[10])
+        field(14; "VAT Bus. Posting Group"; Code[20])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'VAT Bus. Posting Group', ENG = 'VAT Bus. Posting Group';

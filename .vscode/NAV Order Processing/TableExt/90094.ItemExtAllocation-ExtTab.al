@@ -51,5 +51,62 @@ tableextension 90094 "Item Ext Allocation" extends Item
             OptionMembers = ,CONTINUED,DISCONTINUED;
             DataClassification = ToBeClassified;
         }
+        modify("Unit Price")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                if xRec."Unit Price" <> Rec."Unit Price" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing."Unit Price" := Rec."Unit Price";
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+            end;
+        }
+        modify(RRP)
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                if xRec.RRP <> Rec.RRP then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.RRP := Rec.RRP;
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+            end;
+        }
+        modify(Description)
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                if xRec.Description <> Rec.Description then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Description := Rec.Description;
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+            end;
+        }
     }
 }

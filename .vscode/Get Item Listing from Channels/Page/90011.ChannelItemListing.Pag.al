@@ -18,10 +18,12 @@ page 90011 "Channel Item Listing"
                 field("Channel Code"; Rec."Channel Code")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("ASIN No"; Rec."ASIN No")
                 {
@@ -33,52 +35,64 @@ page 90011 "Channel Item Listing"
                 {
                     ApplicationArea = All;
                     CaptionML = ENU = 'Nav Item No', ENG = 'Nav Item No';
+                    Editable = false;
                 }
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("NAV Variant"; Rec."NAV Variant")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Channel Variant"; Rec."Channel Variant")
                 {
                     ApplicationArea = All;
                     Caption = 'Variant Id';
+                    Editable = false;
                 }
                 field("Item Category Code"; Rec."Item Category Code")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Pack Size"; Rec."Pack Size")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Channel Inventory"; Rec."Channel Inventory")
                 {
                     ApplicationArea = All;
                     Caption = 'Free Qty';
+                    Editable = false;
                 }
                 field("Physical Inventory"; Rec."Physical Inventory")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Allcoated on SO"; Rec."Allcoated on SO")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Web Orders Qty"; Rec."Web Orders Qty")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field(RRP; Rec.RRP)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
                 field(Status; Rec.Status)
                 {
@@ -103,6 +117,7 @@ page 90011 "Channel Item Listing"
                 field(Remarks; Rec.Remarks)
                 {
                     ApplicationArea = All;
+                    Editable = false;
                 }
             }
         }
