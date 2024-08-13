@@ -283,6 +283,8 @@ codeunit 90066 "Create Consolidate SO"
         //InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
         InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(L_GeneralSetupChannels."Consolidated Sales No. Series", WORKDATE, TRUE));
         NoSeriesManagement.SaveState();
+        InsertedSH.Validate("IRP Order", true);
+        InsertedSH.Validate("Web Order", true);
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
         InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");
         InsertedSH.Validate("Order Date", _Temporary_SalesLine."FA Posting Date");
@@ -294,8 +296,6 @@ codeunit 90066 "Create Consolidate SO"
         if L_Customer.FindFirst() then begin
             InsertedSH."Knapp Customer" := L_Customer."Knapp Customer";
         end;
-        InsertedSH.Validate("IRP Order", true);
-        InsertedSH.Validate("Web Order", true);
         InsertedSH.Insert(true);
 
         //Update Shipment date and Location++
