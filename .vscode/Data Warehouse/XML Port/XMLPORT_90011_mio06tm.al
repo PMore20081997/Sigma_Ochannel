@@ -70,12 +70,13 @@ xmlport 90011 "mio06tm"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     TM_Code := Territory.Code;
                     TM_Desc := Territory.Name;
                     TM_Group := 'Territory Manager Group Not Available';
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
 
 

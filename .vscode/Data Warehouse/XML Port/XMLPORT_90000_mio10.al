@@ -958,6 +958,7 @@ xmlport 90000 "mio10"
                     L_PurchHeader: Record "Purchase Header";
                     L_Item: record Item;
                     companyInfo: Record "Company Information";
+                    L_PurchRectHeader: Record "Purch. Rcpt. Header";
 
                 begin
 
@@ -974,9 +975,12 @@ xmlport 90000 "mio10"
                     L_Item.Get(Purchase_Line."No.");
                     Pord_List := format(L_Item."Unit Price");
                     Pord_Price := format(Purchase_Line."Direct Unit Cost");
-                    Receipt_No := '';
-                    OrderDate := format(L_PurchHeader."Order Date");
-                    DueDate := Format(L_PurchHeader."Due Date");
+                    Receipt_No := Format(Purchase_Line."Receipt No.");
+                    L_PurchRectHeader.Reset();
+                    L_PurchRectHeader.SetRange("Order No.", Purchase_Line."Document No.");
+                    if L_PurchRectHeader.FindSet() then
+                        OrderDate := format(L_PurchHeader."Order Date");
+                    DueDate := Format(L_PurchHeader."Expected Receipt Date");
                     Orig_Due_Date := Format(L_PurchHeader."Due Date");
                     Period := Format(L_PurchHeader."Order Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
@@ -997,7 +1001,7 @@ xmlport 90000 "mio10"
                     Sales_Ord_No := '';
                     Sord_Line_No := '';
                     Pord_Line_No := format(Purchase_Line."Line No.");
-                    Pord_Line_Desc := '';
+                    Pord_Line_Desc := Purchase_Line.Description;
                     Exch_Rate := format(L_PurchHeader."Currency Factor");
                     Foreign_Curr_Code := format(L_PurchHeader."Currency Code");
                     PO_Operator_Code := format(L_PurchHeader."Purchaser Code");

@@ -56,11 +56,12 @@ xmlport 90008 "mio06cr"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Credit_Reason := Return_Reason.Code;
                     Reason_Desc := Return_Reason.Description;
-                    company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
             }
         }

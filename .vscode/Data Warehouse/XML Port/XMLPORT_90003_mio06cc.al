@@ -56,11 +56,12 @@ xmlport 90003 "mio06cc"
                 }
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Curr_Code := Currency.Code;
                     Curr_Code_Desc := Currency.Description;
-                    company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
 
 

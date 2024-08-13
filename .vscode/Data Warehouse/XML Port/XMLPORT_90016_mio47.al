@@ -310,6 +310,15 @@ xmlport 90016 "mio47"
                 textelement("Finishing_Costs_Header")
                 {
                 }
+                textelement("Transfer_Disc_Header")
+                {
+                }
+                textelement("Av_Cost_Value_Header")
+                {
+                }
+                textelement(XXXXXXXXXXXX)
+                {
+                }
 
                 trigger OnAfterGetRecord()
                 var
@@ -388,10 +397,13 @@ xmlport 90016 "mio47"
                     Direct_OH_Header := 'Direct OH';
                     Indirect_OH_Header := 'Indirect OH';
                     Finishing_Costs_Header := 'Finishing Costs';
+                    Transfer_Disc_Header := 'Transfer Disc';
+                    Av_Cost_Value_Header := 'Av Cost Value';
+                    XXXXXXXXXXXX := 'XXXXXXXXXXXX';
 
                 end;
             }
-            tableelement("Sales_Invoice_Header"; "Sales Invoice Header")
+            tableelement("Sales_Invoice_Lines"; "Sales Invoice Line")
             {
                 textelement("Cust_Code")
                 {
@@ -684,10 +696,16 @@ xmlport 90016 "mio47"
                 textelement("Finishing_Costs")
                 {
                 }
+                textelement("Transfer_Disc")
+                {
+                }
+                textelement("Av_Cost_Value")
+                {
+                }
 
                 trigger OnAfterGetRecord()
                 var
-                    Sales_Invoice_Line: Record "Sales Invoice Line";
+                    Sales_Invoice_Headers: Record "Sales Invoice Header";
                     L_Item: Record Item;
                     Sales_Credit_Memo_Line: Record "Sales Cr.Memo Line";
                     Sales_Credit_Memo_Header: Record "Sales Cr.Memo Header";
@@ -695,34 +713,35 @@ xmlport 90016 "mio47"
                     sales_Shipment_Header: Record "Sales Shipment Header";
 
                 begin
-                    Cust_Code := Sales_Invoice_Header."Sell-to Customer No.";
-                    if Sales_Invoice_Line.Get(Sales_Invoice_Line."Document No.", Sales_Invoice_Header."No.") then;
-                    Prod_Code := Sales_Invoice_Line."No.";
-                    Qty := format(Sales_Invoice_Line.Quantity);
-                    Val := format(Sales_Invoice_Line.Amount);
-                    Cst := format(Sales_Invoice_Line."Unit Cost (LCY)");
-                    Del_Date := format(Sales_Invoice_Header."Shipment Date");
-                    Rep_Code := Sales_Invoice_Header."Salesperson Code";
+
+                    if Sales_Invoice_Headers.Get(Sales_Invoice_Lines."Document No.") then;
+                    Cust_Code := Sales_Invoice_Headers."Sell-to Customer No.";
+                    Prod_Code := Sales_Invoice_Lines."No.";
+                    Qty := format(Sales_Invoice_Lines.Quantity);
+                    Val := format(Sales_Invoice_Lines.Amount);
+                    Cst := format(Sales_Invoice_Lines."Unit Cost (LCY)");
+                    Del_Date := format(Sales_Invoice_Headers."Shipment Date");
+                    Rep_Code := Sales_Invoice_Headers."Salesperson Code";
                     Terr_Man := '';
                     Price_Type := '';
-                    Supp_Dep := Sales_Invoice_Header."Location Code";
-                    Ord_No := Sales_Invoice_Header."Order No.";
-                    Op_Code := Sales_Invoice_Header."Salesperson Code";
+                    Supp_Dep := Sales_Invoice_Headers."Location Code";
+                    Ord_No := Sales_Invoice_Headers."Order No.";
+                    Op_Code := Sales_Invoice_Headers."Salesperson Code";
                     Ord_Type := '';
-                    Round := Sales_Invoice_Header."Shipping Agent Code";
+                    Round := Sales_Invoice_Headers."Shipping Agent Code";
                     Pack_Price := '';
-                    Prod_Group := Sales_Invoice_Line."Item Category Code";
-                    Margin := Format(Sales_Invoice_Line."Unit Price" - Sales_Invoice_Line."Unit Cost");
-                    Period := Format(Sales_Invoice_Header."Posting Date", 0, '<Month Text>');
+                    Prod_Group := Sales_Invoice_Lines."Item Category Code";
+                    Margin := Format(Sales_Invoice_Lines."Unit Price" - Sales_Invoice_Lines."Unit Cost");
+                    Period := Format(Sales_Invoice_Headers."Posting Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
-                    if L_Item.Get(Sales_Invoice_Line."No.") then;
+                    if L_Item.Get(Sales_Invoice_Lines."No.") then;
                     Supp_Code := L_Item."Vendor No.";
-                    Weight := '';
-                    Ord_Date := Format(Sales_Invoice_Header."Order Date");
-                    FOC_Ind := '';
+                    Weight := format(Sales_Invoice_Lines."Net Weight");
+                    Ord_Date := Format(Sales_Invoice_Headers."Order Date");
+                    FOC_Ind := 'Paid Sale';
                     Vehicle_Reg := '';
-                    Inv_Cred := '';
-                    if Sales_Credit_Memo_Header.Get(Sales_Invoice_Header."No.") then;
+                    Inv_Cred := 'Invoice';
+                    if Sales_Credit_Memo_Header.Get(Sales_Invoice_Headers."No.") then;
                     Sales_Credit_Memo_Line.Reset();
                     Sales_Credit_Memo_Line.SetRange("Document No.", Sales_Credit_Memo_Header."No.");
                     if Sales_Credit_Memo_Line.FindSet() then begin
@@ -732,7 +751,7 @@ xmlport 90016 "mio47"
                     end;
                     Drop_Seq := '';
                     Comb_Disc := '';
-                    Del_Code := Sales_Invoice_Header."Ship-to Code";
+                    Del_Code := Sales_Invoice_Headers."Ship-to Code";
                     Lost_Pick := '';
                     Lost_Desp := '';
                     Pick_Conf_Code := '';
@@ -742,18 +761,18 @@ xmlport 90016 "mio47"
                     Picker_Code := '';
                     Line_Type := '';
                     Volume := '';
-                    Inv_Date := format(Sales_Invoice_Header."Posting Date");
-                    Cust_Ord_No := Sales_Invoice_Header."External Document No.";
-                    Inv_No := Sales_Invoice_Header."No.";
+                    Inv_Date := format(Sales_Invoice_Headers."Posting Date");
+                    Cust_Ord_No := Sales_Invoice_Headers."External Document No.";
+                    Inv_No := Sales_Invoice_Headers."No.";
                     sales_Shipment_Header.Reset();
-                    sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Header."Order No.");
+                    sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Headers."Order No.");
                     if sales_Shipment_Header.FindFirst() then begin
                         Promise_Date := format(sales_Shipment_Header."Promised Delivery Date");
                     end;
                     Account_Year := '';
                     Account_Month := '';
                     Sell_by_date := '00/00/00';
-                    CustProdCode := Sales_Invoice_Line."Item Reference No.";
+                    CustProdCode := Sales_Invoice_Lines."Item Reference No.";
                     SalesAd1 := '';
                     SalesAd2 := '';
                     SalesAd3 := '';
@@ -769,21 +788,23 @@ xmlport 90016 "mio47"
                     Job_Number := '';
                     Master_Ord_No := '';
                     Purch_Ord_No := '';
-                    Sord_Line_No := '';
+                    Sord_Line_No := Format(Sales_Invoice_Lines."Line No.");
+                    Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
                     Pord_Line_No := '';
-                    ActCst := '';
-                    Sord_Line_Desc := Sales_Invoice_Line.Description;
-                    Qty_Ordered := Format(Sales_Invoice_Line.Quantity);
-                    Landed_Cost := Format(Sales_Invoice_Line."Unit Cost (LCY)");
-                    FC_Val := '';
-                    Exch_Rate := Format(Sales_Invoice_Header."Currency Factor");
-                    Foreign_Curr_Code := Format(Sales_Invoice_Header."Currency Code");
+                    ActCst := Format(Sales_Invoice_Lines."Line Amount");
+                    Sord_Line_Desc := Sales_Invoice_Lines.Description;
+                    Qty_Ordered := Format(Sales_Invoice_Lines.Quantity);
+                    Landed_Cost := Format(Sales_Invoice_Lines."Unit Cost (LCY)");
+                    FC_Val := Format(Sales_Invoice_Headers.Amount);
+                    Exch_Rate := Format(Sales_Invoice_Headers."Currency Factor");
+                    Foreign_Curr_Code := Format(Sales_Invoice_Headers."Currency Code");
                     RM_Cost := '';
                     Direct_Labour := '';
                     Direct_OH := '';
                     Indirect_OH := '';
                     Finishing_Costs := '';
-
+                    Transfer_Disc := '';
+                    Av_Cost_Value := '';
 
                 end;
             }

@@ -61,11 +61,12 @@ xmlport 90012 "mio06vt"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Vat_Code := "VAT_Product_Posting_Group".Code;
                     Vat_Code_Desc := "VAT_Product_Posting_Group".Description;
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
 
                 end;
 

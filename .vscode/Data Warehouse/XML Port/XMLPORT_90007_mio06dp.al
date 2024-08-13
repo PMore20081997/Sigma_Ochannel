@@ -10,7 +10,7 @@ xmlport 90007 "mio06dp"
     Format = VariableText;
     TextEncoding = UTF8;
     UseRequestPage = false;
-    FileName = 'mio06dp.csv';
+    FileName = 'mio6ntt.csv';
 
     schema
     {
@@ -57,11 +57,12 @@ xmlport 90007 "mio06dp"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Depot_Code := Location.Code;
                     Depot_Desc := Location.Name;
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
 
 

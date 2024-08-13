@@ -57,11 +57,12 @@ xmlport 90013 "mio06mc"
 
                 trigger OnAfterGetRecord()
                 var
-
+                    companyInfo: Record "Company Information";
                 begin
                     Market_Code := Dimension_Value.Code;
                     Market_Code_Desc := Dimension_Value.Name;
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
             }
         }

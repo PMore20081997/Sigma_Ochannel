@@ -135,18 +135,20 @@ codeunit 90082 "EDI Invoice"
                 Clear(item);
                 Clear(gtin);
                 Clear(PackSize);
+                Clear(Desc);
                 item.Reset();
                 if item.Get(salesinvoiceline."No.") then begin
                     gtin := item.GTIN;
-                    PackSize := item."Pack Size"
+                    PackSize := item."EDI Pack size";
+                    Desc := item."EDI Description";
                 end;
                 count += 1;
                 TotalAmtIncVat += salesinvoiceline."Amount Including VAT";
                 TotalAmtExcVat += salesinvoiceline.Amount;
                 DiscountAmt += salesinvoiceline."Line Discount Amount";
                 LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesinvoiceline.Quantity) + '^' + '2' + '^^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesinvoiceline."VAT %") + '^' + format(salesinvoiceline."Amount Including VAT" - salesinvoiceline.Amount) + '^^^' + CRLF[1];
-                LineInfo2 := '**P' + '^' + 'O' + '^' + salesinvoiceline."No." + '^' + gtin + '^^^^^^' + salesinvoiceline.Description + '^^' + PackSize + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
-                LineInfo3 := '**G^O^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^^^^^^^^^^^^' + CRLF[1];
+                LineInfo2 := '**P' + '^' + 'O' + '^' + salesinvoiceline."No." + '^' + gtin + '^^^^^^' + Desc + '^^' + Format(PackSize) + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
+                LineInfo3 := '**G^O^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^^^^^^^^^^^' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesinvoiceline.Next() = 0;
 
@@ -279,10 +281,12 @@ codeunit 90082 "EDI Invoice"
                 Clear(item);
                 Clear(gtin);
                 Clear(PackSize);
+                Clear(Desc);
                 item.Reset();
                 if item.Get(Purchline."No.") then begin
                     gtin := item.GTIN;
-                    PackSize := item."Pack Size";
+                    PackSize := item."EDI Pack size";
+                    Desc := item."EDI Description";
                 end;
                 Clear(totalqty);
                 count += 1;
@@ -292,7 +296,7 @@ codeunit 90082 "EDI Invoice"
                 totalqty += Purchline.Quantity;
                 Evaluate(quantityInt, DelChr(Format(Purchline.Quantity), '<=>', ','));
                 LineInfo1 := '*OL,' + PurchHeader."Your Reference" + ',' + format(count) + ',' + format(Purchline."Line No.") + ',' + Format(quantityInt) + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
-                LineInfo2 := '**P,O,,' + gtin + ',,,,' + Purchline."No." + ',,' + Purchline.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo2 := '**P,O,,' + gtin + ',,,,' + Purchline."No." + ',,' + Desc + ',,' + Format(PackSize) + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until Purchline.Next() = 0;
@@ -437,10 +441,14 @@ codeunit 90082 "EDI Invoice"
                 Clear(LineInfo3);
                 Clear(item);
                 Clear(gtin);
+                Clear(PackSize);
+                Clear(Desc);
 
                 item.Reset();
                 if item.Get(salesCRLine."No.") then begin
                     gtin := item.GTIN;
+                    PackSize := item."EDI Pack size";
+                    Desc := item."EDI Description";
                 end;
 
                 count += 1;
@@ -451,13 +459,13 @@ codeunit 90082 "EDI Invoice"
                 totalqty += salesCRLine.Quantity;
                 Evaluate(quantityInt, DelChr(Format(salesCRLine.Quantity), '<=>', ','));
                 LineInfo1 := '*CL,' + SalesCrHeader."Your Reference" + ',' + format(count) + ',,,,,,,,,,,,,' + Format(quantityInt) + ',,,' + format(salesCRLine."Unit Price") + ',' + Format(quantityInt * salesCRLine."Unit Price") + ',VAT,' + TaxCode + ',N,' + format(salesCRLine."Line Discount %") + ',,' + CRLF[1];
-                LineInfo2 := '**P,O,,' + gtin + ',,,,,,' + salesCRLine.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo2 := '**P,O,,' + gtin + ',,,,,,' + Desc + ',,' + Format(PackSize) + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo3 := '**G,O,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesCRLine.Next() = 0;
 
             HeaderInfoAll := '';
-            HeaderInfo1 := '**!1.02.30GORD    ' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
+            HeaderInfo1 := '**!1.02.30GORD0000' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
             HeaderInfo2 := '**D,' + ',,,' + ',CRN,,O,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
             HeaderInfo3 := '*CH,' + SalesCrHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,,,,,,' + ',' + format(TotalAmtExcVat) + ',' + format(TaxAmount) + ',,,B,,INVOICE,' + CRLF[1];
             HeaderInfo4 := '*IH,' + SalesCrHeader."Applies-to Doc. No." + ',' + DMYPostingFormat + ',' + DMYPostingFormat + ',,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
@@ -581,10 +589,12 @@ codeunit 90082 "EDI Invoice"
                 Clear(item);
                 Clear(gtin);
                 Clear(PackSize);
+                Clear(Desc);
                 item.Reset();
                 if item.Get(salesline."No.") then begin
                     gtin := item.GTIN;
-                    PackSize := item."Pack Size";
+                    PackSize := item."EDI Pack size";
+                    Desc := item."EDI Description";
 
                 end;
                 Clear(totalqty);
@@ -594,7 +604,7 @@ codeunit 90082 "EDI Invoice"
                 totalqty += salesline.Quantity;
                 DiscountAmt += salesline."Line Discount Amount";
                 LineInfo1 := '*OL,' + salesHeader."Your Reference" + ',' + format(count) + ',' + format(salesline."Line No.") + ',' + format(salesline.Quantity) + ',,,,,,,,,,,,' + CRLF[1];
-                LineInfo2 := '**P,O,,,' + gtin + ',,,' + salesline."No." + ',' + salesline.Description + ',,' + PackSize + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo2 := '**P,O,,,' + gtin + ',,,' + salesline."No." + ',' + Desc + ',,' + Format(PackSize) + ',,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesline.Next() = 0;
@@ -623,12 +633,53 @@ codeunit 90082 "EDI Invoice"
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
             DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileTOAzureBlob(TextInstream, FileName, TradepartnerRecord.Code);
+            UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
+
         end;
         //end;
     end;
 
+    local procedure UploadFileToEDIAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    var
+        ArchiveAuthorization: Interface "Storage Service Authorization";
+        ArchiveStorageServiceAuthorization: Codeunit "Storage Service Authorization";
+        GetFileABSBlobClient: Codeunit "ABS Blob Client";
+        GetFileResponse: Codeunit "ABS Operation Response";
+        FileInstream: InStream;
+        ArchiveABSBlobClient: Codeunit "ABS Blob Client";
+        DeleteABSBlobClient: Codeunit "ABS Blob Client";
+        ArchiveResponse: Codeunit "ABS Operation Response";
+        DeleteResponse: Codeunit "ABS Operation Response";
+    begin
+        GetCredentials(P_ChannelCode);
 
+        Clear(ArchiveAuthorization);
+        Clear(ArchiveStorageServiceAuthorization);
+        ArchiveAuthorization := ArchiveStorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
+
+        #Region Upload File in Archive Container and Delete from Order Container
+        Clear(ArchiveABSBlobClient);
+        ArchiveABSBlobClient.Initialize(StorageAccountName, ArchiveContainerName, ArchiveAuthorization);
+
+        Clear(ArchiveResponse);
+        ArchiveResponse := ArchiveABSBlobClient.PutBlobBlockBlobStream(P_FileName, FileInstream);
+
+        #endregion
+    end;
+
+    local procedure
+    GetCredentials(ChannelCode: Code[20])
+    var
+        TradePartner: Record "Trade Partner";
+    begin
+        TradePartner.Reset();
+        if TradePartner.Get(ChannelCode) then begin
+            OutgoingContainerName := TradePartner."Order Acknow. Container Name";
+            StorageAccountName := TradePartner."Storage Account Name";
+            SharedAccessKey := TradePartner."Shared Access Key";
+
+        End;
+    end;
 
     procedure UploadFileTOAzureBlob(P_FileInstream: InStream; P_FileName: Text; P__ChannelCode: Code[20])
     var
@@ -744,8 +795,14 @@ codeunit 90082 "EDI Invoice"
         StartParameter: Text;
         RunType: Text;
         TradepartnerRecord: Record "Trade Partner";
-        PackSize: Code[20];
+        PackSize: Decimal;
+        Desc: text[40];
         totalqty: Decimal;
         TaxCode: Code[10];
         TaxCodeLine: Code[10];
+        OutgoingContainerName: Text;
+        OutgoingSasToken: Text;
+        StorageAccountName: Text;
+        SharedAccessKey: SecretText;
+        ArchiveContainerName: Text;
 }

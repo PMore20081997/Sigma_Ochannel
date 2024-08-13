@@ -231,6 +231,15 @@ xmlport 90017 "mio03"
                 textelement("Zero_Discount_Header")
                 {
                 }
+                textelement("Operational_Stop_Header")
+                {
+                }
+                textelement("Temp_Stop_on_Sales_Header")
+                {
+                }
+                textelement("Commodity_Code_Header")
+                {
+                }
 
                 trigger OnAfterGetRecord()
                 var
@@ -289,8 +298,9 @@ xmlport 90017 "mio03"
                     Unit_Weight_Header := 'Unit Weight';
                     Company_Header := 'Company';
                     Zero_Discount_Header := 'Zero Discount';
-
-
+                    Operational_Stop_Header := 'Operational Stop';
+                    Temp_Stop_on_Sales_Header := 'Temp Stop on Sales';
+                    Commodity_Code_Header := 'Commodity Code';
                 end;
             }
             tableelement(Item; Item)
@@ -507,31 +517,51 @@ xmlport 90017 "mio03"
                 textelement("Zero_Discount")
                 {
                 }
+                textelement("Operational_Stop")
+                {
+                }
+                textelement("Temp_Stop_on_Sales")
+                {
+                }
+                textelement("Commodity_Code")
+                {
+                }
 
                 trigger OnAfterGetRecord()
                 var
                     compInfo: Record "Company Information";
+                    itemRef: Record "Item Reference";
+                    binContent: Record "Bin Content";
 
                 begin
                     Prod_Code := Item."No.";
                     Prod_Desc := Item.Description;
                     Prod_Group := Item."Item Category Code";
                     Prod_Type := '';
-                    AC_1 := '';
+                    AC_1 := item."Parent Category";
                     AC_2 := '';
                     AC_3 := '';
                     Pref_Supp := Item."Vendor No.";
                     Vat_Code := Item."VAT Prod. Posting Group";
-                    AC_4 := '';
+                    AC_4 := Item."No. 2";
                     AC_5 := '';
                     AC_6 := '';
-                    Discon := Format(Item.Blocked);
+                    if Item.Blocked = true then begin
+                        Discon := 'Discontinued';
+                    end else
+                        Discon := 'Live';
                     Bako_DS_Scheme := '';
-                    Sedes_Pip_Code := '';
+                    itemRef.Reset();
+                    itemRef.SetRange("Item No.", Item."No.");
+                    itemRef.SetRange("Reference Type", itemRef."Reference Type"::"PIP Code");
+                    if itemRef.FindFirst() then begin
+                        Sedes_Pip_Code := itemRef."Reference No.";
+                    end;
+
                     Sedes_AAH_Code := '';
                     Dept_Code := '';
                     Temperature := Item.Storage;
-                    List_Price := Format(Item."Unit List Price");
+                    List_Price := Format(Item."Last Direct Cost");
                     List_Curr := '';
                     Supp_Prod := Item."Vendor Item No.";
                     Pack_Size := Item."Pack Size";
@@ -539,7 +569,12 @@ xmlport 90017 "mio03"
                     Spec_Disc := '';
                     Case_Weight := Format(Item."Gross Weight");
                     Case_Volume := '';
-                    Bin_Loc := '';
+                    binContent.Reset();
+                    binContent.SetRange("Item No.", Item."No.");
+                    binContent.SetFilter(Quantity, '<>%1', 0);
+                    if binContent.FindFirst() then begin
+                        Bin_Loc := binContent."Bin Code";
+                    end;
                     Own_Brand := '';
                     Cust_Brand := '';
                     Sub_Group_1 := '';
@@ -567,7 +602,9 @@ xmlport 90017 "mio03"
                     compInfo.Get();
                     Company := compInfo.Name;
                     Zero_Discount := '';
-
+                    Operational_Stop := Format(Item."Sales Blocked");
+                    Temp_Stop_on_Sales := Format(Item."Sales Blocked");
+                    Commodity_Code := '';
                 end;
             }
         }

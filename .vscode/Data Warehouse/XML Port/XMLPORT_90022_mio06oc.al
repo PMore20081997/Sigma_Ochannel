@@ -40,9 +40,9 @@ xmlport 90022 "mio06oc"
                 end;
 
             }
-            tableelement("Dimension_Value"; "Dimension Value")
+            tableelement("Salesperson_Purchaser"; "Salesperson/Purchaser")
             {
-                SourceTableView = WHERE("Dimension Code" = filter('OPERATOR CODE'));
+                ///SourceTableView = WHERE("Dimension Code" = filter('OPERATOR CODE'));
 
                 textelement(Op_Code)
                 {
@@ -57,11 +57,12 @@ xmlport 90022 "mio06oc"
 
                 trigger OnAfterGetRecord()
                 var
-
+                    companyInfo: Record "Company Information";
                 begin
-                    Op_Code := Dimension_Value.Code;
-                    Op_Code_Desc := Dimension_Value.Name;
-                    Company := '';
+                    Op_Code := Salesperson_Purchaser.Code;
+                    Op_Code_Desc := Salesperson_Purchaser.Name;
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
             }
         }

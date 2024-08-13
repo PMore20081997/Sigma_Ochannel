@@ -222,6 +222,18 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                     Xmlport.Run(Xmlport::mio82, false, false);
                 end;
             }
+            action(Test151)
+            {
+                Caption = 'Test151';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::mio86, false, false);
+                end;
+            }
             action(Test16)
             {
                 Caption = 'Test16';
@@ -304,6 +316,43 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 trigger OnAction()
                 begin
                     Xmlport.Run(Xmlport::mio09, false, false);
+                end;
+            }
+            action(Test23)
+            {
+                Caption = 'Test23';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::"Contract Price Lists", false, false);
+                end;
+            }
+            action(Test24)
+            {
+                Caption = 'Test24';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::"productsc File", false, false);
+                end;
+            }
+
+            action(Test28)
+            {
+                Caption = 'Test28';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::"sigusage File", false, false);
                 end;
             }
 

@@ -264,6 +264,46 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement("Customer_type_Header")
+                {
+
+                }
+
+                textelement("Cust_Bako_Band_Ind_Header")
+                {
+
+                }
+
+                textelement("Payment_Stop_Header")
+                {
+
+                }
+
+                textelement("DD_Marker_Header")
+                {
+
+                }
+
+                textelement("Daily_Min_Order_Value_Header")
+                {
+
+                }
+
+                textelement("Min_Order_Value_Header")
+                {
+
+                }
+                textelement("LTD_Name_Header")
+                {
+
+                }
+
+
+                textelement(XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
+                {
+
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
@@ -318,7 +358,14 @@ xmlport 90002 "mio01"
                     "Contact_Email_Header" := 'Contact Email';
                     "Company_Header" := 'Company';
                     "Country_Code_Header" := 'Country Code';
-
+                    "Customer_type_Header" := 'Customer_type';
+                    "Cust_Bako_Band_Ind_Header" := 'Cust_Bako_Band_Ind';
+                    "Payment_Stop_Header" := 'Payment_Stop';
+                    "DD_Marker_Header" := 'DD_Marker';
+                    "Daily_Min_Order_Value_Header" := 'Daily_Min_Order_Value';
+                    "Min_Order_Value_Header" := 'Min_Order_Value';
+                    LTD_Name_Header := 'LTD Name';
+                    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX := XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
                 end;
             }
@@ -572,14 +619,38 @@ xmlport 90002 "mio01"
                 {
 
                 }
-
-                textelement("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                textelement("Customer_type")
                 {
 
-                    trigger OnBeforePassVariable()
-                    begin
-                        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" := 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
-                    end;
+                }
+
+                textelement("Cust_Bako_Band_Ind")
+                {
+
+                }
+
+                textelement("Payment_Stop")
+                {
+
+                }
+
+                textelement("DD_Marker")
+                {
+
+                }
+
+                textelement("Daily_Min_Order_Value")
+                {
+
+                }
+
+                textelement("Min_Order_Value")
+                {
+
+                }
+                textelement("LTD_Name")
+                {
+
                 }
 
 
@@ -588,6 +659,9 @@ xmlport 90002 "mio01"
                 var
                     companyInfo: Record "Company Information";
                     contact: Record Contact;
+                    CustLedger: Record "Cust. Ledger Entry";
+                    CustDimension: Record "Default Dimension";
+
                 begin
                     Cust_Code := Customer."No.";
                     Cust_Name := Customer.Name;
@@ -599,8 +673,8 @@ xmlport 90002 "mio01"
                     Fax_Number := Customer."Fax No.";
                     Market_Code := '';
                     Cust_Anal_3 := '';
-                    Rep_Code := Customer."Salesperson Code";
-                    Terr_Man := Customer."Territory Code";
+                    Rep_Code := Customer."Territory Code";
+                    Terr_Man := Customer."Salesperson Code";
                     Contract_Code_1 := Customer."Customer Price Group";
                     Top_Level := '';
                     Contract_Code_2 := Customer."Customer Price Group 2";
@@ -620,7 +694,7 @@ xmlport 90002 "mio01"
                     Unit_Number := '';
                     Sedes_Cust_Code := '';
                     Nu_Care_Baseline := '';
-                    Closed := format(Customer.Blocked);
+                    Closed := '';
                     Cred_Cont := '';
                     Default_Round := Customer."Shipping Agent Service Code";
                     Cust_Anal_1 := '';
@@ -629,18 +703,36 @@ xmlport 90002 "mio01"
                     Cust_Anal_5 := '';
                     Cust_Anal_6 := '';
                     Curr_Code := Customer."Currency Code";
-                    Date_Last_Paid := '';
+                    CustLedger.Reset();
+                    CustLedger.SetRange("Customer No.", Customer."No.");
+                    CustLedger.SetRange("Document Type", CustLedger."Document Type"::Payment);
+                    if CustLedger.FindLast() then begin
+                        Date_Last_Paid := Format(CustLedger."Posting Date");
+                    end;
+
                     Last_Pay_Amount := '';
                     Email := Customer."E-Mail";
                     companyInfo.Get();
                     if contact.Get(Customer."Primary Contact No.") then begin
-                        Contact_ := contact.Name;
+                        Contact_ := Contact.Name;
                         Contact_Tel := Contact."Phone No.";
                         Contact_Mobile := Contact."Mobile Phone No.";
                         Contact_Email := contact."E-Mail";
                     end;
                     Company := companyInfo.Name;
-                    Country_Code := Customer."Currency Code";
+                    Country_Code := Customer."Country/Region Code";
+                    CustDimension.Reset();
+                    CustDimension.SetRange("No.", Customer."No.");
+                    CustDimension.SetRange("Dimension Code", 'CUSTOMER TYPE');
+                    if CustDimension.FindFirst() then begin
+                        "Customer_type" := CustDimension."Dimension Value Code";
+                    end;
+                    "Cust_Bako_Band_Ind" := '';
+                    "Payment_Stop" := '';
+                    "DD_Marker" := Customer."Payment Method Code";
+                    "Daily_Min_Order_Value" := '';
+                    "Min_Order_Value" := Format(Customer."Min Order Value");
+                    LTD_Name := '';
 
                 end;
             }

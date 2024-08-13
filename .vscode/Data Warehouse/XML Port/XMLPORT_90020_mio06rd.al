@@ -32,8 +32,8 @@ xmlport 90020 "mio06rd"
                 var
                     myInt: Integer;
                 begin
-                    Round_Code_Header := 'Cont Code';
-                    Round_Desc_Header := 'Cont Name';
+                    Round_Code_Header := 'Round Code';
+                    Round_Desc_Header := 'Round Desc';
 
                 end;
 

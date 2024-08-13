@@ -66,6 +66,10 @@ xmlport 90019 "mio09"
                 textelement("Del_Contact_Email_Header")
                 {
                 }
+                textelement("Del_Company_Header")
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
@@ -83,6 +87,7 @@ xmlport 90019 "mio09"
                     Del_Contact_Tel_No_Header := 'Del Contact Tel No';
                     Del_Contact_Mobile_Header := 'Del Contact Mobile';
                     Del_Contact_Email_Header := 'Del Contact Email';
+                    Del_Company_Header := 'Del Company';
 
                 end;
 
@@ -136,10 +141,14 @@ xmlport 90019 "mio09"
                 textelement("Del_Contact_Email")
                 {
                 }
+                textelement(Del_Company)
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    CompInfo: Record "Company Information";
                 begin
                     Del_Cust_Code := "Ship-to_Address"."Customer No.";
                     Del_Code := "Ship-to_Address".Code;
@@ -153,7 +162,8 @@ xmlport 90019 "mio09"
                     Del_Contact_Tel_No := "Ship-to_Address"."Phone No.";
                     Del_Contact_Mobile := "Ship-to_Address"."Phone No.";
                     Del_Contact_Email := "Ship-to_Address"."E-Mail";
-
+                    CompInfo.Get();
+                    Del_Company := CompInfo.Name;
                 end;
             }
         }

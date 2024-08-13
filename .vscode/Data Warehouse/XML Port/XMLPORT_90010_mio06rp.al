@@ -70,12 +70,13 @@ xmlport 90010 "mio06rp"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Rep_Code := "Salesperson_Purchaser".Code;
                     Rep_Code_Desc := "Salesperson_Purchaser".Name;
                     Rep_Group := '??';
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
 
                 end;
 

@@ -64,12 +64,13 @@ xmlport 90021 "mio06cl"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
-                    Cred_Cont_Code := '';
-                    Cred_Cont_Name := '';
+                    Cred_Cont_Code := Return_Reason.Code;
+                    Cred_Cont_Name := Return_Reason.Description;
                     Cred_Cont_Area := '';
-                    company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                 end;
             }
         }

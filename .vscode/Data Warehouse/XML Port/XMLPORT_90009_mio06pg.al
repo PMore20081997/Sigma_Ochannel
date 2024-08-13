@@ -67,11 +67,12 @@ xmlport 90009 "mio06pg"
 
                 trigger OnAfterGetRecord()
                 var
-                    myInt: Integer;
+                    companyInfo: Record "Company Information";
                 begin
                     Product_Group := "Item_Category".Code;
                     Product_Group_Desc := "Item_Category".Description;
-                    Company := '';
+                    companyInfo.Get();
+                    company := companyInfo.Name;
                     XXXXXXXX := 'XXXXXXXXXXXXXXX';
 
                 end;
