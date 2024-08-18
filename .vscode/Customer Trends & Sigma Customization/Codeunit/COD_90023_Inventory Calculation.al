@@ -40,9 +40,8 @@ codeunit 90023 "Inventory Calculation"
     begin
         Clear(_CurrentLineQty);
         L_CstomerTrend.Reset();
-        L_CstomerTrend.SetRange("Salesperson Code", _Rec."Salesperson Code");
-        L_CstomerTrend.SetRange("Customer No.", _Rec."Customer No.");
         L_CstomerTrend.SetRange("Entry Number", _Rec."Entry Number");
+        L_CstomerTrend.SetRange("Line No.", _Rec."Line No.");
         if L_CstomerTrend.FindFirst() then
             _CurrentLineQty := L_CstomerTrend."Qty. to be added to SO";
 

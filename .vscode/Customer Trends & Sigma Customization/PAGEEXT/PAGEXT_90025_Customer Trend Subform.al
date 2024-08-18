@@ -1,8 +1,8 @@
-pageextension 90022 "OC Customer Trends" extends "Customer Trends"
+pageextension 90025 "OC Customer Trend Subform" extends "Customer Trends Subform"
 {
     layout
     {
-
+        // Add changes to page layout here
         modify("Qty. to be added to SO")
         {
             trigger OnAfterValidate()
@@ -10,15 +10,6 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
                 CurrPage.Update();
             end;
         }
-
-        // addbefore("Total Physical")
-        // {
-        //     field("Web Orders Qty"; Rec."Web Orders Qty")
-        //     {
-        //         ApplicationArea = All;
-        //         Editable = false;
-        //     }
-        // }
 
         // addafter("Total Allocated on SO")
         // {
@@ -29,7 +20,6 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
         //         Editable = false;
         //         DecimalPlaces = 0 : 5;
         //         ToolTip = 'Total Physical - Total SO Allocated - Web Order Qty';
-        //         StyleExpr = G_Colour;
         //     }
         // }
 
@@ -42,60 +32,18 @@ pageextension 90022 "OC Customer Trends" extends "Customer Trends"
         //         DecimalPlaces = 0 : 5;
         //         ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
         //         Caption = 'Free';
-        //         StyleExpr = G_Colour;
         //     }
-        // }
     }
 
     actions
     {
         // Add changes to page actions here
-        addbefore("Past Months Details")
-        {
-            action("Register Sales Order")
-            {
-                ApplicationArea = All;
-                Image = Register;
-
-                trigger OnAction()
-                var
-                    CreateUpdateWebOrder: Codeunit "OC Create & Update WebOrder";
-                    L_Customertrends: Record CustomerTrends;
-                begin
-                    if not Confirm('Do you want to register?', false) then
-                        Error('');
-
-                    L_Customertrends.Reset();
-                    L_Customertrends.SetRange("Salesperson Code", Rec."Salesperson Code");
-                    L_Customertrends.SetRange("Customer No.", Rec."Customer No.");
-                    L_Customertrends.SetFilter("Qty. to be added to SO", '>%1', 0);
-                    if L_Customertrends.FindFirst() then begin
-                        if L_Customertrends."Delivery Date" = 0D then
-                            Error('Shipment date should not be blank');
-
-                        if L_Customertrends."Salesperson Code" = '' then
-                            Error('SalesPerson/Purchaser Code should not be blank');
-
-                        if L_Customertrends."Customer No." = '' then
-                            Error('Customer Account No. should not be blank');
-
-                        if L_Customertrends."Shipping Agent Service Code" = '' then
-                            Error('Shipping Agent Service should not be blank');
-                    end
-                    else
-                        exit;
-
-                    //Create and Update Web Order++
-                    CreateUpdateWebOrder.CreateAndUpdateWebOrder(Rec."Customer No.", Rec."Salesperson Code");
-                end;
-            }
-        }
     }
 
     var
         myInt: Integer;
         G_Colour: Text;
-        G_CT_Function: Codeunit "Inventory Calculation";
+
 
     trigger OnAfterGetCurrRecord()
     var

@@ -6,15 +6,16 @@ codeunit 90022 "OC Create & Update WebOrder"
 
     end;
 
-    procedure CreateAndUpdateWebOrder(_CustNumber: Code[100]; _SalesPersonCode: Code[20])
+    procedure CreateAndUpdateWebOrder(_CustomerTrendHedaer: Record "Customer Trend Header")
     var
-        CustmerTrend: Record CustomerTrends;
+        CustmerTrendLine: Record CustomerTrends;
         L_ExistSalesHeader: Record "Sales Header";
         L_SalesOrderCard: Page "Sales Order";
         L_SalesH: Record "Sales Header";
         L_SalesLine: Record "Sales Line";
         L_Item: Record Item;
         L_TradPartner: Record "Trade Partner";
+        Delete_CustomerTrend: Record "Customer Trend Header";
     begin
         //Clear Variable++
         Clear(G_InterimHeaderCreated);
@@ -33,15 +34,14 @@ codeunit 90022 "OC Create & Update WebOrder"
         if L_TradPartner.FindFirst() then;
 
         //Make it Ready to Process++
-        CustmerTrend.Reset();
-        CustmerTrend.SetRange("Customer No.", _CustNumber);
-        CustmerTrend.SetRange("Salesperson Code", _SalesPersonCode);
-        CustmerTrend.SetFilter("Qty. to be added to SO", '<>%1', 0);
-        if CustmerTrend.FindSet() then begin
+        CustmerTrendLine.Reset();
+        CustmerTrendLine.SetRange("Entry Number", _CustomerTrendHedaer."Entry Number");
+        CustmerTrendLine.SetFilter("Qty. to be added to SO", '>%1', 0);
+        if CustmerTrendLine.FindSet() then begin
             repeat
                 //Create Temp
-                CreatTemp_Order(CustmerTrend, L_TradPartner);
-            until CustmerTrend.Next() = 0;
+                CreatTemp_Order(CustmerTrendLine, L_TradPartner);
+            until CustmerTrendLine.Next() = 0;
         end;
 
         //Create Web Order++
@@ -50,13 +50,11 @@ codeunit 90022 "OC Create & Update WebOrder"
         CreateWebOrder(Temp_InterimSalesHeader, Temp_InterimSalesLine, L_TradPartner);
 
         //Delete Customer Trends++
-        //if GetLastErrorText() = '' then begin
-        CustmerTrend.Reset();
-        CustmerTrend.SetRange("Customer No.", _CustNumber);
-        CustmerTrend.SetRange("Salesperson Code", _SalesPersonCode);
-        if CustmerTrend.FindSet() then
-            CustmerTrend.DeleteAll();
-        //end;
+        Delete_CustomerTrend.Reset();
+        Delete_CustomerTrend.SetRange("Entry Number", _CustomerTrendHedaer."Entry Number");
+        if Delete_CustomerTrend.FindSet() then
+            Delete_CustomerTrend.DeleteAll(true);
+
     end;
 
     var
