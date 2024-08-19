@@ -248,7 +248,7 @@ table 90002 "Interim Customer"
         }
         field(45; "Customer Price Group 1"; Code[10])
         {
-            Caption = 'Customer Price Group 2';
+            Caption = 'Customer Price Group 1';
             TableRelation = "Customer Price Group";
         }
         field(46; "Customer Price Group 2"; Code[10])
@@ -263,12 +263,12 @@ table 90002 "Interim Customer"
         }
         field(48; "Customer Price Group 4"; Code[10])
         {
-            Caption = 'Customer Price Group 3';
+            Caption = 'Customer Price Group 4';
             TableRelation = "Customer Price Group";
         }
         field(49; "Customer Price Group 5"; Code[10])
         {
-            Caption = 'Customer Price Group 3';
+            Caption = 'Customer Price Group 5';
             TableRelation = "Customer Price Group";
         }
         field(50; "Concerto Customer No."; Code[50])
@@ -282,14 +282,37 @@ table 90002 "Interim Customer"
             var
             begin
                 if Rec."Listing Status Setting" = Rec."Listing Status Setting"::Inactive then
-                    Rec."Customer Sync" := false
-                else
-                    Rec."Customer Sync" := true;
+                    Rec."Customer Sync" := false;
             end;
         }
         field(52; "Customer Sync"; Boolean)
         {
             DataClassification = ToBeClassified;
+        }
+        field(53; "Customer Price Group 6"; Code[10])
+        {
+            Caption = 'Customer Price Group 6';
+            TableRelation = "Customer Price Group";
+        }
+        field(54; "Customer Price Group 7"; Code[10])
+        {
+            Caption = 'Customer Price Group 7';
+            TableRelation = "Customer Price Group";
+        }
+        field(55; "Customer Price Group 8"; Code[10])
+        {
+            Caption = 'Customer Price Group 8';
+            TableRelation = "Customer Price Group";
+        }
+        field(56; "Customer Price Group 9"; Code[10])
+        {
+            Caption = 'Customer Price Group 9';
+            TableRelation = "Customer Price Group";
+        }
+        field(57; "Customer Price Group 10"; Code[10])
+        {
+            Caption = 'Customer Price Group 10';
+            TableRelation = "Customer Price Group";
         }
     }
 

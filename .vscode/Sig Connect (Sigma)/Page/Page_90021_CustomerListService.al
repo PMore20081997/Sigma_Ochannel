@@ -56,6 +56,26 @@ page 90021 "Customer List Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Customer Price Group 6"; Rec."Customer Price Group 6")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 7"; Rec."Customer Price Group 7")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 8"; Rec."Customer Price Group 8")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 9"; Rec."Customer Price Group 9")
+                {
+                    ApplicationArea = All;
+                }
+                field("Customer Price Group 10"; Rec."Customer Price Group 10")
+                {
+                    ApplicationArea = All;
+                }
                 field(Blocked; Rec.Blocked)
                 {
                     ApplicationArea = All;

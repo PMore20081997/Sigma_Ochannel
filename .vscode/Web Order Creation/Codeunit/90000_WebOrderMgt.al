@@ -164,8 +164,12 @@ codeunit 90000 "Web Order Mgt"
                             //Update Monday
                             L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
                         end;
-                    end else
-                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today));
+                    end else begin
+                        if DT2Time(CurrentDateTime) < 200000T then
+                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                        else
+                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                    end;
                 end;
             end;
         end;

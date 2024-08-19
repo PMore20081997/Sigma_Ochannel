@@ -227,6 +227,9 @@ codeunit 90022 "OC Create & Update WebOrder"
             until P_InterimSalesLine.Next() = 0;
         end;
 
+        L_InterimSalesHeader."No. of Items" := WebOrderMgt.CalculateNoofItems(P_InterimSalesHeader);
+        L_InterimSalesHeader.Modify();
+
         //Update Status, Reason Code, Reason Message on Header and Line++
         // Update_InterimSalesLine.Reset();
         // Update_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");

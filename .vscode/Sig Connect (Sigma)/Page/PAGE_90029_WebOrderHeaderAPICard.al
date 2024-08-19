@@ -126,7 +126,7 @@ page 90029 "Web Order Header API Card"
                 L_Date.Reset();
                 L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
                 L_Date.SetRange(L_Date."Period Start", Today);
-                if L_Date.FindFirst() then
+                if L_Date.FindFirst() then begin
                     if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
                         if Rec."Weekend Ship Agent Serv Code" <> '' then
                             //Update Saturday++
@@ -135,9 +135,13 @@ page 90029 "Web Order Header API Card"
                             //Update Monday
                             Rec.Validate("Shipment Date", CalcDate('<+3D>', Today))
                         end;
-                    end else
-                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today));
-
+                    end else begin
+                        if DT2Time(CurrentDateTime) < 200000T then
+                            Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                        else
+                            Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                    end;
+                end;
 
                 L_ShiptoAddress.Reset();
                 L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");

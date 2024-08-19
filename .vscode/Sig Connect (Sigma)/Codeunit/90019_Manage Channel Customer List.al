@@ -1,13 +1,5 @@
 codeunit 90019 "Manage Channel Customer List"
 {
-    trigger OnRun()
-    begin
-
-    end;
-
-    var
-        myInt: Integer;
-
     //Manage Customer Price API++
     [EventSubscriber(ObjectType::Table, Database::"Price List Line", 'OnAfterModifyEvent', '', false, false)]
     local procedure OnAfterCopyToPriceSource(var Rec: Record "Price List Line"; var xRec: Record "Price List Line"; RunTrigger: Boolean);
@@ -77,6 +69,11 @@ codeunit 90019 "Manage Channel Customer List"
                                 InterimCustomer.Validate("Customer Price Group 3", _Customer."Customer Price Group 3");
                                 InterimCustomer.Validate("Customer Price Group 4", _Customer."Customer Price Group 4");
                                 InterimCustomer.Validate("Customer Price Group 5", _Customer."Customer Price Group 5");
+                                InterimCustomer.Validate("Customer Price Group 6", _Customer."Customer Price Group 6");
+                                InterimCustomer.Validate("Customer Price Group 7", _Customer."Customer Price Group 7");
+                                InterimCustomer.Validate("Customer Price Group 8", _Customer."Customer Price Group 8");
+                                InterimCustomer.Validate("Customer Price Group 9", _Customer."Customer Price Group 9");
+                                InterimCustomer.Validate("Customer Price Group 10", _Customer."Customer Price Group 10");
                                 if _Customer."Bill-to Customer No." <> '' then begin
                                     InterimCustomer.Validate("Bill to Customer No.", _Customer."Bill-to Customer No.");
                                     if L_Customer.Get(_Customer."Bill-to Customer No.") then
