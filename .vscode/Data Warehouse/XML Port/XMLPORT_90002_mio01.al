@@ -329,7 +329,7 @@ xmlport 90002 "mio01"
                     "Home_Export_Header" := 'Home Export';
                     "Created_Date_Header" := 'Created Date';
                     "Price_List_Header" := 'Price List';
-                    "Cust_Disc_per_Header" := 'Cust Disc per';
+                    "Cust_Disc_per_Header" := 'Cust Disc %';
                     "Stop_Ind_Header" := 'Stop Ind';
                     "Op_Code_Header" := 'Op Code';
                     "Service_Depot_Header" := 'Service Depot';
@@ -339,7 +339,7 @@ xmlport 90002 "mio01"
                     "Contract_Code_4_Header" := 'Contract Code 4';
                     "Unit_Number_Header" := 'Unit Number';
                     "Sedes_Cust_Code_Header" := 'Sedes Cust Code';
-                    "Nu_Care_Baseline_Header" := 'Nu Care Baseline';
+                    "Nu_Care_Baseline_Header" := 'Nu-Care Baseline';
                     "Closed_Header" := 'Closed';
                     "Cred_Cont_Header" := 'Cred Cont';
                     "Default_Round_Header" := 'Default Round';
@@ -667,7 +667,7 @@ xmlport 90002 "mio01"
                     Cust_Name := Customer.Name;
                     Address_1 := Customer.Address;
                     Address_2 := Customer."Address 2";
-                    Address_3 := Customer.County;
+                    Address_3 := Customer.City;
                     Postcode := Customer."Post Code";
                     Telephone_No := Customer."Phone No.";
                     Fax_Number := Customer."Fax No.";
@@ -732,7 +732,7 @@ xmlport 90002 "mio01"
                     "DD_Marker" := Customer."Payment Method Code";
                     "Daily_Min_Order_Value" := '';
                     "Min_Order_Value" := Format(Customer."Min Order Value");
-                    LTD_Name := '';
+                    LTD_Name := Customer."Name 2";
 
                 end;
             }

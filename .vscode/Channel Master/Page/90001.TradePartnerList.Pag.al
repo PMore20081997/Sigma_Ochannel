@@ -465,6 +465,36 @@ page 90001 "Trade Partner List"
                 RunObject = Page "Handled Web Order Line";
                 RunPageLink = "Trade Partner Code" = FIELD(Code);
             }
+            action("Datawarehouse")
+            {
+                ApplicationArea = All;
+                Image = Intercompany;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                Visible = false;
+
+                trigger OnAction()
+                var
+                begin
+                    Clear(TradePartnerList);
+                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
+                    if TradePartnerList.FindSet() then begin
+                        repeat
+
+                            JobQueueEntry.Init;
+                            JobQueueEntry.ID := CreateGuid();
+                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';Datawarehouse';
+                            JobQueueEntry.Insert;
+
+                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
+                            JobQueueEntry.Delete();
+
+                        until TradePartnerList.Next() = 0;
+                    end;
+                end;
+            }
         }
     }
 

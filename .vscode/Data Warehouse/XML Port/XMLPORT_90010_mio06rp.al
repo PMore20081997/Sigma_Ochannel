@@ -48,7 +48,7 @@ xmlport 90010 "mio06rp"
                 end;
 
             }
-            tableelement("Salesperson_Purchaser"; "Salesperson/Purchaser")
+            tableelement(Territory; Territory)
             {
 
 
@@ -72,8 +72,8 @@ xmlport 90010 "mio06rp"
                 var
                     companyInfo: Record "Company Information";
                 begin
-                    Rep_Code := "Salesperson_Purchaser".Code;
-                    Rep_Code_Desc := "Salesperson_Purchaser".Name;
+                    Rep_Code := Territory.Code;
+                    Rep_Code_Desc := Territory.Name;
                     Rep_Group := '??';
                     companyInfo.Get();
                     company := companyInfo.Name;

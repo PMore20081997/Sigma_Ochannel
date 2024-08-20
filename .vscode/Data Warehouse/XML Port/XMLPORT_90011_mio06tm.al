@@ -48,7 +48,7 @@ xmlport 90011 "mio06tm"
                 end;
 
             }
-            tableelement(Territory; Territory)
+            tableelement("SalespersonPurchaser"; "Salesperson/Purchaser")
             {
 
 
@@ -72,8 +72,8 @@ xmlport 90011 "mio06tm"
                 var
                     companyInfo: Record "Company Information";
                 begin
-                    TM_Code := Territory.Code;
-                    TM_Desc := Territory.Name;
+                    TM_Code := SalespersonPurchaser.Code;
+                    TM_Desc := SalespersonPurchaser.Name;
                     TM_Group := 'Territory Manager Group Not Available';
                     companyInfo.Get();
                     company := companyInfo.Name;

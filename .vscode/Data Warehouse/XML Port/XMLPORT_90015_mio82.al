@@ -489,7 +489,7 @@ xmlport 90015 "mio82"
                     Grn_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
 
                     Price_Desc := '';
-                    Grn_Price := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
+                    Grn_Price := Format((Purch_Rcpt_Line."Unit Price (LCY)") * (Purch_Rcpt_Line.Quantity));
                     Receipt_Date := Format(L_PurchReceiptheader."Posting Date");
                     Due_Date := Format(L_PurchReceiptheader."Due Date");
                     Weight := format(Purch_Rcpt_Line."Net Weight");

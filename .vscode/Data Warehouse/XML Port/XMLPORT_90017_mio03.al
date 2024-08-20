@@ -299,7 +299,7 @@ xmlport 90017 "mio03"
                     Company_Header := 'Company';
                     Zero_Discount_Header := 'Zero Discount';
                     Operational_Stop_Header := 'Operational Stop';
-                    Temp_Stop_on_Sales_Header := 'Temp Stop on Sales';
+                    Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
                 end;
             }
@@ -540,7 +540,7 @@ xmlport 90017 "mio03"
                     Prod_Type := '';
                     AC_1 := item."Parent Category";
                     AC_2 := '';
-                    AC_3 := '';
+                    AC_3 := format(Item."Top Category");
                     Pref_Supp := Item."Vendor No.";
                     Vat_Code := Item."VAT Prod. Posting Group";
                     AC_4 := Item."No. 2";
@@ -591,7 +591,7 @@ xmlport 90017 "mio03"
                     Additional_6 := '';
                     Last_Purchase_Cost := Format(Item."Last Direct Cost");
                     Standard_Cost := Format(Item."Standard Cost");
-                    Case_Description := item."Unit of Measure Id";
+                    Case_Description := item."Base Unit of Measure";
                     Minimum_Shelf_Life := '';
                     Measured := '';
                     Full_Pal_Qty := '';
@@ -602,8 +602,14 @@ xmlport 90017 "mio03"
                     compInfo.Get();
                     Company := compInfo.Name;
                     Zero_Discount := '';
-                    Operational_Stop := Format(Item."Sales Blocked");
-                    Temp_Stop_on_Sales := Format(Item."Sales Blocked");
+                    if item."Sales Blocked" = true then begin
+                        Operational_Stop := 'Y';
+                        Temp_Stop_on_Sales := 'Y';
+                    end
+                    else begin
+                        Operational_Stop := 'N';
+                        Temp_Stop_on_Sales := 'N';
+                    end;
                     Commodity_Code := '';
                 end;
             }

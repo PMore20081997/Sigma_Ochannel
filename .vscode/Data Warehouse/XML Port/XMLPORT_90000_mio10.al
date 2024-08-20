@@ -730,9 +730,9 @@ xmlport 90000 "mio10"
                 begin
                     Supp_Code_Header := 'Supp Code';
                     Prod_Code_Header := 'Prod Code';
-                    DepotCode_Header := 'DepotCode';
-                    PurchOrdNo_Header := 'PurchOrdNo';
-                    PordQty_Header := 'PordQty';
+                    DepotCode_Header := 'Depot Code';
+                    PurchOrdNo_Header := 'Purch Ord No';
+                    PordQty_Header := 'Pord Qty';
                     Pord_Qty_OS_Header := 'Pord Qty OS';
                     Qty_Desc_Header := 'Qty Desc';
                     Pord_Value_Header := 'Pord Value';
@@ -740,8 +740,8 @@ xmlport 90000 "mio10"
                     Pord_List_Header := 'Pord List';
                     Pord_Price_Header := 'Pord Price';
                     Receipt_No_Header := 'Receipt No';
-                    OrderDate_Header := 'OrderDate';
-                    DueDate_Header := 'DueDate';
+                    OrderDate_Header := 'Order Date';
+                    DueDate_Header := 'Due Date';
                     Orig_Due_Date_Header := 'Orig Due Date';
                     Period_Header := 'Period';
                     Days_Late_Header := 'Days Late';

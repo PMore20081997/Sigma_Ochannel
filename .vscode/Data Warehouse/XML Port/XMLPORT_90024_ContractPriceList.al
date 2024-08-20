@@ -10,7 +10,7 @@ xmlport 90024 "Contract Price Lists"
     Format = VariableText;
     TextEncoding = UTF8;
     UseRequestPage = false;
-    FileName = 'Contract Price Lists.csv';
+    FileName = 'contractprices.csv';
 
 
     schema
