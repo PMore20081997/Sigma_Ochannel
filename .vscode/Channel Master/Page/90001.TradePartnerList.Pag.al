@@ -473,7 +473,7 @@ page 90001 "Trade Partner List"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
-                Visible = false;
+                // Visible = false;
 
                 trigger OnAction()
                 var

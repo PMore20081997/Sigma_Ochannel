@@ -367,6 +367,18 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                     Xmlport.Run(Xmlport::mio06ct, false, false);
                 end;
             }
+            action(Test30)
+            {
+                Caption = 'Test30';
+                Promoted = true;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::"Product variant", false, false);
+                end;
+            }
 
 
 

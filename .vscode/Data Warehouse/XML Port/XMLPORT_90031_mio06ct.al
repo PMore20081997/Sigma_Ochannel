@@ -53,7 +53,7 @@ xmlport 90031 "mio06ct"
 
                 trigger OnAfterGetRecord()
                 var
-                    companyInfo: Record "Company Information";
+
                 begin
                     Cust_Type := Dimension_Value.Code;
                     Desc := Dimension_Value.Name;

@@ -534,7 +534,7 @@ xmlport 90017 "mio03"
                     binContent: Record "Bin Content";
 
                 begin
-                    Prod_Code := Item."No.";
+                    Prod_Code := Item."No.";  //variant code
                     Prod_Desc := Item.Description;
                     Prod_Group := Item."Item Category Code";
                     Prod_Type := '';
@@ -543,7 +543,7 @@ xmlport 90017 "mio03"
                     AC_3 := format(Item."Top Category");
                     Pref_Supp := Item."Vendor No.";
                     Vat_Code := Item."VAT Prod. Posting Group";
-                    AC_4 := Item."No. 2";
+                    AC_4 := Item."No. 2";// item table
                     AC_5 := '';
                     AC_6 := '';
                     if Item.Blocked = true then begin

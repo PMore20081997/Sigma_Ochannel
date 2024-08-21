@@ -317,7 +317,7 @@ xmlport 90001 "mio24"
                 begin
                     // if Check = true then
                     //     updateheadercaption();
-
+                    Prod_Code := Item_Ledger_Entry."Item No.";
                     LG_Date := format(Item_Ledger_Entry."Posting Date");
                     LG_Number := format(Item_Ledger_Entry."Document No.");
                     LS_Date := format(Item_Ledger_Entry."Posting Date");
@@ -326,7 +326,7 @@ xmlport 90001 "mio24"
                     L_Item.SetRange("No.", Item_Ledger_Entry."Item No.");
                     if L_Item.FindFirst() then begin
                         L_Item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory);
-                        Prod_Code := L_Item."No.";
+
                         Phys_Stock := format(L_Item.Inventory);
                         Alloc_Stock := Format(L_Item."Qty. on Sales Order" + L_Item."Qty. on Web Order");
                         Alloc_After := '';
