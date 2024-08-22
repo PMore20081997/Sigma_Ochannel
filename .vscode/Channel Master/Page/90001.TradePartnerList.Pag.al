@@ -150,12 +150,14 @@ page 90001 "Trade Partner List"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
+
                 trigger OnAction()
                 var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -165,6 +167,7 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Acknowledgement Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -177,10 +180,12 @@ page 90001 "Trade Partner List"
                 PromotedIsBig = true;
                 PromotedOnly = true;
                 Enabled = Rec.SyncPrice;
+                Visible = false;
+
                 trigger OnAction()
                 var
                 begin
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -191,6 +196,7 @@ page 90001 "Trade Partner List"
                                 JobQueueEntry.Delete();
                             end;
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -204,12 +210,14 @@ page 90001 "Trade Partner List"
                 PromotedIsBig = true;
                 PromotedOnly = true;
                 Enabled = Rec.SyncInventory;
+                Visible = false;
+
                 trigger OnAction()
                 var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -219,6 +227,7 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -232,12 +241,14 @@ page 90001 "Trade Partner List"
                 Promoted = true;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
+
                 trigger OnAction()
                 var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -247,6 +258,7 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -260,12 +272,14 @@ page 90001 "Trade Partner List"
                 Promoted = true;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
+
                 trigger OnAction()
                 var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -275,6 +289,7 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -351,26 +366,31 @@ page 90001 "Trade Partner List"
                 end;
             }
 
-            action("Export Stock Available")
+            action("Export FTP Data Files")
             {
-                Image = OrderPromising;
-                Visible = false;
+                ApplicationArea = All;
+                Image = Inventory;
+                Enabled = Rec.SyncInventory;
+                Visible = true;
+                PromotedCategory = Process;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+
                 trigger OnAction()
+                var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
-                        repeat
-                            if TradePartnerList."Order Acknowledgement Required" then begin
-                                JobQueueEntry.Init;
-                                JobQueueEntry.ID := CreateGuid();
-                                JobQueueEntry."Parameter String" := TradePartnerList.Code + ';StockPosition';
-                                JobQueueEntry.Insert;
+                    if TradePartnerList.FindFirst() then begin
+                        JobQueueEntry.Init();
+                        JobQueueEntry.ID := CreateGuid();
+                        JobQueueEntry."Parameter String" := TradePartnerList.Code + ';ExportDataFiles';
+                        JobQueueEntry.Insert();
 
-                                Codeunit.Run(TradePartnerList."Order Acknowledgement Codeunit", JobQueueEntry);
-                                JobQueueEntry.Delete();
-                            end;
-                        until TradePartnerList.Next() = 0;
+                        Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
+                        JobQueueEntry.Delete();
+                    end;
                 end;
             }
 

@@ -22,6 +22,10 @@ codeunit 90018 "GOY File Integration"
                     end;
                     Message('Order Sync Completed');
                 End;
+            ExportDataFilesLabel:
+                begin
+                    PushDataFilesToContainer();
+                end;
         end;
     end;
 
@@ -29,6 +33,7 @@ codeunit 90018 "GOY File Integration"
         StartParameter: Text;
         RunType: Text;
         SyncOrderLabel: Label 'SyncOrder';
+        ExportDataFilesLabel: Label 'ExportDataFiles';
         TempCSVBuffer: Record "CSV Buffer" temporary;
         G_TradePartner: Record "Trade Partner";
         ApiEndPoint: Text;
@@ -40,6 +45,7 @@ codeunit 90018 "GOY File Integration"
         StorageAccountName: Text;
         SharedAccessKey: SecretText;
         ArchiveContainerName: Text;
+        MasterDataContainerName: Text;
 
     local procedure GetCredentials(ChannelCode: Code[20])
     var
@@ -56,6 +62,7 @@ codeunit 90018 "GOY File Integration"
             StorageAccountName := TradePartner."Storage Account Name";
             SharedAccessKey := TradePartner."Shared Access Key";
             ArchiveContainerName := TradePartner."Outgoing Container 2 Name";
+            MasterDataContainerName := TradePartner."Outgoing Container 3 Name";
         End;
     end;
 
@@ -429,5 +436,72 @@ codeunit 90018 "GOY File Integration"
             exit(TempCSVBuffer.Value)
         else
             exit('')
+    end;
+
+
+    local procedure PushDataFilesToContainer()
+    var
+        TempBlob: Codeunit "Temp Blob";
+        StockXmlPort: XmlPort "Stock File FTP";
+        ProductXmlPort: XmlPort "Product File FTP";
+        ProductScXmlPort: XmlPort "ProductSC File FTP";
+        FTPOutStrm: OutStream;
+        FTPInStrm: InStream;
+    begin
+        #Region Stock File
+        Clear(TempBlob);
+        Clear(FTPOutStrm);
+        Clear(FTPInStrm);
+        TempBlob.CreateOutStream(FTPOutStrm);
+        StockXmlPort.SetDestination(FTPOutStrm);
+        StockXmlPort.Export();
+        TempBlob.CreateInStream(FTPInStrm, TextEncoding::UTF8);
+
+        UploadDataFileToAzureContainer(FTPInStrm, 'stock.csv', StartParameter);
+        #endregion
+
+        #Region Product File
+        Clear(TempBlob);
+        Clear(FTPOutStrm);
+        Clear(FTPInStrm);
+        TempBlob.CreateOutStream(FTPOutStrm);
+        ProductXmlPort.SetDestination(FTPOutStrm);
+        ProductXmlPort.Export();
+        TempBlob.CreateInStream(FTPInStrm, TextEncoding::UTF8);
+
+        UploadDataFileToAzureContainer(FTPInStrm, 'product.csv', StartParameter);
+        #endregion
+
+        #Region Product SC File
+        Clear(TempBlob);
+        Clear(FTPOutStrm);
+        Clear(FTPInStrm);
+        TempBlob.CreateOutStream(FTPOutStrm);
+        ProductScXmlPort.SetDestination(FTPOutStrm);
+        ProductScXmlPort.Export();
+        TempBlob.CreateInStream(FTPInStrm, TextEncoding::UTF8);
+
+        UploadDataFileToAzureContainer(FTPInStrm, 'productsc.csv', StartParameter);
+        #endregion
+    end;
+
+    local procedure UploadDataFileToAzureContainer(P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    var
+        Authorization: Interface "Storage Service Authorization";
+        StorageServiceAuthorization: Codeunit "Storage Service Authorization";
+        ABSBlobClient: Codeunit "ABS Blob Client";
+        Response: Codeunit "ABS Operation Response";
+    begin
+        GetCredentials(P_ChannelCode);
+
+        Clear(Authorization);
+        Clear(StorageServiceAuthorization);
+        Authorization := StorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
+
+        Clear(ABSBlobClient);
+        ABSBlobClient.Initialize(StorageAccountName, MasterDataContainerName, Authorization);
+
+        Clear(Response);
+        Response := ABSBlobClient.PutBlobBlockBlobStream(P_FileName, P_FileInstream);
     end;
 }

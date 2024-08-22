@@ -4,6 +4,7 @@ page 90035 "Channel Item Reference"
     ApplicationArea = All;
     UsageCategory = Lists;
     SourceTable = "Item Reference";
+    SourceTableView = where("Reference Type" = filter("PIP Code"));
 
     layout
     {

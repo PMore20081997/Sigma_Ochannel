@@ -26,7 +26,17 @@ tableextension 90029 "OC Price List Line" extends "Price List Line"
         }
         field(90002; "Sync Price"; Boolean)
         {
-
+            DataClassification = ToBeClassified;
         }
     }
+
+    trigger OnBeforeInsert()
+    var
+        L_PriceListHeader: Record "Price List Header";
+    begin
+        L_PriceListHeader.Reset();
+        L_PriceListHeader.SetRange(Code, Rec."Price List Code");
+        if L_PriceListHeader.FindFirst() then
+            Rec."Listing Status Setting" := L_PriceListHeader."Listing Status Setting";
+    end;
 }

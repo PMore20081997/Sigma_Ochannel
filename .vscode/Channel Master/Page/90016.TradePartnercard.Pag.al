@@ -107,7 +107,7 @@ page 90016 "Trade Partner card"
                 }
             }
 
-            group(Conatiner)
+            group(Container)
             {
                 Caption = 'Container Details';
                 Editable = NOT InboxTypeAPI;
@@ -150,6 +150,11 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                     Caption = 'Archive Container Name';
+                }
+                field("Outgoing Container 3 Name"; Rec."Outgoing Container 3 Name")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Master Data Container Name';
                 }
             }
 
@@ -352,13 +357,14 @@ page 90016 "Trade Partner card"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
 
                 trigger OnAction()
                 var
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -368,6 +374,7 @@ page 90016 "Trade Partner card"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -380,13 +387,12 @@ page 90016 "Trade Partner card"
                 PromotedIsBig = true;
                 PromotedOnly = true;
                 Enabled = Rec.SyncInventory;
+                Visible = false;
+
                 trigger OnAction()
                 var
-                    myInt: Integer;
-                    B2B: Codeunit B2B;
-                    TradePartner: Record "Trade Partner";
                 begin
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -397,6 +403,7 @@ page 90016 "Trade Partner card"
                                 JobQueueEntry.Delete();
                             end;
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -410,16 +417,14 @@ page 90016 "Trade Partner card"
                 PromotedIsBig = true;
                 PromotedOnly = true;
                 Enabled = Rec.SyncInventory;
+                Visible = false;
+
                 trigger OnAction()
                 var
-                    ItemChannelCode: Code[10];
-                    ChannelCode: Code[10];
-                    WooCommerce: Codeunit "Woo Commerce";
-                    TradePartner: Record "Trade Partner";
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -429,6 +434,7 @@ page 90016 "Trade Partner card"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -442,14 +448,14 @@ page 90016 "Trade Partner card"
                 Promoted = true;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
+
                 trigger OnAction()
                 var
-                    UpdateInventoryChannelCode: Code[10];
-                    ChannelCode: code[20];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -459,6 +465,7 @@ page 90016 "Trade Partner card"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
@@ -472,14 +479,14 @@ page 90016 "Trade Partner card"
                 Promoted = true;
                 PromotedIsBig = true;
                 PromotedOnly = true;
+                Visible = false;
+
                 trigger OnAction()
                 var
-                    UpdatePriceChannelCode: Code[10];
-                    ChannelCode: code[20];
                 begin
                     Clear(TradePartnerList);
                     CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then
+                    if TradePartnerList.FindSet() then begin
                         repeat
                             JobQueueEntry.Init;
                             JobQueueEntry.ID := CreateGuid();
@@ -489,6 +496,7 @@ page 90016 "Trade Partner card"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
+                    end;
                 end;
             }
 
