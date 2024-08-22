@@ -40,14 +40,6 @@ pageextension 90071 "Warehouse Pick Card Ext" extends "Warehouse Pick"
                     end;
                 end;
             }
-            field("Shipping Agent Code"; Rec."Shipping Agent Code")
-            {
-                ApplicationArea = all;
-            }
-            field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
-            {
-                ApplicationArea = all;
-            }
             field("No. of Boxes"; Rec."No. of Boxes")
             {
                 ApplicationArea = all;

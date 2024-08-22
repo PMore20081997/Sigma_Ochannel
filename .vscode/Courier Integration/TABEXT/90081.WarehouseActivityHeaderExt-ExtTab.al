@@ -8,14 +8,6 @@ tableextension 90081 "Warehouse Activity Header Ext" extends "Warehouse Activity
         field(90001; "Total weight (consignment)"; Decimal)
         {
         }
-        field(90002; "Shipping Agent Code"; Code[10])
-        {
-            TableRelation = "Shipping Agent".Code;
-        }
-        field(90003; "Shipping Agent Service Code"; Code[20])
-        {
-            TableRelation = "Shipping Agent Services".Code where("Shipping Agent Code" = field("Shipping Agent Code"));
-        }
         field(90004; "PO No."; Code[20])
         {
             Editable = false;
