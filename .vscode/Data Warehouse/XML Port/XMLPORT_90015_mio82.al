@@ -470,7 +470,12 @@ xmlport 90015 "mio82"
                 begin
                     if L_PurchReceiptheader.Get(Purch_Rcpt_Line."Document No.") then;
                     Supp_Code := L_PurchReceiptheader."Buy-from Vendor No.";
-                    Prod_Code := Purch_Rcpt_Line."No.";
+
+                    if Purch_Rcpt_Line."Variant Code" = '' then begin
+                        Prod_Code := Purch_Rcpt_Line."No.";
+                    end else
+                        Prod_Code := Purch_Rcpt_Line."Variant Code";
+
                     Depot_Code := L_PurchReceiptheader."Location Code";
                     Grn_No := Purch_Rcpt_Line."Document No.";
                     Prod_Qty := Format(Purch_Rcpt_Line.Quantity);

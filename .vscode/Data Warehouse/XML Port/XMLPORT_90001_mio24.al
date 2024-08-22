@@ -317,7 +317,11 @@ xmlport 90001 "mio24"
                 begin
                     // if Check = true then
                     //     updateheadercaption();
-                    Prod_Code := Item_Ledger_Entry."Item No.";
+                    if Item_Ledger_Entry."Variant Code" = '' then begin
+                        Prod_Code := Item_Ledger_Entry."Item No.";
+                    end else
+                        Prod_Code := Item_Ledger_Entry."Variant Code";
+
                     LG_Date := format(Item_Ledger_Entry."Posting Date");
                     LG_Number := format(Item_Ledger_Entry."Document No.");
                     LS_Date := format(Item_Ledger_Entry."Posting Date");

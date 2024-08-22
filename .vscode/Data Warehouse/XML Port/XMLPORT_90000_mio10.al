@@ -964,7 +964,10 @@ xmlport 90000 "mio10"
 
                     L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.");
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
-                    Prod_Code := Purchase_Line."No."; 
+                    if Purchase_Line."Variant Code" = '' then begin
+                        Prod_Code := Purchase_Line."No.";
+                    end else
+                        Prod_Code := Purchase_Line."Variant Code";
                     DepotCode := L_PurchHeader."Location Code";
                     PurchOrdNo := Format(L_PurchHeader."No.");
                     PordQty := format(Purchase_Line.Quantity);

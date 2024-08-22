@@ -679,7 +679,7 @@ xmlport 90002 "mio01"
                     Top_Level := '';
                     Contract_Code_2 := Customer."Customer Price Group 2";
                     Credit_Limit := format(Customer."Credit Limit (LCY)");
-                    Terms_Desc := Customer."Payment Terms Id";
+                    Terms_Desc := Customer."Payment Terms Code";
                     Home_Export := '';
                     Created_Date := format(Customer.SystemCreatedAt);
                     Price_List := '';

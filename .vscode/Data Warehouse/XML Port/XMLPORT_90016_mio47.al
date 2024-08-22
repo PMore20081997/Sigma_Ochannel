@@ -711,17 +711,27 @@ xmlport 90016 "mio47"
                     Sales_Credit_Memo_Header: Record "Sales Cr.Memo Header";
                     CompInfo: Record "Company Information";
                     sales_Shipment_Header: Record "Sales Shipment Header";
+                    cust: Record Customer;
 
                 begin
 
                     if Sales_Invoice_Headers.Get(Sales_Invoice_Lines."Document No.") then;
                     Cust_Code := Sales_Invoice_Headers."Sell-to Customer No.";
-                    Prod_Code := Sales_Invoice_Lines."No.";
+                    if Sales_Invoice_Lines."Variant Code" = '' then begin
+                        Prod_Code := Sales_Invoice_Lines."No.";
+                    end else
+                        Prod_Code := Sales_Invoice_Lines."Variant Code";
+
                     Qty := format(Sales_Invoice_Lines.Quantity);
                     Val := format(Sales_Invoice_Lines.Amount);
                     Cst := format(Sales_Invoice_Lines."Unit Cost (LCY)");
                     Del_Date := format(Sales_Invoice_Headers."Shipment Date");
-                    Rep_Code := Sales_Invoice_Headers."Salesperson Code";
+                    cust.Reset();
+                    cust.SetRange("No.", Sales_Invoice_Headers."Sell-to Customer No.");
+                    if cust.FindFirst() then begin
+                        Rep_Code := cust."Territory Code";
+                    end;
+
                     Terr_Man := '';
                     Price_Type := '';
                     Supp_Dep := Sales_Invoice_Headers."Location Code";
@@ -795,7 +805,7 @@ xmlport 90016 "mio47"
                     Sord_Line_Desc := Sales_Invoice_Lines.Description;
                     Qty_Ordered := Format(Sales_Invoice_Lines.Quantity);
                     Landed_Cost := Format(Sales_Invoice_Lines."Unit Cost (LCY)");
-                    FC_Val := Format(Sales_Invoice_Headers.Amount);
+                    FC_Val := Format(Sales_Invoice_Lines.Amount);
                     Exch_Rate := Format(Sales_Invoice_Headers."Currency Factor");
                     Foreign_Curr_Code := Format(Sales_Invoice_Headers."Currency Code");
                     RM_Cost := '';
