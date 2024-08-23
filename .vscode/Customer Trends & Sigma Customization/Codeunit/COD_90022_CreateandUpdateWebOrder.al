@@ -112,6 +112,12 @@ codeunit 90022 "OC Create & Update WebOrder"
             Temp_InterimSalesLine.Validate("Channel SKU", _CustomerTrends."Item No.");
             Temp_InterimSalesLine.Validate("No.", _CustomerTrends."Item No.");
             Temp_InterimSalesLine.Quantity := _CustomerTrends."Qty. to be added to SO";
+            Temp_InterimSalesLine."Changed UnitPrice" := _CustomerTrends."Changed UnitPrice";
+            Temp_InterimSalesLine."Unit Price" := _CustomerTrends."Unit Price";
+            Temp_InterimSalesLine."Discount %" := _CustomerTrends."Line Disc %";
+            Temp_InterimSalesLine.Amount := _CustomerTrends.Amount;
+            Temp_InterimSalesLine."VAT amount" := _CustomerTrends."VAT amount";
+            Temp_InterimSalesLine."Amount Including VAT" := _CustomerTrends."Amount Including VAT";
             Temp_InterimSalesLine.Insert();
         end;
         #endregion
@@ -305,7 +311,13 @@ codeunit 90022 "OC Create & Update WebOrder"
         L_InterimSalesLine."Channel Order ID" := P_InterimSalesLine."Channel Order ID";
         L_InterimSalesLine."Currency Code" := P_InterimSalesLine."Currency Code";
         L_InterimSalesLine."Shipment Date" := P_InterimSalesHeader."Shipment Date";
+        L_InterimSalesLine."Changed UnitPrice" := P_InterimSalesLine."Changed UnitPrice";
         L_InterimSalesLine.Discount := P_InterimSalesLine.Discount;
+        L_InterimSalesLine."Unit Price" := P_InterimSalesLine."Unit Price";
+        L_InterimSalesLine."Discount %" := P_InterimSalesLine."Discount %";
+        L_InterimSalesLine.Amount := P_InterimSalesLine.Amount;
+        L_InterimSalesLine."VAT amount" := P_InterimSalesLine."VAT amount";
+        L_InterimSalesLine."Amount Including VAT" := P_InterimSalesLine."Amount Including VAT";
 
         L_ItemVariant.Reset();
         L_ItemVariant.SetRange(Code, L_InterimSalesLine."NAV Variant code");

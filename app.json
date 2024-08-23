@@ -2,7 +2,7 @@
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
   "name": "Ochannel 2.0",
   "publisher": "Robosol",
-  "version": "24.0.0.32",
+  "version": "24.0.0.33",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -27,7 +27,7 @@
       "id": "89b2d3ff-cff9-4506-9a14-597a5b6d370f",
       "name": "Interim WMS BC Customisation",
       "publisher": "Robosol",
-      "version": "24.0.0.57"
+      "version": "24.0.0.58"
     },
     {
       "id": "1a0f1d96-00b3-4f86-b25b-d0af4bcd74f4",
@@ -45,7 +45,7 @@
       "id": "9d21f859-860e-4a4d-ab73-d2bf6815a030",
       "name": "Customer_Trends",
       "publisher": "Robosol",
-      "version": "24.0.0.14"
+      "version": "24.0.0.15"
     },
     {
       "id": "996edaf0-a9f0-4939-aea6-cfbc08d07710",

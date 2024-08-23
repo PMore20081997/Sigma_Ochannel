@@ -269,40 +269,12 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     Editable = false;
                 }
-                field("Reason Code"; Rec."Reason Code")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Reason Message"; Rec."Reason Message")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Reserved Qty"; Rec."Reserved Qty")
-                {
-                    ApplicationArea = ALl;
-                    Editable = false;
-                    Visible = false;
-                }
-                field(Reserved; Rec.Reserved)
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                    Editable = false;
-                }
-                field("Channel Price"; Rec."Channel Price")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                    Visible = false;
-                }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     Caption = 'Unit Price Ex. VAT';
                     ApplicationArea = All;
                     DecimalPlaces = 0 : 4;
-                    Visible = false;
+                    Editable = false;
 
                     trigger OnValidate()
                     var
@@ -339,6 +311,110 @@ page 90004 "Web order Subpage"
                         end;
                     end;
                 }
+                field("Discount %"; Rec."Discount %")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field(Amount; Rec.Amount)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field("VAT amount"; Rec."VAT amount")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+
+                    trigger OnValidate()
+                    var
+                        InterimSalesHeader: Record "Interim Sales Header";
+                        TotalAmount: Decimal;
+                        Amount: Decimal;
+                        L_InterimSalesLine: Record "Interim Sales Line";
+                        VATDifference: Decimal;
+                        GeneralLedgerSetup: Record "General Ledger Setup";
+                    begin
+                        GeneralLedgerSetup.Get();
+                        Clear(VATDifference);
+                        if xRec."VAT amount" > Rec."VAT amount" then begin
+                            VATDifference := xRec."VAT amount" - Rec."VAT amount";
+                        end
+                        else begin
+                            VATDifference := Rec."VAT amount" - xRec."VAT amount";
+                        end;
+
+                        if (VATDifference > GeneralLedgerSetup."Max. VAT Difference Allowed") then begin
+                            Error(StrSubstNo('VAT Difference must not exceed Max. VAT Difference Allowed = %1', GeneralLedgerSetup."Max. VAT Difference Allowed"));
+                        end;
+
+                        if Rec."Document No" <> '' then begin
+                            InterimSalesHeader.Reset();
+                            InterimSalesHeader.SetFilter("No.", Rec."Document No");
+                            if InterimSalesHeader.FindFirst() then begin
+                                Clear(TotalAmount);
+                                L_InterimSalesLine.Reset();
+                                L_InterimSalesLine.SetRange("Document Type", L_InterimSalesLine."Document Type"::Order);
+                                L_InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
+                                if L_InterimSalesLine.FindSet() then begin
+                                    repeat
+                                        Clear(Amount);
+                                        if L_InterimSalesLine."Unit Price" > 0 then begin
+                                            if L_InterimSalesLine."Line No." = Rec."Line No." then begin
+                                                Amount := (L_InterimSalesLine."Unit Price" * L_InterimSalesLine.Quantity) + Rec."VAT amount";
+                                            end
+                                            else begin
+                                                Amount := (L_InterimSalesLine."Unit Price" * L_InterimSalesLine.Quantity) + L_InterimSalesLine."VAT amount";
+                                            end;
+                                        end;
+                                        TotalAmount += Amount;
+                                    until L_InterimSalesLine.Next() = 0;
+                                end;
+                                InterimSalesHeader."Order Amount" := TotalAmount;
+                                InterimSalesHeader.Modify();
+                            end;
+                        end;
+                        CurrPage.Update();
+                    end;
+                }
+                field("Amount Including VAT"; Rec."Amount Including VAT")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field("Reason Code"; Rec."Reason Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Reason Message"; Rec."Reason Message")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Reserved Qty"; Rec."Reserved Qty")
+                {
+                    ApplicationArea = ALl;
+                    Editable = false;
+                    Visible = false;
+                }
+                field(Reserved; Rec.Reserved)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                    Editable = false;
+                }
+                field("Channel Price"; Rec."Channel Price")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+
                 field("Quantity Handeled"; Rec."Trolley closed Quantity")
                 {
                     ApplicationArea = All;
@@ -405,77 +481,7 @@ page 90004 "Web order Subpage"
                     Caption = 'Line Discount Inc VAT';
                     Visible = false;
                 }
-                field("Discount %"; Rec."Discount %")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("VAT amount"; Rec."VAT amount")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
 
-                    trigger OnValidate()
-                    var
-                        InterimSalesHeader: Record "Interim Sales Header";
-                        TotalAmount: Decimal;
-                        Amount: Decimal;
-                        L_InterimSalesLine: Record "Interim Sales Line";
-                        VATDifference: Decimal;
-                        GeneralLedgerSetup: Record "General Ledger Setup";
-                    begin
-                        GeneralLedgerSetup.Get();
-                        Clear(VATDifference);
-                        if xRec."VAT amount" > Rec."VAT amount" then begin
-                            VATDifference := xRec."VAT amount" - Rec."VAT amount";
-                        end
-                        else begin
-                            VATDifference := Rec."VAT amount" - xRec."VAT amount";
-                        end;
-
-                        if (VATDifference > GeneralLedgerSetup."Max. VAT Difference Allowed") then begin
-                            Error(StrSubstNo('VAT Difference must not exceed Max. VAT Difference Allowed = %1', GeneralLedgerSetup."Max. VAT Difference Allowed"));
-                        end;
-
-                        if Rec."Document No" <> '' then begin
-                            InterimSalesHeader.Reset();
-                            InterimSalesHeader.SetFilter("No.", Rec."Document No");
-                            if InterimSalesHeader.FindFirst() then begin
-                                Clear(TotalAmount);
-                                L_InterimSalesLine.Reset();
-                                L_InterimSalesLine.SetRange("Document Type", L_InterimSalesLine."Document Type"::Order);
-                                L_InterimSalesLine.SetRange("Document No", InterimSalesHeader."No.");
-                                if L_InterimSalesLine.FindSet() then begin
-                                    repeat
-                                        Clear(Amount);
-                                        if L_InterimSalesLine."Unit Price" > 0 then begin
-                                            if L_InterimSalesLine."Line No." = Rec."Line No." then begin
-                                                Amount := (L_InterimSalesLine."Unit Price" * L_InterimSalesLine.Quantity) + Rec."VAT amount";
-                                            end
-                                            else begin
-                                                Amount := (L_InterimSalesLine."Unit Price" * L_InterimSalesLine.Quantity) + L_InterimSalesLine."VAT amount";
-                                            end;
-                                        end;
-                                        TotalAmount += Amount;
-                                    until L_InterimSalesLine.Next() = 0;
-                                end;
-                                InterimSalesHeader."Order Amount" := TotalAmount;
-                                InterimSalesHeader.Modify();
-                            end;
-                        end;
-                        CurrPage.Update();
-                    end;
-                }
-                field(Amount; Rec.Amount)
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
-                field("Amount Including VAT"; Rec."Amount Including VAT")
-                {
-                    ApplicationArea = All;
-                    Visible = false;
-                }
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;

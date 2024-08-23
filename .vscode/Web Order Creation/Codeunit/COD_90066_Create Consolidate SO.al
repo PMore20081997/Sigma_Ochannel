@@ -64,6 +64,8 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.SetRange("No.", _InterimSalesLine."No.");
         Temporary_SalesLine.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine.SetRange(Type, Temporary_SalesLine.Type::Item);
+        Temporary_SalesLine.SetRange("Changed UnitPrice", _InterimSalesLine."Changed UnitPrice");
+        Temporary_SalesLine.SetRange("Unit Price", _InterimSalesLine."Unit Price");
         if Temporary_SalesLine.FindFirst() then begin
             Temporary_SalesLine.Quantity := Temporary_SalesLine.Quantity + _InterimSalesLine."Qty. to Deliver";
 
@@ -100,6 +102,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine."Temp Web Order No." := _InterimSH."No.";
+            Temporary_SalesLine."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
+            Temporary_SalesLine."Unit Price" := _InterimSalesLine."Unit Price";
 
 
             //Update KNAP Line+++
@@ -130,6 +134,8 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine_ForLoop.SetRange("No.", _InterimSalesLine."No.");
         Temporary_SalesLine_ForLoop.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine_ForLoop.SetRange(Type, Temporary_SalesLine_ForLoop.Type::Item);
+        Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", _InterimSalesLine."Changed UnitPrice");
+        Temporary_SalesLine_ForLoop.SetRange("Unit Price", _InterimSalesLine."Unit Price");
         if Temporary_SalesLine_ForLoop.FindFirst() then begin
             Temporary_SalesLine_ForLoop.Quantity := Temporary_SalesLine_ForLoop.Quantity + _InterimSalesLine."Qty. to Deliver";
 
@@ -165,6 +171,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine_ForLoop."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine_ForLoop."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine_ForLoop."Temp Web Order No." := _InterimSH."No.";
+            Temporary_SalesLine_ForLoop."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
+            Temporary_SalesLine_ForLoop."Unit Price" := _InterimSalesLine."Unit Price";
 
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
@@ -331,15 +339,36 @@ codeunit 90066 "Create Consolidate SO"
         L_Location: Record Location;
         L_Zone: Record Zone;
     begin
+        // InsertedSL.Reset();
+        // InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
+        // InsertedSL.SetRange("Document No.", _SalesOrderNo);
+        // InsertedSL.SetRange("No.", _Temporary_SalesLine."No.");
+        // InsertedSL.SetRange(Type, InsertedSL.Type::Item);
+        // if InsertedSL.FindFirst() then begin
+        //     InsertedSL.Validate(Quantity, InsertedSL.Quantity + _Temporary_SalesLine.Quantity);
+        //     InsertedSL.Modify(true);
+        // end else begin
+        //     InsertedSL.Init();
+        //     InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
+        //     InsertedSL.VALIDATE("Document No.", _SalesOrderNo);
+        //     InsertedSL.VALIDATE("Line No.", GetLastLineNo(_SalesOrderNo));
+        //     InsertedSL.VALIDATE(Type, InsertedSL.Type::Item);
+        //     InsertedSL.VALIDATE("No.", _Temporary_SalesLine."No.");
+        //     InsertedSL.VALIDATE(Quantity, _Temporary_SalesLine.Quantity);
+        //     InsertedSL.Validate("Location Code", _Temporary_SalesLine."Location Code");
+        //     InsertedSL.Validate("Knapp Line", _Temporary_SalesLine."Knapp Line");
+        //     L_Item.Reset();
+        //     L_Item.SetRange("No.", _Temporary_SalesLine."No.");
+        //     if L_Item.FindFirst() then
+        //         InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
+        //     InsertedSL.Insert(true);
+        // end;
+
+        //New Code++
         InsertedSL.Reset();
         InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
         InsertedSL.SetRange("Document No.", _SalesOrderNo);
-        InsertedSL.SetRange("No.", _Temporary_SalesLine."No.");
-        InsertedSL.SetRange(Type, InsertedSL.Type::Item);
         if InsertedSL.FindFirst() then begin
-            InsertedSL.Validate(Quantity, InsertedSL.Quantity + _Temporary_SalesLine.Quantity);
-            InsertedSL.Modify(true);
-        end else begin
             InsertedSL.Init();
             InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
             InsertedSL.VALIDATE("Document No.", _SalesOrderNo);
@@ -353,6 +382,10 @@ codeunit 90066 "Create Consolidate SO"
             L_Item.SetRange("No.", _Temporary_SalesLine."No.");
             if L_Item.FindFirst() then
                 InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
+
+            InsertedSL."Changed UnitPrice" := _Temporary_SalesLine."Changed UnitPrice";
+            if _Temporary_SalesLine."Changed UnitPrice" = true then
+                InsertedSL.Validate("Unit Price", _Temporary_SalesLine."Unit Price");
             InsertedSL.Insert(true);
         end;
     end;

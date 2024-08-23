@@ -374,6 +374,10 @@ table 90006 "Handled Interim Sales Line"
             FieldClass = FlowField;
             CalcFormula = exist("Item Variant" where("Item No." = field("No.")));
         }
+        field(86; "Changed UnitPrice"; Boolean)
+        {
+            Editable = false;
+        }
     }
 
     keys
