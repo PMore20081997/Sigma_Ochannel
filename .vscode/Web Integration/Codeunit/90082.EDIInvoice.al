@@ -156,7 +156,7 @@ codeunit 90082 "EDI Invoice"
         HeaderInfoAll := '';
         HeaderInfo1 := '**!' + '1.02.30' + 'G' + 'INV' + '0000' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + CompanyInfo.GLN + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + '^^^^' + CRLF[1];
-        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
+        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYPostingFormat + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + CompGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];

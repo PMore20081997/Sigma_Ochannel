@@ -671,7 +671,7 @@ xmlport 90002 "mio01"
                     Postcode := Customer."Post Code";
                     Telephone_No := Customer."Phone No.";
                     Fax_Number := Customer."Fax No.";
-                    Market_Code := '';
+                    Market_Code := Customer."Market Code";
                     Cust_Anal_3 := '';
                     Rep_Code := Customer."Territory Code";
                     Terr_Man := Customer."Salesperson Code";
@@ -707,7 +707,7 @@ xmlport 90002 "mio01"
                     CustLedger.SetRange("Customer No.", Customer."No.");
                     CustLedger.SetRange("Document Type", CustLedger."Document Type"::Payment);
                     if CustLedger.FindLast() then begin
-                        Date_Last_Paid := Format(CustLedger."Posting Date");
+                        Date_Last_Paid := Format(CustLedger."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
 
                     Last_Pay_Amount := '';

@@ -52,6 +52,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         xmlmio82: XmlPort mio82;
         xmlcontractprices: XmlPort "Contract Price Lists";
         xmlmio06ct: XmlPort mio06ct;
+        xmlproductvariant: XmlPort "Product variant";
         XMLOutStream: OutStream;
         XMLInStream: InStream;
         FileName: Text;
@@ -403,6 +404,19 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempBlob.CreateOutStream(XMLOutStream);
         xmlmio06ct.SetDestination(XMLOutStream);
         xmlmio06ct.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        #endregion
+
+        #region "productvariant" 28
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'productvariant.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlproductvariant.SetDestination(XMLOutStream);
+        xmlproductvariant.Export();
         TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);

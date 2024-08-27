@@ -14,7 +14,6 @@ xmlport 90001 "mio24"
 
     schema
     {
-
         textelement(Root)
         {
             tableelement(Integer; Integer)
@@ -179,9 +178,9 @@ xmlport 90001 "mio24"
             }
 
 
-            tableelement("Item_Ledger_Entry"; "Item Ledger Entry")
+            tableelement(Item; Item)
             {
-                //CalcFields = "Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory;
+                CalcFields = "Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory;
                 //SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
 
                 textelement("Prod_Code")
@@ -308,53 +307,69 @@ xmlport 90001 "mio24"
 
 
                 trigger OnAfterGetRecord()
-
                 var
                     //L_PurchHeader: Record "Purchase Header";
-                    L_Item: record "Item";
+                    L_ILE: record "Item Ledger Entry";
                     companyInfo: Record "Company Information";
 
                 begin
                     // if Check = true then
                     //     updateheadercaption();
-                    if Item_Ledger_Entry."Variant Code" = '' then begin
-                        Prod_Code := Item_Ledger_Entry."Item No.";
-                    end else
-                        Prod_Code := Item_Ledger_Entry."Variant Code";
-
-                    LG_Date := format(Item_Ledger_Entry."Posting Date");
-                    LG_Number := format(Item_Ledger_Entry."Document No.");
-                    LS_Date := format(Item_Ledger_Entry."Posting Date");
-                    DepotCode := Item_Ledger_Entry."Location Code";
-                    L_Item.Reset();
-                    L_Item.SetRange("No.", Item_Ledger_Entry."Item No.");
-                    if L_Item.FindFirst() then begin
-                        L_Item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory);
-
-                        Phys_Stock := format(L_Item.Inventory);
-                        Alloc_Stock := Format(L_Item."Qty. on Sales Order" + L_Item."Qty. on Web Order");
-                        Alloc_After := '';
-                        On_Order := format(L_Item."Qty. on Purch. Order");
-                        Backorder := format(L_Item."Qty. on Sales Order");
-                        Pick_Bin := '';
-                        LPP_Cost := format(L_Item."Last Direct Cost");
-                        Avg_Cost := format(L_Item."Unit Cost");
-                        True_Cost := '';
-                        Min_Stock := format(L_Item."Reorder Point");
-                        Std_Cost := '0';
-                        Max_Stock := format(L_Item."Maximum Inventory");
-                        Average_usage := '';
-                        Average_usage_UOM := '';
-                        Average_usage_period := '';
-                        File_Date := '';
-                        Stock_Holding_Date := '';
-                        Temp_Stop_on_Sales := Format(L_Item."Sales Blocked");
+                    L_ILE.Reset();
+                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Purchase);
+                    if L_ILE.FindLast() then begin
+                        LG_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                        LG_Number := format(L_ILE."Document No.");
                     end;
+                    L_ILE.Reset();
+                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Sale);
+                    if L_ILE.FindLast() then begin
+                        LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    end;
+
+
+                    L_ILE.Reset();
+                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    if L_ILE.FindSet() then begin
+                        repeat
+                            DepotCode := L_ILE."Location Code";
+                        until L_ILE.Next() = 0;
+                    end;
+
+                    L_ILE.Reset();
+                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    if L_ILE.FindFirst() then begin
+                        if L_ILE."Variant Code" = '' then begin
+                            Prod_Code := L_ILE."Item No.";
+                        end else begin
+                            Prod_Code := L_ILE."Variant Code";
+                        end;
+                    end;
+
+
+
+                    Phys_Stock := format(item.Inventory);
+                    Alloc_Stock := Format(Item."Qty. on Sales Order" + item."Qty. on Web Order");
+                    Alloc_After := '';
+                    On_Order := format(Item."Qty. on Purch. Order");
+                    Backorder := format(Item."Qty. on Sales Order");
                     companyInfo.Get();
                     Company := companyInfo.Name;
-
-
-                    //Check := false;
+                    Pick_Bin := '';
+                    LPP_Cost := format(Item."Last Direct Cost");
+                    Avg_Cost := format(Item."Unit Cost");
+                    True_Cost := format(Item."Unit List Price");
+                    Min_Stock := format(Item."Reorder Point");
+                    Std_Cost := '0';
+                    Max_Stock := format(Item."Maximum Inventory");
+                    Average_usage := '';
+                    Average_usage_UOM := '';
+                    Average_usage_period := '';
+                    File_Date := '';
+                    Stock_Holding_Date := '';
+                    Temp_Stop_on_Sales := Format(item."Sales Blocked");
                 end;
             }
 

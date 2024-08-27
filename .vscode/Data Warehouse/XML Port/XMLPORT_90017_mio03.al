@@ -240,6 +240,9 @@ xmlport 90017 "mio03"
                 textelement("Commodity_Code_Header")
                 {
                 }
+                textelement("Average_Cost_Header")
+                {
+                }
 
                 trigger OnAfterGetRecord()
                 var
@@ -301,10 +304,12 @@ xmlport 90017 "mio03"
                     Operational_Stop_Header := 'Operational Stop';
                     Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
+                    "Average_Cost_Header" := 'AverageCost';
                 end;
             }
             tableelement(Item; Item)
             {
+                CalcFields = "Parent Category";
 
                 textelement("Prod_Code")
                 {
@@ -526,13 +531,17 @@ xmlport 90017 "mio03"
                 textelement("Commodity_Code")
                 {
                 }
+                textelement("Average_Cost")
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
                     compInfo: Record "Company Information";
                     itemRef: Record "Item Reference";
                     binContent: Record "Bin Content";
-                    itemvariant: record "Item Reference";
+                    tempRange: Record "Temperature Range";
 
                 begin
 
@@ -562,7 +571,12 @@ xmlport 90017 "mio03"
 
                     Sedes_AAH_Code := '';
                     Dept_Code := '';
-                    Temperature := Item.Storage;
+                    tempRange.Reset();
+                    tempRange.SetRange(Code, Item.Storage);
+                    if tempRange.FindFirst() then begin
+                        Temperature := tempRange.Description;
+                    end;
+
                     List_Price := Format(Item."Last Direct Cost");
                     List_Curr := '';
                     Supp_Prod := Item."Vendor Item No.";
@@ -613,6 +627,7 @@ xmlport 90017 "mio03"
                         Temp_Stop_on_Sales := 'N';
                     end;
                     Commodity_Code := '';
+                    Average_Cost := Format(Item."Unit Cost");
                 end;
             }
         }

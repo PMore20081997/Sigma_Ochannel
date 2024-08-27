@@ -716,12 +716,14 @@ xmlport 90016 "mio47"
                 begin
 
                     if Sales_Invoice_Headers.Get(Sales_Invoice_Lines."Document No.") then;
+
+                    Sales_Invoice_Headers.CalcFields(Amount);
                     Cust_Code := Sales_Invoice_Headers."Sell-to Customer No.";
                     if Sales_Invoice_Lines."Variant Code" = '' then begin
                         Prod_Code := Sales_Invoice_Lines."No.";
-                    end else
+                    end else begin
                         Prod_Code := Sales_Invoice_Lines."Variant Code";
-
+                    end;
                     Qty := format(Sales_Invoice_Lines.Quantity);
                     Val := format(Sales_Invoice_Lines.Amount);
                     Cst := format(Sales_Invoice_Lines."Unit Cost (LCY)");
@@ -747,7 +749,7 @@ xmlport 90016 "mio47"
                     if L_Item.Get(Sales_Invoice_Lines."No.") then;
                     Supp_Code := L_Item."Vendor No.";
                     Weight := format(Sales_Invoice_Lines."Net Weight");
-                    Ord_Date := Format(Sales_Invoice_Headers."Order Date");
+                    Ord_Date := Format(Sales_Invoice_Headers."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     FOC_Ind := 'Paid Sale';
                     Vehicle_Reg := '';
                     Inv_Cred := 'Invoice';
@@ -771,13 +773,13 @@ xmlport 90016 "mio47"
                     Picker_Code := '';
                     Line_Type := '';
                     Volume := '';
-                    Inv_Date := format(Sales_Invoice_Headers."Posting Date");
+                    Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Cust_Ord_No := Sales_Invoice_Headers."External Document No.";
                     Inv_No := Sales_Invoice_Headers."No.";
                     sales_Shipment_Header.Reset();
                     sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Headers."Order No.");
                     if sales_Shipment_Header.FindFirst() then begin
-                        Promise_Date := format(sales_Shipment_Header."Promised Delivery Date");
+                        Promise_Date := format(sales_Shipment_Header."Promised Delivery Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
                     Account_Year := '';
                     Account_Month := '';
@@ -805,7 +807,7 @@ xmlport 90016 "mio47"
                     Sord_Line_Desc := Sales_Invoice_Lines.Description;
                     Qty_Ordered := Format(Sales_Invoice_Lines.Quantity);
                     Landed_Cost := Format(Sales_Invoice_Lines."Unit Cost (LCY)");
-                    FC_Val := Format(Sales_Invoice_Lines.Amount);
+                    FC_Val := Format(Sales_Invoice_Headers.Amount);
                     Exch_Rate := Format(Sales_Invoice_Headers."Currency Factor");
                     Foreign_Curr_Code := Format(Sales_Invoice_Headers."Currency Code");
                     RM_Cost := '';
@@ -814,7 +816,7 @@ xmlport 90016 "mio47"
                     Indirect_OH := '';
                     Finishing_Costs := '';
                     Transfer_Disc := '';
-                    Av_Cost_Value := '';
+                    Av_Cost_Value := Format(Sales_Invoice_Lines."Unit Cost");
 
                 end;
             }

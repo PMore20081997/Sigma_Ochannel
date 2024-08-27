@@ -966,10 +966,11 @@ xmlport 90000 "mio10"
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
                     if Purchase_Line."Variant Code" = '' then begin
                         Prod_Code := Purchase_Line."No.";
-                    end else
+                    end else begin
                         Prod_Code := Purchase_Line."Variant Code";
+                    end;
                     DepotCode := L_PurchHeader."Location Code";
-                    PurchOrdNo := Format(L_PurchHeader."No.");
+                    PurchOrdNo := L_PurchHeader."No.";
                     PordQty := format(Purchase_Line.Quantity);
                     Pord_Qty_OS := format(Purchase_Line."Outstanding Quantity");
                     Qty_Desc := Purchase_Line."Unit of Measure";
@@ -979,12 +980,13 @@ xmlport 90000 "mio10"
                     Pord_List := format(L_Item."Unit Price");
                     Pord_Price := format(Purchase_Line."Direct Unit Cost");
                     Receipt_No := Format(Purchase_Line."Receipt No.");
-                    L_PurchRectHeader.Reset();
-                    L_PurchRectHeader.SetRange("Order No.", Purchase_Line."Document No.");
-                    if L_PurchRectHeader.FindSet() then
-                        OrderDate := format(L_PurchHeader."Order Date");
-                    DueDate := Format(L_PurchHeader."Expected Receipt Date");
-                    Orig_Due_Date := Format(L_PurchHeader."Due Date");
+                    // L_PurchRectHeader.Reset();
+                    // L_PurchRectHeader.SetRange("Order No.", Purchase_Line."Document No.");
+                    // if L_PurchRectHeader.FindFirst() then begin
+                    OrderDate := format(L_PurchHeader."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    //end;
+                    DueDate := Format(L_PurchHeader."Expected Receipt Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Orig_Due_Date := Format(L_PurchHeader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Period := Format(L_PurchHeader."Order Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
                     Days_Late := '';

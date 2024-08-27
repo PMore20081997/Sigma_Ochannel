@@ -473,9 +473,9 @@ xmlport 90015 "mio82"
 
                     if Purch_Rcpt_Line."Variant Code" = '' then begin
                         Prod_Code := Purch_Rcpt_Line."No.";
-                    end else
+                    end else begin
                         Prod_Code := Purch_Rcpt_Line."Variant Code";
-
+                    end;
                     Depot_Code := L_PurchReceiptheader."Location Code";
                     Grn_No := Purch_Rcpt_Line."Document No.";
                     Prod_Qty := Format(Purch_Rcpt_Line.Quantity);
@@ -495,8 +495,8 @@ xmlport 90015 "mio82"
 
                     Price_Desc := '';
                     Grn_Price := Format((Purch_Rcpt_Line."Unit Price (LCY)") * (Purch_Rcpt_Line.Quantity));
-                    Receipt_Date := Format(L_PurchReceiptheader."Posting Date");
-                    Due_Date := Format(L_PurchReceiptheader."Due Date");
+                    Receipt_Date := Format(L_PurchReceiptheader."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Due_Date := Format(L_PurchReceiptheader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Weight := format(Purch_Rcpt_Line."Net Weight");
                     // Period := Format(Date2DMY(Purch_Rcpt_Header."Posting Date", 2));
                     Period := Format(L_PurchReceiptheader."Posting Date", 0, '<Month Text>');
@@ -522,7 +522,7 @@ xmlport 90015 "mio82"
                     Sord_Line_No := '';
                     Pord_Line_No := Format(Purch_Rcpt_Line."Line No.");
                     Pord_Line_Desc := Purch_Rcpt_Line.Description;
-                    Order_Date := Format(L_PurchReceiptheader."Order Date");
+                    Order_Date := Format(L_PurchReceiptheader."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Pord_FC_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
                     Pord_Exch_Rate := Format(L_PurchReceiptheader."Currency Factor");
                     GRN_Exch_Rate := Format(L_PurchReceiptheader."Currency Code");
