@@ -338,6 +338,7 @@ codeunit 90066 "Create Consolidate SO"
         CU_KnappGenerateDocuments: Codeunit "Knapp Generate Documents";
         L_Location: Record Location;
         L_Zone: Record Zone;
+        SalesHeader: Record "Sales Header";
     begin
         // InsertedSL.Reset();
         // InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
@@ -365,10 +366,10 @@ codeunit 90066 "Create Consolidate SO"
         // end;
 
         //New Code++
-        InsertedSL.Reset();
-        InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
-        InsertedSL.SetRange("Document No.", _SalesOrderNo);
-        if InsertedSL.FindFirst() then begin
+        SalesHeader.Reset();
+        SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Order);
+        SalesHeader.SetRange("No.", _SalesOrderNo);
+        if SalesHeader.FindFirst() then begin
             InsertedSL.Init();
             InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
             InsertedSL.VALIDATE("Document No.", _SalesOrderNo);

@@ -1,4 +1,4 @@
-codeunit 90021 "Update Channel Item Inventory"
+codeunit 90017 "Update Channel Item Inventory"
 {
     TableNo = "Job Queue Entry";
 
@@ -26,6 +26,7 @@ codeunit 90021 "Update Channel Item Inventory"
                 Clear(L_Item);
                 if L_Item.Get(L_ChannelItemListing."Item No.") then begin
                     L_ChannelItemListing.CalcFields("Physical Inventory", "Allcoated on SO", "Web Orders Qty");
+
                     Clear(PhysicalInventory);
                     PhysicalInventory := L_ChannelItemListing."Physical Inventory";
 
@@ -56,7 +57,7 @@ codeunit 90021 "Update Channel Item Inventory"
 
                 L_ChannelItemListing.Modify(true);
                 Commit();
-            Until L_ChannelItemListing.Next = 0;
+            Until L_ChannelItemListing.Next() = 0;
         end;
     end;
 }
