@@ -239,7 +239,6 @@ page 90026 "DC Web Order Line Subpage"
         L_AttributeCode: Code[20];
         L_CompanyLicenseError: Text[100];
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
-        SalesQuotaValidation: Codeunit "Web Order Sales Quota";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
         ItemBlockedError: Text;
     begin

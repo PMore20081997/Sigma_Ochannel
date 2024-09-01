@@ -903,7 +903,6 @@ codeunit 90000 "Web Order Mgt"
         L_CustRef: Record "Customer Reference";
         LineCount: Integer;
         ErrorCount: Integer;
-        SalesQuotaValidation: Codeunit "Web Order Sales Quota";
         L_ProductLevelResponse: Record "Product Level Response";
         L_OrderLevelResponse: Record "Order Level Response";
         Rec_InterimLine: Record "Interim Sales Line";
