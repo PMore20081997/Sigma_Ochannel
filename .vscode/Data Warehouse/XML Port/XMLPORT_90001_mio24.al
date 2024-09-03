@@ -178,9 +178,10 @@ xmlport 90001 "mio24"
             }
 
 
-            tableelement(Item; Item)
+            tableelement(TempILE; TempILE)
             {
-                CalcFields = "Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory;
+
+                // CalcFields = "Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory;
                 //SourceTableView = SORTING(Number) WHERE(Number = CONST(1));
 
                 textelement("Prod_Code")
@@ -311,84 +312,106 @@ xmlport 90001 "mio24"
                     //L_PurchHeader: Record "Purchase Header";
                     L_ILE: record "Item Ledger Entry";
                     companyInfo: Record "Company Information";
+                    L_item: Record Item;
 
                 begin
                     // if Check = true then
                     //     updateheadercaption();
                     L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Purchase);
                     if L_ILE.FindLast() then begin
                         LG_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                         LG_Number := format(L_ILE."Document No.");
                     end;
                     L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
+                    L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Sale);
                     if L_ILE.FindLast() then begin
                         LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
+                    DepotCode := TempILE."Depot Code";
 
-
-                    L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
-                    if L_ILE.FindSet() then begin
-                        repeat
-                            DepotCode := L_ILE."Location Code";
-                        until L_ILE.Next() = 0;
+                    if TempILE."Variant Code" = '' then begin
+                        Prod_Code := TempILE."Item No.";
+                    end else begin
+                        Prod_Code := TempILE."Variant Code";
                     end;
-
-                    L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", Item."No.");
-                    if L_ILE.FindFirst() then begin
-                        if L_ILE."Variant Code" = '' then begin
-                            Prod_Code := L_ILE."Item No.";
-                        end else begin
-                            Prod_Code := L_ILE."Variant Code";
-                        end;
+                    Phys_Stock := format(TempILE."ILE Qty.");
+                    if L_item.Get(TempILE."Item No.") then begin
+                        L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory);
+                        Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
+                        On_Order := format(L_item."Qty. on Purch. Order");
+                        Backorder := format(L_item."Qty. on Sales Order");
+                        LPP_Cost := format(L_item."Last Direct Cost");
+                        Avg_Cost := format(L_item."Unit Cost");
+                        True_Cost := format(L_item."Unit List Price");
+                        Min_Stock := format(L_item."Reorder Point");
+                        Max_Stock := format(L_item."Maximum Inventory");
+                        Temp_Stop_on_Sales := Format(L_item."Sales Blocked");
                     end;
-
-
-
-                    Phys_Stock := format(item.Inventory);
-                    Alloc_Stock := Format(Item."Qty. on Sales Order" + item."Qty. on Web Order");
-                    Alloc_After := '';
-                    On_Order := format(Item."Qty. on Purch. Order");
-                    Backorder := format(Item."Qty. on Sales Order");
                     companyInfo.Get();
                     Company := companyInfo.Name;
                     Pick_Bin := '';
-                    LPP_Cost := format(Item."Last Direct Cost");
-                    Avg_Cost := format(Item."Unit Cost");
-                    True_Cost := format(Item."Unit List Price");
-                    Min_Stock := format(Item."Reorder Point");
                     Std_Cost := '0';
-                    Max_Stock := format(Item."Maximum Inventory");
                     Average_usage := '';
                     Average_usage_UOM := '';
                     Average_usage_period := '';
                     File_Date := '';
                     Stock_Holding_Date := '';
-                    Temp_Stop_on_Sales := Format(item."Sales Blocked");
+                    Alloc_After := '';
                 end;
             }
 
         }
+
+
     }
-    // procedure updateheadercaption()
-    // begin
-    //     Supp_Code := 'Supp Code';
-    // end;
+    local procedure getlastentryno(): Integer
+    var
+        TempILE: Record TempILE;
+    begin
+        TempILE.Reset();
+        IF TempILE.FINDLAST THEN
+            exit(TempILE."Entry No." + 1)
+        ELSE
+            exit(1);
+    end;
 
-    // trigger OnPreXmlPort()
-    // var
+    trigger OnPreXmlPort()
+    var
+        TempILE: Record TempILE;
+        ILE: Record "Item Ledger Entry";
+        ILE2: Record "Item Ledger Entry";
+    begin
+        TempILE.DeleteAll();
+        ILE.Reset();
+        if ILE.FindSet() then begin
+            repeat
+                TempILE.Reset();
+                TempILE.SetRange("Item No.", ILE."Item No.");
+                TempILE.SetRange("Variant Code", ILE."Variant Code");
+                TempILE.SetRange("Depot Code", ILE."Location Code");
+                if not TempILE.FindFirst() then begin
+                    TempILE.Init();
+                    TempILE."Entry No." := getlastentryno();
+                    TempILE."Item No." := ILE."Item No.";
+                    TempILE."Variant Code" := ILE."Variant Code";
+                    TempILE."Depot Code" := ILE."Location Code";
+                    ILE2.Reset();
+                    ILE2.SetRange("Item No.", ILE."Item No.");
+                    ILE2.SetRange("Variant Code", ILE."Variant Code");
+                    ILE2.SetRange("Location Code", ILE."Location Code");
+                    if ILE2.FindSet() then begin
+                        repeat
+                            TempILE."ILE Qty." += ILE2.Quantity;
+                        until ILE2.Next() = 0;
 
-    // begin
-    //     //Check := true;
-    //     // updateheadercaption();
+                    end;
 
-    // end;
-
-    // var
-    //     Check: Boolean;
+                    TempILE.Insert()
+                end;
+            until ILE.Next() = 0;
+        end;
+    end;
 }
