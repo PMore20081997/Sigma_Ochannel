@@ -899,7 +899,7 @@ codeunit 90000 "Web Order Mgt"
         L_Line: Record "Interim Sales Line";
         L_CheckItemLicense: Codeunit "Check Item License";
         L_AttributeCode: Code[20];
-        L_CompanyLicenseError: Text[100];
+        L_CompanyLicenseError: Text[250];
         L_CustRef: Record "Customer Reference";
         LineCount: Integer;
         ErrorCount: Integer;
