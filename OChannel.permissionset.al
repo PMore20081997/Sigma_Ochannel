@@ -196,5 +196,7 @@ permissionset 90000 OChannel
         query "Qty on Web" = X,
         query "Total No Orders By Trolley" = X,
         query "Validate Interim Sales Return" = X,
-        query "Validate Return Order Screen" = X;
+        query "Validate Return Order Screen" = X,
+        tabledata TempILE = RIMD,
+        table TempILE = X;
 }
