@@ -983,7 +983,8 @@ xmlport 90000 "mio10"
                     // L_PurchRectHeader.Reset();
                     // L_PurchRectHeader.SetRange("Order No.", Purchase_Line."Document No.");
                     // if L_PurchRectHeader.FindFirst() then begin
-                    OrderDate := format(L_PurchHeader."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    OrderDate := Format(L_PurchHeader."Order Date");
+                    //OrderDate := format(L_PurchHeader."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     //end;
                     DueDate := Format(L_PurchHeader."Expected Receipt Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Orig_Due_Date := Format(L_PurchHeader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');

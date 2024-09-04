@@ -175,7 +175,7 @@ codeunit 90082 "EDI Invoice"
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
             DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileTOAzureBlob(TextInstream, FileName, TradepartnerRecord.Code);
+            UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
         end;
     end;
 
@@ -321,7 +321,7 @@ codeunit 90082 "EDI Invoice"
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
             DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileTOAzureBlob(TextInstream, FileName, TradepartnerRecord.Code);
+            UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
         end;
         //end;
     end;
@@ -486,7 +486,7 @@ codeunit 90082 "EDI Invoice"
                 TextOutstream.WriteText(EDIMessage);
                 tempblob.CreateInStream(TextInstream);
                 DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-                UploadFileTOAzureBlob(TextInstream, FileName, StartParameter);
+                UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
             end;
         end;
     end;
@@ -641,34 +641,25 @@ codeunit 90082 "EDI Invoice"
 
     local procedure UploadFileToEDIAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
     var
-        ArchiveAuthorization: Interface "Storage Service Authorization";
-        ArchiveStorageServiceAuthorization: Codeunit "Storage Service Authorization";
-        GetFileABSBlobClient: Codeunit "ABS Blob Client";
-        GetFileResponse: Codeunit "ABS Operation Response";
-        FileInstream: InStream;
-        ArchiveABSBlobClient: Codeunit "ABS Blob Client";
-        DeleteABSBlobClient: Codeunit "ABS Blob Client";
-        ArchiveResponse: Codeunit "ABS Operation Response";
-        DeleteResponse: Codeunit "ABS Operation Response";
+        Authorization: Interface "Storage Service Authorization";
+        StorageServiceAuthorization: Codeunit "Storage Service Authorization";
+        ABSBlobClient: Codeunit "ABS Blob Client";
+        Response: Codeunit "ABS Operation Response";
+
     begin
         GetCredentials(P_ChannelCode);
+        Clear(Authorization);
+        Clear(StorageServiceAuthorization);
+        Authorization := StorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
 
-        Clear(ArchiveAuthorization);
-        Clear(ArchiveStorageServiceAuthorization);
-        ArchiveAuthorization := ArchiveStorageServiceAuthorization.CreateSharedKey(SharedAccessKey);
+        Clear(ABSBlobClient);
+        ABSBlobClient.Initialize(StorageAccountName, OutgoingContainerName, Authorization);
 
-        #Region Upload File in Archive Container and Delete from Order Container
-        Clear(ArchiveABSBlobClient);
-        ArchiveABSBlobClient.Initialize(StorageAccountName, ArchiveContainerName, ArchiveAuthorization);
-
-        Clear(ArchiveResponse);
-        ArchiveResponse := ArchiveABSBlobClient.PutBlobBlockBlobStream(P_FileName, FileInstream);
-
-        #endregion
+        Clear(Response);
+        Response := ABSBlobClient.PutBlobBlockBlobStream(P_FileName, P_FileInstream);
     end;
 
-    local procedure
-    GetCredentials(ChannelCode: Code[20])
+    local procedure GetCredentials(ChannelCode: Code[20])
     var
         TradePartner: Record "Trade Partner";
     begin
@@ -680,59 +671,59 @@ codeunit 90082 "EDI Invoice"
 
         End;
     end;
+    ///old
+    // procedure UploadFileTOAzureBlob(P_FileInstream: InStream; P_FileName: Text; P__ChannelCode: Code[20])
+    // var
+    //     fileMgt: Codeunit "File Management";
+    //     L_httpResponse: HttpResponseMessage;
+    //     L_httpHeader: HttpHeaders;
+    //     apiEndPoint: Text;
+    //     containerName: Text;
+    //     filename: Text;
+    //     sasToken: text;
+    //     apiUrl: Text;
+    //     L_httpClient: HttpClient;
+    //     L_httpContent: HttpContent;
+    //     apiattribute: Text;
+    //     TradePartner: Record "Trade Partner";
+    // begin
+    //     //Upload++
+    //     ClearLastError();
+    //     Clear(L_httpContent);
+    //     Clear(L_httpHeader);
+    //     Clear(apiEndPoint);
+    //     Clear(containerName);
+    //     Clear(filename);
+    //     Clear(sasToken);
+    //     Clear(L_httpClient);
+    //     Clear(L_httpResponse);
+    //     L_httpContent.WriteFrom(P_FileInstream);
+    //     L_httpContent.GetHeaders(L_httpHeader);
 
-    procedure UploadFileTOAzureBlob(P_FileInstream: InStream; P_FileName: Text; P__ChannelCode: Code[20])
-    var
-        fileMgt: Codeunit "File Management";
-        L_httpResponse: HttpResponseMessage;
-        L_httpHeader: HttpHeaders;
-        apiEndPoint: Text;
-        containerName: Text;
-        filename: Text;
-        sasToken: text;
-        apiUrl: Text;
-        L_httpClient: HttpClient;
-        L_httpContent: HttpContent;
-        apiattribute: Text;
-        TradePartner: Record "Trade Partner";
-    begin
-        //Upload++
-        ClearLastError();
-        Clear(L_httpContent);
-        Clear(L_httpHeader);
-        Clear(apiEndPoint);
-        Clear(containerName);
-        Clear(filename);
-        Clear(sasToken);
-        Clear(L_httpClient);
-        Clear(L_httpResponse);
-        L_httpContent.WriteFrom(P_FileInstream);
-        L_httpContent.GetHeaders(L_httpHeader);
+    //     L_httpHeader.Remove('Content-Type');
+    //     L_httpHeader.Add('x-ms-version', '2015-02-21');
+    //     L_httpHeader.Add('x-ms-date', '2015-02-21');
+    //     L_httpHeader.Add('x-ms-blob-type', 'BlockBlob');
+    //     L_httpHeader.Add('Content-Type', 'application/octet-stream');
 
-        L_httpHeader.Remove('Content-Type');
-        L_httpHeader.Add('x-ms-version', '2015-02-21');
-        L_httpHeader.Add('x-ms-date', '2015-02-21');
-        L_httpHeader.Add('x-ms-blob-type', 'BlockBlob');
-        L_httpHeader.Add('Content-Type', 'application/octet-stream');
+    //     TradePartner.Reset();
+    //     TradePartner.SetRange(Code, P__ChannelCode);
+    //     if TradePartner.FindFirst() then begin
+    //         apiEndPoint := TradePartner."API Endpoint";
+    //         containerName := TradePartner."Order Acknow. Container Name";
+    //         sasToken := TradePartner."Order Acknow. Container Token";
+    //     end;
 
-        TradePartner.Reset();
-        TradePartner.SetRange(Code, P__ChannelCode);
-        if TradePartner.FindFirst() then begin
-            apiEndPoint := TradePartner."API Endpoint";
-            containerName := TradePartner."Order Acknow. Container Name";
-            sasToken := TradePartner."Order Acknow. Container Token";
-        end;
+    //     // apiEndPoint := 'https://shopdirect.blob.core.windows.net';
+    //     // containerName := 'teststupdin';
+    //     // sasToken := 'sp=racwl&st=2021-06-18T09:59:46Z&se=2021-07-30T17:59:46Z&spr=https&sv=2020-02-10&sr=c&sig=GMoLncjHNc0eY2KCSDN%2BnVw819%2FmQJdKmp5ZamBst5k%3D';
 
-        // apiEndPoint := 'https://shopdirect.blob.core.windows.net';
-        // containerName := 'teststupdin';
-        // sasToken := 'sp=racwl&st=2021-06-18T09:59:46Z&se=2021-07-30T17:59:46Z&spr=https&sv=2020-02-10&sr=c&sig=GMoLncjHNc0eY2KCSDN%2BnVw819%2FmQJdKmp5ZamBst5k%3D';
-
-        apiUrl := apiEndPoint + '/' + containerName + '/' + P_FileName + sasToken;
-        L_httpClient.Put(apiUrl, L_httpContent, L_httpResponse);
-        // if L_httpResponse.HttpStatusCode = 201 then
-        //     Message('file uploaded successfully.');
-        //Upload--
-    end;
+    //     apiUrl := apiEndPoint + '/' + containerName + '/' + P_FileName + sasToken;
+    //     L_httpClient.Put(apiUrl, L_httpContent, L_httpResponse);
+    //     if L_httpResponse.HttpStatusCode = 201 then
+    //         Message('file uploaded successfully.');
+    //     //Upload--
+    // end;
 
     var
         CRLF: Text[2];
