@@ -983,11 +983,14 @@ xmlport 90000 "mio10"
                     // L_PurchRectHeader.Reset();
                     // L_PurchRectHeader.SetRange("Order No.", Purchase_Line."Document No.");
                     // if L_PurchRectHeader.FindFirst() then begin
-                    OrderDate := Format(L_PurchHeader."Order Date");
+                    OrderDate := FormatDateForCSV(L_PurchHeader."Order Date");
                     //OrderDate := format(L_PurchHeader."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     //end;
-                    DueDate := Format(L_PurchHeader."Expected Receipt Date", 0, '<Day,2>/<Month,2>/<Year,4>');
-                    Orig_Due_Date := Format(L_PurchHeader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    DueDate := FormatDateForCSV(L_PurchHeader."Expected Receipt Date");
+                    //DueDate := Format(L_PurchHeader."Expected Receipt Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Orig_Due_Date := FormatDateForCSV(L_PurchHeader."Order Date");
+
+                    // Orig_Due_Date := Format(L_PurchHeader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Period := Format(L_PurchHeader."Order Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
                     Days_Late := '';
@@ -1014,8 +1017,32 @@ xmlport 90000 "mio10"
 
                 end;
 
+
+
             }
+
 
         }
     }
+
+
+
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
+    end;
 }

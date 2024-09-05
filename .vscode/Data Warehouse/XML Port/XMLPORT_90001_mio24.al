@@ -321,14 +321,16 @@ xmlport 90001 "mio24"
                     L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Purchase);
                     if L_ILE.FindLast() then begin
-                        LG_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                        LG_Date := FormatDateForCSV(L_ILE."Posting Date");
+                        //LG_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                         LG_Number := format(L_ILE."Document No.");
                     end;
                     L_ILE.Reset();
                     L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Sale);
                     if L_ILE.FindLast() then begin
-                        LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                        LS_Date := FormatDateForCSV(L_ILE."Posting Date");
+                        // LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
                     DepotCode := TempILE."Depot Code";
 
@@ -413,5 +415,24 @@ xmlport 90001 "mio24"
                 end;
             until ILE.Next() = 0;
         end;
+    end;
+
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
 }

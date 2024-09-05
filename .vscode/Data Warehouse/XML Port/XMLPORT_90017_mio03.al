@@ -632,4 +632,22 @@ xmlport 90017 "mio03"
             }
         }
     }
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
+    end;
 }

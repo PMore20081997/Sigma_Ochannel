@@ -741,7 +741,7 @@ xmlport 90016 "mio47"
                     Op_Code := Sales_Invoice_Headers."Salesperson Code";
                     Ord_Type := '';
                     Round := Sales_Invoice_Headers."Shipping Agent Code";
-                    Pack_Price := '';
+                    Pack_Price := Format(Sales_Invoice_Lines."Unit Price");
                     Prod_Group := Sales_Invoice_Lines."Item Category Code";
                     Margin := Format(Sales_Invoice_Lines."Unit Price" - Sales_Invoice_Lines."Unit Cost");
                     Period := Format(Sales_Invoice_Headers."Posting Date", 0, '<Month Text>');
@@ -749,7 +749,8 @@ xmlport 90016 "mio47"
                     if L_Item.Get(Sales_Invoice_Lines."No.") then;
                     Supp_Code := L_Item."Vendor No.";
                     Weight := format(Sales_Invoice_Lines."Net Weight");
-                    Ord_Date := Format(Sales_Invoice_Headers."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Ord_Date := FormatDateForCSV(Sales_Invoice_Headers."Order Date");
+                    // Ord_Date := Format(Sales_Invoice_Headers."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     FOC_Ind := 'Paid Sale';
                     Vehicle_Reg := '';
                     Inv_Cred := 'Invoice';
@@ -773,13 +774,15 @@ xmlport 90016 "mio47"
                     Picker_Code := '';
                     Line_Type := '';
                     Volume := '';
-                    Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Inv_Date := FormatDateForCSV(Sales_Invoice_Headers."Posting Date");
+                    //Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Cust_Ord_No := Sales_Invoice_Headers."External Document No.";
                     Inv_No := Sales_Invoice_Headers."No.";
                     sales_Shipment_Header.Reset();
                     sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Headers."Order No.");
                     if sales_Shipment_Header.FindFirst() then begin
-                        Promise_Date := format(sales_Shipment_Header."Promised Delivery Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                        Promise_Date := FormatDateForCSV(sales_Shipment_Header."Promised Delivery Date");
+                        //Promise_Date := format(sales_Shipment_Header."Promised Delivery Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
                     Account_Year := '';
                     Account_Month := '';
@@ -822,4 +825,22 @@ xmlport 90016 "mio47"
             }
         }
     }
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
+    end;
 }

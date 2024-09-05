@@ -229,7 +229,8 @@ xmlport 90018 "mio06su"
                     vendorLedgerEntry.Reset();
                     vendorLedgerEntry.SetRange("Vendor No.", Vendor."No.");
                     if vendorLedgerEntry.FindLast() then begin
-                        Date_Last_Paid := Format(vendorLedgerEntry."Document Date");
+                        Date_Last_Paid := FormatDateForCSV(vendorLedgerEntry."Document Date");
+                        // Date_Last_Paid := Format(vendorLedgerEntry."Document Date");
                         Last_Pay_Amount := Format(vendorLedgerEntry.Amount);
                     end;
                     Email := Vendor."E-Mail";
@@ -246,4 +247,22 @@ xmlport 90018 "mio06su"
 
         }
     }
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
+    end;
 }

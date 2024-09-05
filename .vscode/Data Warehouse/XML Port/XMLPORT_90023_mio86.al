@@ -494,8 +494,10 @@ xmlport 90023 "mio86"
 
                     Price_Desc := '';
                     Grn_Price := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
-                    Receipt_Date := Format(L_PurchReceiptheader."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
-                    Due_Date := Format(L_PurchReceiptheader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Receipt_Date := FormatDateForCSV(L_PurchReceiptheader."Posting Date");
+                    //Receipt_Date := Format(L_PurchReceiptheader."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+                    Due_Date := FormatDateForCSV(L_PurchReceiptheader."Due Date");
+                    // Due_Date := Format(L_PurchReceiptheader."Due Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Weight := format(Purch_Rcpt_Line."Net Weight");
                     // Period := Format(Date2DMY(Purch_Rcpt_Header."Posting Date", 2));
                     Period := Format(L_PurchReceiptheader."Posting Date", 0, '<Month Text>');
@@ -521,7 +523,8 @@ xmlport 90023 "mio86"
                     Sord_Line_No := '';
                     Pord_Line_No := Format(Purch_Rcpt_Line."Line No.");
                     Pord_Line_Desc := Purch_Rcpt_Line.Description;
-                    Order_Date := Format(L_PurchReceiptheader."Order Date", 0, '<Day,2>/<Month,2>/20<Year>');
+                    Order_Date := FormatDateForCSV(L_PurchReceiptheader."Order Date");
+                    // Order_Date := Format(L_PurchReceiptheader."Order Date", 0, '<Day,2>/<Month,2>/20<Year>');
                     Pord_FC_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
                     Pord_Exch_Rate := Format(L_PurchReceiptheader."Currency Factor");
                     GRN_Exch_Rate := Format(L_PurchReceiptheader."Currency Code");
@@ -543,4 +546,22 @@ xmlport 90023 "mio86"
 
         }
     }
+    procedure FormatDateForCSV(MyDate: Date): Text[10];
+    var
+        DayStr: Text[2];
+        MonthStr: Text[2];
+        YearStr: Text[4];
+    begin
+        if MyDate = 0D then
+            exit('');
+        DayStr := Format(Date2DMY(MyDate, 1));
+        MonthStr := Format(Date2DMY(MyDate, 2));
+        YearStr := Format(Date2DMY(MyDate, 3));
+
+        if STRLEN(DayStr) = 1 then
+            DayStr := '0' + DayStr;
+        if STRLEN(MonthStr) = 1 then
+            MonthStr := '0' + MonthStr;
+        exit(DayStr + '/' + MonthStr + '/' + YearStr);
+    end;
 }
