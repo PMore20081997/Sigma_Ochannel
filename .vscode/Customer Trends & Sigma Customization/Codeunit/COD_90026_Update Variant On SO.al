@@ -120,6 +120,8 @@ codeunit 90026 "Udate Variant on SO"
         L_ItemVariant: Record "Item Variant";
         L_TotalInventory: Decimal;
         L_TotalRequestedQty: Decimal;
+        LocationFilter: Text;
+        L_Location: Record Location;
     begin
         // Clear(L_TotalInventory);
         // Clear(L_TotalRequestedQty);
@@ -142,9 +144,21 @@ codeunit 90026 "Udate Variant on SO"
         //New Code++
         Clear(L_TotalInventory);
         Clear(L_TotalRequestedQty);
+
+        // Clear(LocationFilter);
+        // L_Location.Reset();
+        // L_Location.SetRange("Saleable Location", true);
+        // if L_Location.FindSet() then begin
+        //     repeat
+        //         LocationFilter += L_Location.Code + '|';
+        //     until L_Location.Next() = 0;
+        //     LocationFilter := LocationFilter.TrimEnd('|');
+        // end;
+
         L_ItemVariant.Reset();
         L_ItemVariant.SetRange("Item No.", _SalesLine."No.");
         L_ItemVariant.SetFilter("Location Filter", _SalesLine."Location Code");
+        //L_ItemVariant.SetFilter("Location Filter", LocationFilter);
         L_ItemVariant.SetRange(Blocked, false);
         L_ItemVariant.SetRange("Sales Blocked", false);
         L_ItemVariant.SetRange(Code, _ItemVariant.Code);

@@ -77,6 +77,18 @@ page 90005 "Handled Web Order List"
                     ApplicationArea = All;
                     Caption = 'No. of Item Lines';
                 }
+                field("Total Order Quantity"; Rec."Total Order Quantity")
+                {
+                    ApplicationArea = All;
+                }
+                field("Total Order Amount"; Rec."Total Order Amount")
+                {
+                    ApplicationArea = All;
+                }
+                field("Total Order Amount Incl. VAT"; Rec."Total Order Amount Incl. VAT")
+                {
+                    ApplicationArea = All;
+                }
                 field("No of Error"; Rec."No of Error")
                 {
                     ApplicationArea = All;

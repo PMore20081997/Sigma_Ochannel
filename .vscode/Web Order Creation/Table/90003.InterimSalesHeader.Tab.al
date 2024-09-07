@@ -501,6 +501,24 @@ table 90003 "Interim Sales Header"
         {
             TableRelation = "Shipping Agent";
         }
+        field(123; "Total Order Quantity"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), "Document No" = field("No."), Type = const(Item)));
+            DecimalPlaces = 0 : 5;
+        }
+        field(124; "Total Order Amount"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line".Amount where("Document Type" = const(Order), "Document No" = field("No."), Type = const(Item)));
+            DecimalPlaces = 0 : 5;
+        }
+        field(125; "Total Order Amount Incl. VAT"; Decimal)
+        {
+            FieldClass = FlowField;
+            CalcFormula = sum("Interim Sales Line"."Amount Including VAT" where("Document Type" = const(Order), "Document No" = field("No."), Type = const(Item)));
+            DecimalPlaces = 0 : 5;
+        }
     }
 
 

@@ -210,6 +210,7 @@ codeunit 90066 "Create Consolidate SO"
     procedure ProcessTemporarySalesLinetoSalesOrder()
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
+        Counter: Integer;
     begin
         //For Manual Order++
         Temporary_SalesLine.Reset();
@@ -247,6 +248,7 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.SetRange("Knapp Line", true);
         if Temporary_SalesLine.FindSet() then begin
             repeat
+                Clear(Counter);
                 Temporary_SalesLine_ForLoop.Reset();
                 Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
                 Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
@@ -255,11 +257,13 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
                 if Temporary_SalesLine_ForLoop.FindSet() then begin
                     //Create Header++
                     CreateSalesHeaderFromTemporary(Temporary_SalesLine);
                     repeat
+                        Counter += 1;
                         //Create Line++
                         CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
 
@@ -268,6 +272,8 @@ codeunit 90066 "Create Consolidate SO"
 
                         Temporary_SalesLine_ForLoop."System-Created Entry" := true;
                         Temporary_SalesLine_ForLoop.Modify();
+                        if Counter = 60 then
+                            break;
                     until Temporary_SalesLine_ForLoop.Next() = 0;
                 end;
             until Temporary_SalesLine.Next() = 0;
