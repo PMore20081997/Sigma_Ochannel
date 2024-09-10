@@ -358,12 +358,12 @@ xmlport 90002 "mio01"
                     "Contact_Email_Header" := 'Contact Email';
                     "Company_Header" := 'Company';
                     "Country_Code_Header" := 'Country Code';
-                    "Customer_type_Header" := 'Customer_type';
-                    "Cust_Bako_Band_Ind_Header" := 'Cust_Bako_Band_Ind';
-                    "Payment_Stop_Header" := 'Payment_Stop';
-                    "DD_Marker_Header" := 'DD_Marker';
-                    "Daily_Min_Order_Value_Header" := 'Daily_Min_Order_Value';
-                    "Min_Order_Value_Header" := 'Min_Order_Value';
+                    "Customer_type_Header" := 'Customer type';
+                    "Cust_Bako_Band_Ind_Header" := 'Cust Bako Band Ind';
+                    "Payment_Stop_Header" := 'Payment_ top';
+                    "DD_Marker_Header" := 'DD Marker';
+                    "Daily_Min_Order_Value_Header" := 'Daily Min Order Value';
+                    "Min_Order_Value_Header" := 'Min Order Value';
                     LTD_Name_Header := 'LTD Name';
                     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX := XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 

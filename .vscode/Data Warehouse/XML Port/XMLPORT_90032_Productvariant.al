@@ -302,6 +302,10 @@ xmlport 90032 "Product variant"
                 textelement("Commodity_Code_Header")
                 {
                 }
+                textelement("Average_Cost_Header")
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
@@ -363,6 +367,7 @@ xmlport 90032 "Product variant"
                     Operational_Stop_Header := 'Operational Stop';
                     Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
+                    "Average_Cost_Header" := 'Average Cost';
                 end;
             }
             tableelement("Item_Variant"; "Item Variant")
@@ -588,26 +593,35 @@ xmlport 90032 "Product variant"
                 textelement("Commodity_Code")
                 {
                 }
+                textelement("Average_Cost")
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
                     L_Item: Record item;
                 begin
+                    L_Item.Reset();
+                    L_Item.SetRange("No.", Item_Variant."Item No.");
+                    if L_Item.FindFirst() then begin
+                        Prod_Group := L_Item."Item Category Code";
+                        Average_Cost := Format(L_Item."Unit Cost");
+                        AC_1 := L_Item."Parent Category";
+                        AC_4 := L_Item."No. 2";
+                        if L_Item.Blocked = true then begin
+                            Discon := 'Discontinued';
+                        end else
+                            Discon := 'Live';
+
+                    end;
                     Prod_Code := Item_Variant.Code;  //variant code
-                    Prod_Desc := '';
-                    Prod_Group := '';
+                    Prod_Desc := Item_Variant.Description;
                     Prod_Type := '';
-                    AC_1 := '';
                     AC_2 := '';
                     AC_3 := '';
                     Pref_Supp := '';
                     Vat_Code := '';
-                    L_Item.Reset();
-                    L_Item.SetRange("No.", Item_Variant."Item No.");
-                    if L_Item.FindFirst() then begin
-                        AC_4 := L_Item."No. 2";
-                    end;
-
                     AC_5 := '';
                     AC_6 := '';
                     Discon := '';

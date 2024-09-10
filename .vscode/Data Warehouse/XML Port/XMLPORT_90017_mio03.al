@@ -304,7 +304,7 @@ xmlport 90017 "mio03"
                     Operational_Stop_Header := 'Operational Stop';
                     Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
-                    "Average_Cost_Header" := 'AverageCost';
+                    "Average_Cost_Header" := 'Average Cost';
                 end;
             }
             tableelement(Item; Item)
