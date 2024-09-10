@@ -223,7 +223,7 @@ page 90030 "Web Order Line Subpage"
         L_TradePartner: Record "Trade Partner";
         L_CheckItemLicense: Codeunit "Check Item License";
         L_AttributeCode: Code[20];
-        L_CompanyLicenseError: Text[100];
+        L_CompanyLicenseError: Text[250];
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
         ItemBlockedError: Text;

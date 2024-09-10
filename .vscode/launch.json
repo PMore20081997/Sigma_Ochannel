@@ -12,9 +12,9 @@
             "environmentType": "Sandbox",
             "startupObjectType": "Page",
             "startupObjectId": 22,
-            "environmentName": "SIGCONNECT_DEV",
+            //"environmentName": "SIGCONNECT_DEV",
             //"environmentName": "Copy_01092024",
-            //"environmentName": "Sigma_Beta_UAT",
+            "environmentName": "Sigma_Beta_UAT",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"Synchronize"
         }

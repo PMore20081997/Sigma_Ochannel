@@ -145,20 +145,20 @@ codeunit 90026 "Udate Variant on SO"
         Clear(L_TotalInventory);
         Clear(L_TotalRequestedQty);
 
-        // Clear(LocationFilter);
-        // L_Location.Reset();
-        // L_Location.SetRange("Saleable Location", true);
-        // if L_Location.FindSet() then begin
-        //     repeat
-        //         LocationFilter += L_Location.Code + '|';
-        //     until L_Location.Next() = 0;
-        //     LocationFilter := LocationFilter.TrimEnd('|');
-        // end;
+        Clear(LocationFilter);
+        L_Location.Reset();
+        L_Location.SetRange("Saleable Location", true);
+        if L_Location.FindSet() then begin
+            repeat
+                LocationFilter += L_Location.Code + '|';
+            until L_Location.Next() = 0;
+            LocationFilter := LocationFilter.TrimEnd('|');
+        end;
 
         L_ItemVariant.Reset();
         L_ItemVariant.SetRange("Item No.", _SalesLine."No.");
-        L_ItemVariant.SetFilter("Location Filter", _SalesLine."Location Code");
-        //L_ItemVariant.SetFilter("Location Filter", LocationFilter);
+        //L_ItemVariant.SetFilter("Location Filter", _SalesLine."Location Code");
+        L_ItemVariant.SetFilter("Location Filter", LocationFilter);
         L_ItemVariant.SetRange(Blocked, false);
         L_ItemVariant.SetRange("Sales Blocked", false);
         L_ItemVariant.SetRange(Code, _ItemVariant.Code);
@@ -256,6 +256,7 @@ codeunit 90026 "Udate Variant on SO"
         Text005: TextConst ENU = 'Updating the Variant Code...\\', ENG = 'Updating the Variant Code...\\';
         Text006: TextConst ENU = 'Progress', ENG = 'Progress';
         NoOfRecords: Integer;
+        Count: Integer;
     begin
         if _SalesHeader.IsEmpty then
             exit;
@@ -263,13 +264,19 @@ codeunit 90026 "Udate Variant on SO"
         //Start Process to Update Variant Code++
         Clear(NoOfRecords);
         Clear(Counter);
-        NoOfRecords := _SalesHeader.Count;
-        Window.OPEN(Text005 + Text006 + ' @1@@@@@@@@@@@@@\' + _SalesHeader.FIELDCAPTION("No.") + ' #3##########');
+        Window.OPEN('Updating the Variant Code...' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
 
         repeat
+            NoOfRecords := _SalesHeader.Count;
             Counter += 1;
-            Window.UPDATE(1, ROUND(Counter / NoOfRecords * 10000, 1));
+            IF NoOfRecords <= 100 THEN
+                Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
+            ELSE
+                IF Count MOD (NoOfRecords DIV 100) = 0 THEN BEGIN
+                    Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
+                END;
             Window.UPDATE(3, _SalesHeader."No.");
+
             L_SalesLine.Reset();
             L_SalesLine.CalcFields("Variant Code mandatory");
             L_SalesLine.SetRange("Document Type", _SalesHeader."Document Type");

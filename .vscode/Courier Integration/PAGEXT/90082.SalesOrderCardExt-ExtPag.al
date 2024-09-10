@@ -37,7 +37,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
     {
         addafter(Release)
         {
-            action("Update Variant On Lines")
+            action("Update Variant, KNAPP Check & Release")
             {
                 ApplicationArea = All;
                 Image = Insert;
@@ -46,16 +46,57 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                 trigger OnAction()
                 var
                     UdateVariantonSO: Codeunit "Udate Variant on SO";
-                    L_Location: Record Location;
+                    L_SalesHeader: Record "Sales Header";
+                    L_SalesLine: Record "Sales Line";
+                    NoSeriesManagement: Codeunit "No. Series";
+                    Rec_SalesLine: Record "Sales Line";
+                    CU_ReleaseSalesDoc: Codeunit "Release Sales Document";
                 begin
-                    //Check Status++
-                    Rec.TestField(Status, Rec.Status::Open);
+                    Clear(L_SalesHeader);
+                    L_SalesHeader := Rec;
+                    CurrPage.SetSelectionFilter(L_SalesHeader);
 
-                    //Update Variant Code++
-                    L_Location.Reset();
-                    if L_Location.Get(Rec."Location Code") then begin
-                        if (Rec."Web Order" = true) or (L_Location."Saleable Location" = true) then
-                            UdateVariantonSO.UpdateVariantOnSalesOrder(Rec);
+                    if L_SalesHeader.FindFirst() then begin
+                        L_SalesHeader.TestField(Status, L_SalesHeader.Status::Open);
+                        L_SalesHeader.TestField("Web Order", false);
+                        UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
+                        Commit();
+
+                        L_SalesHeader.CalcFields(Shipped, "Drop/Special Order");
+                        if (L_SalesHeader."Knapp Order" = false) and (L_SalesHeader."Drop/Special Order" = false) and (L_SalesHeader.Shipped = false) then begin
+                            L_SalesLine.Reset();
+                            L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                            L_SalesLine.SetRange("Knapp Line", false);
+                            if not L_SalesLine.FindFirst() then begin
+                                L_SalesHeader."Knapp Order" := true;
+                                if L_SalesHeader."Posting No." = '' then
+                                    L_SalesHeader.Validate("Posting No.", NoSeriesManagement.GetNextNo(L_SalesHeader."Posting No. Series", WorkDate()));
+                                L_SalesHeader.Modify(true);
+
+                                Rec_SalesLine.Reset();
+                                Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                                Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                                Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
+                                Rec_SalesLine.SetRange("Knapp Line", true);
+                                if Rec_SalesLine.FindSet() then begin
+                                    Rec_SalesLine.ModifyAll("Qty. to Ship", 0);
+                                end;
+                                Commit();
+                                Message('This order is successfully converted into knapp order');
+                            end
+                            else
+                                Message('This order can not be converted into knapp order as there are non Knapp Lines in it.');
+                        end
+                        else begin
+                            Message('This order can not be converted into knapp order as the header part is not satisfying the conditions');
+                        end;
+
+                        CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                        Commit();
+
+                        Message('Process Completed');
                     end;
                 end;
             }

@@ -211,6 +211,8 @@ codeunit 90066 "Create Consolidate SO"
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         Counter: Integer;
+        GeneralSetupChannel: Record "General Setup - Channels";
+        BreakCount: Integer;
     begin
         //For Manual Order++
         Temporary_SalesLine.Reset();
@@ -244,6 +246,9 @@ codeunit 90066 "Create Consolidate SO"
         end;
 
         //For KNAAP Order+++
+        GeneralSetupChannel.Get();
+        Clear(BreakCount);
+        BreakCount := GeneralSetupChannel."Knapp Consolidation Counter";
         Temporary_SalesLine.Reset();
         Temporary_SalesLine.SetRange("Knapp Line", true);
         if Temporary_SalesLine.FindSet() then begin
@@ -272,8 +277,15 @@ codeunit 90066 "Create Consolidate SO"
 
                         Temporary_SalesLine_ForLoop."System-Created Entry" := true;
                         Temporary_SalesLine_ForLoop.Modify();
-                        if Counter = 60 then
-                            break;
+
+                        if BreakCount > 0 then begin
+                            if Counter = BreakCount then
+                                break;
+                        end
+                        else begin
+                            if Counter = 30 then
+                                break;
+                        end;
                     until Temporary_SalesLine_ForLoop.Next() = 0;
                 end;
             until Temporary_SalesLine.Next() = 0;

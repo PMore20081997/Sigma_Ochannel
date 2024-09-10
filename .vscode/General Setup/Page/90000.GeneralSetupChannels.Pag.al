@@ -22,6 +22,11 @@ page 90000 "General Setup - Channels"
                 {
                     ApplicationArea = All;
                 }
+                field("Knapp Consolidation Counter"; Rec."Knapp Consolidation Counter")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Knapp Web Order Consolidation Counter';
+                }
             }
         }
     }

@@ -64,5 +64,9 @@ table 90000 "General Setup - Channels"
             TableRelation = "No. Series";
             DataClassification = ToBeClassified;
         }
+        field(18; "Knapp Consolidation Counter"; Integer)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }
