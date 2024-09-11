@@ -26,7 +26,7 @@ query 90065 "Daywise Web order quantity"
             dataitem(QueryElement1000000001; "Interim Sales Line")
             {
                 DataItemLink = "Document Type" = "QueryElement1000000000"."Document Type", "Document No" = "QueryElement1000000000"."No.";
-                DataItemTableFilter = Type = FILTER(Item), "Reason Code" = filter('Order line created|PARTIAL QUANTITY DELIVERED');
+                DataItemTableFilter = Type = FILTER(Item), "Reason Code" = filter('Order line created|Partial Quantity Delivered');
                 column(No; "No.")
                 {
                 }

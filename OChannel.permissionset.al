@@ -198,5 +198,7 @@ permissionset 90000 OChannel
         query "Validate Interim Sales Return" = X,
         query "Validate Return Order Screen" = X,
         tabledata TempILE = RIMD,
-        table TempILE = X;
+        table TempILE = X,
+        codeunit "Customer Trend Sales Quota New" = X,
+        query "Daywise Cust Trends Qty Mew" = X;
 }

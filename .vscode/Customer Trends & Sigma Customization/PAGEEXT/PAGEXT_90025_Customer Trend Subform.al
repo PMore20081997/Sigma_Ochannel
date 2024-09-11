@@ -6,8 +6,22 @@ pageextension 90025 "OC Customer Trend Subform" extends "Customer Trends Subform
         modify("Qty. to be added to SO")
         {
             trigger OnAfterValidate()
+            var
+                RecUserSetup: Record "User Setup";
+                CustomerTrendSalesQuota: Codeunit "Customer Trend Sales Quota New";
             begin
                 CurrPage.Update();
+
+                //Check Item Sales Quota (For Both Promotion and Normal Item)++
+                if Rec."Qty. to be added to SO" > 0 then begin
+                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                        IF NOT RecUserSetup."SO Override MaxQty Calculation" THEN BEGIN
+                            CustomerTrendSalesQuota.CheckExceededQty(Rec);
+                        END;
+                    END ELSE BEGIN
+                        CustomerTrendSalesQuota.CheckExceededQty(Rec);
+                    END;
+                end;
             end;
         }
 
