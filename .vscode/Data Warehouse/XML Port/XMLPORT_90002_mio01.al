@@ -360,7 +360,7 @@ xmlport 90002 "mio01"
                     "Country_Code_Header" := 'Country Code';
                     "Customer_type_Header" := 'Customer type';
                     "Cust_Bako_Band_Ind_Header" := 'Cust Bako Band Ind';
-                    "Payment_Stop_Header" := 'Payment_ top';
+                    "Payment_Stop_Header" := 'Payment Stop';
                     "DD_Marker_Header" := 'DD Marker';
                     "Daily_Min_Order_Value_Header" := 'Daily Min Order Value';
                     "Min_Order_Value_Header" := 'Min Order Value';

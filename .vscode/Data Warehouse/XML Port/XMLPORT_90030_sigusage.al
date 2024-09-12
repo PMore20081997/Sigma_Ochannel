@@ -180,12 +180,19 @@ xmlport 90030 "sigusage File"
                     L_StartDate: Date;
                     L_EndDate: Date;
                     ILE: Record "Item Ledger Entry";
+                    companyInfo: Record "Company Information";
 
                 begin
 
-                    Company := '';
+                    companyInfo.Get();
+                    Company := companyInfo.Name;
                     Prod_Code := Item."No.";
-                    Depot_Code := '';
+                    ILE.Reset();
+                    ILE.SetRange("Item No.", Item."No.");
+                    if ILE.FindFirst() then begin
+                        Depot_Code := ILE."Location Code";
+
+                    end;
 
                     Clear(L_StartDate);
                     Clear(L_EndDate);
