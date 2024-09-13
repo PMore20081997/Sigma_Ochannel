@@ -539,7 +539,7 @@ xmlport 90015 "mio82"
                         PIP_Code := item."No. 2"
 
                     end;
-                    Narr_Date_1 := '';
+                    Narr_Date_1 := FormatDateForCSV(L_PurchReceiptheader."Document Date");
                 end;
 
             }

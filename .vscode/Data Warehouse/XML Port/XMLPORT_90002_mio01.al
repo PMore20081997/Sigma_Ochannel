@@ -358,7 +358,7 @@ xmlport 90002 "mio01"
                     "Contact_Email_Header" := 'Contact Email';
                     "Company_Header" := 'Company';
                     "Country_Code_Header" := 'Country Code';
-                    "Customer_type_Header" := 'Customer type';
+                    "Customer_type_Header" := 'Customer Type';
                     "Cust_Bako_Band_Ind_Header" := 'Cust Bako Band Ind';
                     "Payment_Stop_Header" := 'Payment Stop';
                     "DD_Marker_Header" := 'DD Marker';
