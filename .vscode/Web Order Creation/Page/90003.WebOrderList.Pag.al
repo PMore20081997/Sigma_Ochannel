@@ -169,7 +169,7 @@ page 90003 "Web Order List"
                 PromotedCategory = Process;
                 PromotedIsBig = true;
                 PromotedOnly = true;
-                Visible = false;
+                //Visible = false;
 
                 trigger OnAction()
                 var

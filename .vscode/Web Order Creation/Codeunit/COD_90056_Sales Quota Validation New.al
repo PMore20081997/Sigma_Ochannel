@@ -320,6 +320,8 @@ codeunit 90056 "Web Order Sales Quota New"
             end;
         end;
         // //Per Month all 12 validation--
+
+        exit(ReturnValue::"No Entry")
     end;
 
     local procedure ExceptionPerDaySelCustomerSelItemCatQty(_InterimSalesLine: Record "Interim Sales Line"; _InterimSalesHeader: Record "Interim Sales Header"; ItemCat: code[20]; var _RemainingQty: Decimal) ReturnValue: Option "Allowed Qty","Exceeded Qty","No Entry"
