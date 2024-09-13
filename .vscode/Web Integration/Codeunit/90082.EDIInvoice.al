@@ -61,7 +61,7 @@ codeunit 90082 "EDI Invoice"
                 Salesinvoicehead.Reset();
                 Salesinvoicehead.SetRange("Sell-to Customer No.", Customer."No.");
                 // Salesinvoicehead.SetRange("Document Type", salesHeader."Document Type"::Invoice);
-                if Salesinvoicehead.FindFirst() then begin
+                if Salesinvoicehead.FindSet() then begin
                     repeat
                         ProcessEDIFile(Salesinvoicehead, Customer);
                     until Salesinvoicehead.Next() = 0;
@@ -208,7 +208,7 @@ codeunit 90082 "EDI Invoice"
                 purchHeader.Reset();
                 purchHeader.SetRange("Buy-from Vendor No.", vendor."No.");
                 purchHeader.SetRange("Document Type", purchHeader."Document Type"::Order);
-                if purchHeader.FindFirst() then begin
+                if purchHeader.FindSet() then begin
                     repeat
                         ProcessEDIFile1(purchHeader, vendor);
                     until purchHeader.Next() = 0;
@@ -518,7 +518,7 @@ codeunit 90082 "EDI Invoice"
                 salesHeader.Reset();
                 salesHeader.SetRange("Sell-to Customer No.", customer."No.");
                 salesHeader.SetRange("Document Type", salesHeader."Document Type"::Order);
-                if salesHeader.FindFirst() then begin
+                if salesHeader.FindSet() then begin
                     repeat
                         ProcessEDIFile3(salesHeader, customer);
                     until salesHeader.Next() = 0;
