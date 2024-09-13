@@ -607,6 +607,7 @@ xmlport 90032 "Product variant"
                     if L_Item.FindFirst() then begin
                         Prod_Group := L_Item."Item Category Code";
                         Average_Cost := Format(L_Item."Unit Cost");
+                        L_Item.CalcFields("Parent Category");
                         AC_1 := L_Item."Parent Category";
                         AC_4 := L_Item."No. 2";
                         if L_Item.Blocked = true then begin
@@ -624,7 +625,6 @@ xmlport 90032 "Product variant"
                     Vat_Code := '';
                     AC_5 := '';
                     AC_6 := '';
-                    Discon := '';
                     Bako_DS_Scheme := '';
                     Sedes_Pip_Code := '';
                     Sedes_AAH_Code := '';

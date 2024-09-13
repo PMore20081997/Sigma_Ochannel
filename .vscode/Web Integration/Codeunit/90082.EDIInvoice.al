@@ -11,6 +11,8 @@ codeunit 90082 "EDI Invoice"
 
         CASE RunType OF
 
+
+
             EDICustomerLabel:
                 begin
 
@@ -30,6 +32,14 @@ codeunit 90082 "EDI Invoice"
             EDISalesOrderLabel:
                 begin
                     GetEDIRecords3();
+
+                end;
+
+            EDILabel:
+                begin
+                    GetEDIRecords();
+                    GetEDIRecords1();
+                    GetEDIRecords2();
 
                 end;
         end;
@@ -783,6 +793,7 @@ codeunit 90082 "EDI Invoice"
         EDISupplierLabel: Label 'EDISupplier';
         EDICrMemoLabel: Label 'EDICrMemo';
         EDISalesOrderLabel: Label 'EDISalesOrder';
+        EDILabel: Label 'EDI';
         StartParameter: Text;
         RunType: Text;
         TradepartnerRecord: Record "Trade Partner";
