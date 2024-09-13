@@ -908,8 +908,9 @@ codeunit 90000 "Web Order Mgt"
         Rec_InterimLine: Record "Interim Sales Line";
         Duplicate_InterimSalesLine: Record "Interim Sales Line";
         QuotaQuantity: Decimal;
-        CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
+        CU_SalesQuotaQtyValidation: Codeunit "Web Order Sales Quota New";
         ItemBlockedError: Text;
+        L_RemainingQty: Decimal;
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1123,12 +1124,36 @@ codeunit 90000 "Web Order Mgt"
                         end;
                     end;
 
-                    //Response SEQ9++
+                    //Response SEQ9 and SEQ11++
                     if L_ErrorRecorded = false then begin
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
                             if CalculateQtyToDeliver(L_InterimSalesLine) = 0 then begin
                                 Sigma_InsertErrorLog('Product out of stock', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', false, '');
                                 L_ErrorRecorded := TRUE;
+                            end else begin
+                                //SEQ11++
+                                Clear(QuotaQuantity);
+                                if CU_SalesQuotaQtyValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader, QuotaQuantity) <> CU_SalesQuotaQtyValidation.CheckExceededQty(L_InterimSalesLine, P_InterimSalesHeader, QuotaQuantity) ::"No Entry" then begin
+                                    if QuotaQuantity < 0 then
+                                        QuotaQuantity := 0;
+                                    if QuotaQuantity > 0 then begin
+                                        if L_InterimSalesLine."Qty. to Deliver" > QuotaQuantity then begin
+                                            L_InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
+                                            L_InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', L_InterimSalesLine.Quantity - QuotaQuantity);
+                                            L_InterimSalesLine."Qty. to Deliver" := QuotaQuantity;
+                                            L_InterimSalesLine.Modify();
+                                        end;
+                                    end else begin
+                                        Sigma_InsertErrorLog('Product out of stock because of Quota', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
+                                        L_ErrorRecorded := TRUE;
+
+                                        //Update Line
+                                        L_InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
+                                        L_InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', L_InterimSalesLine.Quantity - QuotaQuantity);
+                                        L_InterimSalesLine."Qty. to Deliver" := 0;
+                                        L_InterimSalesLine.Modify();
+                                    end;
+                                end;
                             end;
                         end;
                     end;
@@ -1174,6 +1199,7 @@ codeunit 90000 "Web Order Mgt"
             L_Line.Reset();
             L_Line.SetRange("Document Type", P_InterimSalesHeader."Document Type");
             L_Line.SetRange("Document No", P_InterimSalesHeader."No.");
+            L_Line.SetFilter("Reason Code", '<>%1', UpperCase('Partial Quantity Delivered')); //For Partial Quantity managed at the time of Check error 
             if L_Line.FindSet() then begin
                 repeat
                     PartnerErrorLog.RESET;
@@ -1194,53 +1220,9 @@ codeunit 90000 "Web Order Mgt"
                             end;
                         end;
                     end else begin
-                        Clear(QuotaQuantity);
-                        QuotaQuantity := CU_SalesQuotaQtyValidation.CheckExceededQty(L_Line, P_InterimSalesHeader);
-                        if (L_Line."Qty. to Deliver" > 0) and (L_Line."Qty. to Deliver" < L_Line.Quantity) then begin
-                            if QuotaQuantity > 0 then begin
-                                if L_Line.Quantity > QuotaQuantity then begin
-                                    if L_Line."Qty. to Deliver" <= QuotaQuantity then begin
-                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                        L_Line."Reason Message" := 'Partial Quantity Delivered';
-                                    end;
-                                    if L_Line."Qty. to Deliver" > QuotaQuantity then begin
-                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                        L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
-                                        L_Line."Qty. to Deliver" := QuotaQuantity;
-                                    end;
-                                end
-                                else begin
-                                    if L_Line."Qty. to Deliver" < QuotaQuantity then begin
-                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                        L_Line."Reason Message" := 'Partial Quantity Delivered';
-                                    end;
-                                    if L_Line."Qty. to Deliver" > QuotaQuantity then begin
-                                        L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                        L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
-                                        L_Line."Qty. to Deliver" := QuotaQuantity;
-                                    end;
-                                end;
-                            end
-                            else begin
-                                if (L_Line."Qty. to Deliver" > 0) and (L_Line."Qty. to Deliver" < L_Line.Quantity) then begin
-                                    L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                    L_Line."Reason Message" := 'Partial Quantity Delivered';
-                                end;
-                            end;
-                        end
-                        else begin
-                            if (QuotaQuantity > 0) and (L_Line.Quantity > QuotaQuantity) and (L_Line."Qty. to Deliver" > QuotaQuantity) then begin
-                                L_Line."Reason Code" := 'Partial Quantity Delivered';
-                                L_Line."Reason Message" := StrSubstNo('Quota is over %1 qty', L_Line.Quantity - QuotaQuantity);
-                                L_Line."Qty. to Deliver" := QuotaQuantity;
-                            end
-                            else begin
-                                L_Line."Reason Code" := 'Order Line Created';
-                                L_Line."Reason Message" := 'Successful';
-                            end;
-                        end;
+                        L_Line."Reason Code" := 'Order Line Created';
+                        L_Line."Reason Message" := 'Successful';
                     end;
-
                     L_Line.Modify();
                 until L_Line.Next() = 0;
             end;

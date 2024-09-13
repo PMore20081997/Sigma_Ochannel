@@ -176,7 +176,7 @@ page 90003 "Web Order List"
                     L_InterimSalesHeader: Record "Interim Sales Header";
                     InterimSalesLine: Record "Interim Sales Line";
                     QuotaQuantity: Decimal;
-                    CU_SalesQuotaQtyValidation: Codeunit "Sales Quota Qty Validation";
+                    CU_SalesQuotaQtyValidation: Codeunit "Web Order Sales Quota New";
                     AvailableInventory: Decimal;
                     CU_WebOrderManagement: Codeunit "Web Order Mgt";
                 begin
@@ -195,8 +195,10 @@ page 90003 "Web Order List"
                                     AvailableInventory := CU_WebOrderManagement.CalculateQtyToDeliver(InterimSalesLine);
                                     AvailableInventory := AvailableInventory - InterimSalesLine."Qty. to Deliver";
                                     Clear(QuotaQuantity);
-                                    QuotaQuantity := CU_SalesQuotaQtyValidation.CheckExceededQty(InterimSalesLine, L_InterimSalesHeader);
-                                    Message(StrSubstNo('Item No - %1\Line Qty - %2\Available Inv - %3\Quota Quantity - %4', InterimSalesLine."No.", InterimSalesLine.Quantity, AvailableInventory, QuotaQuantity));
+                                    if CU_SalesQuotaQtyValidation.CheckExceededQty(InterimSalesLine, L_InterimSalesHeader, QuotaQuantity) <> CU_SalesQuotaQtyValidation.CheckExceededQty(InterimSalesLine, L_InterimSalesHeader, QuotaQuantity) ::"No Entry" then
+                                        Message(StrSubstNo('Item No - %1\Line Qty - %2\Available Inv - %3\Quota Quantity - %4', InterimSalesLine."No.", InterimSalesLine.Quantity, AvailableInventory, QuotaQuantity))
+                                    else
+                                        Message('No Quota Set')
                                 until InterimSalesLine.Next() = 0;
                             end;
                         until L_InterimSalesHeader.Next() = 0;

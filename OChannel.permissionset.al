@@ -94,7 +94,6 @@ permissionset 90000 OChannel
         codeunit "Process Web Order" = X,
         codeunit "RM Click & Drop" = X,
         codeunit "Royal Mail" = X,
-        codeunit "Sales Quota Qty Validation" = X,
         codeunit "Shipment Tracking Insertion" = X,
         codeunit "Shipment Tracking JobQueue" = X,
         codeunit "Shop Direct Courier" = X,
@@ -200,5 +199,6 @@ permissionset 90000 OChannel
         tabledata TempILE = RIMD,
         table TempILE = X,
         codeunit "Customer Trend Sales Quota New" = X,
-        query "Daywise Cust Trends Qty Mew" = X;
+        query "Daywise Cust Trends Qty Mew" = X,
+        codeunit "Web Order Sales Quota New" = X;
 }

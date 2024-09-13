@@ -39,6 +39,7 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
         L_InterimSL.SetRange("Document No", _InterimSH."No.");
         L_InterimSL.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+        L_InterimSL.SetFilter("Qty. to Deliver", '>%1', 0);
         if L_InterimSL.FindSet() then begin
             repeat
                 //Create Lines++
