@@ -37,15 +37,15 @@ codeunit 90082 "EDI Invoice"
 
             EDILabel:
                 begin
-                    GetEDIRecords();
-                    GetEDIRecords1();
-                    GetEDIRecords2();
+                    GetEDIRecords(); //SalesInvoice
+                    GetEDIRecords1(); //PO
+                    GetEDIRecords2(); //SalesCreditMemo
 
                 end;
         end;
     end;
     //Customer EDI
-    procedure GetEDIRecords()
+    procedure GetEDIRecords() //salesinvoice
     var
         NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
@@ -180,19 +180,22 @@ codeunit 90082 "EDI Invoice"
 
         EDIMessage := HeaderInfoAll + EDIMessage;
         if EDIMessage <> '' then begin
-            FileName := '$' + Salesinvoicehead."No." + '.fif';
+            FileName := '$' + Salesinvoicehead."No." + '.fif';  //$5000112073.fif
+            Clear(tempblob);
+            Clear(TextInstream);
+            Clear(TextOutstream);
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
+            //DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+            UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
         end;
     end;
 
 
     ///////////////////////////////////////Supplier EDI
 
-    procedure GetEDIRecords1()
+    procedure GetEDIRecords1() //PO
     var
         NoSeriesMgmt1: Codeunit "No. Series";
         NextNo1: Code[20];
@@ -327,11 +330,14 @@ codeunit 90082 "EDI Invoice"
         EDIMessage := HeaderInfoAll + EDIMessage;
         if EDIMessage <> '' then begin
             FileName := '$' + purchHeader."No." + '.fif';
+            Clear(tempblob);
+            Clear(TextInstream);
+            Clear(TextOutstream);
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
+            //DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+            UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
         end;
         //end;
     end;
@@ -492,10 +498,13 @@ codeunit 90082 "EDI Invoice"
             EDIMessage := HeaderInfoAll + EDIMessage;
             if EDIMessage <> '' then begin
                 FileName := '$' + SalesCrHeader."No." + '.fif';
+                Clear(tempblob);
+                Clear(TextInstream);
+                Clear(TextOutstream);
                 tempblob.CreateOutStream(TextOutstream);
                 TextOutstream.WriteText(EDIMessage);
                 tempblob.CreateInStream(TextInstream);
-                DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+                //DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
                 UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
             end;
         end;
@@ -642,7 +651,7 @@ codeunit 90082 "EDI Invoice"
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+            // DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
             UploadFileToEDIAzureContainer(TextInstream, FileName, TradepartnerRecord.Code);
 
         end;
