@@ -34,6 +34,7 @@ codeunit 90066 "Create Consolidate SO"
     local procedure CreateTemporaryOrder(_InterimSH: Record "Interim Sales Header")
     var
         L_InterimSL: Record "Interim Sales Line";
+        L_Item: Record Item;
     begin
         L_InterimSL.Reset();
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
@@ -42,11 +43,20 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.SetFilter("Qty. to Deliver", '>%1', 0);
         if L_InterimSL.FindSet() then begin
             repeat
-                //Create Lines++
-                CreateTemporarySalesLine(L_InterimSL, _InterimSH);
+                //Added the Condition here again to Check Item because 
+                //User can make any product Block or keep it Open anytime in between Working Shifts
+                //So need to skip those lines as discussed with Adesh
+                Clear(L_Item);
+                L_Item.Reset();
+                if L_Item.Get(L_InterimSL."No.") then begin
+                    if (L_Item.Blocked = false) and (L_Item."Sales Blocked" = false) and (L_Item."Ops Sales Blocked" = false) and (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) then begin
+                        //Create Lines++
+                        CreateTemporarySalesLine(L_InterimSL, _InterimSH);
 
-                //Create Lines For Loop++
-                CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                        //Create Lines For Loop++
+                        CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                    end;
+                end;
             until L_InterimSL.Next() = 0;
         end;
     end;

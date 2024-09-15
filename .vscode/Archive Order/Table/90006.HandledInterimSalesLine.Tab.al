@@ -159,7 +159,7 @@ table 90006 "Handled Interim Sales Line"
         {
             Editable = false;
             FieldClass = FlowField;
-            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No")));
+            CalcFormula = Count("Incoming/Outgoing Error Log" WHERE("Document No." = field("Document No"), "PIP Code" = field("Channel SKU")));
         }
         field(36; "Order Status"; Option)
         {

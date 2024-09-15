@@ -43,6 +43,9 @@ table 90010 "Incoming/Outgoing Error Log"
         field(11; "Attribute"; Code[20])
         {
         }
+        field(12; "PIP Code"; Code[20])
+        {
+        }
     }
 
     keys

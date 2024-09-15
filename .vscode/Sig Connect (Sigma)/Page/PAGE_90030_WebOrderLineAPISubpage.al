@@ -99,6 +99,7 @@ page 90030 "Web Order Line Subpage"
                 Rec.Description2 := L_Item."Description 2";
                 Rec."Unit of Measure Code" := L_Item."Sales Unit of Measure";
             end;
+            Rec."Channel SKU" := Rec."No.";
             Rec."Shipment Date" := MyHeader."Shipment Date";
 
             //Check Available Qty++

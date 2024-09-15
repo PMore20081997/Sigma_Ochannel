@@ -1630,10 +1630,13 @@ codeunit 90000 "Web Order Mgt"
 
         PartnerErrorLog."Error Code" := _ErrorCode;
         if P_Header = false then begin
-            If P_InterimSalesLine."No." <> '' then
-                PartnerErrorLog."Item No." := P_InterimSalesLine."No."
-            else
+            If P_InterimSalesLine."No." <> '' then begin
+                PartnerErrorLog."Item No." := P_InterimSalesLine."No.";
+            end
+            else begin
                 PartnerErrorLog."Item No." := CopyStr(P_InterimSalesLine."Channel SKU", 1, 20);
+            end;
+            PartnerErrorLog."PIP Code" := CopyStr(P_InterimSalesLine."Channel SKU", 1, 20);
             PartnerErrorLog.Attribute := _AttributeCode;
             L_ProductLevelResponse.Reset();
             L_ProductLevelResponse.SetRange("Error Code", _ErrorCode);

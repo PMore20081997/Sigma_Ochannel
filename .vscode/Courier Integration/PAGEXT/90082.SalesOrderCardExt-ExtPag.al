@@ -51,6 +51,10 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     NoSeriesManagement: Codeunit "No. Series";
                     Rec_SalesLine: Record "Sales Line";
                     CU_ReleaseSalesDoc: Codeunit "Release Sales Document";
+                    KnappOrder: Boolean;
+                    ItemList: List of [Text];
+                    ApprovalsMgmt: Codeunit "Approvals Mgmt.";
+                    L_Location: Record Location;
                 begin
                     Clear(L_SalesHeader);
                     L_SalesHeader := Rec;
@@ -62,39 +66,104 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                         UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
                         Commit();
 
-                        L_SalesHeader.CalcFields(Shipped, "Drop/Special Order");
-                        if (L_SalesHeader."Knapp Order" = false) and (L_SalesHeader."Drop/Special Order" = false) and (L_SalesHeader.Shipped = false) then begin
-                            L_SalesLine.Reset();
-                            L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
-                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                            L_SalesLine.SetRange("Knapp Line", false);
-                            if not L_SalesLine.FindFirst() then begin
-                                L_SalesHeader."Knapp Order" := true;
-                                if L_SalesHeader."Posting No." = '' then
-                                    L_SalesHeader.Validate("Posting No.", NoSeriesManagement.GetNextNo(L_SalesHeader."Posting No. Series", WorkDate()));
-                                L_SalesHeader.Modify(true);
+                        #Region Converting to Knapp Order
+                        L_SalesLine.Reset();
+                        L_SalesLine.CalcFields("Variant Code mandatory");
+                        L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                        L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                        L_SalesLine.SetFilter("Variant Code", '%1', '');
+                        L_SalesLine.SetRange("Variant Code mandatory", true);
+                        L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
+                        L_SalesLine.SetFilter("Location Code", '<>%1', '');
+                        if not L_SalesLine.FindFirst() then begin
+                            L_SalesHeader.CalcFields(Shipped, "Drop/Special Order");
+                            if (L_SalesHeader."Knapp Order" = false) and (L_SalesHeader."Drop/Special Order" = false) and (L_SalesHeader.Shipped = false) then begin
+                                L_SalesLine.Reset();
+                                L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                                L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                                L_SalesLine.SetRange("Knapp Line", false);
+                                if not L_SalesLine.FindFirst() then begin
+                                    KnappOrder := true;
+                                    Clear(ItemList);
+                                    Rec_SalesLine.Reset();
+                                    Rec_SalesLine.SetCurrentKey("No.");
+                                    Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                                    Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                                    Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
+                                    Rec_SalesLine.Ascending(true);
+                                    if Rec_SalesLine.FindSet() then begin
+                                        repeat
+                                            if Rec_SalesLine."Variant Code" = '' then begin
+                                                if not ItemList.Contains(Rec_SalesLine."No.") then begin
+                                                    ItemList.Add(Rec_SalesLine."No.");
+                                                    KnappOrder := true;
+                                                end
+                                                else begin
+                                                    KnappOrder := false;
+                                                end;
+                                            end
+                                            else begin
+                                                if not ItemList.Contains(Rec_SalesLine."Variant Code") then begin
+                                                    ItemList.Add(Rec_SalesLine."Variant Code");
+                                                    KnappOrder := true;
+                                                end
+                                                else begin
+                                                    KnappOrder := false;
+                                                end;
+                                            end;
+                                        until Rec_SalesLine.Next() = 0;
+                                    end;
 
-                                Rec_SalesLine.Reset();
-                                Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
-                                Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                                Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
-                                Rec_SalesLine.SetRange("Knapp Line", true);
-                                if Rec_SalesLine.FindSet() then begin
-                                    Rec_SalesLine.ModifyAll("Qty. to Ship", 0);
+                                    if KnappOrder = true then begin
+                                        L_SalesHeader."Knapp Order" := true;
+                                        L_Location.Reset();
+                                        L_Location.SetRange("Knapp Location", true);
+                                        if L_Location.FindFirst() then begin
+                                            L_SalesHeader."Location Code" := L_Location.Code;
+                                        end;
+
+                                        if L_SalesHeader."Posting No." = '' then
+                                            L_SalesHeader.Validate("Posting No.", NoSeriesManagement.GetNextNo(L_SalesHeader."Posting No. Series", WorkDate()));
+                                        L_SalesHeader.Modify(true);
+
+                                        Rec_SalesLine.Reset();
+                                        Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                                        Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                                        Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
+                                        Rec_SalesLine.SetRange("Knapp Line", true);
+                                        if Rec_SalesLine.FindSet() then begin
+                                            Rec_SalesLine.ModifyAll("Qty. to Ship", 0);
+                                            Rec_SalesLine.ModifyAll("Qty. to Invoice", 0);
+                                            Rec_SalesLine.ModifyAll("Location Code", L_SalesHeader."Location Code");
+                                        end;
+                                        Commit();
+                                        Message('This order is successfully converted into knapp order');
+                                    end
+                                    else begin
+                                        Message('This order can not be converted into knapp order as there is a duplicate item entry.');
+                                    end;
+                                end
+                                else begin
+                                    Message('This order can not be converted into knapp order as there are non Knapp Lines in it.');
                                 end;
-                                Commit();
-                                Message('This order is successfully converted into knapp order');
                             end
-                            else
-                                Message('This order can not be converted into knapp order as there are non Knapp Lines in it.');
-                        end
-                        else begin
-                            Message('This order can not be converted into knapp order as the header part is not satisfying the conditions');
+                            else begin
+                                Message('This order can not be converted into knapp order as the header part is not satisfying the conditions');
+                            end;
+                        end;
+                        #endregion
+
+                        if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(L_SalesHeader) then begin
+                            if L_SalesHeader.SalesLinesExist() then begin
+                                ApprovalsMgmt.OnSendSalesDocForApproval(L_SalesHeader);
+                                Commit();
+                            end;
                         end;
 
-                        CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
-                        Commit();
+                        //CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                        //Commit();
 
                         Message('Process Completed');
                     end;
