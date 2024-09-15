@@ -392,7 +392,7 @@ page 90025 "DC Web Order Header API Card"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    if L_Cust."Payment Terms Code" = 'COD' then begin
+                    if L_Cust."Payment Terms Code" = '0D-COD' then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog('COD Account *********', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
                         L_ErrorRecorded := TRUE;
                     end;

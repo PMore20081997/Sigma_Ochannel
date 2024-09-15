@@ -1022,7 +1022,7 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    if L_Cust."Payment Terms Code" = 'COD' then begin
+                    if L_Cust."Payment Terms Code" = '0D-COD' then begin
                         Sigma_InsertErrorLog('COD Account *********', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
