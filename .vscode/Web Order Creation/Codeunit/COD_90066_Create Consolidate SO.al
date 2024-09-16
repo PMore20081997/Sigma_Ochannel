@@ -309,6 +309,7 @@ codeunit 90066 "Create Consolidate SO"
         NoSeriesManagement: Codeunit "No. Series - Batch";
         L_Customer: Record Customer;
         L_GeneralSetupChannels: Record "General Setup - Channels";
+        L_Location: Record Location;
     begin
         Clear(G_SNo);
         SalesRecSetup.Get();
@@ -350,6 +351,10 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date");
 
         if InsertedSH."Knapp Order" = true then begin
+            L_Location.Reset();
+            L_Location.SetRange("Knapp Location", true);
+            if L_Location.FindFirst() then
+                InsertedSH.Validate("Location Code", L_Location.Code);
             InsertedSH.Validate("Posting No.", NoSeriesManagement.GetNextNo(InsertedSH."Posting No. Series", WORKDATE, TRUE));
             NoSeriesManagement.SaveState();
         end;
@@ -406,7 +411,10 @@ codeunit 90066 "Create Consolidate SO"
             InsertedSL.VALIDATE(Type, InsertedSL.Type::Item);
             InsertedSL.VALIDATE("No.", _Temporary_SalesLine."No.");
             InsertedSL.VALIDATE(Quantity, _Temporary_SalesLine.Quantity);
-            InsertedSL.Validate("Location Code", _Temporary_SalesLine."Location Code");
+            if SalesHeader."Knapp Order" = false then
+                InsertedSL.Validate("Location Code", _Temporary_SalesLine."Location Code")
+            else
+                InsertedSL.Validate("Location Code", SalesHeader."Location Code");
             InsertedSL.Validate("Knapp Line", _Temporary_SalesLine."Knapp Line");
             L_Item.Reset();
             L_Item.SetRange("No.", _Temporary_SalesLine."No.");
