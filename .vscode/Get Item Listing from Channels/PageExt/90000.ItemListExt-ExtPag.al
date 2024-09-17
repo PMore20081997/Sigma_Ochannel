@@ -31,7 +31,8 @@ pageextension 90000 "ItemListExt" extends "Item List"
                 begin
                     G_Item := Rec;
                     CurrPage.SETSELECTIONFILTER(G_Item);
-                    ManageItemListing.CreateChannelItemListingForMultipleSelection(G_Item);
+                    //ManageItemListing.CreateChannelItemListingForMultipleSelection(G_Item);
+                    ManageItemListing.SigmaCreateChannelItemListingForMultipleSelection(G_Item);
                 end;
             }
 

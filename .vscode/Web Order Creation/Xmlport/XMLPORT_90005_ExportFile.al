@@ -17,7 +17,7 @@ xmlport 90005 "Export File"
             XmlName = 'Root';
             tableelement("Interim_Sales_Line"; "Interim Sales Line")
             {
-                textelement(ChannelCode)
+                textelement(ETAccessCode)
                 {
 
                 }
@@ -71,8 +71,8 @@ xmlport 90005 "Export File"
                     L_Header: Record "Interim Sales Header";
                 begin
                     L_Header.Get(Interim_Sales_Line."Document Type", Interim_Sales_Line."Document No");
-                    ChannelCode := L_Header."Trade Partner Code";
-                    CustomerNo := L_Header."Sell-to Customer No.";
+                    ETAccessCode := L_Header."ET Access Code";
+                    CustomerNo := L_Header."Channel Order ID";
                     OrderResponse := L_Header."Reason Code";
                     SigmaOrderNo := L_Header."No.";
                     TotalOrderValue := Format(L_Header."Order Amount");

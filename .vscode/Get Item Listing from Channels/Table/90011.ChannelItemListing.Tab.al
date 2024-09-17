@@ -233,7 +233,7 @@ table 90011 "Channel Item Listing"
         field(44; "Allcoated on SO"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true), "Variant Code" = FIELD("NAV Variant"), "Shipment Date" = field("Date Filter")));
+            CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true)));
             DecimalPlaces = 0 : 5;
         }
         field(45; "Web Orders Qty"; Decimal)
@@ -245,7 +245,7 @@ table 90011 "Channel Item Listing"
         field(46; "Physical Inventory"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Variant Code" = FIELD("NAV Variant"), "Daily Priority Exist" = field("Variant Code Mandatory")));
+            CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Daily Priority Exist" = field("Variant Code Mandatory")));
             DecimalPlaces = 0 : 5;
         }
         field(47; "Variant Code Mandatory"; Boolean)

@@ -242,7 +242,7 @@ codeunit 90018 "GOY File Integration"
                     InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
                     InterimSalesHeader.Validate("Trade Partner Code", P_ChannelCode);
                     InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
-                    InterimSalesHeader.Validate("Channel Order ID", FileName);
+                    InterimSalesHeader.Validate("Channel Order ID", GetCellValue(RowNo, 2));
                     CustomerRef.Reset();
                     CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
                     if CustomerRef.FindFirst() then
@@ -324,7 +324,7 @@ codeunit 90018 "GOY File Integration"
             TempBlob.CREATEINSTREAM(FileInStream);
 
             //outputFileName := Format(DT2Date(CurrentDateTime), 0, '<Day,2><Month,2>20<Year>') + '_' + L_Line."ET Access Code" + '_' + Header."Channel Order ID";
-            outputFileName := Header."Channel Order ID";
+            outputFileName := Header."File Name";
 
             //Procedure to Upload Reply (Order Acknowledgement) File to Reply Container
             UploadFileToReplyAzureContainer(FileInStream, outputFileName, P_ChannelCode);
