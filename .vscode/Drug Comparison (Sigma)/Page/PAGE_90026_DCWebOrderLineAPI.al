@@ -136,13 +136,16 @@ page 90026 "DC Web Order Line Subpage"
                     L_ProductLevelResponse.Reset();
                     L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                     if L_ProductLevelResponse.FindFirst() then begin
-                        if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
-                            Rec."Reason Code" := L_ProductLevelResponse.Reason;
-                            Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
-                        end else begin
-                            Rec."Reason Code" := L_ProductLevelResponse.Reason;
-                            Rec."Reason Message" := L_ProductLevelResponse.Message;
-                        end;
+                        Rec."Reason Code" := L_ProductLevelResponse.Reason;
+                        Rec."Reason Message" := L_ProductLevelResponse.Message;
+                        Rec."Qty. to Deliver" := 0;
+                        // if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
+                        //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+                        //     Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+                        // end else begin
+                        //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+                        //     Rec."Reason Message" := L_ProductLevelResponse.Message;
+                        // end;
                     end;
                 end else begin
                     Rec."Reason Code" := 'Order Line Created';

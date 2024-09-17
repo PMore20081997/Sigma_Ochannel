@@ -130,6 +130,7 @@ page 90030 "Web Order Line Subpage"
                             Rec."Reason Code" := L_ProductLevelResponse.Reason;
                             Rec."Reason Message" := L_ProductLevelResponse.Message;
                         end;
+                        Rec."Qty. to Deliver" := 0;
                     end;
                 end else begin
                     Rec."Reason Code" := 'Order Line Created';

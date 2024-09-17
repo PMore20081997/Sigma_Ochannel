@@ -1211,16 +1211,19 @@ codeunit 90000 "Web Order Mgt"
                         L_ProductLevelResponse.Reset();
                         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
                         if L_ProductLevelResponse.FindFirst() then begin
-                            if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
-                                L_Line."Reason Code" := L_ProductLevelResponse.Reason;
-                                L_Line."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
-                            end else begin
-                                L_Line."Reason Code" := L_ProductLevelResponse.Reason;
-                                L_Line."Reason Message" := L_ProductLevelResponse.Message;
-                            end;
+                            L_Line."Reason Code" := L_ProductLevelResponse.Reason;
+                            L_Line."Reason Message" := L_ProductLevelResponse.Message;
+                            // if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
+                            //     L_Line."Reason Code" := L_ProductLevelResponse.Reason;
+                            //     L_Line."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+                            // end else begin
+                            //     L_Line."Reason Code" := L_ProductLevelResponse.Reason;
+                            //     L_Line."Reason Message" := L_ProductLevelResponse.Message;
+                            // end;
+                            L_Line."Qty. to Deliver" := 0;
                         end;
                     end else begin
-                        L_Line."Reason Code" := 'Order Line Created';
+                        L_Line."Reason Code" := 'Order line created';
                         L_Line."Reason Message" := 'Successful';
                     end;
                     L_Line.Modify();
