@@ -77,12 +77,8 @@ xmlport 90005 "Export File"
                     SigmaOrderNo := L_Header."No.";
                     TotalOrderValue := Format(L_Header."Order Amount");
                     TransmittedFlag := Format(1);
-                    LineNumber := Format(Interim_Sales_Line."Line No.");
-                    if Interim_Sales_Line."No." <> '' then
-                        PipCode := Interim_Sales_Line."No."
-                    else
-                        PipCode := Interim_Sales_Line."Channel SKU";
-                    //Qty := Format(Interim_Sales_Line.Quantity);
+                    LineNumber := Interim_Sales_Line."Channel Item Id";
+                    PipCode := Interim_Sales_Line."Channel SKU";
                     Qty := Format(Interim_Sales_Line."Qty. to Deliver");
                     ProductResponse := Interim_Sales_Line."Reason Code";
                     Misc := '';

@@ -242,7 +242,12 @@ codeunit 90018 "GOY File Integration"
                     InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
                     InterimSalesHeader.Validate("Trade Partner Code", P_ChannelCode);
                     InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
-                    InterimSalesHeader.Validate("Channel Order ID", GetCellValue(RowNo, 2));
+                    if GetCellValue(RowNo, 2) <> '' then begin
+                        InterimSalesHeader.Validate("Channel Order ID", GetCellValue(RowNo, 2));
+                    end
+                    else begin
+                        InterimSalesHeader.Validate("Channel Order ID", FileName);
+                    end;
                     CustomerRef.Reset();
                     CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
                     if CustomerRef.FindFirst() then
@@ -265,6 +270,7 @@ codeunit 90018 "GOY File Integration"
                     InterimSalesLine.Validate("Trade Partner Code", P_ChannelCode);
                     InterimSalesLine.Validate("ET Access Code", GetCellValue(RowNo, 1));
                     InterimSalesLine.Validate("Channel Order ID", InterimSalesHeader."Channel Order ID");
+                    InterimSalesLine.Validate("Channel Item Id", GetCellValue(RowNo, 7));
                     InterimSalesLine.Validate("Channel SKU", GetCellValue(RowNo, 8));
                     Clear(Qty);
                     if GetCellValue(RowNo, 9) <> '' then
