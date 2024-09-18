@@ -208,7 +208,7 @@ page 90025 "DC Web Order Header API Card"
         L_OrderLevelResponse: Record "Order Level Response";
         L_InterimSalesHeader: Record "Interim Sales Header";
     begin
-        //Region All product lines rejected Error SEQ13
+        #Region All product lines rejected Error SEQ13
         Clear(LineCount);
         L_Line.Reset();
         L_Line.SetRange("Document Type", Rec."Document Type");
@@ -227,12 +227,11 @@ page 90025 "DC Web Order Header API Card"
         if L_Line.FindSet() then
             ErrorCount := L_Line.Count;
 
-
         if LineCount = ErrorCount then begin
             CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
             Rec.status := Rec.status::Rejected;
         end;
-
+        #endregion
 
         PartnerErrorLog.Reset();
         PartnerErrorLog.SetRange("Document No.", Rec."No.");
@@ -267,7 +266,7 @@ page 90025 "DC Web Order Header API Card"
         end;
 
         Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
-        //Rec.Modify();
+        Rec.Modify();
     end;
 
 
