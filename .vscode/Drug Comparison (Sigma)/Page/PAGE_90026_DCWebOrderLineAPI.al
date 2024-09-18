@@ -152,6 +152,45 @@ page 90026 "DC Web Order Line Subpage"
                     Rec."Reason Message" := 'Successful';
                 end;
             end;
+            // PartnerErrorLog.RESET;
+            // PartnerErrorLog.SETRANGE("Document No.", MyHeader."No.");
+            // PartnerErrorLog.SetFilter("Item No.", Rec."No.");
+            // PartnerErrorLog.SetCurrentKey("Sequence No.");
+            // PartnerErrorLog.Ascending(true);
+            // IF PartnerErrorLog.FindFirst() THEN begin
+            //     L_ProductLevelResponse.Reset();
+            //     L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            //     if L_ProductLevelResponse.FindFirst() then begin
+            //         Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         Rec."Reason Message" := L_ProductLevelResponse.Message;
+            //         // if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
+            //         //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         //     Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+            //         // end else begin
+            //         //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         //     Rec."Reason Message" := L_ProductLevelResponse.Message;
+            //         // end;
+            //     end;
+            // end else begin
+            //     Rec."Reason Code" := 'Order Line Created';
+            //     Rec."Reason Message" := 'Successful';
+            // end;
+
+            // //Update Qty to Deliver as 0 is any error on line level except quota becuase we are managed the quota in Validation function+++
+            // if (UpperCase(Rec."Reason Code") <> UpperCase('Partial Quantity Delivered')) then begin
+            //     PartnerErrorLog.RESET;
+            //     PartnerErrorLog.SETRANGE("Document No.", MyHeader."No.");
+            //     PartnerErrorLog.SetFilter("Item No.", Rec."No.");
+            //     PartnerErrorLog.SetCurrentKey("Sequence No.");
+            //     PartnerErrorLog.Ascending(true);
+            //     IF PartnerErrorLog.FindFirst() THEN begin
+            //         L_ProductLevelResponse.Reset();
+            //         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            //         if L_ProductLevelResponse.FindFirst() then begin
+            //             Rec."Qty. to Deliver" := 0;
+            //         end;
+            //     end;
+            // end;
         end;
     end;
 
@@ -288,7 +327,8 @@ page 90026 "DC Web Order Line Subpage"
                             if QuotaQuantity > 0 then begin
                                 if _InterimSalesLine."Qty. to Deliver" > QuotaQuantity then begin
                                     _InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
-                                    _InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', _InterimSalesLine.Quantity - QuotaQuantity);
+                                    //_InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', _InterimSalesLine.Quantity - QuotaQuantity);
+                                    _InterimSalesLine."Reason Message" := 'Partial Quantity Delivered';
                                     _InterimSalesLine."Qty. to Deliver" := QuotaQuantity;
                                 end;
                             end else begin
@@ -297,7 +337,8 @@ page 90026 "DC Web Order Line Subpage"
 
                                 //Update Line
                                 _InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
-                                _InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', _InterimSalesLine.Quantity - QuotaQuantity);
+                                //_InterimSalesLine."Reason Message" := StrSubstNo('Quota is over %1 qty', _InterimSalesLine.Quantity - QuotaQuantity);
+                                _InterimSalesLine."Reason Message" := 'Partial Quantity Delivered';
                                 _InterimSalesLine."Qty. to Deliver" := 0;
                             end;
                         end;
