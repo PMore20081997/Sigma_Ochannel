@@ -27,6 +27,10 @@ page 90000 "General Setup - Channels"
                     ApplicationArea = All;
                     Caption = 'Knapp Web Order Consolidation Counter';
                 }
+                field("Update Variant Counter"; Rec."Update Variant Counter")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }
@@ -84,8 +88,10 @@ page 90000 "General Setup - Channels"
                     L_SalesLine: Record "Sales Line";
                 begin
                     L_SalesHeader.Reset();
+                    L_SalesHeader.CalcFields("Inv. Pick Exist");
                     L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
                     L_SalesHeader.SetRange("Knapp Order", false);
+                    L_SalesHeader.SetRange("Inv. Pick Exist", false);
                     L_SalesHeader.SetFilter(Status, '%1|%2', L_SalesHeader.Status::Open, L_SalesHeader.Status::Released);
                     if L_SalesHeader.FindSet() then begin
                         repeat
@@ -93,12 +99,14 @@ page 90000 "General Setup - Channels"
                             L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
                             L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
                             L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                            L_SalesLine.SetFilter(Quantity, '>0');
                             L_SalesLine.SetFilter("Qty. to Ship", '0');
                             if L_SalesLine.FindSet() then begin
                                 repeat
-                                    L_SalesLine.Validate("Qty. to Ship", L_SalesLine.Quantity);
-                                    L_SalesLine.Validate("Qty. to Invoice", L_SalesLine.Quantity);
+                                    L_SalesLine.Validate("Qty. to Ship", L_SalesLine."Outstanding Quantity");
+                                    L_SalesLine.Validate("Qty. to Invoice", L_SalesLine."Outstanding Quantity");
                                     L_SalesLine.Modify(true);
+                                    Commit();
                                 until L_SalesLine.Next() = 0;
                             end;
                         until L_SalesHeader.Next() = 0;

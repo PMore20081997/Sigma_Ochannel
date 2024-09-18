@@ -206,6 +206,7 @@ page 90029 "Web Order Header API Card"
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_OrderLevelResponse: Record "Order Level Response";
     begin
+        Rec.LockTable();
         #Region All product lines rejected Error SEQ13
         Clear(LineCount);
         L_Line.Reset();

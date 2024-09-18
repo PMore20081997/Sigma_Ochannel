@@ -68,5 +68,9 @@ table 90000 "General Setup - Channels"
         {
             DataClassification = ToBeClassified;
         }
+        field(19; "Update Variant Counter"; Integer)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }
