@@ -69,18 +69,42 @@ xmlport 90005 "Export File"
                 trigger OnAfterGetRecord()
                 var
                     L_Header: Record "Interim Sales Header";
+                    L_OrderLevelResponse: Record "Order Level Response";
+                    L_ProductLevelResponse: Record "Product Level Response";
                 begin
                     L_Header.Get(Interim_Sales_Line."Document Type", Interim_Sales_Line."Document No");
                     ETAccessCode := L_Header."ET Access Code";
-                    CustomerNo := L_Header."Channel Order ID";
-                    OrderResponse := L_Header."Reason Code";
+                    CustomerNo := L_Header."External Document No.";
+
+                    L_OrderLevelResponse.Reset();
+                    if L_OrderLevelResponse.FindSet() then begin
+                        repeat
+                            if UpperCase(L_OrderLevelResponse.Reason) = L_Header."Reason Code" then begin
+                                OrderResponse := L_OrderLevelResponse.Message;
+                                break;
+                            end;
+                        until L_OrderLevelResponse.Next() = 0;
+                    end;
+                    //OrderResponse := L_Header."Reason Code";
+
                     SigmaOrderNo := L_Header."No.";
                     TotalOrderValue := Format(L_Header."Order Amount");
                     TransmittedFlag := Format(1);
                     LineNumber := Interim_Sales_Line."Channel Item Id";
                     PipCode := Interim_Sales_Line."Channel SKU";
                     Qty := Format(Interim_Sales_Line."Qty. to Deliver");
-                    ProductResponse := Interim_Sales_Line."Reason Code";
+
+                    L_ProductLevelResponse.Reset();
+                    if L_ProductLevelResponse.FindSet() then begin
+                        repeat
+                            if UpperCase(L_ProductLevelResponse.Reason) = Interim_Sales_Line."Reason Code" then begin
+                                ProductResponse := L_ProductLevelResponse.Message;
+                                break;
+                            end;
+                        until L_ProductLevelResponse.Next() = 0;
+                    end;
+                    //ProductResponse := Interim_Sales_Line."Reason Code";
+
                     Misc := '';
                     FileName := L_Header."File Name";
                 end;

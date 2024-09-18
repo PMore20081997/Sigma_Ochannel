@@ -37,6 +37,11 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("External Document No."; Rec."External Document No.")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Customer Order No.';
+                }
                 field("Sell-to Customer No."; Rec."Sell-to Customer No.")
                 {
                     ApplicationArea = All;

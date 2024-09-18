@@ -242,12 +242,8 @@ codeunit 90018 "GOY File Integration"
                     InterimSalesHeader.Validate("No.", CopyStr(GetCellValue(RowNo, 12), 1, 20));
                     InterimSalesHeader.Validate("Trade Partner Code", P_ChannelCode);
                     InterimSalesHeader.Validate("ET Access Code", GetCellValue(RowNo, 1));
-                    if GetCellValue(RowNo, 2) <> '' then begin
-                        InterimSalesHeader.Validate("Channel Order ID", GetCellValue(RowNo, 2));
-                    end
-                    else begin
-                        InterimSalesHeader.Validate("Channel Order ID", FileName);
-                    end;
+                    InterimSalesHeader.Validate("External Document No.", GetCellValue(RowNo, 2));
+                    InterimSalesHeader.Validate("Channel Order ID", FileName);
                     CustomerRef.Reset();
                     CustomerRef.SetRange("ET Access Code", GetCellValue(RowNo, 1));
                     if CustomerRef.FindFirst() then

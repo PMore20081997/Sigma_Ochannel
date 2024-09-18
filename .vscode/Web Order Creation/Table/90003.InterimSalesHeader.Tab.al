@@ -89,7 +89,7 @@ table 90003 "Interim Sales Header"
         {
             DataClassification = ToBeClassified;
         }
-        field(22; "External Document No."; Code[20])
+        field(22; "External Document No."; Code[50])
         {
             DataClassification = ToBeClassified;
         }
