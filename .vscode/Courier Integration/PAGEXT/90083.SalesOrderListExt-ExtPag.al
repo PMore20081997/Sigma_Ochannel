@@ -152,11 +152,18 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                         end;
                                     end;
 
-                                    if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
-                                        if Rec_SalesHeader.SalesLinesExist() then begin
-                                            ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
-                                            Commit();
-                                        end;
+                                    // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
+                                    //     if Rec_SalesHeader.SalesLinesExist() then begin
+                                    //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
+                                    //         Commit();
+                                    //     end;
+                                    // end;
+
+                                    //Send for Release order if Approval not required
+                                    Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
+                                    if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                        Commit();
                                     end;
                                 end;
                                 #endregion

@@ -13,19 +13,38 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 ApplicationArea = All;
             }
         }
-        addbefore(Inventory)
+        addlast(Control1)
+        {
+            field(Priority; Rec.Priority)
+            {
+                ApplicationArea = All;
+
+            }
+        }
+        addafter("Purchasing Blocked")
         {
             field("Web Orders Qty"; Rec."Web Orders Qty")
             {
                 ApplicationArea = All;
                 Editable = false;
                 ToolTip = 'Sucessfull Electronic Orders';
-                //GHST Customization++
             }
-        }
-
-        addafter(Allocated)
-        {
+            field(Inventory; Rec.Inventory)
+            {
+                ApplicationArea = All;
+                Editable = false;
+                Caption = 'Total Physical';
+                ToolTip = 'Total Inventory';
+                DecimalPlaces = 0 : 5;
+            }
+            field(Allocated; Rec.Allocated)
+            {
+                Editable = false;
+                ApplicationArea = All;
+                ToolTip = 'Sum of Outstanding Qty on SO across ALL Locations';
+                DecimalPlaces = 0 : 5;
+                Caption = 'Total Allocated on SO';
+            }
             field("Total Free"; TotalAvailableQty(rec))
             {
                 Caption = 'Total Free';
@@ -33,12 +52,23 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 Editable = false;
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Total Physical - Total SO Allocated';
-                //GHST Customization++
             }
-        }
-
-        addafter("Qty on SO(Saleable)")
-        {
+            field(Physical; Physical(Rec))
+            {
+                ApplicationArea = All;
+                Editable = false;
+                Caption = 'Physical';
+                ToolTip = 'Qty available in Saleable location';
+                DecimalPlaces = 0 : 5;
+            }
+            field("Allocated on SO"; QtyOnSOForSaleableLocation(Rec))
+            {
+                ApplicationArea = All;
+                Editable = false;
+                Caption = 'Allocated on SO';
+                ToolTip = 'Sum of Outstanding SO Qty in Saleable location';
+                DecimalPlaces = 0 : 5;
+            }
             field("Free"; TotalAvailableQtyForSaleable(Rec))
             {
                 ApplicationArea = All;
@@ -46,35 +76,144 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 DecimalPlaces = 0 : 5;
                 ToolTip = 'Physical - Allocated on SO';
                 Caption = 'Free';
-                //GHST Customization++
             }
         }
     }
 
-
-    local procedure TotalAvailableQty(_Rec: Record "Item Variant"): Decimal
+    local procedure Physical(_Rec: Record "Item Variant"): Decimal
     var
-        L_ILE: Record "Item Ledger Entry";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        PhysicalInventory: Decimal;
     begin
-        _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty");
-        if (_Rec.Inventory - _Rec.Allocated) > 0 then
-            exit(_Rec.Inventory - _Rec.Allocated)
+        Clear(PhysicalInventory);
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
+        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
+        L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            PhysicalInventory := L_ItemLedgerEntry.Quantity;
+        end;
+
+        if PhysicalInventory > 0 then
+            exit(PhysicalInventory)
         else
             exit(0);
     end;
 
-    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Item Variant"): Decimal
+    local procedure QtyOnSOForSaleableLocation(_Rec: Record "Item Variant"): Decimal
     var
-        _LocationCode: Code[20];
-        L_ILE: Record "Item Ledger Entry";
+        L_SalesLine: Record "Sales Line";
+        QtyOnSO: Decimal;
     begin
-        _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
-        if _Rec."Saleable Inventory" > 0 then
-            if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)") > 0 then
-                exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)")
-            else
-                exit(0)
+        Clear(QtyOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
+        L_SalesLine.SetRange("Variant Code", _Rec.Code);
+        L_SalesLine.SETRANGE("Saleable Location", true);
+        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+
+        if QtyOnSO > 0 then
+            exit(QtyOnSO)
         else
             exit(0);
+    end;
+
+    local procedure TotalAvailableQty(_Rec: Record "Item Variant"): Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        QtyOnSO: Decimal;
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        TotalInventory: Decimal;
+    begin
+        Clear(TotalInventory);
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
+        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            TotalInventory := L_ItemLedgerEntry.Quantity;
+        end;
+
+
+        Clear(QtyOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
+        L_SalesLine.SetRange("Variant Code", _Rec.Code);
+        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+
+        if (TotalInventory - QtyOnSO) > 0 then
+            exit(TotalInventory - QtyOnSO)
+        else
+            exit(0);
+
+
+        // //Old Code+++
+        // _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty");
+        // if (_Rec.Inventory - _Rec.Allocated) > 0 then
+        //     exit(_Rec.Inventory - _Rec.Allocated)
+        // else
+        //     exit(0);
+    end;
+
+    local procedure TotalAvailableQtyForSaleable(_Rec: Record "Item Variant"): Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        QtyOnSO: Decimal;
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        PhysicalInventory: Decimal;
+    begin
+        Clear(PhysicalInventory);
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
+        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
+        L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            PhysicalInventory := L_ItemLedgerEntry.Quantity;
+        end;
+
+        Clear(QtyOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
+        L_SalesLine.SetRange("Variant Code", _Rec.Code);
+        L_SalesLine.SETRANGE("Saleable Location", true);
+        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+
+        if (PhysicalInventory - QtyOnSO) > 0 then
+            exit(PhysicalInventory - QtyOnSO)
+        else
+            exit(0);
+
+
+        // //Old Code+++
+        // _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
+        // if _Rec."Saleable Inventory" > 0 then
+        //     if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)") > 0 then
+        //         exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)")
+        //     else
+        //         exit(0)
+        // else
+        //     exit(0);
     end;
 }

@@ -25,6 +25,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         KnappOrdersLabel: Label 'KnappOrders';
         NonKnappOrderLabel: Label 'NonKnappOrders';
         KnappNonKnappOrdersLabel: Label 'KnappNonKnappOrders';
+        CU_ReleaseSalesDoc: Codeunit "Release Sales Document";
 
     local procedure UpdateKnappOrders()
     var
@@ -77,12 +78,19 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
-                        if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
-                            if Rec_SalesHeader.SalesLinesExist() then begin
-                                ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
-                                Commit();
-                            end;
+                        //Send for Release order if Approval not required
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
+                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                            Commit();
                         end;
+
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
+                        //     if Rec_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
                     end;
 
                     //Code to process only 500 Orders then exit the code
@@ -141,12 +149,18 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
-                        if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
-                            if Rec_SalesHeader.SalesLinesExist() then begin
-                                ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
-                                Commit();
-                            end;
+                        //Send for Release order if Approval not required
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
+                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                            Commit();
                         end;
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
+                        //     if Rec_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
                     end;
                 end;
             until L_SalesHeader.Next() = 0;

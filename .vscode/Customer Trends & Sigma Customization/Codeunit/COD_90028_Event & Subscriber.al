@@ -8,6 +8,7 @@ codeunit 90028 "OC Event & Subscriber"
     var
         myInt: Integer;
 
+
     [EventSubscriber(ObjectType::Codeunit, Codeunit::ArchiveManagement, 'OnAfterStoreSalesDocument', '', false, false)]
     local procedure OnAfterStoreSalesDocument(var SalesHeader: Record "Sales Header"; var SalesHeaderArchive: Record "Sales Header Archive")
     begin

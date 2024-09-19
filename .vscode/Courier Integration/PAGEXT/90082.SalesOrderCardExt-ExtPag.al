@@ -155,12 +155,22 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                         end;
                         #endregion
 
-                        if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(L_SalesHeader) then begin
-                            if L_SalesHeader.SalesLinesExist() then begin
-                                ApprovalsMgmt.OnSendSalesDocForApproval(L_SalesHeader);
-                                Commit();
-                            end;
+                        //Send for Release order if Approval not required
+                        L_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
+                        if (L_SalesHeader."Zero Price Approval" = false) AND (L_SalesHeader."Sales Quota Approval" = false) AND (L_SalesHeader."SO Approval Required" = false) AND (L_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (L_SalesHeader."SO Min Order Approval Required" = false) AND (L_SalesHeader."Credit Limit Approval" = false) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                         end;
+
+
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(L_SalesHeader) then begin
+                        //     if L_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(L_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+
+
 
                         //CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                         //Commit();
