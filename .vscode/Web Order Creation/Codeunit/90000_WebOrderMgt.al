@@ -100,6 +100,7 @@ codeunit 90000 "Web Order Mgt"
         L_ShiptoAddress: Record "Ship-to Address";
         BillToCustomer: Record Customer;
         L_Date: Record Date;
+        L_ShippingAgentService: Record "Shipping Agent Services";
     Begin
         ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
         ChannelPartner.TestField("Channel Order No. Series");
@@ -165,10 +166,23 @@ codeunit 90000 "Web Order Mgt"
                             L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
                         end;
                     end else begin
-                        if DT2Time(CurrentDateTime) < 200000T then
-                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                        else
-                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                        L_ShippingAgentService.Reset();
+                        L_ShippingAgentService.SetRange("Shipping Agent Code", L_InterimSalesHeader."Shipping Agent Code");
+                        L_ShippingAgentService.SetRange(Code, L_InterimSalesHeader."Shipping Agent Service Code");
+                        if L_ShippingAgentService.FindFirst() then begin
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                                if DT2Time(CurrentDateTime) < 180000T then
+                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                                if DT2Time(CurrentDateTime) < 200000T then
+                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                        end;
                     end;
                 end;
             end;

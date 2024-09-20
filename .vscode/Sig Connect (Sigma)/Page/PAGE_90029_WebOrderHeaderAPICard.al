@@ -73,6 +73,7 @@ page 90029 "Web Order Header API Card"
         NoSeriesManagement: Codeunit "No. Series - Batch";
         GeneralSetup: record "General Setup - Channels";
         L_Date: Record Date;
+        L_ShippingAgentService: Record "Shipping Agent Services";
     begin
         GeneralSetup.Get();
         //GeneralSetup.TestField("Web Order Nos");
@@ -136,10 +137,23 @@ page 90029 "Web Order Header API Card"
                             Rec.Validate("Shipment Date", CalcDate('<+3D>', Today))
                         end;
                     end else begin
-                        if DT2Time(CurrentDateTime) < 200000T then
-                            Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                        else
-                            Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                        L_ShippingAgentService.Reset();
+                        L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                        L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                        if L_ShippingAgentService.FindFirst() then begin
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                                if DT2Time(CurrentDateTime) < 180000T then
+                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                                if DT2Time(CurrentDateTime) < 200000T then
+                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                        end;
                     end;
                 end;
 

@@ -75,6 +75,7 @@ page 90025 "DC Web Order Header API Card"
         L_Date: Record Date;
         L_CustomerRef: Record "Customer Reference";
         OrderResponse: Text;
+        L_ShippingAgentService: Record "Shipping Agent Services";
     begin
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
@@ -140,8 +141,25 @@ page 90025 "DC Web Order Header API Card"
                             //Update Monday
                             Rec.Validate("Shipment Date", CalcDate('<+3D>', Today))
                         end;
-                    end else
-                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today));
+                    end else begin
+                        L_ShippingAgentService.Reset();
+                        L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                        L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                        if L_ShippingAgentService.FindFirst() then begin
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                                if DT2Time(CurrentDateTime) < 180000T then
+                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                                if DT2Time(CurrentDateTime) < 200000T then
+                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                else
+                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                            end;
+                        end;
+                    end;
                 end;
 
                 L_ShiptoAddress.Reset();
