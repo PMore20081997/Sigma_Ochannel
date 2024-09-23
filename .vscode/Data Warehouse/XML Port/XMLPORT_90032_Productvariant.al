@@ -305,6 +305,9 @@ xmlport 90032 "Product variant"
                 textelement("Average_Cost_Header")
                 {
                 }
+                textelement("Child_Category_Header")
+                {
+                }
 
 
                 trigger OnAfterGetRecord()
@@ -368,6 +371,7 @@ xmlport 90032 "Product variant"
                     Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
                     "Average_Cost_Header" := 'Average Cost';
+                    Child_Category_Header := 'Child Category';
                 end;
             }
             tableelement("Item_Variant"; "Item Variant")
@@ -596,6 +600,10 @@ xmlport 90032 "Product variant"
                 textelement("Average_Cost")
                 {
                 }
+                textelement("Child_Category")
+                {
+
+                }
 
 
                 trigger OnAfterGetRecord()
@@ -607,8 +615,9 @@ xmlport 90032 "Product variant"
                     if L_Item.FindFirst() then begin
                         Prod_Group := L_Item."Item Category Code";
                         Average_Cost := Format(L_Item."Unit Cost");
-                        L_Item.CalcFields("Parent Category");
+                        L_Item.CalcFields("Parent Category", "Child Category");
                         AC_1 := L_Item."Parent Category";
+                        Child_Category := L_Item."Child Category";
                         AC_4 := L_Item."No. 2";
                         if L_Item.Blocked = true then begin
                             Discon := 'Discontinued';

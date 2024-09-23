@@ -727,7 +727,7 @@ xmlport 90016 "mio47"
                     Qty := format(Sales_Invoice_Lines.Quantity);
                     Val := format(Sales_Invoice_Lines.Amount);
                     Cst := format(Sales_Invoice_Lines."Unit Cost (LCY)");
-                    Del_Date := format(Sales_Invoice_Headers."Shipment Date");
+                    Del_Date := FormatDateForCSV(Sales_Invoice_Headers."Shipment Date");
                     cust.Reset();
                     cust.SetRange("No.", Sales_Invoice_Headers."Sell-to Customer No.");
                     if cust.FindFirst() then begin

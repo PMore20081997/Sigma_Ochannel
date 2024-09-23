@@ -243,6 +243,10 @@ xmlport 90017 "mio03"
                 textelement("Average_Cost_Header")
                 {
                 }
+                textelement("Child_Category_Header")
+                {
+                }
+
 
                 trigger OnAfterGetRecord()
                 var
@@ -305,11 +309,12 @@ xmlport 90017 "mio03"
                     Temp_Stop_on_Sales_Header := 'Temp Stop on Sale';
                     Commodity_Code_Header := 'Commodity Code';
                     "Average_Cost_Header" := 'Average Cost';
+                    Child_Category_Header := 'Child Category';
                 end;
             }
             tableelement(Item; Item)
             {
-                CalcFields = "Parent Category";
+                CalcFields = "Parent Category", "Child Category";
 
                 textelement("Prod_Code")
                 {
@@ -534,6 +539,10 @@ xmlport 90017 "mio03"
                 textelement("Average_Cost")
                 {
                 }
+                textelement("Child_Category")
+                {
+
+                }
 
 
                 trigger OnAfterGetRecord()
@@ -628,6 +637,7 @@ xmlport 90017 "mio03"
                     end;
                     Commodity_Code := '';
                     Average_Cost := Format(Item."Unit Cost");
+                    Child_Category := Item."Child Category";
                 end;
             }
         }

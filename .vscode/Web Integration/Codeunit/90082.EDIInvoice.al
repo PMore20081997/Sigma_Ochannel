@@ -50,6 +50,7 @@ codeunit 90082 "EDI Invoice"
         NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
         Salesinvoicehead: Record "Sales Invoice Header";
+
         //salesHeader: Record "Sales Header";
         Customer: Record Customer;
     begin
