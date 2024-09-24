@@ -306,7 +306,7 @@ codeunit 90066 "Create Consolidate SO"
     local procedure CreateSalesHeaderFromTemporary(_Temporary_SalesLine: Record "Sales Line" temporary)
     var
         SalesRecSetup: Record "Sales & Receivables Setup";
-        NoSeriesManagement: Codeunit "No. Series - Batch";
+        NoSeriesManagement: Codeunit "No. Series";
         L_Customer: Record Customer;
         L_GeneralSetupChannels: Record "General Setup - Channels";
         L_Location: Record Location;
@@ -318,9 +318,7 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH.Reset();
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
-        //InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(SalesRecSetup."Order Nos.", WORKDATE, TRUE));
         InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(L_GeneralSetupChannels."Consolidated Sales No. Series", WORKDATE, TRUE));
-        NoSeriesManagement.SaveState();
         InsertedSH.Validate("IRP Order", true);
         InsertedSH.Validate("Web Order", true);
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
@@ -356,7 +354,6 @@ codeunit 90066 "Create Consolidate SO"
             if L_Location.FindFirst() then
                 InsertedSH.Validate("Location Code", L_Location.Code);
             InsertedSH.Validate("Posting No.", NoSeriesManagement.GetNextNo(InsertedSH."Posting No. Series", WORKDATE, TRUE));
-            NoSeriesManagement.SaveState();
         end;
 
         InsertedSH.Modify();

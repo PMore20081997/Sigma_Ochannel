@@ -134,26 +134,52 @@ page 90025 "DC Web Order Header API Card"
                 L_Date.SetRange(L_Date."Period Start", Today);
                 if L_Date.FindFirst() then begin
                     if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                        if Rec."Weekend Ship Agent Serv Code" <> '' then
-                            //Update Saturday++
-                            Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                        if Rec."Weekend Ship Agent Serv Code" <> '' then begin
+                            L_ShippingAgentService.Reset();
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Weekend Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, Rec."Weekend Ship Agent Serv Code");
+                            if L_ShippingAgentService.FindFirst() then begin
+                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                                    if DT2Time(CurrentDateTime) < 190000T then
+                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                    else
+                                        Rec.Validate("Shipment Date", CalcDate('<+3D>', Today));
+                                end;
+                            end;
+                        end
                         else begin
-                            //Update Monday
-                            Rec.Validate("Shipment Date", CalcDate('<+3D>', Today))
+                            L_ShippingAgentService.Reset();
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                            if L_ShippingAgentService.FindFirst() then begin
+                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                                    if DT2Time(CurrentDateTime) < 170000T then
+                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                    else
+                                        Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
+                                end;
+                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                                    if DT2Time(CurrentDateTime) < 190000T then
+                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                    else
+                                        Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
+                                end;
+                            end;
                         end;
-                    end else begin
+                    end
+                    else begin
                         L_ShippingAgentService.Reset();
                         L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
                         L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
                         if L_ShippingAgentService.FindFirst() then begin
                             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                                if DT2Time(CurrentDateTime) < 180000T then
+                                if DT2Time(CurrentDateTime) < 170000T then
                                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
                                 else
                                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
                             end;
                             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                if DT2Time(CurrentDateTime) < 200000T then
+                                if DT2Time(CurrentDateTime) < 190000T then
                                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
                                 else
                                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
