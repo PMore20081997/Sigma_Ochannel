@@ -89,7 +89,7 @@ report 90001 "Move Scanned Order to Handled"
         END;
     end;
 
-    local procedure MovingHeaderData(ISH: Record "Interim Sales Header")
+    procedure MovingHeaderData(ISH: Record "Interim Sales Header")
     var
         L_HandledInterimHeader: Record "Handled Interim Sales Header";
     begin

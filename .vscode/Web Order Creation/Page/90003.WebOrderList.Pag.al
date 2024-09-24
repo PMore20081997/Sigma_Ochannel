@@ -267,6 +267,74 @@ page 90003 "Web Order List"
                 end;
             }
 
+            action("Force Move to Archive")
+            {
+                Caption = 'Force Move to Archive';
+                Ellipsis = true;
+                Image = CompleteLine;
+                ApplicationArea = all;
+                Visible = true;
+
+                trigger OnAction()
+                var
+                    L_InterimSalesHeader: Record "Interim Sales Header";
+                    L_InterimSalesLine: Record "Interim Sales Line";
+                    L_HandledInterimHeader: Record "Handled Interim Sales Header";
+                    L_HandledInterimLine: Record "Handled Interim Sales Line";
+                    REP_90001: Report "Move Scanned Order to Handled";
+                    UserSetup: Record "User Setup";
+                begin
+                    UserSetup.Reset();
+                    if UserSetup.Get(UserId) then begin
+                        if UserSetup."Allow to Move Web Orders" = true then begin
+                            Clear(L_InterimSalesHeader);
+                            L_InterimSalesHeader := Rec;
+                            CurrPage.SetSelectionFilter(L_InterimSalesHeader);
+
+                            if L_InterimSalesHeader.FindSet() then begin
+                                repeat
+                                    L_HandledInterimHeader.Reset();
+                                    L_HandledInterimHeader.SetRange("Document Type", L_HandledInterimHeader."Document Type"::Order);
+                                    L_HandledInterimHeader.SetRange(L_HandledInterimHeader."No.", L_InterimSalesHeader."No.");
+                                    IF not L_HandledInterimHeader.FindFirst() THEN BEGIN
+                                        //Move Header
+                                        REP_90001.MovingHeaderData(L_InterimSalesHeader);
+
+                                        //Move Lines
+                                        L_HandledInterimLine.Reset();
+                                        L_HandledInterimLine.Init();
+                                        L_InterimSalesLine.Reset();
+                                        L_InterimSalesLine.SetRange("Document Type", L_InterimSalesHeader."Document Type");
+                                        L_InterimSalesLine.SetRange("Document No", L_InterimSalesHeader."No.");
+                                        if L_InterimSalesLine.FindSet() then begin
+                                            repeat
+                                                L_HandledInterimLine.TransferFields(L_InterimSalesLine);
+                                                L_InterimSalesLine.CalcFields("Document Date", "Location Code", "Tracking No.");
+                                                L_HandledInterimLine."Tracking No." := L_InterimSalesLine."Tracking No.";
+                                                L_HandledInterimLine."Document Date" := L_InterimSalesLine."Document Date";
+                                                L_HandledInterimLine."Scanned Date" := L_InterimSalesLine."Scanned Date";
+                                                L_HandledInterimLine."Location Code" := L_InterimSalesLine."Location Code";
+                                                L_HandledInterimLine.Insert(true);
+                                            until L_InterimSalesLine.Next() = 0;
+                                        end;
+
+                                        L_InterimSalesHeader."Moved In Handled" := TRUE;
+                                        L_InterimSalesHeader.Modify();
+                                        L_InterimSalesHeader.Delete(true);
+                                        Commit();
+                                    END;
+                                until L_InterimSalesHeader.Next() = 0;
+                            end;
+
+                            Message('Process Completed');
+                        end
+                        else begin
+                            Message('You do not have permission to move orders into archive.');
+                        end;
+                    end
+                end;
+            }
+
             // action("Update Reason Code")
             // {
             //     ApplicationArea = All;

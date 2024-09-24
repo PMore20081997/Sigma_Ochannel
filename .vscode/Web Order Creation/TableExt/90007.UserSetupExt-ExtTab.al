@@ -15,5 +15,13 @@ tableextension 90007 "OC UserSetupExt" extends "User Setup"
         {
             DataClassification = ToBeClassified;
         }
+        field(90003; "Allow to Move Web Orders"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90004; "Allow to Delete Bulk SO"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }

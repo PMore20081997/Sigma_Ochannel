@@ -14,6 +14,17 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
                 ToolTip = 'Specifies the user if the user has permission to change Qty. to ship value in Warehouse Shipment Lines.';
                 Visible = false;
             }
+            field("Allow to Move Web Orders"; Rec."Allow to Move Web Orders")
+            {
+                ApplicationArea = All;
+                Caption = 'Allow to Move Web Orders into Handled';
+                ToolTip = 'Specifies if user has permission to move web orders into handled orders';
+            }
+            field("Allow to Delete Bulk SO"; Rec."Allow to Delete Bulk SO")
+            {
+                ApplicationArea = All;
+                ToolTip = 'Specifies if user has permission to delete bulk selected sales orders';
+            }
         }
         addafter("Allowed Quota Manag. for CD")
         {

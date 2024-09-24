@@ -24,19 +24,25 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                 trigger OnAction()
                 var
                     L_SalesHeader: Record "Sales Header";
+                    UserSetup: Record "User Setup";
                 begin
-                    Clear(L_SalesHeader);
-                    L_SalesHeader := Rec;
-                    CurrPage.SetSelectionFilter(L_SalesHeader);
+                    UserSetup.Reset();
+                    if UserSetup.Get(UserId) then begin
+                        if UserSetup."Allow to Delete Bulk SO" = true then begin
+                            Clear(L_SalesHeader);
+                            L_SalesHeader := Rec;
+                            CurrPage.SetSelectionFilter(L_SalesHeader);
 
-                    L_SalesHeader.SetRange("Web Order", true);
-                    L_SalesHeader.SetRange("Knapp Order", false);
-                    L_SalesHeader.SetFilter("Posting No.", '<>%1', '');
-                    if L_SalesHeader.FindSet() then begin
-                        repeat
-                            L_SalesHeader.Delete(true);
-                            Commit();
-                        until L_SalesHeader.Next() = 0;
+                            if L_SalesHeader.FindSet() then begin
+                                repeat
+                                    L_SalesHeader.Delete(true);
+                                    Commit();
+                                until L_SalesHeader.Next() = 0;
+                            end;
+                        end
+                        else begin
+                            Message('You do not have permission to delete bulk sales orders.');
+                        end;
                     end;
                 end;
             }
