@@ -654,10 +654,81 @@ codeunit 90056 "Web Order Sales Quota New"
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
+                        // //Permonth Web orders Qty++++++
+                        // L_InterimSalesLinePerdayQuantity.Reset();
+                        // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        // L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                        // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                        //         end;
+                        //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        // end;
+
+
+                        // //Permonth Current Web orders Qty++++++
+                        // L_InterimSalesLine.RESET;
+                        // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                        // L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                        // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                        // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                        //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                        // END;
+
+                        // //Permonth SHipped Qty+++++
+                        // L_SalesShipmentLine.Reset();
+                        // L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
+                        // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        // L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_SalesShipmentLine.FindSet() then begin
+                        //     repeat
+                        //         L_DimensionSetEntry.Reset();
+                        //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                        //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if L_DimensionSetEntry.FindFirst() then begin
+                        //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                        //         end;
+                        //     until L_SalesShipmentLine.Next() = 0;
+                        // end;
+
+                        // //Permonth Customer Trends Quantity+++
+                        // L_CustomerTrends.Reset();
+                        // L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                        // L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_CustomerTrends.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                        //         end;
+                        //     until L_CustomerTrends.Next() = 0;
+                        // end;
+
+                        //New Code Added as diciussed with team++++
                         //Permonth Web orders Qty++++++
                         L_InterimSalesLinePerdayQuantity.Reset();
                         L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                         L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
                         L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
@@ -693,6 +764,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
                         L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                         L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         if L_SalesShipmentLine.FindSet() then begin
                             repeat
                                 L_DimensionSetEntry.Reset();
@@ -708,6 +780,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         //Permonth Customer Trends Quantity+++
                         L_CustomerTrends.Reset();
                         L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                        L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
                         if L_CustomerTrends.FindSet() then begin
                             repeat
@@ -722,6 +795,8 @@ codeunit 90056 "Web Order Sales Quota New"
                                 end;
                             until L_CustomerTrends.Next() = 0;
                         end;
+                        //New Code Added as diciussed with team++++
+
 
                         L_EntryFound := true;
                         L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
@@ -793,10 +868,80 @@ codeunit 90056 "Web Order Sales Quota New"
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
+                        // //PerMonth Web orders Qty++++++
+                        // L_InterimSalesLinePerdayQuantity.Reset();
+                        // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        // L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                        // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                        //         end;
+                        //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        // end;
+
+                        // //PerMonth Current Web orders Qty++++++
+                        // L_InterimSalesLine.RESET;
+                        // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                        // L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                        // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                        // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                        //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                        // END;
+
+                        // //PerMonth SHipped Qty+++++
+                        // L_SalesShipmentLine.Reset();
+                        // L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                        // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        // L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_SalesShipmentLine.FindSet() then begin
+                        //     repeat
+                        //         L_DimensionSetEntry.Reset();
+                        //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                        //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if L_DimensionSetEntry.FindFirst() then begin
+                        //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                        //         end;
+                        //     until L_SalesShipmentLine.Next() = 0;
+                        // end;
+
+                        // //PerMonth Customer Trends Quantity+++
+                        // L_CustomerTrends.Reset();
+                        // L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                        // L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_CustomerTrends.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                        //         end;
+                        //     until L_CustomerTrends.Next() = 0;
+                        // end;
+
+                        //New Code Added as diciussed with team++++
                         //PerMonth Web orders Qty++++++
                         L_InterimSalesLinePerdayQuantity.Reset();
                         L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                         L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
                         L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
@@ -831,6 +976,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
                         L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                         L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         if L_SalesShipmentLine.FindSet() then begin
                             repeat
                                 L_DimensionSetEntry.Reset();
@@ -847,6 +993,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         L_CustomerTrends.Reset();
                         L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
                         L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         if L_CustomerTrends.FindSet() then begin
                             repeat
                                 DefaultDimension_2.Reset();
@@ -860,6 +1007,7 @@ codeunit 90056 "Web Order Sales Quota New"
                                 end;
                             until L_CustomerTrends.Next() = 0;
                         end;
+                        //New Code Added as diciussed with team++++
 
                         L_EntryFound := true;
                         L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
@@ -934,10 +1082,80 @@ codeunit 90056 "Web Order Sales Quota New"
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
                     if (L_MaxOrderQty."Start Date" <= _InterimSalesHeader."Order Date") AND (L_MaxOrderQty."End Date" >= _InterimSalesHeader."Order Date") then begin
 
+                        // //Permonth Web orders Qty++++++
+                        // L_InterimSalesLinePerdayQuantity.Reset();
+                        // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                        // L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                        // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                        //         end;
+                        //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                        // end;
+
+                        // //Permonth Current Web orders Qty++++++
+                        // L_InterimSalesLine.RESET;
+                        // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                        // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                        // L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                        // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                        // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                        //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                        //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                        // END;
+
+                        // //Permonth SHipped Qty+++++
+                        // L_SalesShipmentLine.Reset();
+                        // L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                        // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                        // L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_SalesShipmentLine.FindSet() then begin
+                        //     repeat
+                        //         L_DimensionSetEntry.Reset();
+                        //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                        //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if L_DimensionSetEntry.FindFirst() then begin
+                        //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                        //         end;
+                        //     until L_SalesShipmentLine.Next() = 0;
+                        // end;
+
+                        // //Permonth Customer Trends Quantity+++
+                        // L_CustomerTrends.Reset();
+                        // L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                        // L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        // if L_CustomerTrends.FindSet() then begin
+                        //     repeat
+                        //         DefaultDimension_2.Reset();
+                        //         DefaultDimension_2.SetRange("Table ID", 18);
+                        //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                        //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                        //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                        //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                        //         if DefaultDimension_2.FindFirst() then begin
+                        //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                        //         end;
+                        //     until L_CustomerTrends.Next() = 0;
+                        // end;
+
+                        //New Code Added as diciussed with team++++
                         //Permonth Web orders Qty++++++
                         L_InterimSalesLinePerdayQuantity.Reset();
                         L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                         L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                        L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                         L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
                         L_InterimSalesLinePerdayQuantity.SetFilter("Order Date", '%1..%2', Sdate, Edate);
@@ -972,6 +1190,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
                         L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                         L_SalesShipmentLine.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         if L_SalesShipmentLine.FindSet() then begin
                             repeat
                                 L_DimensionSetEntry.Reset();
@@ -988,6 +1207,7 @@ codeunit 90056 "Web Order Sales Quota New"
                         L_CustomerTrends.Reset();
                         L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
                         L_CustomerTrends.SetFilter("Order Date", '%1..%2', Sdate, Edate);
+                        L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                         if L_CustomerTrends.FindSet() then begin
                             repeat
                                 DefaultDimension_2.Reset();
@@ -1001,6 +1221,7 @@ codeunit 90056 "Web Order Sales Quota New"
                                 end;
                             until L_CustomerTrends.Next() = 0;
                         end;
+                        //New Code Added as diciussed with team----
 
                         L_EntryFound := true;
                         L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
@@ -2108,10 +2329,81 @@ codeunit 90056 "Web Order Sales Quota New"
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
+                    // //PerDay Web orders Qty++++++
+                    // L_InterimSalesLinePerdayQuantity.Reset();
+                    // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    // L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
+                    // L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                    // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                    //         end;
+                    //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    // end;
+
+                    // //PerDay Current Web orders Qty++++++
+                    // L_InterimSalesLine.RESET;
+                    // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                    // L_InterimSalesLine.SETRANGE("Item Category Code", ItemCat);
+                    // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                    // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                    //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    // END;
+
+
+                    // //PerDay SHipped Qty+++++
+                    // L_SalesShipmentLine.Reset();
+                    // L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
+                    // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    // L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_SalesShipmentLine.FindSet() then begin
+                    //     repeat
+                    //         L_DimensionSetEntry.Reset();
+                    //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                    //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if L_DimensionSetEntry.FindFirst() then begin
+                    //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                    //         end;
+                    //     until L_SalesShipmentLine.Next() = 0;
+                    // end;
+
+                    // //Perday Customer Trends Quantity+++
+                    // L_CustomerTrends.Reset();
+                    // L_CustomerTrends.SetRange("Item Category Code", ItemCat);
+                    // L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_CustomerTrends.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                    //         end;
+                    //     until L_CustomerTrends.Next() = 0;
+                    // end;
+
+                    //New Code Added as dicussed with team++++
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
                     L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                     L_InterimSalesLinePerdayQuantity.SetRange("Item Category Code", ItemCat);
                     L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
@@ -2147,6 +2439,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_SalesShipmentLine.SetRange("Item Category Code", ItemCat);
                     L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                     L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_SalesShipmentLine.FindSet() then begin
                         repeat
                             L_DimensionSetEntry.Reset();
@@ -2163,6 +2456,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_CustomerTrends.Reset();
                     L_CustomerTrends.SetRange("Item Category Code", ItemCat);
                     L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_CustomerTrends.FindSet() then begin
                         repeat
                             DefaultDimension_2.Reset();
@@ -2176,6 +2470,7 @@ codeunit 90056 "Web Order Sales Quota New"
                             end;
                         until L_CustomerTrends.Next() = 0;
                     end;
+                    //New Code Added as dicussed with team----
 
                     L_EntryFound := true;
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
@@ -2243,10 +2538,80 @@ codeunit 90056 "Web Order Sales Quota New"
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
+                    // //PerDay Web orders Qty++++++
+                    // L_InterimSalesLinePerdayQuantity.Reset();
+                    // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    // L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                    // L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                    // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                    //         end;
+                    //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    // end;
+
+                    // //PerDay Current Web orders Qty++++++
+                    // L_InterimSalesLine.RESET;
+                    // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                    // L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                    // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                    // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                    //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    // END;
+
+                    // //PerDay SHipped Qty+++++
+                    // L_SalesShipmentLine.Reset();
+                    // L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                    // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    // L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_SalesShipmentLine.FindSet() then begin
+                    //     repeat
+                    //         L_DimensionSetEntry.Reset();
+                    //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                    //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if L_DimensionSetEntry.FindFirst() then begin
+                    //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                    //         end;
+                    //     until L_SalesShipmentLine.Next() = 0;
+                    // end;
+
+                    // //Perday Customer Trends Quantity+++
+                    // L_CustomerTrends.Reset();
+                    // L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                    // L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_CustomerTrends.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                    //         end;
+                    //     until L_CustomerTrends.Next() = 0;
+                    // end;
+
+                    //New Code Added as dicussed with team++++
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
                     L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                     L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
                     L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
@@ -2281,6 +2646,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
                     L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                     L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_SalesShipmentLine.FindSet() then begin
                         repeat
                             L_DimensionSetEntry.Reset();
@@ -2297,6 +2663,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_CustomerTrends.Reset();
                     L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
                     L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_CustomerTrends.FindSet() then begin
                         repeat
                             DefaultDimension_2.Reset();
@@ -2310,6 +2677,7 @@ codeunit 90056 "Web Order Sales Quota New"
                             end;
                         until L_CustomerTrends.Next() = 0;
                     end;
+                    //New Code Added as dicussed with team---
 
                     L_EntryFound := true;
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
@@ -2381,10 +2749,80 @@ codeunit 90056 "Web Order Sales Quota New"
                 L_MaxOrderQty.SetRange("Restriction Type", L_MaxOrderQty."Restriction Type"::"By Quantity");
                 L_MaxOrderQty.SETFILTER("Maximum Quantity", '>%1', 0);
                 IF L_MaxOrderQty.FINDFIRST THEN BEGIN
+                    // //PerDay Web orders Qty++++++
+                    // L_InterimSalesLinePerdayQuantity.Reset();
+                    // L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    // L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
+                    // L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
+                    // L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
+                    // L_InterimSalesLinePerdayQuantity.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                    // if L_InterimSalesLinePerdayQuantity.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_InterimSalesLinePerdayQuantity."Sell-to Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_InterimSalesLinePerdayQuantity."Qty. to Deliver";
+                    //         end;
+                    //     until L_InterimSalesLinePerdayQuantity.Next() = 0;
+                    // end;
+
+                    // //PerDay Current Web orders Qty++++++
+                    // L_InterimSalesLine.RESET;
+                    // L_InterimSalesLine.SETRANGE("Document Type", _InterimSalesHeader."Document Type");
+                    // L_InterimSalesLine.SETRANGE("Document No", _InterimSalesHeader."No.");
+                    // L_InterimSalesLine.SETRANGE("No.", _InterimSalesLine."No.");
+                    // L_InterimSalesLine.SetRange(Type, L_InterimSalesLine.Type::Item);
+                    // IF L_InterimSalesLine.FINDSET THEN BEGIN
+                    //     L_InterimSalesLine.CalcSums("Qty. to Deliver");
+                    //     L_OrderQty := L_InterimSalesLine."Qty. to Deliver";
+                    // END;
+
+                    // //PerDay SHipped Qty+++++
+                    // L_SalesShipmentLine.Reset();
+                    // L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
+                    // L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
+                    // L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_SalesShipmentLine.FindSet() then begin
+                    //     repeat
+                    //         L_DimensionSetEntry.Reset();
+                    //         L_DimensionSetEntry.SetRange("Dimension Set ID", L_SalesShipmentLine."Dimension Set ID");
+                    //         L_DimensionSetEntry.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         L_DimensionSetEntry.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if L_DimensionSetEntry.FindFirst() then begin
+                    //             L_DayOrderQty += L_SalesShipmentLine.Quantity;
+                    //         end;
+                    //     until L_SalesShipmentLine.Next() = 0;
+                    // end;
+
+                    // //Perday Customer Trends Quantity+++
+                    // L_CustomerTrends.Reset();
+                    // L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
+                    // L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    // if L_CustomerTrends.FindSet() then begin
+                    //     repeat
+                    //         DefaultDimension_2.Reset();
+                    //         DefaultDimension_2.SetRange("Table ID", 18);
+                    //         DefaultDimension_2.SetRange("Parent Type", DefaultDimension_2."Parent Type"::Customer);
+                    //         DefaultDimension_2.SetRange("No.", L_CustomerTrends."Customer No.");
+                    //         DefaultDimension_2.SetRange("Dimension Code", L_DefaultDimension."Dimension Code");
+                    //         DefaultDimension_2.SetRange("Dimension Value Code", L_DefaultDimension."Dimension Value Code");
+                    //         if DefaultDimension_2.FindFirst() then begin
+                    //             L_DayOrderQty += L_CustomerTrends."Qty. to be added to SO";
+                    //         end;
+                    //     until L_CustomerTrends.Next() = 0;
+                    // end;
+
+                    //New Code Added as dicussed with team++++
                     //PerDay Web orders Qty++++++
                     L_InterimSalesLinePerdayQuantity.Reset();
                     L_InterimSalesLinePerdayQuantity.SetRange("Document Type", _InterimSalesHeader."Document Type");
                     L_InterimSalesLinePerdayQuantity.SETFILTER("Document No", '<>%1', _InterimSalesHeader."No.");
+                    L_InterimSalesLinePerdayQuantity.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     L_InterimSalesLinePerdayQuantity.SetRange(Type, L_InterimSalesLinePerdayQuantity.Type::Item);
                     L_InterimSalesLinePerdayQuantity.SetRange("No.", _InterimSalesLine."No.");
                     L_InterimSalesLinePerdayQuantity.SETRANGE("Order Date", _InterimSalesHeader."Order Date");
@@ -2419,6 +2857,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_SalesShipmentLine.SetRange("No.", _InterimSalesLine."No.");
                     L_SalesShipmentLine.SetRange(Type, L_SalesShipmentLine.Type::Item);
                     L_SalesShipmentLine.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_SalesShipmentLine.SetRange("Sell-to Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_SalesShipmentLine.FindSet() then begin
                         repeat
                             L_DimensionSetEntry.Reset();
@@ -2435,6 +2874,7 @@ codeunit 90056 "Web Order Sales Quota New"
                     L_CustomerTrends.Reset();
                     L_CustomerTrends.SetRange("Item No.", _InterimSalesLine."No.");
                     L_CustomerTrends.SetRange("Order Date", _InterimSalesHeader."Order Date");
+                    L_CustomerTrends.SetRange("Customer No.", _InterimSalesHeader."Sell-to Customer No.");
                     if L_CustomerTrends.FindSet() then begin
                         repeat
                             DefaultDimension_2.Reset();
@@ -2448,6 +2888,7 @@ codeunit 90056 "Web Order Sales Quota New"
                             end;
                         until L_CustomerTrends.Next() = 0;
                     end;
+                    //New Code Added as dicussed with team---
 
                     L_EntryFound := true;
                     L_RemainingQuantity := L_MaxOrderQty."Maximum Quantity" - L_DayOrderQty;
