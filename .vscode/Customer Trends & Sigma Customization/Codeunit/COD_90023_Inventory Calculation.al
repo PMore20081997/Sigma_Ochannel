@@ -8,27 +8,27 @@ codeunit 90023 "Inventory Calculation"
     var
         myInt: Integer;
     //++++++++++++++++++++++++++++++++++++++++++++Customer Trends+++++++++++++++++++++++++++++++++++++++++++++++++++
-    procedure CT_TotalFree(_Rec: Record CustomerTrends) _TotalFree: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
-        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
-        if _TotalFree > 0 then
-            exit(_TotalFree)
-        else
-            exit(0);
-    end;
+    // procedure CT_TotalFree(_Rec: Record CustomerTrends) _TotalFree: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
+    //     _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
+    //     if _TotalFree > 0 then
+    //         exit(_TotalFree)
+    //     else
+    //         exit(0);
+    // end;
 
-    procedure CT_Free(_Rec: Record CustomerTrends) _Free: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields(Physical, "Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
-        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
-        if _Free > 0 then
-            Exit(_Free)
-        else
-            exit(0);
-    end;
+    // procedure CT_Free(_Rec: Record CustomerTrends) _Free: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields(Physical, "Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
+    //     _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
+    //     if _Free > 0 then
+    //         Exit(_Free)
+    //     else
+    //         exit(0);
+    // end;
 
 
     procedure CT_Onvalidate_Free(_Rec: Record CustomerTrends) _Free: Decimal
@@ -36,7 +36,10 @@ codeunit 90023 "Inventory Calculation"
         L_CstomerTrend: Record CustomerTrends;
         _CurrentLineQty: Decimal;
 
-
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        _Physical: Decimal;
+        L_SalesLine: Record "Sales Line";
+        _AllocatedOnSO: Decimal;
     begin
         Clear(_CurrentLineQty);
         L_CstomerTrend.Reset();
@@ -45,40 +48,79 @@ codeunit 90023 "Inventory Calculation"
         if L_CstomerTrend.FindFirst() then
             _CurrentLineQty := L_CstomerTrend."Qty. to be added to SO";
 
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields(Physical, "Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
-        _Free := (_Rec.Physical + _CurrentLineQty) - (_Rec."Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
+        // _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+        // _Rec.CalcFields(Physical, "Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
+        // _Free := (_Rec.Physical + _CurrentLineQty) - (_Rec."Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
+        // if _Free > 0 then
+        //     Exit(_Free)
+        // else
+        //     exit(0);
+        //New Code+++
+        Clear(_Physical);
+        _Rec.CalcFields("Variant Code mandatory");
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SetRange("Item No.", _Rec."Item No.");
+        L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Units of Measure");
+        L_ItemLedgerEntry.SetRange("Saleable Location", true);
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", _Rec."Variant Code mandatory");
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            _Physical := L_ItemLedgerEntry.Quantity;
+        end;
+        if _Physical < 0 then
+            _Physical := 0;
+
+
+        Clear(_AllocatedOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SetRange("No.", _Rec."Item No.");
+        L_SalesLine.SetRange("Saleable Location", true);
+        L_SalesLine.SetRange("Unit of Measure Code", _Rec."Units of Measure");
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+        if _AllocatedOnSO < 0 then
+            _AllocatedOnSO := 0;
+
+        _Rec.CalcFields("Web Orders Qty", "Qty On Customer Trends");
+        Clear(_Free);
+        _Free := (_Physical + _CurrentLineQty) - (_AllocatedOnSO + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
         if _Free > 0 then
             Exit(_Free)
         else
             exit(0);
+
     end;
     //--------------------------------------------Customer Trends---------------------------------------------------
 
 
 
     //++++++++++++++++++++++++++++++++++++++++Sales Order++++++++++++++++++++++++++++++++++++++++
-    procedure Sales_TotalFree(_Rec: Record "Sales Line") _TotalFree: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
-        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
-        if _TotalFree > 0 then
-            exit(_TotalFree)
-        else
-            exit(0);
-    end;
+    // procedure Sales_TotalFree(_Rec: Record "Sales Line") _TotalFree: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
+    //     _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
+    //     if _TotalFree > 0 then
+    //         exit(_TotalFree)
+    //     else
+    //         exit(0);
+    // end;
 
-    procedure Sales_Free(_Rec: Record "Sales Line") _Free: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
-        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-    end;
+    // procedure Sales_Free(_Rec: Record "Sales Line") _Free: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
+    //     _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
+    //     if _Free > 0 then
+    //         exit(_Free)
+    //     else
+    //         exit(0);
+    // end;
 
     procedure Sales_CheckFreeQuantity_OnValidate(_Rec: Record "Sales Line") _Free: Decimal
     var
@@ -92,12 +134,16 @@ codeunit 90023 "Inventory Calculation"
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
         L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
+        //L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
+        L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
         end;
+        if _Physical < 0 then
+            _Physical := 0;
+
 
         Clear(_AllocatedOnSO);
         L_SalesLine.Reset();
@@ -106,13 +152,18 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Quantity");
-            _AllocatedOnSO := L_SalesLine."Outstanding Quantity";
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
         end;
+        if _AllocatedOnSO < 0 then
+            _AllocatedOnSO := 0;
+
+
 
         Clear(_AllocatedOnSO_SameOrderDifferentLine);
         L_SalesLine.Reset();
@@ -122,17 +173,20 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Quantity");
-            _AllocatedOnSO_SameOrderDifferentLine := L_SalesLine."Outstanding Quantity";
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            _AllocatedOnSO_SameOrderDifferentLine := L_SalesLine."Outstanding Qty. (Base)";
         end;
+        if _AllocatedOnSO_SameOrderDifferentLine < 0 then
+            _AllocatedOnSO_SameOrderDifferentLine := 0;
 
         _Rec.CalcFields("Web Orders Qty");
 
-
+        Clear(_Free);
         _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine + _Rec."Web Orders Qty");
         if _Free > 0 then
             exit(_Free)
@@ -151,12 +205,16 @@ codeunit 90023 "Inventory Calculation"
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
         L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
+        //L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
+        L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
         end;
+        if _Physical < 0 then
+            _Physical := 0;
+
 
         Clear(_AllocatedOnSO);
         L_SalesLine.Reset();
@@ -164,16 +222,21 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
+        L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
             L_SalesLine.CalcSums("Outstanding Quantity");
             _AllocatedOnSO := L_SalesLine."Outstanding Quantity";
         end;
+        if _AllocatedOnSO < 0 then
+            _AllocatedOnSO := 0;
+
 
         _Rec.CalcFields("Web Orders Qty");
 
+        Clear(_Free);
         _Free := _Physical - (_AllocatedOnSO + _Rec."Web Orders Qty");
         if _Free > 0 then
             exit(_Free)
@@ -185,27 +248,27 @@ codeunit 90023 "Inventory Calculation"
 
 
     //++++++++++++++++++++++++++++++++++++++++Purcahse Order+++++++++++++++++++++++++++++++++++++
-    procedure Purchase_TotalFree(_Rec: Record "Purchase Line") _TotalFree: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
-        _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
-        if _TotalFree > 0 then
-            exit(_TotalFree)
-        else
-            exit(0);
-    end;
+    // procedure Purchase_TotalFree(_Rec: Record "Purchase Line") _TotalFree: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields("Total Physical", "Total Allocated on SO", "Web Orders Qty");
+    //     _TotalFree := _Rec."Total Physical" - (_Rec."Total Allocated on SO" + _Rec."Web Orders Qty");
+    //     if _TotalFree > 0 then
+    //         exit(_TotalFree)
+    //     else
+    //         exit(0);
+    // end;
 
 
-    procedure Purchase_Free(_Rec: Record "Purchase Line") _Free: Decimal
-    begin
-        _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
-        _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-    end;
+    // procedure Purchase_Free(_Rec: Record "Purchase Line") _Free: Decimal
+    // begin
+    //     _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
+    //     _Rec.CalcFields("Allocated on SO", Physical, "Web Orders Qty");
+    //     _Free := _Rec.Physical - (_Rec."Allocated on SO" + _Rec."Web Orders Qty");
+    //     if _Free > 0 then
+    //         exit(_Free)
+    //     else
+    //         exit(0);
+    // end;
     //----------------------------------------Purcahse Order-------------------------------------
 }
