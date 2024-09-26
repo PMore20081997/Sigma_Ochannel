@@ -178,7 +178,11 @@ codeunit 90026 "Udate Variant on SO"
             L_ItemLedgerEntry.Reset();
             L_ItemLedgerEntry.SETRANGE("Item No.", _SalesLine."No.");
             L_ItemLedgerEntry.SetRange("Variant Code", _ItemVariant.Code);
-            L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
+            _SalesLine.CalcFields("Saleable Location");
+            if _SalesLine."Saleable Location" = false then
+                L_ItemLedgerEntry.SETRANGE("Location Code", _SalesLine."Location Code")
+            else
+                L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
             if L_ItemLedgerEntry.FindSet() then begin
                 L_ItemLedgerEntry.CalcSums(Quantity);
                 PhysicalInventory := L_ItemLedgerEntry.Quantity;

@@ -129,13 +129,18 @@ codeunit 90023 "Inventory Calculation"
         _Physical: Decimal;
         _AllocatedOnSO: Decimal;
         _AllocatedOnSO_SameOrderDifferentLine: Decimal;
+        L_Location: Record Location;
     begin
+        _Rec.CalcFields("Saleable Location");
+
         Clear(_Physical);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
         L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        //L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
-        L_ItemLedgerEntry.SetRange("Saleable Location", true);
+        if _Rec."Saleable Location" = false then
+            L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code")
+        else
+            L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
@@ -152,8 +157,10 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Saleable Location", true);
+        if _Rec."Saleable Location" = false then
+            L_SalesLine.SetRange("Location Code", _Rec."Location Code")
+        else
+            L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
@@ -173,8 +180,10 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Saleable Location", true);
+        if _Rec."Saleable Location" = false then
+            L_SalesLine.SetRange("Location Code", _Rec."Location Code")
+        else
+            L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
@@ -187,7 +196,11 @@ codeunit 90023 "Inventory Calculation"
         _Rec.CalcFields("Web Orders Qty");
 
         Clear(_Free);
-        _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine + _Rec."Web Orders Qty");
+        if _Rec."Saleable Location" = true then
+            _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine + _Rec."Web Orders Qty")
+        else
+            _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine);
+
         if _Free > 0 then
             exit(_Free)
         else
@@ -201,12 +214,16 @@ codeunit 90023 "Inventory Calculation"
         _Physical: Decimal;
         _AllocatedOnSO: Decimal;
     begin
+        _Rec.CalcFields("Saleable Location");
+
         Clear(_Physical);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
         L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        //L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
-        L_ItemLedgerEntry.SetRange("Saleable Location", true);
+        if _Rec."Saleable Location" = false then
+            L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code")
+        else
+            L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
@@ -222,8 +239,10 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."No.");
         L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        //L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Saleable Location", true);
+        if _Rec."Saleable Location" = false then
+            L_SalesLine.SetRange("Location Code", _Rec."Location Code")
+        else
+            L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
@@ -237,7 +256,11 @@ codeunit 90023 "Inventory Calculation"
         _Rec.CalcFields("Web Orders Qty");
 
         Clear(_Free);
-        _Free := _Physical - (_AllocatedOnSO + _Rec."Web Orders Qty");
+        if _Rec."Saleable Location" = true then
+            _Free := _Physical - (_AllocatedOnSO + _Rec."Web Orders Qty")
+        else
+            _Free := _Physical - _AllocatedOnSO;
+
         if _Free > 0 then
             exit(_Free)
         else

@@ -2,7 +2,7 @@
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
   "name": "Ochannel 2.0",
   "publisher": "Robosol",
-  "version": "24.0.0.65",
+  "version": "24.0.0.67",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -52,6 +52,12 @@
       "name": "Item Sales Quota",
       "publisher": "Robosol",
       "version": "24.0.0.7"
+    },
+    {
+      "id": "7597bb61-04b5-46dd-80f5-7d812ac0c2c8",
+      "name": "Robosol Order Cancellation",
+      "publisher": "Robosol",
+      "version": "24.0.0.14"
     }
   ],
   "screenshots": [],
