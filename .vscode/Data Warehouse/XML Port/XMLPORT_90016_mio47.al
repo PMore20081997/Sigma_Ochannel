@@ -772,7 +772,7 @@ xmlport 90016 "mio47"
                     CompInfo.Get();
                     Company := CompInfo.Name;
                     Picker_Code := '';
-                    Line_Type := '';
+                    Line_Type := 'Y';
                     Volume := '';
                     Inv_Date := FormatDateForCSV(Sales_Invoice_Headers."Posting Date");
                     //Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
@@ -808,7 +808,7 @@ xmlport 90016 "mio47"
                     Pord_Line_No := '';
                     ActCst := Format(Sales_Invoice_Lines."Line Amount");
                     Sord_Line_Desc := Sales_Invoice_Lines.Description;
-                    Qty_Ordered := Format(Sales_Invoice_Lines.Quantity);
+                    Qty_Ordered := Format(Sales_Invoice_Lines."Original Order Quantity");
                     Landed_Cost := Format(Sales_Invoice_Lines."Unit Cost (LCY)");
                     FC_Val := Format(Sales_Invoice_Headers.Amount);
                     Exch_Rate := Format(Sales_Invoice_Headers."Currency Factor");
