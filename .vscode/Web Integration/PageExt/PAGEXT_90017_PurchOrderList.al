@@ -46,6 +46,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Export PO via XMLport';
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
@@ -60,6 +61,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -72,6 +74,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -84,6 +87,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -96,6 +100,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -108,6 +113,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -120,6 +126,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -132,6 +139,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -144,6 +152,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -156,6 +165,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -168,6 +178,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -180,6 +191,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -192,6 +204,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -204,6 +217,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -216,6 +230,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -228,6 +243,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -238,6 +254,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test16';
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
@@ -252,6 +269,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -264,6 +282,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -276,6 +295,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -288,6 +308,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -300,6 +321,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -312,6 +334,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -324,6 +347,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -336,6 +360,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -347,6 +372,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test28';
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
@@ -359,6 +385,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test29';
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
@@ -371,6 +398,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test30';
                 Promoted = true;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
@@ -379,13 +407,6 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                     Xmlport.Run(Xmlport::"Product variant", false, false);
                 end;
             }
-
-
-
-
-
-
-
 
         }
     }
