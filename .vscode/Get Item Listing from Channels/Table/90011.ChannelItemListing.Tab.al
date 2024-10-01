@@ -62,6 +62,9 @@ table 90011 "Channel Item Listing"
         }
         field(8; "Channel Inventory"; Decimal)
         {
+            DecimalPlaces = 0 : 5;
+            Caption = 'Free Qty.';
+            Editable = false;
             trigger OnValidate()
             begin
                 IF xRec."Channel Inventory" <> Rec."Channel Inventory" THEN
@@ -233,20 +236,24 @@ table 90011 "Channel Item Listing"
         field(44; "Allcoated on SO"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true)));
+            CalcFormula = sum("Sales Line"."Outstanding Qty. (Base)" where("Document Type" = CONST(Order), Type = CONST(Item), "No." = field("Item No."), "Outstanding Qty. (Base)" = filter(> 0), "Saleable Location" = const(true), "Shipment Date" = field("Date Filter")));
             DecimalPlaces = 0 : 5;
+            Caption = 'Allocated on SO.';
+            Editable = false;
         }
         field(45; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|PARTIAL QUANTITY DELIVERED'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
             DecimalPlaces = 0 : 5;
         }
         field(46; "Physical Inventory"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Unit of Measure Code" = field("Unit of Measure code"), "Daily Priority Exist" = field("Variant Code Mandatory")));
+            CalcFormula = Sum("Item Ledger Entry".Quantity WHERE("Item No." = FIELD("Item No."), "Saleable Location" = const(true), "Daily Priority Exist" = field("Variant Code Mandatory")));
             DecimalPlaces = 0 : 5;
+            Caption = 'Physical';
+            Editable = false;
         }
         field(47; "Variant Code Mandatory"; Boolean)
         {

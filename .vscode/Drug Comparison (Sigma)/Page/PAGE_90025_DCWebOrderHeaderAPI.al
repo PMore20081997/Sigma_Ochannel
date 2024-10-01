@@ -329,6 +329,7 @@ page 90025 "DC Web Order Header API Card"
         LineCount: Integer;
         ErrorCount: Integer;
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
+        L_BilltoCustomer: Code[20];
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
@@ -418,9 +419,18 @@ page 90025 "DC Web Order Header API Card"
             end;
 
             //Response SEQ9++
+            Clear(L_BilltoCustomer);
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    if L_Cust."Bill-to Customer No." <> '' then
+                        L_BilltoCustomer := L_Cust."Bill-to Customer No."
+                    else
+                        L_BilltoCustomer := L_Cust."No.";
+                end;
+
+                L_Cust.Reset();
+                if L_Cust.Get(L_BilltoCustomer) then begin
                     L_Cust.CalcFields("Balance (LCY)");
                     if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');

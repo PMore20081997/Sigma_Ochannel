@@ -52,10 +52,10 @@ page 90005 "Handled Web Order List"
                     ApplicationArea = all;
                     Caption = 'Status';
                 }
-                field("Shipment Date"; Rec."Shipment Date")
-                {
-                    ApplicationArea = All;
-                }
+                // field("Shipment Date"; Rec."Shipment Date")
+                // {
+                //     ApplicationArea = All;
+                // }
                 field("Order Date"; Rec."Order Date")
                 {
                     ApplicationArea = all;

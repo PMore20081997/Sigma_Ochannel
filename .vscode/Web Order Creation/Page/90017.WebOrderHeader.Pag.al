@@ -96,11 +96,11 @@ page 90017 "Web Order Header"
                     ApplicationArea = all;
                     Editable = false;
                 }
-                field("Shipment Date"; Rec."Shipment Date")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
+                // field("Shipment Date"; Rec."Shipment Date")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
                 field("Salesperson Code"; Rec."Salesperson Code")
                 {
                     ApplicationArea = All;

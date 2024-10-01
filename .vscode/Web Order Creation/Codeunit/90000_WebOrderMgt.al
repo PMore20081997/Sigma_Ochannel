@@ -951,6 +951,7 @@ codeunit 90000 "Web Order Mgt"
         CU_SalesQuotaQtyValidation: Codeunit "Web Order Sales Quota New";
         ItemBlockedError: Text;
         L_RemainingQty: Decimal;
+        L_BilltoCustomer: Code[20];
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1047,9 +1048,17 @@ codeunit 90000 "Web Order Mgt"
             end;
 
             //Response SEQ9++
+            Clear(L_BilltoCustomer);
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
+                    if L_Cust."Bill-to Customer No." <> '' then
+                        L_BilltoCustomer := L_Cust."Bill-to Customer No."
+                    else
+                        L_BilltoCustomer := L_Cust."No.";
+                end;
+                L_Cust.Reset();
+                if L_Cust.Get(L_BilltoCustomer) then begin
                     L_Cust.CalcFields("Balance (LCY)");
                     if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
                         Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
@@ -1323,17 +1332,19 @@ codeunit 90000 "Web Order Mgt"
         L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
         L_ItemLedgerEntry.SETRANGE("Item No.", P_InterimSalesLine."No.");
         L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-        L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
+        //L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
         L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             PhysicalInventory := L_ItemLedgerEntry.Quantity;
         end;
+        if PhysicalInventory < 0 then
+            PhysicalInventory := 0;
         #endregion
 
         #Region Quantity Allocated on Sales Order
-        Clear(L_SalesLine);
         Clear(QtyOnSO);
+        L_SalesLine.Reset();
         L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SETRANGE("No.", P_InterimSalesLine."No.");
@@ -1345,6 +1356,8 @@ codeunit 90000 "Web Order Mgt"
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
             QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
         end;
+        if QtyOnSO < 0 then
+            QtyOnSO := 0;
         #endregion
 
         #Region Quantity Allocated on Web Orders
@@ -1362,10 +1375,14 @@ codeunit 90000 "Web Order Mgt"
             L_InterimSalesLine.CalcSums("Qty. to Deliver");
             QtyonWebOrder := L_InterimSalesLine."Qty. to Deliver";
         END;
+        if QtyonWebOrder < 0 then
+            QtyonWebOrder := 0;
         #endregion
 
         Clear(AvailableInventory);
         AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
+        if AvailableInventory < 0 then
+            AvailableInventory := 0;
 
         if AvailableInventory > 0 then begin
             if AvailableInventory < P_InterimSalesLine.Quantity then begin

@@ -92,11 +92,11 @@ page 90019 "Handle Web Order"
                     ApplicationArea = all;
                     Editable = false;
                 }
-                field("Shipment Date"; Rec."Shipment Date")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
+                // field("Shipment Date"; Rec."Shipment Date")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
                 field("Salesperson Code"; Rec."Salesperson Code")
                 {
                     ApplicationArea = All;

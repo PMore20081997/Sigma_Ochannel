@@ -200,5 +200,7 @@ permissionset 90000 OChannel
         table TempILE = X,
         codeunit "Customer Trend Sales Quota New" = X,
         query "Daywise Cust Trends Qty Mew" = X,
-        codeunit "Web Order Sales Quota New" = X;
+        codeunit "Web Order Sales Quota New" = X,
+        tabledata "Item Variant With Free Qty" = RIMD,
+        table "Item Variant With Free Qty" = X;
 }

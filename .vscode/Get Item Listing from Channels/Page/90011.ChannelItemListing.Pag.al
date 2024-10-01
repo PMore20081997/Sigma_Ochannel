@@ -46,12 +46,14 @@ page 90011 "Channel Item Listing"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Channel Variant"; Rec."Channel Variant")
                 {
                     ApplicationArea = All;
                     Caption = 'Variant Id';
                     Editable = false;
+                    Visible = false;
                 }
                 field("Item Category Code"; Rec."Item Category Code")
                 {
@@ -66,23 +68,33 @@ page 90011 "Channel Item Listing"
                 field("Channel Inventory"; Rec."Channel Inventory")
                 {
                     ApplicationArea = All;
-                    Caption = 'Free Qty';
+                    Caption = 'Free';
                     Editable = false;
+                    ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
+                    DecimalPlaces = 0 : 5;
                 }
                 field("Physical Inventory"; Rec."Physical Inventory")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Caption = 'Physical';
+                    DecimalPlaces = 0 : 5;
+                    ToolTip = 'Quantity in saleable locations where the priority exists.';
                 }
                 field("Allcoated on SO"; Rec."Allcoated on SO")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Caption = 'Allocated on SO.';
+                    ToolTip = 'Sum of outstanding SO quantity of saleable locations.';
+                    DecimalPlaces = 0 : 5;
                 }
                 field("Web Orders Qty"; Rec."Web Orders Qty")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    ToolTip = 'Sucessfull Electronic Orders.';
+                    DecimalPlaces = 0 : 5;
                 }
                 field(RRP; Rec.RRP)
                 {
@@ -119,6 +131,12 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("Variant Code Mandatory"; Rec."Variant Code Mandatory")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    //Dont remove this field from page because it is used in "Physical" field calculation!!!!!++++
+                }
             }
         }
     }
@@ -149,13 +167,21 @@ page 90011 "Channel Item Listing"
                     ProgressCount: Integer;
                     NoOfRecs: Integer;
                     Count: Integer;
+
+                    L_SalesLine: Record "Sales Line";
+                    L_ItemLedgerEntry: Record "Item Ledger Entry";
                 begin
+                    Clear(QtyOnSO);
+                    Clear(QtyonWebOrder);
+                    Clear(AvailableInventory);
+                    Clear(PhysicalInventory);
+
                     Windows.OPEN('Update Inventory..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
                     ChannelItemListing.Reset();
                     ChannelItemListing.SetFilter("Item No.", '<>%1', '');
                     ChannelItemListing.SetRange("Listing Status", ChannelItemListing."Listing Status"::Listed);
                     ChannelItemListing.SetRange(Status, ChannelItemListing.Status::Active);
-                    ChannelItemListing.SetFilter("Date Filter", '>=%1', WorkDate());
+                    //ChannelItemListing.SetFilter("Date Filter", '>=%1', WorkDate());
                     if ChannelItemListing.FindSet() then begin
                         repeat
                             NoOfRecs := ChannelItemListing.Count;
@@ -170,32 +196,59 @@ page 90011 "Channel Item Listing"
 
                             Clear(L_Item);
                             if L_Item.Get(ChannelItemListing."Item No.") then begin
-                                ChannelItemListing.CalcFields("Physical Inventory", "Allcoated on SO", "Web Orders Qty");
+                                ChannelItemListing.CalcFields("Web Orders Qty", "Variant Code Mandatory");
 
+                                //Calculate Physical+++
                                 Clear(PhysicalInventory);
-                                PhysicalInventory := ChannelItemListing."Physical Inventory";
+                                //PhysicalInventory := ChannelItemListing."Physical Inventory";
+                                L_ItemLedgerEntry.Reset();
+                                L_ItemLedgerEntry.SetRange("Item No.", ChannelItemListing."Item No.");
+                                L_ItemLedgerEntry.SetRange("Saleable Location", true);
+                                if ChannelItemListing."Variant Code Mandatory" = true then
+                                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", true)
+                                else
+                                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", false);
+                                L_ItemLedgerEntry.CalcSums(Quantity);
+                                PhysicalInventory := L_ItemLedgerEntry.Quantity;
+                                if PhysicalInventory < 0 then
+                                    PhysicalInventory := 0;
 
+
+                                //Calculate "Qty On SO"++++
                                 Clear(QtyOnSO);
-                                QtyOnSO := ChannelItemListing."Allcoated on SO";
+                                //QtyOnSO := ChannelItemListing."Allcoated on SO";
+                                L_SalesLine.Reset();
+                                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                                L_SalesLine.SetRange("No.", ChannelItemListing."Item No.");
+                                L_SalesLine.SetRange("Saleable Location", true);
+                                L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+                                L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+                                QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+                                if QtyOnSO < 0 then
+                                    QtyOnSO := 0;
 
+                                //Get Web Order Qty+++
                                 Clear(QtyonWebOrder);
                                 QtyonWebOrder := ChannelItemListing."Web Orders Qty";
+                                if QtyonWebOrder < 0 then
+                                    QtyonWebOrder := 0;
 
+                                //Calculate Available Qty +++
                                 Clear(AvailableInventory);
                                 AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
+                                if AvailableInventory < 0 then
+                                    AvailableInventory := 0;
 
                                 if AvailableInventory <> ChannelItemListing."Channel Inventory" then begin
-                                    if AvailableInventory > 0 then begin
-                                        ChannelItemListing.Validate("Channel Inventory", AvailableInventory);
-                                    end
-                                    else begin
+                                    if AvailableInventory > 0 then
+                                        ChannelItemListing.Validate("Channel Inventory", AvailableInventory)
+                                    else
                                         ChannelItemListing.Validate("Channel Inventory", 0);
-                                    end;
                                     ChannelItemListing."Inventory Synced" := false;
                                     ChannelItemListing."Modified On" := CurrentDateTime;
                                 end;
-                            end
-                            else begin
+                            end else begin
                                 ChannelItemListing.Remarks := 'Item Not Found ' + ChannelItemListing."Item No.";
                                 ChannelItemListing."Modified On" := CurrentDateTime;
                             end;

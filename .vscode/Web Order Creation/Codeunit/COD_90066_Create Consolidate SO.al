@@ -71,7 +71,7 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.SetRange("Ship-to Code", _InterimSH."Ship-to Code");
         Temporary_SalesLine.SetRange("Shipping Agent Code", _InterimSH."Shipping Agent Code");
         Temporary_SalesLine.SetRange("Shipping Agent Service Code", _InterimSH."Shipping Agent Service Code");
-        Temporary_SalesLine.SetRange("Shipment Date", _InterimSH."Shipment Date");
+        //Temporary_SalesLine.SetRange("Shipment Date", _InterimSH."Shipment Date"); // Shipment Date Changes - 28/09/2024
         Temporary_SalesLine.SetRange("No.", _InterimSalesLine."No.");
         Temporary_SalesLine.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine.SetRange(Type, Temporary_SalesLine.Type::Item);
@@ -141,7 +141,7 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", _InterimSH."Ship-to Code");
         Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", _InterimSH."Shipping Agent Code");
         Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", _InterimSH."Shipping Agent Service Code");
-        Temporary_SalesLine_ForLoop.SetRange("Shipment Date", _InterimSH."Shipment Date");
+        //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", _InterimSH."Shipment Date"); // Shipment Date Changes - 28/09/2024
         Temporary_SalesLine_ForLoop.SetRange("No.", _InterimSalesLine."No.");
         Temporary_SalesLine_ForLoop.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine_ForLoop.SetRange(Type, Temporary_SalesLine_ForLoop.Type::Item);
@@ -235,7 +235,7 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
                 Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
                 Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
-                Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
@@ -310,6 +310,9 @@ codeunit 90066 "Create Consolidate SO"
         L_Customer: Record Customer;
         L_GeneralSetupChannels: Record "General Setup - Channels";
         L_Location: Record Location;
+        L_Date: Record Date;
+        L_ShippingAgentservices: Record "Shipping Agent Services";
+        L_Shift: Text[20];
     begin
         Clear(G_SNo);
         SalesRecSetup.Get();
@@ -322,9 +325,9 @@ codeunit 90066 "Create Consolidate SO"
         InsertedSH.Validate("IRP Order", true);
         InsertedSH.Validate("Web Order", true);
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
-        InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");
-        InsertedSH.Validate("Order Date", _Temporary_SalesLine."FA Posting Date");
-        InsertedSH.Validate("Document Date", _Temporary_SalesLine."FA Posting Date");
+        // InsertedSH.Validate("Posting Date", _Temporary_SalesLine."FA Posting Date");
+        // InsertedSH.Validate("Order Date", _Temporary_SalesLine."FA Posting Date");
+        // InsertedSH.Validate("Document Date", _Temporary_SalesLine."FA Posting Date");
         InsertedSH.Validate("Knapp Order", _Temporary_SalesLine."Knapp Line");
 
         L_Customer.Reset();
@@ -346,7 +349,109 @@ codeunit 90066 "Create Consolidate SO"
         // end;
 
         InsertedSH.Validate("Location Code", _Temporary_SalesLine."Location Code");
-        InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date");
+
+        //Update Shipment Date ++++++++++++
+        //InsertedSH.Validate("Shipment Date", _Temporary_SalesLine."Shipment Date"); // Shipment Date Changes - 28/09/2024
+        Clear(L_Shift);
+        L_Customer.Reset();
+        L_Customer.SetRange("No.", _Temporary_SalesLine."Sell-to Customer No.");
+        if L_Customer.FindFirst() then begin
+            //Get Shift++
+            L_Date.Reset();
+            L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+            L_Date.SetRange(L_Date."Period Start", WorkDate());
+            if L_Date.FindFirst() then
+                if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                    L_ShippingAgentservices.Reset();
+                    if (L_Customer."Weekend Shipping Agent Code" <> '') AND (L_Customer."Weekend Ship. Agnt. Serv. Code" <> '') then begin
+                        L_ShippingAgentservices.SetRange("Shipping Agent Code", L_Customer."Weekend Shipping Agent Code");
+                        L_ShippingAgentservices.SetRange(Code, L_Customer."Weekend Ship. Agnt. Serv. Code");
+                    end else begin
+                        L_ShippingAgentservices.SetRange("Shipping Agent Code", L_Customer."Shipping Agent Code");
+                        L_ShippingAgentservices.SetRange(Code, L_Customer."Shipping Agent Service Code");
+                    end;
+                    if L_ShippingAgentservices.FindFirst() then
+                        L_Shift := Format(L_ShippingAgentservices.Shift);
+                end;
+
+
+            L_Date.Reset();
+            L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+            L_Date.SetRange(L_Date."Period Start", WorkDate());
+            if L_Date.FindFirst() then
+                if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                    //E - Shift
+                    if UpperCase(L_Shift) = UpperCase('E') then begin
+                        if (L_Customer."Weekend Shipping Agent Code" <> '') AND (L_Customer."Weekend Ship. Agnt. Serv. Code" <> '') then
+                            //Update Saturday++
+                            InsertedSH.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                        else begin
+                            //Update Monday
+                            InsertedSH.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                        end;
+                    end;
+
+                    //A - Shift
+                    if UpperCase(L_Shift) = UpperCase('A') then begin
+                        //Update Monday
+                        InsertedSH.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                    end;
+
+                    //M - Shift
+                    //Phase2+++
+
+                    //X - Shift
+                    //Phase2+++
+
+                end else begin
+                    //As discussed shipment date shoud be next day all condistion++
+                    InsertedSH.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
+
+                    // //New Code based on calendar+++
+                    // if UpperCase(L_Date."Period Name") = UpperCase('SATURDAY') then begin
+                    //     if L_Customer."Base Calendar Code" <> '' then
+                    //         Rec.Validate("Shipment Date", Rec.CalcPlannedShptDate(21))
+                    //     else begin
+                    //         L_ShipingAgentService.Reset();
+                    //         L_ShipingAgentService.SetRange("Shipping Agent Code", L_Customer."Shipping Agent Code");
+                    //         L_ShipingAgentService.SetRange(Code, L_Customer."Shipping Agent Service Code");
+                    //         if L_ShipingAgentService.FindFirst() then begin
+                    //             if L_ShipingAgentService."Base Calendar Code" <> '' then
+                    //                 Rec.Validate("Shipment Date", Rec.CalcPlannedShptDate(21))
+                    //             else
+                    //                 //Update Monday
+                    //                 Rec.Validate("Shipment Date", CalcDate('<+2D>', WorkDate()));
+                    //         end;
+                    //     end;
+                    // end else begin
+                    //     if L_Customer."Base Calendar Code" <> '' then
+                    //         Rec.Validate("Shipment Date", Rec.CalcPlannedShptDate(21))
+                    //     else begin
+                    //         L_ShipingAgentService.Reset();
+                    //         L_ShipingAgentService.SetRange("Shipping Agent Code", L_Customer."Shipping Agent Code");
+                    //         L_ShipingAgentService.SetRange(Code, L_Customer."Shipping Agent Service Code");
+                    //         if L_ShipingAgentService.FindFirst() then begin
+                    //             if L_ShipingAgentService."Base Calendar Code" <> '' then
+                    //                 Rec.Validate("Shipment Date", Rec.CalcPlannedShptDate(21))
+                    //             else begin
+                    //                 if L_Customer."Shipping Time" <> L_BlankDatFormula then begin
+                    //                     Rec.Validate("Shipment Date", CalcDate(L_Customer."Shipping Time", Rec."Shipment Date"))
+                    //                 end else begin
+                    //                     L_ShipingAgentService.Reset();
+                    //                     L_ShipingAgentService.SetRange("Shipping Agent Code", L_Customer."Shipping Agent Code");
+                    //                     L_ShipingAgentService.SetRange(Code, L_Customer."Shipping Agent Service Code");
+                    //                     if L_ShipingAgentService.FindFirst() then begin
+                    //                         if L_ShipingAgentService."Shipping Time" <> L_BlankDatFormula then
+                    //                             Rec.Validate("Shipment Date", CalcDate(L_ShipingAgentService."Shipping Time", Rec."Shipment Date"));
+                    //                     end;
+                    //                 end;
+                    //             end;
+                    //         end;
+                    //     end;
+                    // end;
+                end;
+        end;
+        //Update Shipment Date ------------
 
         if InsertedSH."Knapp Order" = true then begin
             L_Location.Reset();
@@ -370,7 +475,14 @@ codeunit 90066 "Create Consolidate SO"
         L_Location: Record Location;
         L_Zone: Record Zone;
         SalesHeader: Record "Sales Header";
+        CustomeCodeunit: Codeunit "Udate Variant on SO";
+        L_ItemVariant: Record "Item Variant";
+        L_Count: Integer;
+        RemQty: Decimal;
+        L_ItemVariantWithFreeQty: Record "Item Variant With Free Qty" temporary;
     begin
+        L_ItemVariantWithFreeQty.Reset();
+        L_ItemVariantWithFreeQty.DeleteAll();
         // InsertedSL.Reset();
         // InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
         // InsertedSL.SetRange("Document No.", _SalesOrderNo);
@@ -417,6 +529,62 @@ codeunit 90066 "Create Consolidate SO"
             L_Item.SetRange("No.", _Temporary_SalesLine."No.");
             if L_Item.FindFirst() then
                 InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
+
+            // //Update Variant as per the priority+++++
+            // L_ItemVariant.Reset();
+            // L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
+            // if not L_ItemVariant.IsEmpty then begin
+            //     Clear(RemQty);
+            //     //Total required quantity 
+            //     RemQty := _Temporary_SalesLine.Quantity;
+
+
+
+            //     //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            //     //Set PriorityWithoutZero++
+            //     Clear(L_ItemVariant);
+            //     L_ItemVariant.Reset();
+            //     CustomeCodeunit.SetPriorityWithoutZero(InsertedSL, L_ItemVariant);
+            //     Clear(L_Count);
+            //     L_Count := L_ItemVariant.Count;
+
+            //     //Process to update variant code and create new line if required++
+            //     if L_Count > 0 then begin
+            //         while (RemQty > 0) AND (L_Count > 0) do begin
+            //             if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant) > 0 then begin
+            //                 L_ItemVariantWithFreeQty.Init();
+            //                 L_ItemVariantWithFreeQty.Priority := L_ItemVariant.Priority;
+            //                 L_ItemVariantWithFreeQty."Item No." := L_ItemVariant."Item No.";
+            //                 L_ItemVariantWithFreeQty."Variant Code" := L_ItemVariant.Code;
+            //                 L_ItemVariantWithFreeQty.Quantity := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant);
+            //                 L_ItemVariantWithFreeQty.Insert();
+            //             end;
+            //             L_Count := L_Count - 1;
+            //             L_ItemVariant.Next();
+            //         end;
+
+            //         //Update Variant Code++
+            //         L_ItemVariantWithFreeQty.Reset();
+            //         L_ItemVariantWithFreeQty.SetRange("Item No.", _Temporary_SalesLine."No.");
+            //         L_ItemVariantWithFreeQty.SetFilter(Quantity, '>=%1', RemQty);
+            //         L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
+            //         L_ItemVariantWithFreeQty.Ascending(true);
+            //         if L_ItemVariantWithFreeQty.FindFirst() then
+            //             InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code")
+            //         else begin
+            //             L_ItemVariantWithFreeQty.Reset();
+            //             L_ItemVariantWithFreeQty.SetRange("Item No.", _Temporary_SalesLine."No.");
+            //             L_ItemVariantWithFreeQty.SetFilter(Quantity, '<%1', RemQty);
+            //             L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
+            //             L_ItemVariantWithFreeQty.Ascending(true);
+            //             if L_ItemVariantWithFreeQty.FindFirst() then
+            //                 InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code");
+            //         end;
+
+            //     end;
+
+            // end;
+            // //Update Variant as per the priority-----
 
             InsertedSL."Changed UnitPrice" := _Temporary_SalesLine."Changed UnitPrice";
             if _Temporary_SalesLine."Changed UnitPrice" = true then
