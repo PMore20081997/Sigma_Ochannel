@@ -11,6 +11,9 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine_ForLoop: Record "Sales Line" temporary; //Dont Remove Temporary propert+++
         G_TemporaryLineNo: Integer;
         G_TemporaryLineNo_ForLoop: Integer;
+        G_SalesHeaderCreated: Boolean;
+        G_SNo: Code[20];
+        InsertedSH: Record "Sales Header";
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Consolidate Sales +++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -35,6 +38,7 @@ codeunit 90066 "Create Consolidate SO"
     var
         L_InterimSL: Record "Interim Sales Line";
         L_Item: Record Item;
+        L_CUstomer: Record Customer;
     begin
         L_InterimSL.Reset();
         L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
@@ -46,15 +50,20 @@ codeunit 90066 "Create Consolidate SO"
                 //Added the Condition here again to Check Item because 
                 //User can make any product Block or keep it Open anytime in between Working Shifts
                 //So need to skip those lines as discussed with Adesh
-                Clear(L_Item);
-                L_Item.Reset();
-                if L_Item.Get(L_InterimSL."No.") then begin
-                    if (L_Item.Blocked = false) and (L_Item."Sales Blocked" = false) and (L_Item."Ops Sales Blocked" = false) and (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) then begin
-                        //Create Lines++
-                        CreateTemporarySalesLine(L_InterimSL, _InterimSH);
+                L_CUstomer.Reset();
+                L_CUstomer.SetRange("No.", _InterimSH."Sell-to Customer No.");
+                if L_CUstomer.FindFirst() then begin
+                    if (L_CUstomer.Blocked = L_CUstomer.Blocked::" ") and (L_CUstomer.Status = L_CUstomer.Status::Released) and (L_CUstomer."QAU Approved" = true) then begin
+                        L_Item.Reset();
+                        if L_Item.Get(L_InterimSL."No.") then begin
+                            if (L_Item.Blocked = false) and (L_Item."Sales Blocked" = false) and (L_Item."Ops Sales Blocked" = false) and (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) and (L_Item."Gen. Prod. Posting Group" <> '') then begin
+                                //Create Lines++
+                                CreateTemporarySalesLine(L_InterimSL, _InterimSH);
 
-                        //Create Lines For Loop++
-                        CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                                //Create Lines For Loop++
+                                CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                            end;
+                        end;
                     end;
                 end;
             until L_InterimSL.Next() = 0;
@@ -224,7 +233,10 @@ codeunit 90066 "Create Consolidate SO"
         Counter: Integer;
         GeneralSetupChannel: Record "General Setup - Channels";
         BreakCount: Integer;
+        L_LineNo: Integer;
     begin
+        Clear(L_LineNo);
+
         //For Manual Order++
         Temporary_SalesLine.Reset();
         Temporary_SalesLine.SetRange("Knapp Line", false);
@@ -240,11 +252,15 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
                 if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    Clear(L_LineNo);
                     //Create Header++
+                    InsertedSH.Reset();
+                    InsertedSH.LockTable();
                     CreateSalesHeaderFromTemporary(Temporary_SalesLine);
                     repeat
+                        L_LineNo := L_LineNo + 10000;
                         //Create Line++
-                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
 
                         //Moved Into Web Buffer Table++
                         InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
@@ -252,6 +268,9 @@ codeunit 90066 "Create Consolidate SO"
                         Temporary_SalesLine_ForLoop."System-Created Entry" := true;
                         Temporary_SalesLine_ForLoop.Modify();
                     until Temporary_SalesLine_ForLoop.Next() = 0;
+
+                    Commit();
+                    Sleep(10);
                 end;
             until Temporary_SalesLine.Next() = 0;
         end;
@@ -276,12 +295,17 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
                 if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    Clear(L_LineNo);
                     //Create Header++
+                    InsertedSH.Reset();
+                    InsertedSH.LockTable();
                     CreateSalesHeaderFromTemporary(Temporary_SalesLine);
                     repeat
                         Counter += 1;
+
+                        L_LineNo := L_LineNo + 10000;
                         //Create Line++
-                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop);
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
 
                         //Moved Into Web Buffer Table++
                         InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
@@ -298,6 +322,9 @@ codeunit 90066 "Create Consolidate SO"
                                 break;
                         end;
                     until Temporary_SalesLine_ForLoop.Next() = 0;
+
+                    Commit();
+                    Sleep(10);
                 end;
             until Temporary_SalesLine.Next() = 0;
         end;
@@ -313,15 +340,34 @@ codeunit 90066 "Create Consolidate SO"
         L_Date: Record Date;
         L_ShippingAgentservices: Record "Shipping Agent Services";
         L_Shift: Text[20];
+
+        NumberSeries: Record "No. Series Line";
+        NextNo: Code[20];
+        NoSeriesSingle: Interface "No. Series - Single";
     begin
+        Clear(NextNo);
+
         Clear(G_SNo);
         SalesRecSetup.Get();
         L_GeneralSetupChannels.Get();
         L_GeneralSetupChannels.TestField("Consolidated Sales No. Series");
-        InsertedSH.Reset();
         InsertedSH.Init();
         InsertedSH.Validate("Document Type", InsertedSH."Document Type"::Order);
-        InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(L_GeneralSetupChannels."Consolidated Sales No. Series", WORKDATE, TRUE));
+
+        NumberSeries.Reset();
+        NumberSeries.SetRange("Series Code", L_GeneralSetupChannels."Consolidated Sales No. Series");
+        if NumberSeries.FindFirst() then begin
+            NumberSeries.LockTable();
+            NoSeriesSingle := GetImplementation(NumberSeries);
+            NextNo := NoSeriesSingle.GetNextNo(NumberSeries, WorkDate(), true);
+            InsertedSH.Validate("No.", NextNo);
+            if NumberSeries."Last No. Used" <> NextNo then
+                NumberSeries."Last No. Used" := NextNo;
+            NumberSeries.Modify();
+            Clear(NumberSeries);
+        end;
+        //InsertedSH.Validate("No.", NoSeriesManagement.GetNextNo(L_GeneralSetupChannels."Consolidated Sales No. Series", WORKDATE, TRUE));
+
         InsertedSH.Validate("IRP Order", true);
         InsertedSH.Validate("Web Order", true);
         InsertedSH.Validate("Sell-to Customer No.", _Temporary_SalesLine."Sell-to Customer No.");
@@ -467,7 +513,7 @@ codeunit 90066 "Create Consolidate SO"
     end;
 
 
-    local procedure CreateSalesLineFromTemporary(_SalesOrderNo: Code[20]; _Temporary_SalesLine: Record "Sales Line" temporary)
+    local procedure CreateSalesLineFromTemporary(_SalesOrderNo: Code[20]; _Temporary_SalesLine: Record "Sales Line" temporary; _LineNumber: Integer)
     var
         InsertedSL: Record "Sales Line";
         L_Item: Record Item;
@@ -480,9 +526,13 @@ codeunit 90066 "Create Consolidate SO"
         L_Count: Integer;
         RemQty: Decimal;
         L_ItemVariantWithFreeQty: Record "Item Variant With Free Qty" temporary;
+        SalesReceivablesSetup: Record "Sales & Receivables Setup";
     begin
         L_ItemVariantWithFreeQty.Reset();
         L_ItemVariantWithFreeQty.DeleteAll();
+
+        SalesReceivablesSetup.Reset();
+        SalesReceivablesSetup.Get();
         // InsertedSL.Reset();
         // InsertedSL.SetRange("Document Type", InsertedSL."Document Type"::Order);
         // InsertedSL.SetRange("Document No.", _SalesOrderNo);
@@ -516,7 +566,8 @@ codeunit 90066 "Create Consolidate SO"
             InsertedSL.Init();
             InsertedSL.VALIDATE("Document Type", InsertedSL."Document Type"::Order);
             InsertedSL.VALIDATE("Document No.", _SalesOrderNo);
-            InsertedSL.VALIDATE("Line No.", GetLastLineNo(_SalesOrderNo));
+            //InsertedSL.VALIDATE("Line No.", GetLastLineNo(_SalesOrderNo));
+            InsertedSL.VALIDATE("Line No.", _LineNumber);
             InsertedSL.VALIDATE(Type, InsertedSL.Type::Item);
             InsertedSL.VALIDATE("No.", _Temporary_SalesLine."No.");
             InsertedSL.VALIDATE(Quantity, _Temporary_SalesLine.Quantity);
@@ -531,67 +582,79 @@ codeunit 90066 "Create Consolidate SO"
                 InsertedSL.Validate("Knapp Item", L_Item."Knapp Item");
 
             //Update Variant as per the priority+++++
-            L_ItemVariant.Reset();
-            L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
-            if not L_ItemVariant.IsEmpty then begin
-                Clear(RemQty);
-                //Total required quantity 
-                RemQty := _Temporary_SalesLine.Quantity;
-
-
-
-                //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //Set PriorityWithoutZero++
-                Clear(L_ItemVariant);
+            if SalesReceivablesSetup."Check Variant on Consolidation" = true then begin
                 L_ItemVariant.Reset();
-                CustomeCodeunit.SetPriorityWithoutZero(InsertedSL, L_ItemVariant);
-                Clear(L_Count);
-                L_Count := L_ItemVariant.Count;
+                L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
+                if not L_ItemVariant.IsEmpty then begin
+                    Clear(RemQty);
+                    //Total required quantity 
+                    RemQty := _Temporary_SalesLine.Quantity;
 
-                //Process to update variant code and create new line if required++
-                if L_Count > 0 then begin
-                    while (RemQty > 0) AND (L_Count > 0) do begin
-                        if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant) > 0 then begin
+                    //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    //Set PriorityWithoutZero++
+                    Clear(L_ItemVariant);
+                    L_ItemVariant.Reset();
+                    CustomeCodeunit.SetPriorityWithoutZero(InsertedSL, L_ItemVariant);
+                    Clear(L_Count);
+                    L_Count := L_ItemVariant.Count;
+
+                    //Process to update variant code and create new line if required++
+                    if L_Count > 0 then begin
+                        while (RemQty > 0) AND (L_Count > 0) do begin
+                            // if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant) > 0 then begin
                             L_ItemVariantWithFreeQty.Init();
                             L_ItemVariantWithFreeQty.Priority := L_ItemVariant.Priority;
                             L_ItemVariantWithFreeQty."Item No." := L_ItemVariant."Item No.";
                             L_ItemVariantWithFreeQty."Variant Code" := L_ItemVariant.Code;
                             L_ItemVariantWithFreeQty.Quantity := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant);
-                            L_ItemVariantWithFreeQty.Insert();
+                            if L_ItemVariantWithFreeQty.Quantity > 0 then
+                                L_ItemVariantWithFreeQty.Insert();
+                            //end;
+                            L_Count := L_Count - 1;
+                            L_ItemVariant.Next();
                         end;
-                        L_Count := L_Count - 1;
-                        L_ItemVariant.Next();
-                    end;
 
-                    //Update Variant Code++
-                    L_ItemVariantWithFreeQty.Reset();
-                    L_ItemVariantWithFreeQty.SetRange("Item No.", _Temporary_SalesLine."No.");
-                    L_ItemVariantWithFreeQty.SetFilter(Quantity, '>=%1', RemQty);
-                    L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
-                    L_ItemVariantWithFreeQty.Ascending(true);
-                    if L_ItemVariantWithFreeQty.FindFirst() then
-                        InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code")
-                    else begin
+                        //Update Variant Code++
                         L_ItemVariantWithFreeQty.Reset();
                         L_ItemVariantWithFreeQty.SetRange("Item No.", _Temporary_SalesLine."No.");
-                        L_ItemVariantWithFreeQty.SetFilter(Quantity, '<%1', RemQty);
+                        L_ItemVariantWithFreeQty.SetFilter(Quantity, '>=%1', RemQty);
                         L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
                         L_ItemVariantWithFreeQty.Ascending(true);
                         if L_ItemVariantWithFreeQty.FindFirst() then
-                            InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code");
-                    end;
+                            InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code")
+                        else begin
+                            L_ItemVariantWithFreeQty.Reset();
+                            L_ItemVariantWithFreeQty.SetRange("Item No.", _Temporary_SalesLine."No.");
+                            L_ItemVariantWithFreeQty.SetFilter(Quantity, '<%1', RemQty);
+                            L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
+                            L_ItemVariantWithFreeQty.Ascending(true);
+                            if L_ItemVariantWithFreeQty.FindFirst() then
+                                InsertedSL.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code")
+                            else begin
+                                //If there is no Inventory++++
+                                L_ItemVariant.Reset();
+                                L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
+                                L_ItemVariant.SetRange("Sales Blocked", false);
+                                L_ItemVariant.SetRange(Blocked, false);
+                                if L_ItemVariant.FindFirst() then begin
+                                    InsertedSL.Validate("Variant Code", L_ItemVariant.Code);
+                                end;
+                            end;
+                        end;
 
-                end else begin
-                    //If there is no priority on Item Varaint++
-                    //This code added to manage "Release" the order++
-                    L_ItemVariant.Reset();
-                    L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
-                    if L_ItemVariant.FindFirst() then begin
-                        InsertedSL.Validate("Variant Code", L_ItemVariant.Code);
+                    end else begin
+                        //If there is no priority on Item Varaint++
+                        //This code added to manage "Release" the order++
+                        L_ItemVariant.Reset();
+                        L_ItemVariant.SetRange("Item No.", _Temporary_SalesLine."No.");
+                        L_ItemVariant.SetRange("Sales Blocked", false);
+                        L_ItemVariant.SetRange(Blocked, false);
+                        if L_ItemVariant.FindFirst() then begin
+                            InsertedSL.Validate("Variant Code", L_ItemVariant.Code);
+                        end;
                     end;
 
                 end;
-
             end;
             //Update Variant as per the priority-----
 
@@ -768,10 +831,6 @@ codeunit 90066 "Create Consolidate SO"
         END;
     end;
 
-    var
-        G_SalesHeaderCreated: Boolean;
-        G_SNo: Code[20];
-        InsertedSH: Record "Sales Header";
 
     local procedure CheckSalesHeaderExist_But_InventoryPick_And_PostedInventoryPickNotExist(_InterimSH: Record "Interim Sales Header"): Boolean
     var
@@ -1033,5 +1092,10 @@ codeunit 90066 "Create Consolidate SO"
                 exit(L_Bin.Code)
             end;
         end;
+    end;
+
+    local procedure GetImplementation(var NoSeriesLine: Record "No. Series Line"): Interface "No. Series - Single"
+    begin
+        exit(NoSeriesLine.Implementation);
     end;
 }

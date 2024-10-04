@@ -202,5 +202,8 @@ permissionset 90000 OChannel
         query "Daywise Cust Trends Qty Mew" = X,
         codeunit "Web Order Sales Quota New" = X,
         tabledata "Item Variant With Free Qty" = RIMD,
-        table "Item Variant With Free Qty" = X;
+        table "Item Variant With Free Qty" = X,
+        tabledata TempGRN = RIMD,
+        table TempGRN = X,
+        xmlport "mio47-1" = X;
 }
