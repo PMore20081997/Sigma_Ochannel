@@ -398,13 +398,13 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test30';
                 Promoted = true;
-                Visible = false;
+                /// Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
-                    Xmlport.Run(Xmlport::"Product variant", false, false);
+                    Xmlport.Run(Xmlport::"mio47-1", false, false);
                 end;
             }
 

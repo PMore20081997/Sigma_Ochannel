@@ -405,6 +405,8 @@ xmlport 90016 "mio47"
             }
             tableelement("Sales_Invoice_Lines"; "Sales Invoice Line")
             {
+
+
                 textelement("Cust_Code")
                 {
                 }
@@ -754,14 +756,15 @@ xmlport 90016 "mio47"
                     FOC_Ind := 'Paid Sale';
                     Vehicle_Reg := '';
                     Inv_Cred := 'Invoice';
-                    if Sales_Credit_Memo_Header.Get(Sales_Invoice_Headers."No.") then;
-                    Sales_Credit_Memo_Line.Reset();
-                    Sales_Credit_Memo_Line.SetRange("Document No.", Sales_Credit_Memo_Header."No.");
-                    if Sales_Credit_Memo_Line.FindSet() then begin
-                        repeat
-                            Cred_Reason := Sales_Credit_Memo_Line."Return Reason Code";
-                        until Sales_Credit_Memo_Line.Next() = 0;
-                    end;
+                    // if Sales_Credit_Memo_Header.Get(Sales_Invoice_Headers."No.") then;
+                    // Sales_Credit_Memo_Line.Reset();
+                    // Sales_Credit_Memo_Line.SetRange("Document No.", Sales_Credit_Memo_Header."No.");
+                    // if Sales_Credit_Memo_Line.FindSet() then begin
+                    //     repeat
+                    //         Cred_Reason := Sales_Credit_Memo_Line."Return Reason Code";
+                    //     until Sales_Credit_Memo_Line.Next() = 0;
+                    // end;
+                    Cred_Reason := '';
                     Drop_Seq := '';
                     Comb_Disc := '';
                     Del_Code := Sales_Invoice_Headers."Ship-to Code";
@@ -823,8 +826,12 @@ xmlport 90016 "mio47"
 
                 end;
             }
+
         }
     }
+
+
+
     procedure FormatDateForCSV(MyDate: Date): Text[10];
     var
         DayStr: Text[2];

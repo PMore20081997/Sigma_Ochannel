@@ -405,6 +405,9 @@ xmlport 90028 "mio47-1"
             }
             tableelement("Sales_Invoice_Lines"; "Sales Invoice Line")
             {
+
+
+
                 textelement("Cust_Code")
                 {
                 }
@@ -743,7 +746,7 @@ xmlport 90028 "mio47-1"
                     Round := Sales_Invoice_Headers."Shipping Agent Code";
                     Pack_Price := Format(Sales_Invoice_Lines."Unit Price");
                     Prod_Group := Sales_Invoice_Lines."Item Category Code";
-                    Margin := Format(Sales_Invoice_Lines."Unit Price" - Sales_Invoice_Lines."Unit Cost");
+                    Margin := Format((Sales_Invoice_Lines."Unit Price" - Sales_Invoice_Lines."Unit Cost") * (Sales_Invoice_Lines.Quantity));
                     Period := Format(Sales_Invoice_Headers."Posting Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
                     if L_Item.Get(Sales_Invoice_Lines."No.") then;
@@ -822,9 +825,22 @@ xmlport 90028 "mio47-1"
                     Av_Cost_Value := Format(Sales_Invoice_Lines."Unit Cost");
 
                 end;
+
             }
         }
     }
+
+
+    trigger OnPreXmlPort()
+    var
+        TempGRN: Record TempGRN;
+
+    begin
+        TempGRN.DeleteAll();
+        Insertsalesinvoiceline();
+        Insertsalescrmemoline();
+    end;
+
     local procedure getlastentryno(): Integer
     var
         TempILE: Record TempILE;
@@ -836,41 +852,38 @@ xmlport 90028 "mio47-1"
             exit(1);
     end;
 
-    trigger OnPreXmlPort()
+    procedure Insertsalesinvoiceline()
     var
         TempGRN: Record TempGRN;
         SalesInvoiceLine: Record "Sales Invoice Line";
-        SalesInvoiceLine2: Record "Sales Invoice Line";
+        SalesInvoiceHeader: Record "Sales Invoice Header";
     begin
-        TempGRN.DeleteAll();
         SalesInvoiceLine.Reset();
         if SalesInvoiceLine.FindSet() then begin
             repeat
-                TempGRN.Reset();
-                TempGRN.SetRange("Item No.", SalesInvoiceLine."No.");
-                TempGRN.SetRange("Variant Code", SalesInvoiceLine."Variant Code");
-                TempGRN.SetRange("Document No", SalesInvoiceLine."Document No.");
-                if not TempGRN.FindFirst() then begin
-                    TempGRN.Init();
-                    TempGRN."Entry No." := getlastentryno();
-                    TempGRN."Item No." := SalesInvoiceLine."No.";
-                    TempGRN."Variant Code" := SalesInvoiceLine."Variant Code";
-                    TempGRN."Document No" := SalesInvoiceLine."Document No.";
-                    SalesInvoiceLine2.Reset();
-                    SalesInvoiceLine2.SetRange("No.", SalesInvoiceLine."No.");
-                    SalesInvoiceLine2.SetRange("Variant Code", SalesInvoiceLine."Variant Code");
-                    SalesInvoiceLine2.SetRange("Document No.", SalesInvoiceLine."Document No.");
-                    if SalesInvoiceLine2.FindSet() then begin
-                        repeat
-                            TempGRN."Qty." += SalesInvoiceLine2.Quantity;
-                        until SalesInvoiceLine.Next() = 0;
 
-                    end;
+                TempGRN.Init();
+                TempGRN."Entry No." := getlastentryno();
+                TempGRN."Item No." := SalesInvoiceLine."No.";
+                TempGRN."Variant Code" := SalesInvoiceLine."Variant Code";
+                TempGRN."Document No" := SalesInvoiceLine."Document No.";
+                SalesInvoiceHeader.Reset();
+                SalesInvoiceHeader.SetRange("No.", SalesInvoiceLine."Document No.");
+                if SalesInvoiceHeader.FindFirst() then begin
 
-                    TempGRN.Insert()
                 end;
+                TempGRN.Insert();
+
             until SalesInvoiceLine.Next() = 0;
         end;
+    end;
+
+
+    procedure Insertsalescrmemoline()
+    var
+    begin
+
+
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
