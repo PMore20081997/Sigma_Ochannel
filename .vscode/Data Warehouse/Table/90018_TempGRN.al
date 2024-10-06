@@ -68,6 +68,95 @@ table 90018 TempGRN
         {
             DataClassification = ToBeClassified;
         }
+        field(16; "Shipment Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(17; "Territory Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(18; "Location Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(19; "Order No."; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(20; "Salesperson Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(21; "Sell-to Customer No."; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(22; "Shipping Agent Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(23; "Posting Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(24; "Net Weight"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(25; "Order Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(26; "Return Reason Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(27; "Ship-to Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(28; "External Document No."; Code[35])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(29; "Header No."; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(30; "Promised Delivery Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(31; "Currency Code"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(32; "Currency Factor"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(33; "Header Amount"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(34; "Inv/Cred"; Text[10])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(35; "Cred Reason"; Code[100])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(36; "Vendor No."; Code[20])
+        {
+            DataClassification = ToBeClassified;
+        }
+
+
+
+
+
 
 
 
