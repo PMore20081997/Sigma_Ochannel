@@ -798,7 +798,7 @@ xmlport 90028 "mio47-1"
                     Master_Ord_No := '';
                     Purch_Ord_No := '';
                     Sord_Line_No := Format(TempGRN."Line No.");
-                    //Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
+                    // Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
                     Pord_Line_No := '';
                     ActCst := Format(TempGRN."Line Amount");
                     Sord_Line_Desc := TempGRN.Description;
@@ -851,10 +851,13 @@ xmlport 90028 "mio47-1"
         cust: Record Customer;
         L_Item: Record Item;
         sales_Shipment_Header: Record "Sales Shipment Header";
+        InvoiceLineNo: Text[10];
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         SalesInvoiceLine.Reset();
+        SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
         if SalesInvoiceLine.FindSet() then begin
+
             repeat
                 NoOfRecs := SalesInvoiceLine.Count;
                 ProgressCount += 1;
@@ -865,7 +868,8 @@ xmlport 90028 "mio47-1"
                         Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
                     END;
                 Windows.UPDATE(3, SalesInvoiceLine."No.");
-
+                TempGRN.Reset();
+                TempGRN.SetRange("Order No.", SalesInvoiceLine."Order No.");
                 TempGRN.Init();
                 TempGRN."Entry No." := getlastentryno();
                 TempGRN."Item No." := SalesInvoiceLine."No.";
@@ -930,10 +934,12 @@ xmlport 90028 "mio47-1"
         SalesCRHeader: Record "Sales Cr.Memo Header";
         cust: Record Customer;
         L_Item: Record Item;
+        CreditLineNo: Text[10];
         sales_Shipment_Header: Record "Sales Shipment Header";
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         SalesCRLine.Reset();
+        SalesCRLine.SetFilter(Quantity, '>%1', 0);
         if SalesCRLine.FindSet() then begin
             repeat
                 NoOfRecs := SalesCRLine.Count;
@@ -1025,4 +1031,5 @@ xmlport 90028 "mio47-1"
         ProgressCount: Integer;
         NoOfRecs: Integer;
         Count: Integer;
+
 }

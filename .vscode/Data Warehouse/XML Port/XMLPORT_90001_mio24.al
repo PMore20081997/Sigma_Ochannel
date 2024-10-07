@@ -313,6 +313,7 @@ xmlport 90001 "mio24"
                     L_ILE: record "Item Ledger Entry";
                     companyInfo: Record "Company Information";
                     L_item: Record Item;
+                    L_Variant: Record "Item Variant";
 
                 begin
                     // if Check = true then
@@ -333,25 +334,29 @@ xmlport 90001 "mio24"
                         // LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
                     DepotCode := TempILE."Depot Code";
-
+                    if L_item.Get(TempILE."Item No.") then;
+                    L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order");
                     if TempILE."Variant Code" = '' then begin
                         Prod_Code := TempILE."Item No.";
-                    end else begin
-                        Prod_Code := TempILE."Variant Code";
-                    end;
-                    Phys_Stock := format(TempILE."ILE Qty.");
-                    if L_item.Get(TempILE."Item No.") then begin
-                        L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory);
                         Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
                         On_Order := format(L_item."Qty. on Purch. Order");
                         Backorder := format(L_item."Qty. on Sales Order");
-                        LPP_Cost := format(L_item."Last Direct Cost");
-                        Avg_Cost := format(L_item."Unit Cost");
-                        True_Cost := format(L_item."Unit List Price");
-                        Min_Stock := format(L_item."Reorder Point");
-                        Max_Stock := format(L_item."Maximum Inventory");
-                        Temp_Stop_on_Sales := Format(L_item."Sales Blocked");
+
+                    end else begin
+                        Prod_Code := TempILE."Variant Code";
+                        Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
+                        On_Order := format(QtyOnPOrder(TempILE));
+                        Backorder := format(QtyOnSOrder(TempILE));
+
                     end;
+                    Phys_Stock := format(TempILE."ILE Qty.");
+                    LPP_Cost := format(L_item."Last Direct Cost");
+                    Avg_Cost := format(L_item."Unit Cost");
+                    True_Cost := format(L_item."Unit List Price");
+                    Min_Stock := format(L_item."Reorder Point");
+                    Max_Stock := format(L_item."Maximum Inventory");
+                    Temp_Stop_on_Sales := Format(L_item."Sales Blocked");
+
                     companyInfo.Get();
                     Company := companyInfo.Name;
                     Pick_Bin := '';
@@ -435,4 +440,56 @@ xmlport 90001 "mio24"
             MonthStr := '0' + MonthStr;
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
+
+    local procedure QtyOnSOrder(var TempIle: Record TempILE): Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        QtyOnSO: Decimal;
+    begin
+        Clear(QtyOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", TempIle."Item No.");
+        L_SalesLine.SetRange("Variant Code", TempIle."Variant Code");
+        //L_SalesLine.SETRANGE("Saleable Location", true);
+        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        // L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+
+        if QtyOnSO > 0 then
+            exit(QtyOnSO)
+        else
+            exit(0);
+    end;
+
+    local procedure QtyOnPOrder(var TempIle: Record TempILE): Decimal
+    var
+        L_PurchaseLine: Record "Purchase Line";
+        QtyOnPO: Decimal;
+    begin
+        Clear(QtyOnPO);
+        L_PurchaseLine.Reset();
+        L_PurchaseLine.SetRange("Document Type", L_PurchaseLine."Document Type"::Order);
+        L_PurchaseLine.SetRange(Type, L_PurchaseLine.Type::Item);
+        L_PurchaseLine.SETRANGE("No.", TempIle."Item No.");
+        L_PurchaseLine.SetRange("Variant Code", TempIle."Variant Code");
+        //L_SalesLine.SETRANGE("Saleable Location", true);
+        L_PurchaseLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        // L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_PurchaseLine.FindSet() then begin
+            L_PurchaseLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnPO := L_PurchaseLine."Outstanding Qty. (Base)";
+        end;
+
+        if QtyOnPO > 0 then
+            exit(QtyOnPO)
+        else
+            exit(0);
+    end;
+
+
 }
