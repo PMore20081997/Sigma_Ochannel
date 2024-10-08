@@ -385,6 +385,123 @@ codeunit 90026 "Udate Variant on SO"
     end;
 
 
+    procedure RevalidateVariantOnSalesOrder(_SalesHeader: Record "Sales Header")
+    var
+        L_SalesLine: Record "Sales Line";
+        RemQty: Decimal;
+        CustomeCodeunit: Codeunit "Udate Variant on SO";
+        L_ItemVariant: Record "Item Variant";
+        L_Count: Integer;
+        QtyToApply: Decimal;
+        Window: Dialog;
+        Counter: Integer;
+        Text005: TextConst ENU = 'Updating the Variant Code...\\', ENG = 'Updating the Variant Code...\\';
+        Text006: TextConst ENU = 'Progress', ENG = 'Progress';
+        NoOfRecords: Integer;
+        Count: Integer;
+        L_ItemVariantWithFreeQty: Record "Item Variant With Free Qty" temporary;
+        L_SalesHeader: Record "Sales Header";
+    begin
+        // Lock the tables to work on
+        L_SalesLine.LockTable();
+
+        L_SalesHeader.Reset();
+        L_SalesHeader.SetRange("No.", _SalesHeader."No.");
+        L_SalesHeader.SetRange("Document Type", _SalesHeader."Document Type");
+        if L_SalesHeader.FindFirst() then begin
+            //Start Process to Update Variant Code++
+            L_SalesLine.Reset();
+            L_SalesLine.CalcFields("Variant Code mandatory");
+            L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+            L_SalesLine.SetRange("Variant Code mandatory", true);
+            L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
+            L_SalesLine.SetFilter("Location Code", '<>%1', '');
+            if L_SalesLine.FindSet() then begin
+                repeat
+                    //Delete++
+                    L_ItemVariantWithFreeQty.Reset();
+                    L_ItemVariantWithFreeQty.DeleteAll();
+
+                    //Total required quantity 
+                    Clear(RemQty);
+                    RemQty := L_SalesLine.Quantity;
+
+                    //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    //Set PriorityWithoutZero++
+                    Clear(L_ItemVariant);
+                    L_ItemVariant.Reset();
+                    CustomeCodeunit.SetPriorityWithoutZero(L_SalesLine, L_ItemVariant);
+                    Clear(L_Count);
+                    L_Count := L_ItemVariant.Count;
+
+                    //Process to update variant code and create new line if required++
+                    if L_Count > 0 then begin
+                        while (RemQty > 0) AND (L_Count > 0) do begin
+                            L_ItemVariantWithFreeQty.Init();
+                            L_ItemVariantWithFreeQty.Priority := L_ItemVariant.Priority;
+                            L_ItemVariantWithFreeQty."Item No." := L_ItemVariant."Item No.";
+                            L_ItemVariantWithFreeQty."Variant Code" := L_ItemVariant.Code;
+                            L_ItemVariantWithFreeQty.Quantity := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+                            if L_ItemVariantWithFreeQty.Quantity > 0 then
+                                L_ItemVariantWithFreeQty.Insert();
+                            //end;
+                            L_Count := L_Count - 1;
+                            L_ItemVariant.Next();
+                        end;
+
+                        //Update Variant Code++
+                        L_ItemVariantWithFreeQty.Reset();
+                        L_ItemVariantWithFreeQty.SetRange("Item No.", L_SalesLine."No.");
+                        L_ItemVariantWithFreeQty.SetFilter(Quantity, '>=%1', RemQty);
+                        L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
+                        L_ItemVariantWithFreeQty.Ascending(true);
+                        if L_ItemVariantWithFreeQty.FindFirst() then begin
+                            if L_SalesLine."Variant Code" <> L_ItemVariantWithFreeQty."Variant Code" then begin
+                                L_SalesLine.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code");
+                                L_SalesLine.Modify();
+                            end;
+                        end else begin
+                            L_ItemVariantWithFreeQty.Reset();
+                            L_ItemVariantWithFreeQty.SetRange("Item No.", L_SalesLine."No.");
+                            L_ItemVariantWithFreeQty.SetFilter(Quantity, '<%1', RemQty);
+                            L_ItemVariantWithFreeQty.SetCurrentKey(Priority);
+                            L_ItemVariantWithFreeQty.Ascending(true);
+                            if L_ItemVariantWithFreeQty.FindFirst() then begin
+                                if L_SalesLine."Variant Code" <> L_ItemVariantWithFreeQty."Variant Code" then begin
+                                    L_SalesLine.Validate("Variant Code", L_ItemVariantWithFreeQty."Variant Code");
+                                    L_SalesLine.Modify();
+                                end;
+                            end else begin
+                                // //If there is no Inventory++++
+                                // L_ItemVariant.Reset();
+                                // L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
+                                // L_ItemVariant.SetRange("Sales Blocked", false);
+                                // L_ItemVariant.SetRange(Blocked, false);
+                                // if L_ItemVariant.FindFirst() then begin
+                                //     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                // end;
+                            end;
+                        end;
+                    end else begin
+                        // //If there is no priority on Item Varaint++
+                        // //This code added to manage "Release" the order++
+                        // L_ItemVariant.Reset();
+                        // L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
+                        // L_ItemVariant.SetRange("Sales Blocked", false);
+                        // L_ItemVariant.SetRange(Blocked, false);
+                        // if L_ItemVariant.FindFirst() then begin
+                        //     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                        // end;
+                    end;
+                until L_SalesLine.Next() = 0;
+            end;
+            Commit();
+        end;
+    end;
+
+
     //Old Code Backup+++++++++++++++++++
     // action("Update Variant On Lines")
     //         {

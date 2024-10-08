@@ -26,6 +26,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                     L_SalesHeader: Record "Sales Header";
                     UserSetup: Record "User Setup";
                 begin
+                    Commit();
                     UserSetup.Reset();
                     if UserSetup.Get(UserId) then begin
                         if UserSetup."Allow to Delete Bulk SO" = true then begin
@@ -66,7 +67,11 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                     ItemList: List of [Text];
                     ApprovalsMgmt: Codeunit "Approvals Mgmt.";
                     L_Location: Record Location;
+
+                    MinOrder_Header: Record "Sales Header";
+                    L_SumMin: Decimal;
                 begin
+                    Commit();
                     Clear(L_SalesHeader);
                     L_SalesHeader := Rec;
                     CurrPage.SetSelectionFilter(L_SalesHeader);
@@ -166,10 +171,30 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                     // end;
 
                                     //Send for Release order if Approval not required
-                                    Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
-                                    if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
-                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                                        Commit();
+                                    Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                                    if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                                        Clear(L_SumMin);
+                                        MinOrder_Header.Reset();
+                                        MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                                        MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                                        MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                                        MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                                        if MinOrder_Header.FindSet() then begin
+                                            repeat
+                                                MinOrder_Header.CalcFields(Amount);
+                                                L_SumMin += MinOrder_Header.Amount;
+                                            until MinOrder_Header.Next() = 0;
+                                        end;
+
+                                        if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                                            if L_SumMin >= Rec_SalesHeader.Amount then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                Commit();
+                                            end;
+                                        end else begin
+                                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                            Commit();
+                                        end;
                                     end;
                                 end;
                                 #endregion

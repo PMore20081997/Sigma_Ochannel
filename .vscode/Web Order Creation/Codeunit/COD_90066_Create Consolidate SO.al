@@ -135,7 +135,6 @@ codeunit 90066 "Create Consolidate SO"
                         Temporary_SalesLine."Knapp Line" := true;
                 end;
             end;
-
             Temporary_SalesLine.Insert();
         end;
     end;
@@ -661,6 +660,7 @@ codeunit 90066 "Create Consolidate SO"
             InsertedSL."Changed UnitPrice" := _Temporary_SalesLine."Changed UnitPrice";
             if _Temporary_SalesLine."Changed UnitPrice" = true then
                 InsertedSL.Validate("Unit Price", _Temporary_SalesLine."Unit Price");
+            InsertedSL."Custom Unit Price" := InsertedSL."Unit Price";
             InsertedSL.Insert(true);
         end;
     end;

@@ -39,6 +39,9 @@ codeunit 90025 "Manual/KNAAP SO Process"
         GeneralSetupChannel: Record "General Setup - Channels";
         L_SalesLine: Record "Sales Line";
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
+
+        MinOrder_Header: Record "Sales Header";
+        L_SumMin: Decimal;
     begin
         GeneralSetupChannel.Get();
         Clear(Counter);
@@ -56,9 +59,11 @@ codeunit 90025 "Manual/KNAAP SO Process"
                 Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
                 Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
                 if Rec_SalesHeader.FindFirst() then begin
-                    //Update Variant Code
-                    UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
-                    Commit();
+                    //Commented by Abdul - 07/10/2024
+                    // //Update Variant Code
+                    // UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
+                    // Commit();
+                    //Commented by Abdul - 07/10/2024
 
                     //Release Sales Order
                     // if ApprovalMgmt.IsSalesHeaderPendingApproval(Rec_SalesHeader) = false then begin
@@ -79,10 +84,30 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
                         //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
-                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
-                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                            Commit();
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                            Clear(L_SumMin);
+                            MinOrder_Header.Reset();
+                            MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                            MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                            MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                            MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                            if MinOrder_Header.FindSet() then begin
+                                repeat
+                                    MinOrder_Header.CalcFields(Amount);
+                                    L_SumMin += MinOrder_Header.Amount;
+                                until MinOrder_Header.Next() = 0;
+                            end;
+
+                            if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                                if L_SumMin >= Rec_SalesHeader.Amount then begin
+                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                    Commit();
+                                end;
+                            end else begin
+                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                Commit();
+                            end;
                         end;
 
                         // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
@@ -113,6 +138,9 @@ codeunit 90025 "Manual/KNAAP SO Process"
         ApprovalMgmt: Codeunit "Approvals Mgmt.";
         L_SalesLine: Record "Sales Line";
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
+
+        MinOrder_Header: Record "Sales Header";
+        L_SumMin: Decimal;
     begin
         Clear(L_SalesHeader);
         L_SalesHeader.Reset();
@@ -127,9 +155,11 @@ codeunit 90025 "Manual/KNAAP SO Process"
                 Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
                 Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
                 if Rec_SalesHeader.FindFirst() then begin
-                    //Update Variant Code
-                    UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
-                    Commit();
+                    //Commented by Abdul - 07/10/2024
+                    // //Update Variant Code
+                    // UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
+                    // Commit();
+                    //Commented by Abdul - 07/10/2024
 
                     //Release Sales Order
                     // if ApprovalMgmt.IsSalesHeaderPendingApproval(Rec_SalesHeader) = false then begin
@@ -150,10 +180,30 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
                         //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required");
-                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."SO Min Order Approval Required" = false) AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
-                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                            Commit();
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                            Clear(L_SumMin);
+                            MinOrder_Header.Reset();
+                            MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                            MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                            MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                            MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                            if MinOrder_Header.FindSet() then begin
+                                repeat
+                                    MinOrder_Header.CalcFields(Amount);
+                                    L_SumMin += MinOrder_Header.Amount;
+                                until MinOrder_Header.Next() = 0;
+                            end;
+
+                            if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                                if L_SumMin >= Rec_SalesHeader.Amount then begin
+                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                    Commit();
+                                end;
+                            end else begin
+                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                Commit();
+                            end;
                         end;
                         // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
                         //     if Rec_SalesHeader.SalesLinesExist() then begin
