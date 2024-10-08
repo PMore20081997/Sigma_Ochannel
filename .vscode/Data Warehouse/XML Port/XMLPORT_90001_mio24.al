@@ -338,17 +338,20 @@ xmlport 90001 "mio24"
                     L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order");
                     if TempILE."Variant Code" = '' then begin
                         Prod_Code := TempILE."Item No.";
-                        Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
-                        On_Order := format(L_item."Qty. on Purch. Order");
-                        Backorder := format(L_item."Qty. on Sales Order");
+                        // Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
+                        // On_Order := format(L_item."Qty. on Purch. Order");
+                        // Backorder := format(L_item."Qty. on Sales Order");
 
                     end else begin
                         Prod_Code := TempILE."Variant Code";
-                        Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
-                        On_Order := format(QtyOnPOrder(TempILE));
-                        Backorder := format(QtyOnSOrder(TempILE));
+                        // Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
+                        // On_Order := format(QtyOnPOrder(TempILE));
+                        // Backorder := format(QtyOnSOrder(TempILE));
 
                     end;
+                    Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
+                    On_Order := format(L_item."Qty. on Purch. Order");
+                    Backorder := format(L_item."Qty. on Sales Order");
                     Phys_Stock := format(TempILE."ILE Qty.");
                     LPP_Cost := format(L_item."Last Direct Cost");
                     Avg_Cost := format(L_item."Unit Cost");

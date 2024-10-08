@@ -61,7 +61,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
-                Visible = false;
+                // Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -405,6 +405,19 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 trigger OnAction()
                 begin
                     Xmlport.Run(Xmlport::"mio47-1", false, false);
+                end;
+            }
+            action(Test31)
+            {
+                Caption = 'Test31';
+                Promoted = true;
+                /// Visible = false;
+                PromotedCategory = Process;
+                Image = Export;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    Xmlport.Run(Xmlport::mio47, false, false);
                 end;
             }
 

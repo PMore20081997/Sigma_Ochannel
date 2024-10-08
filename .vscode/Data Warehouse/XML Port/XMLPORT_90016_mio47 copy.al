@@ -851,11 +851,14 @@ xmlport 90028 "mio47-1"
         cust: Record Customer;
         L_Item: Record Item;
         sales_Shipment_Header: Record "Sales Shipment Header";
-        InvoiceLineNo: Text[10];
+        InvoiceLineNoInt: Integer;
+        InvoiceLineNoTxt: Text[10];
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         SalesInvoiceLine.Reset();
         SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+        SalesInvoiceLine.SetRange(Type, SalesInvoiceLine.Type::Item);
+        //SalesInvoiceLine.SetRange("Posting Date", CalcDate('<-1D>', Today));
         if SalesInvoiceLine.FindSet() then begin
 
             repeat
@@ -868,8 +871,19 @@ xmlport 90028 "mio47-1"
                         Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
                     END;
                 Windows.UPDATE(3, SalesInvoiceLine."No.");
-                TempGRN.Reset();
-                TempGRN.SetRange("Order No.", SalesInvoiceLine."Order No.");
+                // InvoiceLineNoTxt := Format(SalesInvoiceLine."Line No.");
+                // InvoiceLineNoTxt := CopyStr(InvoiceLineNoTxt, 1, 1);
+                // Evaluate(InvoiceLineNoInt, InvoiceLineNoTxt);
+
+                // TempGRN.Reset();
+                // TempGRN.SetRange("Order No.", SalesInvoiceLine."Order No.");
+                // TempGRN.SetRange("Line No.", InvoiceLineNoInt);
+                // TempGRN.SetRange("Sell-to Customer No.", SalesInvoiceLine."Sell-to Customer No.");
+                // TempGRN.SetRange("Item No.", SalesInvoiceLine."No.");
+                // TempGRN.SetRange("Header No.", SalesInvoiceLine."Document No.");
+
+                // if TempGRN.FindSet() then begin
+                //     repeat
                 TempGRN.Init();
                 TempGRN."Entry No." := getlastentryno();
                 TempGRN."Item No." := SalesInvoiceLine."No.";
@@ -922,6 +936,12 @@ xmlport 90028 "mio47-1"
                     end;
                 end;
                 TempGRN.Insert();
+
+            //     until TempGRN.Next() = 0;
+
+            // end;
+
+
             until SalesInvoiceLine.Next() = 0;
         end;
     end;
@@ -934,12 +954,13 @@ xmlport 90028 "mio47-1"
         SalesCRHeader: Record "Sales Cr.Memo Header";
         cust: Record Customer;
         L_Item: Record Item;
-        CreditLineNo: Text[10];
+        //CreditLineNo: Text[10];
         sales_Shipment_Header: Record "Sales Shipment Header";
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         SalesCRLine.Reset();
         SalesCRLine.SetFilter(Quantity, '>%1', 0);
+        SalesCRLine.SetRange(Type, SalesCRLine.Type::Item);
         if SalesCRLine.FindSet() then begin
             repeat
                 NoOfRecs := SalesCRLine.Count;
@@ -956,15 +977,15 @@ xmlport 90028 "mio47-1"
                 TempGRN."Item No." := SalesCRLine."No.";
                 TempGRN."Variant Code" := SalesCRLine."Variant Code";
                 TempGRN."Document No" := SalesCRLine."Document No.";
-                TempGRN."Qty." := SalesCRLine.Quantity;
-                TempGRN.Amount := SalesCRLine.Amount;
+                TempGRN."Qty." := -SalesCRLine.Quantity;
+                TempGRN.Amount := -SalesCRLine.Amount;
                 TempGRN."Unit Price" := SalesCRLine."Unit Price";
                 TempGRN."Unit Cost" := SalesCRLine."Unit Cost";
                 TempGRN."Item Category Code" := SalesCRLine."Item Category Code";
                 TempGRN."Net Weight" := SalesCRLine."Net Weight";
                 TempGRN."Item Reference No." := SalesCRLine."Item Reference No.";
                 TempGRN."Line No." := SalesCRLine."Line No.";
-                TempGRN."Line Amount" := SalesCRLine."Line Amount";
+                TempGRN."Line Amount" := -SalesCRLine."Line Amount";
                 TempGRN.Description := SalesCRLine.Description;
                 TempGRN."Original Order Quantity" := SalesCRLine.Quantity;
                 TempGRN."Inv/Cred" := 'Credit';
@@ -989,7 +1010,7 @@ xmlport 90028 "mio47-1"
                     TempGRN."Currency Factor" := SalesCRHeader."Currency Factor";
                     TempGRN."Currency Code" := SalesCRHeader."Currency Code";
                     TempGRN."Shipment Date" := SalesCRHeader."Shipment Date";
-                    TempGRN."Header Amount" := SalesCRHeader.Amount;
+                    TempGRN."Header Amount" := -SalesCRHeader.Amount;
                     cust.Reset();
                     cust.SetRange("No.", SalesCRHeader."Sell-to Customer No.");
                     if cust.FindFirst() then begin

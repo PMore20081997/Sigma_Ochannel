@@ -807,7 +807,7 @@ xmlport 90016 "mio47"
                     Master_Ord_No := '';
                     Purch_Ord_No := '';
                     Sord_Line_No := Format(Sales_Invoice_Lines."Line No.");
-                    Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
+                    //Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
                     Pord_Line_No := '';
                     ActCst := Format(Sales_Invoice_Lines."Line Amount");
                     Sord_Line_Desc := Sales_Invoice_Lines.Description;
