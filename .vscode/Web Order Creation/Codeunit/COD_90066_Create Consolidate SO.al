@@ -14,6 +14,7 @@ codeunit 90066 "Create Consolidate SO"
         G_SalesHeaderCreated: Boolean;
         G_SNo: Code[20];
         InsertedSH: Record "Sales Header";
+        InsertedSL: Record "Sales Line";
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Consolidate Sales +++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -251,10 +252,16 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
                 if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //CLear Variable++
                     Clear(L_LineNo);
-                    //Create Header++
+
+                    // Lock the tables to work on
                     InsertedSH.Reset();
                     InsertedSH.LockTable();
+                    InsertedSL.Reset();
+                    InsertedSL.LockTable();
+
+                    //Create Header++
                     CreateSalesHeaderFromTemporary(Temporary_SalesLine);
                     repeat
                         L_LineNo := L_LineNo + 10000;
@@ -294,10 +301,16 @@ codeunit 90066 "Create Consolidate SO"
                 Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
                 Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
                 if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //CLear Variable++
                     Clear(L_LineNo);
-                    //Create Header++
+
+                    // Lock the tables to work on
                     InsertedSH.Reset();
                     InsertedSH.LockTable();
+                    InsertedSL.Reset();
+                    InsertedSL.LockTable();
+
+                    //Create Header++
                     CreateSalesHeaderFromTemporary(Temporary_SalesLine);
                     repeat
                         Counter += 1;
@@ -514,7 +527,6 @@ codeunit 90066 "Create Consolidate SO"
 
     local procedure CreateSalesLineFromTemporary(_SalesOrderNo: Code[20]; _Temporary_SalesLine: Record "Sales Line" temporary; _LineNumber: Integer)
     var
-        InsertedSL: Record "Sales Line";
         L_Item: Record Item;
         CU_KnappGenerateDocuments: Codeunit "Knapp Generate Documents";
         L_Location: Record Location;

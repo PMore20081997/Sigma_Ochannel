@@ -46,7 +46,8 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
                     L_SalesHeader.Reset();
                     L_SalesHeader.CalcFields("Sent to Knapp");
                     L_SalesHeader.SetRange("Knapp Order", true);
-                    L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
+                    //L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
+                    L_SalesHeader.SetFilter("Shipment Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
                     L_SalesHeader.SetRange("Sent to Knapp", false);
                     if L_SalesHeader.FindSet() then begin
                         repeat
