@@ -338,10 +338,9 @@ xmlport 90001 "mio24"
                     L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order");
                     if TempILE."Variant Code" = '' then begin
                         Prod_Code := TempILE."Item No.";
-                        // Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
-                        // On_Order := format(L_item."Qty. on Purch. Order");
-                        // Backorder := format(L_item."Qty. on Sales Order");
-
+                        // Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
+                        // On_Order := format(QtyOnPOrder(TempILE));
+                        // Backorder := format(QtyOnSOrder(TempILE));
                     end else begin
                         Prod_Code := TempILE."Variant Code";
                         // Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
@@ -451,13 +450,15 @@ xmlport 90001 "mio24"
     begin
         Clear(QtyOnSO);
         L_SalesLine.Reset();
+
         L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SETRANGE("No.", TempIle."Item No.");
-        L_SalesLine.SetRange("Variant Code", TempIle."Variant Code");
-        //L_SalesLine.SETRANGE("Saleable Location", true);
+        if TempIle."Variant Code" <> '' then begin
+            L_SalesLine.SetRange("Variant Code", TempIle."Variant Code");
+        end;
+        L_SalesLine.SetRange("Location Code", TempIle."Depot Code");
         L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
-        // L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
             QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
@@ -479,10 +480,11 @@ xmlport 90001 "mio24"
         L_PurchaseLine.SetRange("Document Type", L_PurchaseLine."Document Type"::Order);
         L_PurchaseLine.SetRange(Type, L_PurchaseLine.Type::Item);
         L_PurchaseLine.SETRANGE("No.", TempIle."Item No.");
-        L_PurchaseLine.SetRange("Variant Code", TempIle."Variant Code");
-        //L_SalesLine.SETRANGE("Saleable Location", true);
+        if TempIle."Variant Code" <> '' then begin
+            L_PurchaseLine.SetRange("Variant Code", TempIle."Variant Code");
+        end;
+        L_PurchaseLine.SetRange("Location Code", TempIle."Depot Code");
         L_PurchaseLine.SetFilter("Outstanding Quantity", '>%1', 0);
-        // L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_PurchaseLine.FindSet() then begin
             L_PurchaseLine.CalcSums("Outstanding Qty. (Base)");
             QtyOnPO := L_PurchaseLine."Outstanding Qty. (Base)";

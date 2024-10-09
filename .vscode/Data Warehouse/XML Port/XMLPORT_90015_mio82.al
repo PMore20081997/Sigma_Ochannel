@@ -494,7 +494,7 @@ xmlport 90015 "mio82"
                     Grn_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
 
                     Price_Desc := '';
-                    Grn_Price := Format((Purch_Rcpt_Line."Unit Price (LCY)") * (Purch_Rcpt_Line.Quantity));
+                    Grn_Price := Format((Purch_Rcpt_Line."Unit Price (LCY)"));
                     Receipt_Date := FormatDateForCSV(L_PurchReceiptheader."Posting Date");
                     //Receipt_Date := Format(L_PurchReceiptheader."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Due_Date := FormatDateForCSV(L_PurchReceiptheader."Due Date");
