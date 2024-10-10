@@ -152,6 +152,10 @@ table 90018 TempGRN
         {
             DataClassification = ToBeClassified;
         }
+        field(37; LineType; Text[10])
+        {
+            DataClassification = ToBeClassified;
+        }
 
 
 

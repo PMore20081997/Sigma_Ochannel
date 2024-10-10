@@ -768,7 +768,7 @@ xmlport 90028 "mio47-1"
                     CompInfo.Get();
                     Company := CompInfo.Name;
                     Picker_Code := '';
-                    Line_Type := 'Y';
+                    Line_Type := TempGRN.LineType;
                     Volume := '';
                     Inv_Date := FormatDateForCSV(TempGRN."Posting Date");
                     //Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
@@ -900,6 +900,7 @@ xmlport 90028 "mio47-1"
                 TempGRN."Line Amount" := SalesInvoiceLine."Line Amount";
                 TempGRN.Description := SalesInvoiceLine.Description;
                 TempGRN."Original Order Quantity" := SalesInvoiceLine."Original Order Quantity";
+                TempGRN.LineType := 'Y';
                 TempGRN."Inv/Cred" := 'Invoice';
                 TempGRN."Cred Reason" := '';
                 TempGRN."Unit Cost (LCY)" := SalesInvoiceLine."Unit Cost (LCY)";
@@ -988,6 +989,7 @@ xmlport 90028 "mio47-1"
                 TempGRN."Line Amount" := -SalesCRLine."Line Amount";
                 TempGRN.Description := SalesCRLine.Description;
                 TempGRN."Original Order Quantity" := SalesCRLine.Quantity;
+                TempGRN.LineType := 'C';
                 TempGRN."Inv/Cred" := 'Credit';
                 TempGRN."Cred Reason" := SalesCRLine."Return Reason Code";
                 TempGRN."Unit Cost (LCY)" := SalesCRLine."Unit Cost (LCY)";
