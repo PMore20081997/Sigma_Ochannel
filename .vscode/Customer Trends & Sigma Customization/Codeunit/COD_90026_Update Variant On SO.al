@@ -474,26 +474,35 @@ codeunit 90026 "Udate Variant on SO"
                                     L_SalesLine.Modify();
                                 end;
                             end else begin
-                                // //If there is no Inventory++++
-                                // L_ItemVariant.Reset();
-                                // L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
-                                // L_ItemVariant.SetRange("Sales Blocked", false);
-                                // L_ItemVariant.SetRange(Blocked, false);
-                                // if L_ItemVariant.FindFirst() then begin
-                                //     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
-                                // end;
+                                //If there is no Inventory++++
+                                L_ItemVariant.Reset();
+                                L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
+                                L_ItemVariant.SetFilter(Priority, '>%1', 0);
+                                L_ItemVariant.SetRange("Sales Blocked", false);
+                                L_ItemVariant.SetRange(Blocked, false);
+                                L_ItemVariant.SetCurrentKey(Priority);
+                                L_ItemVariant.Ascending(true);
+                                if L_ItemVariant.FindFirst() then begin
+                                    if L_SalesLine."Variant Code" <> L_ItemVariant.Code then begin
+                                        L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                        L_SalesLine.Modify();
+                                    end;
+                                end;
                             end;
                         end;
                     end else begin
-                        // //If there is no priority on Item Varaint++
-                        // //This code added to manage "Release" the order++
-                        // L_ItemVariant.Reset();
-                        // L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
-                        // L_ItemVariant.SetRange("Sales Blocked", false);
-                        // L_ItemVariant.SetRange(Blocked, false);
-                        // if L_ItemVariant.FindFirst() then begin
-                        //     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
-                        // end;
+                        //If there is no priority on Item Varaint++
+                        //This code added to manage "Release" the order++
+                        L_ItemVariant.Reset();
+                        L_ItemVariant.SetRange("Item No.", L_SalesLine."No.");
+                        L_ItemVariant.SetRange("Sales Blocked", false);
+                        L_ItemVariant.SetRange(Blocked, false);
+                        if L_ItemVariant.FindFirst() then begin
+                            if L_SalesLine."Variant Code" <> L_ItemVariant.Code then begin
+                                L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+                                L_SalesLine.Modify();
+                            end;
+                        end;
                     end;
                 until L_SalesLine.Next() = 0;
             end;
