@@ -403,8 +403,9 @@ xmlport 90016 "mio47"
 
                 end;
             }
-            tableelement("Sales_Invoice_Lines"; "Sales Invoice Line")
+            tableelement(TempGRN; TempGRN)
             {
+
 
 
                 textelement("Cust_Code")
@@ -707,67 +708,57 @@ xmlport 90016 "mio47"
 
                 trigger OnAfterGetRecord()
                 var
-                    Sales_Invoice_Headers: Record "Sales Invoice Header";
-                    L_Item: Record Item;
-                    Sales_Credit_Memo_Line: Record "Sales Cr.Memo Line";
-                    Sales_Credit_Memo_Header: Record "Sales Cr.Memo Header";
+                    // Sales_Invoice_Headers: Record "Sales Invoice Header";
+                    // L_Item: Record Item;
+                    // Sales_Credit_Memo_Line: Record "Sales Cr.Memo Line";
+                    // Sales_Credit_Memo_Header: Record "Sales Cr.Memo Header";
                     CompInfo: Record "Company Information";
-                    sales_Shipment_Header: Record "Sales Shipment Header";
-                    cust: Record Customer;
+                //sales_Shipment_Header: Record "Sales Shipment Header";
+                //cust: Record Customer;
 
                 begin
 
-                    if Sales_Invoice_Headers.Get(Sales_Invoice_Lines."Document No.") then;
+                    //if Sales_Invoice_Headers.Get(Sales_Invoice_Lines."Document No.") then;
 
-                    Sales_Invoice_Headers.CalcFields(Amount);
-                    Cust_Code := Sales_Invoice_Headers."Sell-to Customer No.";
-                    if Sales_Invoice_Lines."Variant Code" = '' then begin
-                        Prod_Code := Sales_Invoice_Lines."No.";
+                    // Sales_Invoice_Headers.CalcFields(Amount);
+                    Cust_Code := TempGRN."Sell-to Customer No.";
+                    if TempGRN."Variant Code" = '' then begin
+                        Prod_Code := TempGRN."Item No.";
                     end else begin
-                        Prod_Code := Sales_Invoice_Lines."Variant Code";
+                        Prod_Code := TempGRN."Variant Code";
                     end;
-                    Qty := format(Sales_Invoice_Lines.Quantity);
-                    Val := format(Sales_Invoice_Lines.Amount);
-                    Cst := format(Sales_Invoice_Lines."Unit Cost (LCY)");
-                    Del_Date := FormatDateForCSV(Sales_Invoice_Headers."Shipment Date");
-                    cust.Reset();
-                    cust.SetRange("No.", Sales_Invoice_Headers."Sell-to Customer No.");
-                    if cust.FindFirst() then begin
-                        Rep_Code := cust."Territory Code";
-                    end;
+
+                    Del_Date := FormatDateForCSV(TempGRN."Shipment Date");
+
+                    Rep_Code := TempGRN."Territory Code";
+
 
                     Terr_Man := '';
                     Price_Type := '';
-                    Supp_Dep := Sales_Invoice_Headers."Location Code";
-                    Ord_No := Sales_Invoice_Headers."Order No.";
-                    Op_Code := Sales_Invoice_Headers."Salesperson Code";
+                    Supp_Dep := TempGRN."Location Code";
+                    Ord_No := TempGRN."Order No.";
+                    Op_Code := TempGRN."Salesperson Code";
                     Ord_Type := '';
-                    Round := Sales_Invoice_Headers."Shipping Agent Code";
-                    Pack_Price := Format(Sales_Invoice_Lines."Unit Price");
-                    Prod_Group := Sales_Invoice_Lines."Item Category Code";
-                    Margin := Format(Sales_Invoice_Lines."Unit Price" - Sales_Invoice_Lines."Unit Cost");
-                    Period := Format(Sales_Invoice_Headers."Posting Date", 0, '<Month Text>');
+                    Round := TempGRN."Shipping Agent Code";
+
+                    Prod_Group := TempGRN."Item Category Code";
+
+                    Period := Format(TempGRN."Posting Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
-                    if L_Item.Get(Sales_Invoice_Lines."No.") then;
-                    Supp_Code := L_Item."Vendor No.";
-                    Weight := format(Sales_Invoice_Lines."Net Weight");
-                    Ord_Date := FormatDateForCSV(Sales_Invoice_Headers."Order Date");
+
+                    Supp_Code := TempGRN."Vendor No.";
+                    Weight := format(TempGRN."Net Weight");
+                    Ord_Date := FormatDateForCSV(TempGRN."Order Date");
                     // Ord_Date := Format(Sales_Invoice_Headers."Order Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     FOC_Ind := 'Paid Sale';
                     Vehicle_Reg := '';
-                    Inv_Cred := 'Invoice';
-                    // if Sales_Credit_Memo_Header.Get(Sales_Invoice_Headers."No.") then;
-                    // Sales_Credit_Memo_Line.Reset();
-                    // Sales_Credit_Memo_Line.SetRange("Document No.", Sales_Credit_Memo_Header."No.");
-                    // if Sales_Credit_Memo_Line.FindSet() then begin
-                    //     repeat
-                    //         Cred_Reason := Sales_Credit_Memo_Line."Return Reason Code";
-                    //     until Sales_Credit_Memo_Line.Next() = 0;
-                    // end;
-                    Cred_Reason := '';
+                    Inv_Cred := TempGRN."Inv/Cred";
+
+                    Cred_Reason := TempGRN."Cred Reason";
+
                     Drop_Seq := '';
                     Comb_Disc := '';
-                    Del_Code := Sales_Invoice_Headers."Ship-to Code";
+                    Del_Code := TempGRN."Ship-to Code";
                     Lost_Pick := '';
                     Lost_Desp := '';
                     Pick_Conf_Code := '';
@@ -775,22 +766,20 @@ xmlport 90016 "mio47"
                     CompInfo.Get();
                     Company := CompInfo.Name;
                     Picker_Code := '';
-                    Line_Type := 'Y';
+                    Line_Type := TempGRN.LineType;
                     Volume := '';
-                    Inv_Date := FormatDateForCSV(Sales_Invoice_Headers."Posting Date");
+                    Inv_Date := FormatDateForCSV(TempGRN."Posting Date");
                     //Inv_Date := format(Sales_Invoice_Headers."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
-                    Cust_Ord_No := Sales_Invoice_Headers."External Document No.";
-                    Inv_No := Sales_Invoice_Headers."No.";
-                    sales_Shipment_Header.Reset();
-                    sales_Shipment_Header.SetRange("Order No.", Sales_Invoice_Headers."Order No.");
-                    if sales_Shipment_Header.FindFirst() then begin
-                        Promise_Date := FormatDateForCSV(sales_Shipment_Header."Promised Delivery Date");
-                        //Promise_Date := format(sales_Shipment_Header."Promised Delivery Date", 0, '<Day,2>/<Month,2>/<Year,4>');
-                    end;
+                    Cust_Ord_No := TempGRN."External Document No.";
+                    Inv_No := TempGRN."Header No.";
+
+                    Promise_Date := FormatDateForCSV(TempGRN."Promised Delivery Date");
+                    //Promise_Date := format(sales_Shipment_Header."Promised Delivery Date", 0, '<Day,2>/<Month,2>/<Year,4>');
+
                     Account_Year := '';
                     Account_Month := '';
                     Sell_by_date := '00/00/00';
-                    CustProdCode := Sales_Invoice_Lines."Item Reference No.";
+                    CustProdCode := TempGRN."Item Reference No.";
                     SalesAd1 := '';
                     SalesAd2 := '';
                     SalesAd3 := '';
@@ -806,31 +795,261 @@ xmlport 90016 "mio47"
                     Job_Number := '';
                     Master_Ord_No := '';
                     Purch_Ord_No := '';
-                    Sord_Line_No := Format(Sales_Invoice_Lines."Line No.");
-                    //Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
+                    Sord_Line_No := Format(TempGRN."Line No.");
+                    // Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
                     Pord_Line_No := '';
-                    ActCst := Format(Sales_Invoice_Lines."Line Amount");
-                    Sord_Line_Desc := Sales_Invoice_Lines.Description;
-                    Qty_Ordered := Format(Sales_Invoice_Lines."Original Order Quantity");
-                    Landed_Cost := Format(Sales_Invoice_Lines."Unit Cost (LCY)");
-                    FC_Val := Format(Sales_Invoice_Headers.Amount);
-                    Exch_Rate := Format(Sales_Invoice_Headers."Currency Factor");
-                    Foreign_Curr_Code := Format(Sales_Invoice_Headers."Currency Code");
+                    //ActCst := Format(TempGRN."Line Amount");
+                    Sord_Line_Desc := TempGRN.Description;
+
+
+                    Exch_Rate := Format(TempGRN."Currency Factor");
+                    Foreign_Curr_Code := Format(TempGRN."Currency Code");
                     RM_Cost := '';
                     Direct_Labour := '';
                     Direct_OH := '';
                     Indirect_OH := '';
                     Finishing_Costs := '';
                     Transfer_Disc := '';
-                    Av_Cost_Value := Format(Sales_Invoice_Lines."Unit Cost");
+
+
+                    if TempGRN."Inv/Cred" = 'Credit' then begin
+                        ActCst := '-' + Format(TempGRN."Line Amount");
+                        Pack_Price := '-' + Format(TempGRN."Unit Price");
+                        Qty := '-' + format(TempGRN."Qty.");
+                        Val := '-' + format(TempGRN.Amount);
+                        Cst := '-' + format(TempGRN."Unit Cost (LCY)");
+                        Margin := '-' + Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
+                        Qty_Ordered := '-' + Format(TempGRN."Original Order Quantity");
+                        Landed_Cost := '-' + Format(TempGRN."Unit Cost (LCY)");
+                        FC_Val := '-' + Format(TempGRN."Header Amount");
+                        Av_Cost_Value := '-' + Format(TempGRN."Unit Cost");
+                    end else begin
+                        ActCst := Format(TempGRN."Line Amount");
+                        Pack_Price := Format(TempGRN."Unit Price");
+                        Qty := format(TempGRN."Qty.");
+                        Val := format(TempGRN.Amount);
+                        Cst := format(TempGRN."Unit Cost (LCY)");
+                        Margin := Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
+                        Qty_Ordered := Format(TempGRN."Original Order Quantity");
+                        Landed_Cost := Format(TempGRN."Unit Cost (LCY)");
+                        FC_Val := Format(TempGRN."Header Amount");
+                        Av_Cost_Value := Format(TempGRN."Unit Cost");
+                    end;
 
                 end;
-            }
 
+            }
         }
     }
 
 
+    trigger OnPreXmlPort()
+    var
+        TempGRN: Record TempGRN;
+
+    begin
+        TempGRN.DeleteAll();
+        Insertsalesinvoiceline();
+        Insertsalescrmemoline();
+    end;
+
+    local procedure getlastentryno(): Integer
+    var
+        TempGRN: Record TempGRN;
+    begin
+        TempGRN.Reset();
+        IF TempGRN.FINDLAST THEN
+            exit(TempGRN."Entry No." + 1)
+        ELSE
+            exit(1);
+    end;
+
+    procedure Insertsalesinvoiceline()
+    var
+        TempGRN: Record TempGRN;
+        SalesInvoiceLine: Record "Sales Invoice Line";
+        SalesInvoiceHeader: Record "Sales Invoice Header";
+        cust: Record Customer;
+        L_Item: Record Item;
+        sales_Shipment_Header: Record "Sales Shipment Header";
+        InvoiceLineNoInt: Integer;
+        InvoiceLineNoTxt: Text[10];
+    begin
+        Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        SalesInvoiceLine.Reset();
+        SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+        SalesInvoiceLine.SetRange(Type, SalesInvoiceLine.Type::Item);
+        //SalesInvoiceLine.SetRange("Posting Date", CalcDate('<-1D>', Today));
+        if SalesInvoiceLine.FindSet() then begin
+
+            repeat
+                NoOfRecs := SalesInvoiceLine.Count;
+                ProgressCount += 1;
+                IF NoOfRecs <= 100 THEN
+                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                ELSE
+                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                    END;
+                Windows.UPDATE(3, SalesInvoiceLine."No.");
+                // InvoiceLineNoTxt := Format(SalesInvoiceLine."Line No.");
+                // InvoiceLineNoTxt := CopyStr(InvoiceLineNoTxt, 1, 1);
+                // Evaluate(InvoiceLineNoInt, InvoiceLineNoTxt);
+
+                // TempGRN.Reset();
+                // TempGRN.SetRange("Order No.", SalesInvoiceLine."Order No.");
+                // TempGRN.SetRange("Line No.", InvoiceLineNoInt);
+                // TempGRN.SetRange("Sell-to Customer No.", SalesInvoiceLine."Sell-to Customer No.");
+                // TempGRN.SetRange("Item No.", SalesInvoiceLine."No.");
+                // TempGRN.SetRange("Header No.", SalesInvoiceLine."Document No.");
+
+                // if TempGRN.FindSet() then begin
+                //     repeat
+                TempGRN.Init();
+                TempGRN."Entry No." := getlastentryno();
+                TempGRN."Item No." := SalesInvoiceLine."No.";
+                TempGRN."Variant Code" := SalesInvoiceLine."Variant Code";
+                TempGRN."Document No" := SalesInvoiceLine."Document No.";
+                TempGRN."Qty." := SalesInvoiceLine.Quantity;
+                TempGRN.Amount := SalesInvoiceLine.Amount;
+                TempGRN."Unit Price" := SalesInvoiceLine."Unit Price";
+                TempGRN."Unit Cost" := SalesInvoiceLine."Unit Cost";
+                TempGRN."Item Category Code" := SalesInvoiceLine."Item Category Code";
+                TempGRN."Net Weight" := SalesInvoiceLine."Net Weight";
+                TempGRN."Item Reference No." := SalesInvoiceLine."Item Reference No.";
+                TempGRN."Line No." := SalesInvoiceLine."Line No.";
+                TempGRN."Line Amount" := SalesInvoiceLine."Line Amount";
+                TempGRN.Description := SalesInvoiceLine.Description;
+                TempGRN."Original Order Quantity" := SalesInvoiceLine."Original Order Quantity";
+                TempGRN.LineType := 'Y';
+                TempGRN."Inv/Cred" := 'Invoice';
+                TempGRN."Cred Reason" := '';
+                TempGRN."Unit Cost (LCY)" := SalesInvoiceLine."Unit Cost (LCY)";
+                if L_Item.Get(SalesInvoiceLine."No.") then;
+                TempGRN."Vendor No." := L_Item."Vendor No.";
+                SalesInvoiceHeader.Reset();
+                SalesInvoiceHeader.SetRange("No.", SalesInvoiceLine."Document No.");
+                if SalesInvoiceHeader.FindFirst() then begin
+                    SalesInvoiceHeader.CalcFields(Amount);
+                    TempGRN."Sell-to Customer No." := SalesInvoiceHeader."Sell-to Customer No.";
+                    TempGRN."Location Code" := SalesInvoiceHeader."Location Code";
+                    TempGRN."Order No." := SalesInvoiceHeader."Order No.";
+                    TempGRN."Salesperson Code" := SalesInvoiceHeader."Salesperson Code";
+                    TempGRN."Shipping Agent Code" := SalesInvoiceHeader."Shipping Agent Code";
+                    TempGRN."Order Date" := SalesInvoiceHeader."Order Date";
+                    TempGRN."Ship-to Code" := SalesInvoiceHeader."Ship-to Code";
+                    TempGRN."Posting Date" := SalesInvoiceHeader."Posting Date";
+                    TempGRN."External Document No." := SalesInvoiceHeader."External Document No.";
+                    TempGRN."Header No." := SalesInvoiceHeader."No.";
+                    TempGRN."Currency Factor" := SalesInvoiceHeader."Currency Factor";
+                    TempGRN."Currency Code" := SalesInvoiceHeader."Currency Code";
+                    TempGRN."Shipment Date" := SalesInvoiceHeader."Shipment Date";
+                    TempGRN."Header Amount" := SalesInvoiceHeader.Amount;
+                    cust.Reset();
+                    cust.SetRange("No.", SalesInvoiceHeader."Sell-to Customer No.");
+                    if cust.FindFirst() then begin
+                        TempGRN."Territory Code" := cust."Territory Code";
+                    end;
+                    sales_Shipment_Header.Reset();
+                    sales_Shipment_Header.SetRange("Order No.", SalesInvoiceHeader."Order No.");
+                    if sales_Shipment_Header.FindFirst() then begin
+                        TempGRN."Promised Delivery Date" := sales_Shipment_Header."Promised Delivery Date";
+
+                    end;
+                end;
+                TempGRN.Insert();
+
+            //     until TempGRN.Next() = 0;
+
+            // end;
+
+
+            until SalesInvoiceLine.Next() = 0;
+        end;
+    end;
+
+
+    procedure Insertsalescrmemoline()
+    var
+        TempGRN: Record TempGRN;
+        SalesCRLine: Record "Sales Cr.Memo Line";
+        SalesCRHeader: Record "Sales Cr.Memo Header";
+        cust: Record Customer;
+        L_Item: Record Item;
+        //CreditLineNo: Text[10];
+        sales_Shipment_Header: Record "Sales Shipment Header";
+    begin
+        Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        SalesCRLine.Reset();
+        SalesCRLine.SetFilter(Quantity, '>%1', 0);
+        SalesCRLine.SetRange(Type, SalesCRLine.Type::Item);
+        if SalesCRLine.FindSet() then begin
+            repeat
+                NoOfRecs := SalesCRLine.Count;
+                ProgressCount += 1;
+                IF NoOfRecs <= 100 THEN
+                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                ELSE
+                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                    END;
+                Windows.UPDATE(3, SalesCRLine."No.");
+                TempGRN.Init();
+                TempGRN."Entry No." := getlastentryno();
+                TempGRN."Item No." := SalesCRLine."No.";
+                TempGRN."Variant Code" := SalesCRLine."Variant Code";
+                TempGRN."Document No" := SalesCRLine."Document No.";
+                TempGRN."Qty." := SalesCRLine.Quantity;
+                TempGRN.Amount := SalesCRLine.Amount;
+                TempGRN."Unit Price" := SalesCRLine."Unit Price";
+                TempGRN."Unit Cost" := SalesCRLine."Unit Cost";
+                TempGRN."Item Category Code" := SalesCRLine."Item Category Code";
+                TempGRN."Net Weight" := SalesCRLine."Net Weight";
+                TempGRN."Item Reference No." := SalesCRLine."Item Reference No.";
+                TempGRN."Line No." := SalesCRLine."Line No.";
+                TempGRN."Line Amount" := SalesCRLine."Line Amount";
+                TempGRN.Description := SalesCRLine.Description;
+                TempGRN."Original Order Quantity" := SalesCRLine.Quantity;
+                TempGRN.LineType := 'C';
+                TempGRN."Inv/Cred" := 'Credit';
+                TempGRN."Cred Reason" := SalesCRLine."Return Reason Code";
+                TempGRN."Unit Cost (LCY)" := SalesCRLine."Unit Cost (LCY)";
+                if L_Item.Get(SalesCRLine."No.") then;
+                TempGRN."Vendor No." := L_Item."Vendor No.";
+                SalesCRHeader.Reset();
+                SalesCRHeader.SetRange("No.", SalesCRLine."Document No.");
+                if SalesCRHeader.FindFirst() then begin
+                    SalesCRHeader.CalcFields(Amount);
+                    TempGRN."Sell-to Customer No." := SalesCRHeader."Sell-to Customer No.";
+                    TempGRN."Location Code" := SalesCRHeader."Location Code";
+                    TempGRN."Order No." := SalesCRHeader."Return Order No.";
+                    TempGRN."Salesperson Code" := SalesCRHeader."Salesperson Code";
+                    TempGRN."Shipping Agent Code" := SalesCRHeader."Shipping Agent Code";
+                    TempGRN."Order Date" := SalesCRHeader."Document Date";
+                    TempGRN."Ship-to Code" := SalesCRHeader."Ship-to Code";
+                    TempGRN."Posting Date" := SalesCRHeader."Posting Date";
+                    TempGRN."External Document No." := SalesCRHeader."External Document No.";
+                    TempGRN."Header No." := SalesCRHeader."No.";
+                    TempGRN."Currency Factor" := SalesCRHeader."Currency Factor";
+                    TempGRN."Currency Code" := SalesCRHeader."Currency Code";
+                    TempGRN."Shipment Date" := SalesCRHeader."Shipment Date";
+                    TempGRN."Header Amount" := SalesCRHeader.Amount;
+                    cust.Reset();
+                    cust.SetRange("No.", SalesCRHeader."Sell-to Customer No.");
+                    if cust.FindFirst() then begin
+                        TempGRN."Territory Code" := cust."Territory Code";
+                    end;
+                    sales_Shipment_Header.Reset();
+                    sales_Shipment_Header.SetRange("Order No.", SalesCRHeader."Return Order No.");
+                    if sales_Shipment_Header.FindFirst() then begin
+                        TempGRN."Promised Delivery Date" := sales_Shipment_Header."Promised Delivery Date";
+
+                    end;
+                end;
+                TempGRN.Insert();
+            until SalesCRLine.Next() = 0;
+        end;
+    end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
     var
@@ -850,4 +1069,11 @@ xmlport 90016 "mio47"
             MonthStr := '0' + MonthStr;
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
+
+    var
+        Windows: Dialog;
+        ProgressCount: Integer;
+        NoOfRecs: Integer;
+        Count: Integer;
+
 }
