@@ -39,6 +39,61 @@ page 90000 "General Setup - Channels"
     {
         area(Processing)
         {
+            action("Update Sales Order Location")
+            {
+                ApplicationArea = All;
+                Image = Action;
+
+
+                trigger OnAction()
+                var
+                    L_SalesHeader: Record "Sales Header";
+                    L_SalesLine: Record "Sales Line";
+                    Rec_SalesLine: Record "Sales Line";
+                    L_Location: Record Location;
+                    LocationCode: Code[10];
+                begin
+                    Clear(LocationCode);
+                    L_Location.Reset();
+                    L_Location.SetRange("Knapp Location", false);
+                    L_Location.SetRange("Saleable Location", true);
+                    if L_Location.FindFirst() then begin
+                        LocationCode := L_Location.Code;
+                    end;
+
+                    L_SalesHeader.Reset();
+                    L_SalesHeader.CalcFields("Sent to Knapp");
+                    L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+                    L_SalesHeader.SetRange("Document Date", WorkDate());
+                    L_SalesHeader.SetRange("Knapp Order", true);
+                    //L_SalesHeader.SetRange("Sent to Knapp", false);
+                    if L_SalesHeader.FindSet() then begin
+                        repeat
+                            L_SalesLine.Reset();
+                            L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                            L_SalesLine.SetRange("Knapp Line", false);
+                            if L_SalesLine.FindFirst() then begin
+                                Rec_SalesLine.Reset();
+                                Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                                Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
+                                Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                                if Rec_SalesLine.FindSet() then begin
+                                    Rec_SalesLine.ModifyAll("Location Code", LocationCode);
+                                end;
+
+                                L_SalesHeader."Knapp Order" := false;
+                                L_SalesHeader."Location Code" := LocationCode;
+                                L_SalesHeader."Posting No." := '';
+                                L_SalesHeader.Modify();
+                            end;
+                        until L_SalesHeader.Next() = 0;
+                    end;
+                end;
+            }
+
+
             action("Update Location Code")
             {
                 ApplicationArea = All;

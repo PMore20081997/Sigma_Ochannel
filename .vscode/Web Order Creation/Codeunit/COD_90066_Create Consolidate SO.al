@@ -272,7 +272,8 @@ codeunit 90066 "Create Consolidate SO"
                         Clear(L_LineNo);
 
                         //Create Header++
-                        CreateSalesHeaderFromTemporary(Temporary_SalesLine);
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
                         repeat
                             L_LineNo := L_LineNo + 10000;
                             //Create Line++
@@ -306,7 +307,8 @@ codeunit 90066 "Create Consolidate SO"
                         Clear(L_LineNo);
 
                         //Create Header++
-                        CreateSalesHeaderFromTemporary(Temporary_SalesLine);
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
                         repeat
                             Counter += 1;
 
