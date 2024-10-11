@@ -251,94 +251,90 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.Ascending(true);
         if Temporary_SalesLine.FindSet() then begin
             repeat
-                if L_CustomerNoLoop <> Temporary_SalesLine."Sell-to Customer No." then begin
-                    // Lock the tables to work on
+                // Lock the tables to work on
+                InsertedSH.Reset();
+                InsertedSH.LockTable();
+                InsertedSL.Reset();
+                InsertedSL.LockTable();
+
+                Temporary_SalesLine_ForLoop.Reset();
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //CLear Variable++
+                    Clear(L_LineNo);
+
+                    //Create Header++
                     InsertedSH.Reset();
-                    InsertedSH.LockTable();
-                    InsertedSL.Reset();
-                    InsertedSL.LockTable();
+                    CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                    repeat
+                        L_LineNo := L_LineNo + 10000;
+                        //Create Line++
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
 
-                    Temporary_SalesLine_ForLoop.Reset();
-                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
-                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
-                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
-                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
-                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
-                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
-                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
-                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
-                    if Temporary_SalesLine_ForLoop.FindSet() then begin
-                        //CLear Variable++
-                        Clear(L_LineNo);
+                        //Moved Into Web Buffer Table++
+                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
 
-                        //Create Header++
-                        InsertedSH.Reset();
-                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
-                        repeat
-                            L_LineNo := L_LineNo + 10000;
-                            //Create Line++
-                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                        Temporary_SalesLine_ForLoop.Modify();
+                    until Temporary_SalesLine_ForLoop.Next() = 0;
 
-                            //Moved Into Web Buffer Table++
-                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
-
-                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
-                            Temporary_SalesLine_ForLoop.Modify();
-                        until Temporary_SalesLine_ForLoop.Next() = 0;
-
-                    end;
-
-                    //Sleep
-                    Sleep(10);
-
-                    Clear(Counter);
-                    Temporary_SalesLine_ForLoop.Reset();
-                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
-                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
-                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
-                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
-                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
-                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
-                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
-                    Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
-                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
-                    if Temporary_SalesLine_ForLoop.FindSet() then begin
-                        //CLear Variable++
-                        Clear(L_LineNo);
-
-                        //Create Header++
-                        InsertedSH.Reset();
-                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
-                        repeat
-                            Counter += 1;
-
-                            L_LineNo := L_LineNo + 10000;
-                            //Create Line++
-                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
-
-                            //Moved Into Web Buffer Table++
-                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
-
-                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
-                            Temporary_SalesLine_ForLoop.Modify();
-
-                            if BreakCount > 0 then begin
-                                if Counter = BreakCount then
-                                    break;
-                            end
-                            else begin
-                                if Counter = 30 then
-                                    break;
-                            end;
-                        until Temporary_SalesLine_ForLoop.Next() = 0;
-                    end;
-
-                    //Release the locktable++
-                    Commit();
-                    Sleep(10);
-
-                    L_CustomerNoLoop := Temporary_SalesLine."Sell-to Customer No.";
                 end;
+
+                //Sleep
+                Sleep(5);
+
+                Clear(Counter);
+                Temporary_SalesLine_ForLoop.Reset();
+                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
+                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                if Temporary_SalesLine_ForLoop.FindSet() then begin
+                    //CLear Variable++
+                    Clear(L_LineNo);
+
+                    //Create Header++
+                    InsertedSH.Reset();
+                    CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                    repeat
+                        Counter += 1;
+
+                        L_LineNo := L_LineNo + 10000;
+                        //Create Line++
+                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                        //Moved Into Web Buffer Table++
+                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                        Temporary_SalesLine_ForLoop.Modify();
+
+                        if BreakCount > 0 then begin
+                            if Counter = BreakCount then
+                                break;
+                        end
+                        else begin
+                            if Counter = 30 then
+                                break;
+                        end;
+                    until Temporary_SalesLine_ForLoop.Next() = 0;
+                end;
+
+                //Release the locktable++
+                Commit();
+                Sleep(5);
             until Temporary_SalesLine.Next() = 0;
         end;
     end;
