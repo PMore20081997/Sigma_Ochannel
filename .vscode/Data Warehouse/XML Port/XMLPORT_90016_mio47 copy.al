@@ -727,9 +727,7 @@ xmlport 90028 "mio47-1"
                     end else begin
                         Prod_Code := TempGRN."Variant Code";
                     end;
-                    Qty := format(TempGRN."Qty.");
-                    Val := format(TempGRN.Amount);
-                    Cst := format(TempGRN."Unit Cost (LCY)");
+
                     Del_Date := FormatDateForCSV(TempGRN."Shipment Date");
 
                     Rep_Code := TempGRN."Territory Code";
@@ -742,9 +740,9 @@ xmlport 90028 "mio47-1"
                     Op_Code := TempGRN."Salesperson Code";
                     Ord_Type := '';
                     Round := TempGRN."Shipping Agent Code";
-                    Pack_Price := Format(TempGRN."Unit Price");
+
                     Prod_Group := TempGRN."Item Category Code";
-                    Margin := Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
+
                     Period := Format(TempGRN."Posting Date", 0, '<Month Text>');
                     Period := CopyStr(Period, 1, 3);
 
@@ -800,11 +798,10 @@ xmlport 90028 "mio47-1"
                     Sord_Line_No := Format(TempGRN."Line No.");
                     // Sord_Line_No := CopyStr(Sord_Line_No, 1, 1);
                     Pord_Line_No := '';
-                    ActCst := Format(TempGRN."Line Amount");
+                    //ActCst := Format(TempGRN."Line Amount");
                     Sord_Line_Desc := TempGRN.Description;
-                    Qty_Ordered := Format(TempGRN."Original Order Quantity");
-                    Landed_Cost := Format(TempGRN."Unit Cost (LCY)");
-                    FC_Val := Format(TempGRN."Header Amount");
+
+
                     Exch_Rate := Format(TempGRN."Currency Factor");
                     Foreign_Curr_Code := Format(TempGRN."Currency Code");
                     RM_Cost := '';
@@ -813,7 +810,31 @@ xmlport 90028 "mio47-1"
                     Indirect_OH := '';
                     Finishing_Costs := '';
                     Transfer_Disc := '';
-                    Av_Cost_Value := Format(TempGRN."Unit Cost");
+
+
+                    if TempGRN."Inv/Cred" = 'Credit' then begin
+                        ActCst := '-' + Format(TempGRN."Line Amount");
+                        Pack_Price := '-' + Format(TempGRN."Unit Price");
+                        Qty := '-' + format(TempGRN."Qty.");
+                        Val := '-' + format(TempGRN.Amount);
+                        Cst := '-' + format(TempGRN."Unit Cost (LCY)");
+                        Margin := '-' + Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
+                        Qty_Ordered := '-' + Format(TempGRN."Original Order Quantity");
+                        Landed_Cost := '-' + Format(TempGRN."Unit Cost (LCY)");
+                        FC_Val := '-' + Format(TempGRN."Header Amount");
+                        Av_Cost_Value := '-' + Format(TempGRN."Unit Cost");
+                    end else begin
+                        ActCst := Format(TempGRN."Line Amount");
+                        Pack_Price := Format(TempGRN."Unit Price");
+                        Qty := format(TempGRN."Qty.");
+                        Val := format(TempGRN.Amount);
+                        Cst := format(TempGRN."Unit Cost (LCY)");
+                        Margin := Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
+                        Qty_Ordered := Format(TempGRN."Original Order Quantity");
+                        Landed_Cost := Format(TempGRN."Unit Cost (LCY)");
+                        FC_Val := Format(TempGRN."Header Amount");
+                        Av_Cost_Value := Format(TempGRN."Unit Cost");
+                    end;
 
                 end;
 
@@ -978,15 +999,15 @@ xmlport 90028 "mio47-1"
                 TempGRN."Item No." := SalesCRLine."No.";
                 TempGRN."Variant Code" := SalesCRLine."Variant Code";
                 TempGRN."Document No" := SalesCRLine."Document No.";
-                TempGRN."Qty." := -SalesCRLine.Quantity;
-                TempGRN.Amount := -SalesCRLine.Amount;
+                TempGRN."Qty." := SalesCRLine.Quantity;
+                TempGRN.Amount := SalesCRLine.Amount;
                 TempGRN."Unit Price" := SalesCRLine."Unit Price";
                 TempGRN."Unit Cost" := SalesCRLine."Unit Cost";
                 TempGRN."Item Category Code" := SalesCRLine."Item Category Code";
                 TempGRN."Net Weight" := SalesCRLine."Net Weight";
                 TempGRN."Item Reference No." := SalesCRLine."Item Reference No.";
                 TempGRN."Line No." := SalesCRLine."Line No.";
-                TempGRN."Line Amount" := -SalesCRLine."Line Amount";
+                TempGRN."Line Amount" := SalesCRLine."Line Amount";
                 TempGRN.Description := SalesCRLine.Description;
                 TempGRN."Original Order Quantity" := SalesCRLine.Quantity;
                 TempGRN.LineType := 'C';
@@ -1012,7 +1033,7 @@ xmlport 90028 "mio47-1"
                     TempGRN."Currency Factor" := SalesCRHeader."Currency Factor";
                     TempGRN."Currency Code" := SalesCRHeader."Currency Code";
                     TempGRN."Shipment Date" := SalesCRHeader."Shipment Date";
-                    TempGRN."Header Amount" := -SalesCRHeader.Amount;
+                    TempGRN."Header Amount" := SalesCRHeader.Amount;
                     cust.Reset();
                     cust.SetRange("No.", SalesCRHeader."Sell-to Customer No.");
                     if cust.FindFirst() then begin
