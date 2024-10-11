@@ -492,9 +492,9 @@ xmlport 90015 "mio82"
                     // end;
                     Pord_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
                     Grn_Value := Format((Purch_Rcpt_Line."Unit Cost") * (Purch_Rcpt_Line.Quantity));
-
+                    Grn_Price := Format(Purch_Rcpt_Line."Direct Unit Cost");
                     Price_Desc := '';
-                    Grn_Price := Format(Purch_Rcpt_Line."Unit Price (LCY)");
+
                     Receipt_Date := FormatDateForCSV(L_PurchReceiptheader."Posting Date");
                     //Receipt_Date := Format(L_PurchReceiptheader."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     Due_Date := FormatDateForCSV(L_PurchReceiptheader."Due Date");
@@ -533,10 +533,12 @@ xmlport 90015 "mio82"
                     Pord_Type := '';
                     PO_Operator_Code := L_PurchReceiptheader."Purchaser Code";
 
+
                     item.Reset();
                     item.SetRange("No.", Purch_Rcpt_Line."No.");
                     if item.FindSet() then begin
-                        PIP_Code := item."No. 2"
+                        PIP_Code := item."No. 2";
+
 
                     end;
                     Narr_Date_1 := FormatDateForCSV(L_PurchReceiptheader."Document Date");
