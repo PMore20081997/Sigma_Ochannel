@@ -716,7 +716,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 22, 'Paid Sale');  // FOC Ind
                     CSVBuffer.InsertEntry(LineNo, 23, '');  // Vehicle Reg
                     CSVBuffer.InsertEntry(LineNo, 24, 'Credit');  // Inv/Cred
-                    CSVBuffer.InsertEntry(LineNo, 25, '');  // Cred Reason
+                    CSVBuffer.InsertEntry(LineNo, 25, DelChr(Format(L_SalesCreditMemoLine."Return Reason Code"), '=', ','));  // Cred Reason
                     CSVBuffer.InsertEntry(LineNo, 26, '');  // Drop Seq
                     CSVBuffer.InsertEntry(LineNo, 27, '');  // Comb Disc
                     CSVBuffer.InsertEntry(LineNo, 28, L_SalesCreditMemoHeader."Ship-to Code");  // Del Code
