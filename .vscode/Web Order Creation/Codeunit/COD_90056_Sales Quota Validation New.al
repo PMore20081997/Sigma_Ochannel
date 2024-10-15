@@ -74,7 +74,8 @@ codeunit 90056 "Web Order Sales Quota New"
             exit(ReturnValue)
         else begin
             //-------------2: Selected Customer, All Item, ErrorCode(SCAPOQ)-------------
-            ReturnValue := PerOrderSelCustomerAllItem(_InterimSalesLine, _InterimSalesHeader, Recitem."Item Category Code");
+            Clear(_RemainingQty);
+            ReturnValue := PerOrderSelCustomerAllItem(_InterimSalesLine, _InterimSalesHeader, Recitem."Item Category Code", _RemainingQty);
             if (ReturnValue <> ReturnValue::"No Entry") then
                 exit(ReturnValue)
             else begin
@@ -3842,7 +3843,7 @@ codeunit 90056 "Web Order Sales Quota New"
         end;
     end;
 
-    procedure PerOrderSelCustomerAllItem(_InterimSalesLine: Record "Interim Sales Line"; _InterimSalesHeader: Record "Interim Sales Header"; ItemCat: code[20]) ReturnValue: Option "Allowed Qty","Exceeded Qty","No Entry"
+    procedure PerOrderSelCustomerAllItem(_InterimSalesLine: Record "Interim Sales Line"; _InterimSalesHeader: Record "Interim Sales Header"; ItemCat: code[20]; Var _RemainingQty: decimal) ReturnValue: Option "Allowed Qty","Exceeded Qty","No Entry"
     var
         L_MaxOrderQty: Record "Sales Quota";
         L_DayOrderQty: Decimal;

@@ -135,61 +135,67 @@ page 90005 "Handled Web Order List"
                     L_InterimSalesHeader: record "Interim Sales Header";
                     InterimSalesLine: record "Interim Sales Line";
                     L_Date: Record Date;
+                    L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";
                 begin
-                    Clear(DocNo);
-                    RecInterimSalesHeader.Init();
-                    RecInterimSalesHeader.TransferFields(Rec);
-                    RecInterimSalesHeader."Document Type" := Rec."Document Type";
-                    IF StrPos(Rec."No.", '-') = 0 THEN
-                        DocNo := Rec."No." + '-01'
-                    ELSE
-                        DocNo := IncStr(Rec."No.");
-                    RecInterimSalesHeader."No." := DocNo;
-                    RecInterimSalesHeader.Status := Rec.Status;
-                    RecInterimSalesHeader."Order Date" := Today;
-                    RecInterimSalesHeader."Document Date" := Today;
-                    RecInterimSalesHeader."Order Created On" := CurrentDateTime;
-                    RecInterimSalesHeader."Channel Order ID" := Rec."Channel Order ID";
-                    RecInterimSalesHeader."External Document No." := Rec."External Document No.";
+                    L_HandledInterimSalesHeader.Reset();
+                    CurrPage.SetSelectionFilter(L_HandledInterimSalesHeader);
+                    if L_HandledInterimSalesHeader.FindSet() then
+                        repeat
+                            Clear(DocNo);
+                            RecInterimSalesHeader.Init();
+                            RecInterimSalesHeader.TransferFields(L_HandledInterimSalesHeader);
+                            RecInterimSalesHeader."Document Type" := L_HandledInterimSalesHeader."Document Type";
+                            IF StrPos(L_HandledInterimSalesHeader."No.", '-') = 0 THEN
+                                DocNo := L_HandledInterimSalesHeader."No." + '-01'
+                            ELSE
+                                DocNo := IncStr(L_HandledInterimSalesHeader."No.");
+                            RecInterimSalesHeader."No." := DocNo;
+                            RecInterimSalesHeader.Status := L_HandledInterimSalesHeader.Status;
+                            RecInterimSalesHeader."Order Date" := Today;
+                            RecInterimSalesHeader."Document Date" := Today;
+                            RecInterimSalesHeader."Order Created On" := CurrentDateTime;
+                            RecInterimSalesHeader."Channel Order ID" := L_HandledInterimSalesHeader."Channel Order ID";
+                            RecInterimSalesHeader."External Document No." := L_HandledInterimSalesHeader."External Document No.";
 
-                    //Update Shipment Date++
-                    L_Date.Reset();
-                    L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
-                    L_Date.SetRange(L_Date."Period Start", Today);
-                    if L_Date.FindFirst() then begin
-                        if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                            if RecInterimSalesHeader."Weekend Ship Agent Serv Code" <> '' then
-                                //Update Saturday++
-                                RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                            else begin
-                                //Update Monday
-                                RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
+                            //Update Shipment Date++
+                            L_Date.Reset();
+                            L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                            L_Date.SetRange(L_Date."Period Start", Today);
+                            if L_Date.FindFirst() then begin
+                                if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                                    if RecInterimSalesHeader."Weekend Ship Agent Serv Code" <> '' then
+                                        //Update Saturday++
+                                        RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                                    else begin
+                                        //Update Monday
+                                        RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today))
+                                    end;
+                                end else
+                                    RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today));
                             end;
-                        end else
-                            RecInterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today));
-                    end;
-                    RecInterimSalesHeader.Comments := 'Reorder';
-                    RecInterimSalesHeader.Insert(true);
+                            RecInterimSalesHeader.Comments := 'Reorder';
+                            RecInterimSalesHeader.Insert(true);
 
-                    L_InterimSalesHeader.Reset();
-                    L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
-                    L_InterimSalesHeader.SetRange("No.", DocNo);
-                    IF L_InterimSalesHeader.FindFirst() then begin
-                        L_HandledInterimSalesLine.Reset();
-                        L_HandledInterimSalesLine.SetRange("Document Type", Rec."Document Type");
-                        L_HandledInterimSalesLine.SetRange("Document No", Rec."No.");
-                        IF L_HandledInterimSalesLine.FindSet() then
-                            repeat
-                                InterimSalesLine.Init();
-                                InterimSalesLine.TransferFields(L_HandledInterimSalesLine);
-                                InterimSalesLine."Document Type" := L_InterimSalesHeader."Document Type";
-                                InterimSalesLine."Document No" := L_InterimSalesHeader."No.";
-                                InterimSalesLine.Status := L_HandledInterimSalesLine.Status;
-                                InterimSalesLine."Channel Order ID" := L_InterimSalesHeader."Channel Order ID";
-                                InterimSalesLine.Insert(true);
-                            until L_HandledInterimSalesLine.Next() = 0;
-                        Message('Order %1 created.', DocNo);
-                    end;
+                            L_InterimSalesHeader.Reset();
+                            L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
+                            L_InterimSalesHeader.SetRange("No.", DocNo);
+                            IF L_InterimSalesHeader.FindFirst() then begin
+                                L_HandledInterimSalesLine.Reset();
+                                L_HandledInterimSalesLine.SetRange("Document Type", L_HandledInterimSalesHeader."Document Type");
+                                L_HandledInterimSalesLine.SetRange("Document No", L_HandledInterimSalesHeader."No.");
+                                IF L_HandledInterimSalesLine.FindSet() then
+                                    repeat
+                                        InterimSalesLine.Init();
+                                        InterimSalesLine.TransferFields(L_HandledInterimSalesLine);
+                                        InterimSalesLine."Document Type" := L_InterimSalesHeader."Document Type";
+                                        InterimSalesLine."Document No" := L_InterimSalesHeader."No.";
+                                        InterimSalesLine.Status := L_HandledInterimSalesLine.Status;
+                                        InterimSalesLine."Channel Order ID" := L_InterimSalesHeader."Channel Order ID";
+                                        InterimSalesLine.Insert(true);
+                                    until L_HandledInterimSalesLine.Next() = 0;
+                                Message('Order %1 created.', DocNo);
+                            end;
+                        until L_HandledInterimSalesHeader.Next() = 0;
                 end;
             }
 

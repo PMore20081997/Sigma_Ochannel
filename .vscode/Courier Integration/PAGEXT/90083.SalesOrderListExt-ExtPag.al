@@ -67,7 +67,6 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                     ItemList: List of [Text];
                     ApprovalsMgmt: Codeunit "Approvals Mgmt.";
                     L_Location: Record Location;
-
                     MinOrder_Header: Record "Sales Header";
                     L_SumMin: Decimal;
                 begin
@@ -171,7 +170,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                     // end;
 
                                     //Send for Release order if Approval not required
-                                    Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                                    Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
                                     if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
                                         Clear(L_SumMin);
                                         MinOrder_Header.Reset();

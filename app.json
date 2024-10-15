@@ -2,7 +2,7 @@
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
   "name": "Ochannel 2.0",
   "publisher": "Robosol",
-  "version": "24.0.0.81",
+  "version": "24.0.0.84",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -66,7 +66,7 @@
   "idRanges": [
     {
       "from": 90000,
-      "to": 90201
+      "to": 90203
     }
   ],
   "contextSensitiveHelpUrl": "https://Robosol-Ochannel.com/help/",

@@ -39,135 +39,135 @@ page 90000 "General Setup - Channels"
     {
         area(Processing)
         {
-            action("Update Sales Order Location")
-            {
-                ApplicationArea = All;
-                Image = Action;
+            // action("Update Sales Order Location")
+            // {
+            //     ApplicationArea = All;
+            //     Image = Action;
 
 
-                trigger OnAction()
-                var
-                    L_SalesHeader: Record "Sales Header";
-                    L_SalesLine: Record "Sales Line";
-                    Rec_SalesLine: Record "Sales Line";
-                    L_Location: Record Location;
-                    LocationCode: Code[10];
-                begin
-                    Clear(LocationCode);
-                    L_Location.Reset();
-                    L_Location.SetRange("Knapp Location", false);
-                    L_Location.SetRange("Saleable Location", true);
-                    if L_Location.FindFirst() then begin
-                        LocationCode := L_Location.Code;
-                    end;
+            //     trigger OnAction()
+            //     var
+            //         L_SalesHeader: Record "Sales Header";
+            //         L_SalesLine: Record "Sales Line";
+            //         Rec_SalesLine: Record "Sales Line";
+            //         L_Location: Record Location;
+            //         LocationCode: Code[10];
+            //     begin
+            //         Clear(LocationCode);
+            //         L_Location.Reset();
+            //         L_Location.SetRange("Knapp Location", false);
+            //         L_Location.SetRange("Saleable Location", true);
+            //         if L_Location.FindFirst() then begin
+            //             LocationCode := L_Location.Code;
+            //         end;
 
-                    L_SalesHeader.Reset();
-                    L_SalesHeader.CalcFields("Sent to Knapp");
-                    L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
-                    L_SalesHeader.SetRange("Document Date", WorkDate());
-                    L_SalesHeader.SetRange("Knapp Order", true);
-                    //L_SalesHeader.SetRange("Sent to Knapp", false);
-                    if L_SalesHeader.FindSet() then begin
-                        repeat
-                            L_SalesLine.Reset();
-                            L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
-                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                            L_SalesLine.SetRange("Knapp Line", false);
-                            if L_SalesLine.FindFirst() then begin
-                                Rec_SalesLine.Reset();
-                                Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
-                                Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
-                                Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                                if Rec_SalesLine.FindSet() then begin
-                                    Rec_SalesLine.ModifyAll("Location Code", LocationCode);
-                                end;
+            //         L_SalesHeader.Reset();
+            //         L_SalesHeader.CalcFields("Sent to Knapp");
+            //         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+            //         L_SalesHeader.SetRange("Document Date", WorkDate());
+            //         L_SalesHeader.SetRange("Knapp Order", true);
+            //         //L_SalesHeader.SetRange("Sent to Knapp", false);
+            //         if L_SalesHeader.FindSet() then begin
+            //             repeat
+            //                 L_SalesLine.Reset();
+            //                 L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+            //                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+            //                 L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+            //                 L_SalesLine.SetRange("Knapp Line", false);
+            //                 if L_SalesLine.FindFirst() then begin
+            //                     Rec_SalesLine.Reset();
+            //                     Rec_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+            //                     Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
+            //                     Rec_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+            //                     if Rec_SalesLine.FindSet() then begin
+            //                         Rec_SalesLine.ModifyAll("Location Code", LocationCode);
+            //                     end;
 
-                                L_SalesHeader."Knapp Order" := false;
-                                L_SalesHeader."Location Code" := LocationCode;
-                                L_SalesHeader."Posting No." := '';
-                                L_SalesHeader.Modify();
-                            end;
-                        until L_SalesHeader.Next() = 0;
-                    end;
-                end;
-            }
+            //                     L_SalesHeader."Knapp Order" := false;
+            //                     L_SalesHeader."Location Code" := LocationCode;
+            //                     L_SalesHeader."Posting No." := '';
+            //                     L_SalesHeader.Modify();
+            //                 end;
+            //             until L_SalesHeader.Next() = 0;
+            //         end;
+            //     end;
+            // }
 
 
-            action("Update Location Code")
-            {
-                ApplicationArea = All;
-                Caption = 'Update Knapp Location Code';
+            // action("Update Location Code")
+            // {
+            //     ApplicationArea = All;
+            //     Caption = 'Update Knapp Location Code';
 
-                trigger OnAction()
-                var
-                    L_SalesHeader: Record "Sales Header";
-                    L_Location: Record Location;
-                    L_SalesLine: Record "Sales Line";
-                begin
-                    L_Location.Reset();
-                    L_Location.SetRange("Knapp Location", true);
-                    if L_Location.FindFirst() then;
+            //     trigger OnAction()
+            //     var
+            //         L_SalesHeader: Record "Sales Header";
+            //         L_Location: Record Location;
+            //         L_SalesLine: Record "Sales Line";
+            //     begin
+            //         L_Location.Reset();
+            //         L_Location.SetRange("Knapp Location", true);
+            //         if L_Location.FindFirst() then;
 
-                    L_SalesHeader.Reset();
-                    L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
-                    L_SalesHeader.SetRange("Knapp Order", true);
-                    L_SalesHeader.SetRange("Web Order", true);
-                    L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Released);
-                    L_SalesHeader.SetFilter("Location Code", '<>%1', L_Location.Code);
-                    if L_SalesHeader.FindSet() then begin
-                        repeat
-                            L_SalesHeader."Location Code" := L_Location.Code;
-                            L_SalesHeader.Modify();
+            //         L_SalesHeader.Reset();
+            //         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+            //         L_SalesHeader.SetRange("Knapp Order", true);
+            //         L_SalesHeader.SetRange("Web Order", true);
+            //         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Released);
+            //         L_SalesHeader.SetFilter("Location Code", '<>%1', L_Location.Code);
+            //         if L_SalesHeader.FindSet() then begin
+            //             repeat
+            //                 L_SalesHeader."Location Code" := L_Location.Code;
+            //                 L_SalesHeader.Modify();
 
-                            L_SalesLine.Reset();
-                            L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                            if L_SalesLine.FindSet() then begin
-                                L_SalesLine.ModifyAll("Location Code", L_Location.Code);
-                            end;
-                        until L_SalesHeader.Next() = 0;
-                    end;
-                end;
-            }
+            //                 L_SalesLine.Reset();
+            //                 L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+            //                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+            //                 L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+            //                 if L_SalesLine.FindSet() then begin
+            //                     L_SalesLine.ModifyAll("Location Code", L_Location.Code);
+            //                 end;
+            //             until L_SalesHeader.Next() = 0;
+            //         end;
+            //     end;
+            // }
 
-            action("Update Qty. to Ship")
-            {
-                ApplicationArea = All;
-                Caption = 'Update Qty. to Ship';
+            // action("Update Qty. to Ship")
+            // {
+            //     ApplicationArea = All;
+            //     Caption = 'Update Qty. to Ship';
 
-                trigger OnAction()
-                var
-                    L_SalesHeader: Record "Sales Header";
-                    L_SalesLine: Record "Sales Line";
-                begin
-                    L_SalesHeader.Reset();
-                    L_SalesHeader.CalcFields("Inv. Pick Exist");
-                    L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
-                    L_SalesHeader.SetRange("Knapp Order", false);
-                    L_SalesHeader.SetRange("Inv. Pick Exist", false);
-                    L_SalesHeader.SetFilter(Status, '%1|%2', L_SalesHeader.Status::Open, L_SalesHeader.Status::Released);
-                    if L_SalesHeader.FindSet() then begin
-                        repeat
-                            L_SalesLine.Reset();
-                            L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                            L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                            L_SalesLine.SetFilter(Quantity, '>0');
-                            L_SalesLine.SetFilter("Qty. to Ship", '0');
-                            if L_SalesLine.FindSet() then begin
-                                repeat
-                                    L_SalesLine.Validate("Qty. to Ship", L_SalesLine."Outstanding Quantity");
-                                    L_SalesLine.Validate("Qty. to Invoice", L_SalesLine."Outstanding Quantity");
-                                    L_SalesLine.Modify(true);
-                                    Commit();
-                                until L_SalesLine.Next() = 0;
-                            end;
-                        until L_SalesHeader.Next() = 0;
-                    end;
-                end;
-            }
+            //     trigger OnAction()
+            //     var
+            //         L_SalesHeader: Record "Sales Header";
+            //         L_SalesLine: Record "Sales Line";
+            //     begin
+            //         L_SalesHeader.Reset();
+            //         L_SalesHeader.CalcFields("Inv. Pick Exist");
+            //         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+            //         L_SalesHeader.SetRange("Knapp Order", false);
+            //         L_SalesHeader.SetRange("Inv. Pick Exist", false);
+            //         L_SalesHeader.SetFilter(Status, '%1|%2', L_SalesHeader.Status::Open, L_SalesHeader.Status::Released);
+            //         if L_SalesHeader.FindSet() then begin
+            //             repeat
+            //                 L_SalesLine.Reset();
+            //                 L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+            //                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+            //                 L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+            //                 L_SalesLine.SetFilter(Quantity, '>0');
+            //                 L_SalesLine.SetFilter("Qty. to Ship", '0');
+            //                 if L_SalesLine.FindSet() then begin
+            //                     repeat
+            //                         L_SalesLine.Validate("Qty. to Ship", L_SalesLine."Outstanding Quantity");
+            //                         L_SalesLine.Validate("Qty. to Invoice", L_SalesLine."Outstanding Quantity");
+            //                         L_SalesLine.Modify(true);
+            //                         Commit();
+            //                     until L_SalesLine.Next() = 0;
+            //                 end;
+            //             until L_SalesHeader.Next() = 0;
+            //         end;
+            //     end;
+            // }
         }
     }
 

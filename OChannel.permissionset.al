@@ -205,5 +205,6 @@ permissionset 90000 OChannel
         table "Item Variant With Free Qty" = X,
         tabledata TempGRN = RIMD,
         table TempGRN = X,
-        xmlport "mio47-1" = X;
+        xmlport "mio47-1" = X,
+        codeunit "Manage Time duration" = X;
 }

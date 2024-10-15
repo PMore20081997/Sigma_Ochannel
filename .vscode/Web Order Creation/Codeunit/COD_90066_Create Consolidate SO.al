@@ -61,8 +61,9 @@ codeunit 90066 "Create Consolidate SO"
                                 //Create Lines++
                                 CreateTemporarySalesLine(L_InterimSL, _InterimSH);
 
-                                //Create Lines For Loop++
-                                CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                                //This code Move into ProcessTemporarySalesLinetoSalesOrder function to reduce the time+++
+                                // //Create Lines For Loop++ 
+                                // CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
                             end;
                         end;
                     end;
@@ -86,7 +87,8 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine.SetRange(Type, Temporary_SalesLine.Type::Item);
         Temporary_SalesLine.SetRange("Changed UnitPrice", _InterimSalesLine."Changed UnitPrice");
-        Temporary_SalesLine.SetRange("Unit Price", _InterimSalesLine."Unit Price");
+        if _InterimSalesLine."Changed UnitPrice" = true then
+            Temporary_SalesLine.SetRange("Unit Price", _InterimSalesLine."Unit Price");
         if Temporary_SalesLine.FindFirst() then begin
             Temporary_SalesLine.Quantity := Temporary_SalesLine.Quantity + _InterimSalesLine."Qty. to Deliver";
 
@@ -124,7 +126,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine."Temp Web Order No." := _InterimSH."No.";
             Temporary_SalesLine."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
-            Temporary_SalesLine."Unit Price" := _InterimSalesLine."Unit Price";
+            if _InterimSalesLine."Changed UnitPrice" = true then
+                Temporary_SalesLine."Unit Price" := _InterimSalesLine."Unit Price";
 
 
             //Update KNAP Line+++
@@ -155,7 +158,8 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine_ForLoop.SetRange("Location Code", _InterimSH."Location Code");
         Temporary_SalesLine_ForLoop.SetRange(Type, Temporary_SalesLine_ForLoop.Type::Item);
         Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", _InterimSalesLine."Changed UnitPrice");
-        Temporary_SalesLine_ForLoop.SetRange("Unit Price", _InterimSalesLine."Unit Price");
+        if _InterimSalesLine."Changed UnitPrice" = true then
+            Temporary_SalesLine_ForLoop.SetRange("Unit Price", _InterimSalesLine."Unit Price");
         if Temporary_SalesLine_ForLoop.FindFirst() then begin
             Temporary_SalesLine_ForLoop.Quantity := Temporary_SalesLine_ForLoop.Quantity + _InterimSalesLine."Qty. to Deliver";
 
@@ -192,7 +196,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine_ForLoop."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine_ForLoop."Temp Web Order No." := _InterimSH."No.";
             Temporary_SalesLine_ForLoop."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
-            Temporary_SalesLine_ForLoop."Unit Price" := _InterimSalesLine."Unit Price";
+            if _InterimSalesLine."Changed UnitPrice" = true then
+                Temporary_SalesLine_ForLoop."Unit Price" := _InterimSalesLine."Unit Price";
 
             //Update KNAP Line+++
             if (CheckKnaapCustomer(Temporary_SalesLine_ForLoop."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine_ForLoop."No.") = true) then begin
@@ -235,10 +240,25 @@ codeunit 90066 "Create Consolidate SO"
         BreakCount: Integer;
         L_LineNo: Integer;
         L_CustomerNoLoop: Code[20];
+        L_TotalLoopCount: Integer;
     begin
+        //Insert Data in Temp Table for Loop+++
+        Temporary_SalesLine_ForLoop.Reset();
+        Temporary_SalesLine_ForLoop.DeleteAll();
+        Temporary_SalesLine.Reset();
+        if Temporary_SalesLine.FindSet() then begin
+            repeat
+                Temporary_SalesLine_ForLoop.Init();
+                Temporary_SalesLine_ForLoop.TransferFields(Temporary_SalesLine);
+                Temporary_SalesLine_ForLoop.Insert();
+            until Temporary_SalesLine.Next() = 0;
+        end;
+
+
         //clear Variable++
         Clear(L_LineNo);
         Clear(L_CustomerNoLoop);
+        Clear(L_TotalLoopCount);
 
         //For KNAAP Order+++
         GeneralSetupChannel.Get();
@@ -251,93 +271,235 @@ codeunit 90066 "Create Consolidate SO"
         Temporary_SalesLine.Ascending(true);
         if Temporary_SalesLine.FindSet() then begin
             repeat
-                // Lock the tables to work on
-                InsertedSH.Reset();
-                InsertedSH.LockTable();
-                InsertedSL.Reset();
-                InsertedSL.LockTable();
+                //This line only reduce the extra loop+++
+                if L_CustomerNoLoop <> Temporary_SalesLine."Sell-to Customer No." then begin
 
-                Temporary_SalesLine_ForLoop.Reset();
-                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
-                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
-                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
-                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
-                //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
-                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
-                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
-                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
-                if Temporary_SalesLine_ForLoop.FindSet() then begin
-                    //CLear Variable++
-                    Clear(L_LineNo);
-
-                    //Create Header++
+                    // Lock the tables to work on
                     InsertedSH.Reset();
-                    CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
-                    repeat
-                        L_LineNo := L_LineNo + 10000;
-                        //Create Line++
-                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+                    InsertedSH.LockTable();
+                    // InsertedSL.Reset();
+                    // InsertedSL.LockTable();
 
-                        //Moved Into Web Buffer Table++
-                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+                    #Region MANUAL order Processs+++++++++++++++++++++++++++++Start+++++++++++++++++++++++++++++++++++++++++++
 
-                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
-                        Temporary_SalesLine_ForLoop.Modify();
-                    until Temporary_SalesLine_ForLoop.Next() = 0;
+                    #Region Changed UnitPrice equal to false+++++++++++
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
+                    Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", false);
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
 
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Moved Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+
+                    end;
+                    #EndRegion Changed UnitPrice equal to false+++++++++++
+
+                    #Region Changed UnitPrice equal to True+++++++++++
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
+                    Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", true);
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
+
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Moved Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+
+                    end;
+                    #EndRegion Changed UnitPrice equal to True+++++++++++
+
+                    #EndRegion MANUAL order Processs+++++++++++++++++++++++++++++End+++++++++++++++++++++++++++++++++++++++++++
+
+                    //System Rest for 5 milisecond++
+                    Sleep(5);
+
+
+                    #Region KNAPP order Processs+++++++++++++++++++++++++++++Start+++++++++++++++++++++++++++++++++++++++++++
+
+                    #Region Changed UnitPrice equal to false+++++++++++
+                    Clear(Counter);
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
+                    Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", false);
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
+                        Clear(L_TotalLoopCount);
+
+                        //Get Total Count++
+                        L_TotalLoopCount := Temporary_SalesLine_ForLoop.Count;
+
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_TotalLoopCount -= 1;
+                            Counter += 1;
+
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Moved Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+
+                            if BreakCount > 0 then begin
+                                if Counter = BreakCount then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end else begin
+                                if Counter = 30 then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end;
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+                    end;
+                    #EndRegion Changed UnitPrice equal to false+++++++++++
+
+                    #Region Changed UnitPrice equal to True+++++++++++
+                    Clear(Counter);
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                    Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                    Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
+                    Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
+                    //Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
+                    Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", true);
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
+                        Clear(L_TotalLoopCount);
+
+                        //Get Total Count++
+                        L_TotalLoopCount := Temporary_SalesLine_ForLoop.Count;
+
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_TotalLoopCount -= 1;
+                            Counter += 1;
+
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Moved Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+
+                            if BreakCount > 0 then begin
+                                if Counter = BreakCount then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end else begin
+                                if Counter = 30 then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end;
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+                    end;
+                    #EndRegion Changed UnitPrice equal to True+++++++++++
+
+                    #EndRegion KNAPP order Processs+++++++++++++++++++++++++++++End+++++++++++++++++++++++++++++++++++++++++++
+
+                    //Release the locktable++
+                    Commit();
+                    Sleep(10);
+                    L_CustomerNoLoop := Temporary_SalesLine."Sell-to Customer No.";
                 end;
-
-                //Sleep
-                Sleep(5);
-
-                Clear(Counter);
-                Temporary_SalesLine_ForLoop.Reset();
-                Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
-                Temporary_SalesLine_ForLoop.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
-                Temporary_SalesLine_ForLoop.SetRange("Ship-to Code", Temporary_SalesLine."Ship-to Code");
-                Temporary_SalesLine_ForLoop.SetRange("Location Code", Temporary_SalesLine."Location Code");
-                //Temporary_SalesLine_ForLoop.SetRange("Shipment Date", Temporary_SalesLine."Shipment Date");
-                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Code", Temporary_SalesLine."Shipping Agent Code");
-                Temporary_SalesLine_ForLoop.SetRange("Shipping Agent Service Code", Temporary_SalesLine."Shipping Agent Service Code");
-                Temporary_SalesLine_ForLoop.SetRange("Changed UnitPrice", Temporary_SalesLine."Changed UnitPrice");
-                Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
-                if Temporary_SalesLine_ForLoop.FindSet() then begin
-                    //CLear Variable++
-                    Clear(L_LineNo);
-
-                    //Create Header++
-                    InsertedSH.Reset();
-                    CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
-                    repeat
-                        Counter += 1;
-
-                        L_LineNo := L_LineNo + 10000;
-                        //Create Line++
-                        CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
-
-                        //Moved Into Web Buffer Table++
-                        InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
-
-                        Temporary_SalesLine_ForLoop."System-Created Entry" := true;
-                        Temporary_SalesLine_ForLoop.Modify();
-
-                        if BreakCount > 0 then begin
-                            if Counter = BreakCount then
-                                break;
-                        end
-                        else begin
-                            if Counter = 30 then
-                                break;
-                        end;
-                    until Temporary_SalesLine_ForLoop.Next() = 0;
-                end;
-
-                //Release the locktable++
-                Commit();
-                Sleep(5);
             until Temporary_SalesLine.Next() = 0;
         end;
     end;
+
+
     // procedure ProcessTemporarySalesLinetoSalesOrder()
     // var
     //     L_InterimSalesHeader: Record "Interim Sales Header";

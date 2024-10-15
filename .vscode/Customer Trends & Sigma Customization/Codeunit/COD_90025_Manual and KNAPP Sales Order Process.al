@@ -16,7 +16,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                 end;
             KnappNonKnappOrdersLabel:
                 begin
-                    UpdateKnappAndNonKnappVariant();
+                    //UpdateKnappAndNonKnappVariant();
                 end;
         end;
     end;
@@ -39,7 +39,6 @@ codeunit 90025 "Manual/KNAAP SO Process"
         GeneralSetupChannel: Record "General Setup - Channels";
         L_SalesLine: Record "Sales Line";
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
-
         MinOrder_Header: Record "Sales Header";
         L_SumMin: Decimal;
     begin
@@ -84,7 +83,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
                         //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
                         if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
@@ -138,7 +137,6 @@ codeunit 90025 "Manual/KNAAP SO Process"
         ApprovalMgmt: Codeunit "Approvals Mgmt.";
         L_SalesLine: Record "Sales Line";
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
-
         MinOrder_Header: Record "Sales Header";
         L_SumMin: Decimal;
     begin
@@ -180,7 +178,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
                         //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
+                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
                         if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
@@ -217,46 +215,46 @@ codeunit 90025 "Manual/KNAAP SO Process"
         end;
     end;
 
-    local procedure UpdateKnappAndNonKnappVariant()
-    var
-        L_SalesHeader: Record "Sales Header";
-        Rec_SalesHeader: Record "Sales Header";
-        BatchProcessingMgt: Codeunit "Batch Processing Mgt.";
-        RecRef: RecordRef;
-        UdateVariantonSO: Codeunit "Udate Variant on SO";
-        ApprovalMgmt: Codeunit "Approvals Mgmt.";
-        Counter: Integer;
-    begin
-        Clear(Counter);
-        Clear(L_SalesHeader);
-        L_SalesHeader.Reset();
-        L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
-        L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
-        L_SalesHeader.SetRange("Web Order", true);
-        L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-3D', WorkDate()), WorkDate());
-        if L_SalesHeader.FindSet() then begin
-            repeat
-                Counter += 1;
-                Rec_SalesHeader.Reset();
-                Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
-                Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
-                if Rec_SalesHeader.FindFirst() then begin
-                    //Update Variant Code
-                    UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
-                    Commit();
+    // local procedure UpdateKnappAndNonKnappVariant()
+    // var
+    //     L_SalesHeader: Record "Sales Header";
+    //     Rec_SalesHeader: Record "Sales Header";
+    //     BatchProcessingMgt: Codeunit "Batch Processing Mgt.";
+    //     RecRef: RecordRef;
+    //     UdateVariantonSO: Codeunit "Udate Variant on SO";
+    //     ApprovalMgmt: Codeunit "Approvals Mgmt.";
+    //     Counter: Integer;
+    // begin
+    //     Clear(Counter);
+    //     Clear(L_SalesHeader);
+    //     L_SalesHeader.Reset();
+    //     L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+    //     L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
+    //     L_SalesHeader.SetRange("Web Order", true);
+    //     L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-3D', WorkDate()), WorkDate());
+    //     if L_SalesHeader.FindSet() then begin
+    //         repeat
+    //             Counter += 1;
+    //             Rec_SalesHeader.Reset();
+    //             Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
+    //             Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
+    //             if Rec_SalesHeader.FindFirst() then begin
+    //                 //Update Variant Code
+    //                 UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
+    //                 Commit();
 
-                    //Release Sales Order
-                    if ApprovalMgmt.IsSalesHeaderPendingApproval(Rec_SalesHeader) = false then begin
-                        BatchProcessingMgt.SetProcessingCodeunit(Codeunit::"Sales Manual Release");
-                        RecRef.GetTable(Rec_SalesHeader);
-                        BatchProcessingMgt.BatchProcess(RecRef, Enum::"Error Handling Options"::"Show Notification");
-                    end;
+    //                 //Release Sales Order
+    //                 if ApprovalMgmt.IsSalesHeaderPendingApproval(Rec_SalesHeader) = false then begin
+    //                     BatchProcessingMgt.SetProcessingCodeunit(Codeunit::"Sales Manual Release");
+    //                     RecRef.GetTable(Rec_SalesHeader);
+    //                     BatchProcessingMgt.BatchProcess(RecRef, Enum::"Error Handling Options"::"Show Notification");
+    //                 end;
 
-                    //Code to process only 500 Orders then exit the code
-                    if Counter = 500 then
-                        exit;
-                end;
-            until L_SalesHeader.Next() = 0;
-        end;
-    end;
+    //                 //Code to process only 500 Orders then exit the code
+    //                 if Counter = 500 then
+    //                     exit;
+    //             end;
+    //         until L_SalesHeader.Next() = 0;
+    //     end;
+    // end;
 }

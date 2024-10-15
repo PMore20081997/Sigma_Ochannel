@@ -66,36 +66,38 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
 
                                 //Send for Release order if Approval not required
                                 if L_RequiredRelease = true then begin
-                                    L_ReleaseSalesHeader.Reset();
-                                    L_ReleaseSalesHeader.SetRange("No.", Rec_SalesHeader."No.");
-                                    L_ReleaseSalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type");
-                                    if L_ReleaseSalesHeader.FindFirst() then begin
-                                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount);
-                                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
-                                            Clear(L_SumMin);
-                                            MinOrder_Header.Reset();
-                                            MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
-                                            MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
-                                            MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
-                                            MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
-                                            if MinOrder_Header.FindSet() then begin
-                                                repeat
-                                                    MinOrder_Header.CalcFields(Amount);
-                                                    L_SumMin += MinOrder_Header.Amount;
-                                                until MinOrder_Header.Next() = 0;
-                                            end;
+                                    CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
+                                    Commit();
+                                    // L_ReleaseSalesHeader.Reset();
+                                    // L_ReleaseSalesHeader.SetRange("No.", Rec_SalesHeader."No.");
+                                    // L_ReleaseSalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type");
+                                    // if L_ReleaseSalesHeader.FindFirst() then begin
+                                    //     Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
+                                    //     if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                                    //         Clear(L_SumMin);
+                                    //         MinOrder_Header.Reset();
+                                    //         MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                                    //         MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                                    //         MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                                    //         MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                                    //         if MinOrder_Header.FindSet() then begin
+                                    //             repeat
+                                    //                 MinOrder_Header.CalcFields(Amount);
+                                    //                 L_SumMin += MinOrder_Header.Amount;
+                                    //             until MinOrder_Header.Next() = 0;
+                                    //         end;
 
-                                            if Rec_SalesHeader."Min Order Value" <> 0 then begin
-                                                if L_SumMin >= Rec_SalesHeader.Amount then begin
-                                                    CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
-                                                    Commit();
-                                                end;
-                                            end else begin
-                                                CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
-                                                Commit();
-                                            end;
-                                        end;
-                                    end;
+                                    //         if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                                    //             if L_SumMin >= Rec_SalesHeader.Amount then begin
+                                    //                 CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
+                                    //                 Commit();
+                                    //             end;
+                                    //         end else begin
+                                    //             CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
+                                    //             Commit();
+                                    //         end;
+                                    //     end;
+                                    // end;
                                 end;
                             end;
                         until L_SalesHeader.Next() = 0;
