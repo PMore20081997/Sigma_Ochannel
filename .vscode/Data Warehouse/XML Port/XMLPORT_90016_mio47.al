@@ -813,16 +813,16 @@ xmlport 90016 "mio47"
 
 
                     if TempGRN."Inv/Cred" = 'Credit' then begin
-                        ActCst := '-' + Format(TempGRN."Line Amount");
-                        Pack_Price := '-' + Format(TempGRN."Unit Price");
-                        Qty := '-' + format(TempGRN."Qty.");
-                        Val := '-' + format(TempGRN.Amount);
-                        Cst := '-' + format(TempGRN."Unit Cost (LCY)");
-                        Margin := '-' + Format((TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty."));
-                        Qty_Ordered := '-' + Format(TempGRN."Original Order Quantity");
-                        Landed_Cost := '-' + Format(TempGRN."Unit Cost (LCY)");
-                        FC_Val := '-' + Format(TempGRN."Header Amount");
-                        Av_Cost_Value := '-' + Format(TempGRN."Unit Cost");
+                        ActCst := '-' + Format(Abs(TempGRN."Line Amount"));
+                        Pack_Price := '-' + Format(Abs(TempGRN."Unit Price"));
+                        Qty := '-' + format(Abs(TempGRN."Qty."));
+                        Val := '-' + format(Abs(TempGRN.Amount));
+                        Cst := '-' + format(Abs(TempGRN."Unit Cost (LCY)"));
+                        Margin := '-' + Format((Abs(TempGRN."Unit Price" - TempGRN."Unit Cost") * (TempGRN."Qty.")));
+                        Qty_Ordered := '-' + Format(Abs(TempGRN."Original Order Quantity"));
+                        Landed_Cost := '-' + Format(Abs(TempGRN."Unit Cost (LCY)"));
+                        FC_Val := '-' + Format(Abs(TempGRN."Header Amount"));
+                        Av_Cost_Value := '-' + Format(Abs(TempGRN."Unit Cost"));
                     end else begin
                         ActCst := Format(TempGRN."Line Amount");
                         Pack_Price := Format(TempGRN."Unit Price");
@@ -874,12 +874,16 @@ xmlport 90016 "mio47"
         sales_Shipment_Header: Record "Sales Shipment Header";
         InvoiceLineNoInt: Integer;
         InvoiceLineNoTxt: Text[10];
+        StartOfMonth: Date;
+        EndOfMonth: Date;
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        StartOfMonth := DMY2Date(1, Date2DMY(TODAY, 2), Date2DMY(TODAY, 3));
+        EndOfMonth := CALCDATE('<+1M-1D>', StartOfMonth);
         SalesInvoiceLine.Reset();
         SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
         SalesInvoiceLine.SetRange(Type, SalesInvoiceLine.Type::Item);
-        //SalesInvoiceLine.SetRange("Posting Date", CalcDate('<-1D>', Today));
+        SalesInvoiceLine.SetRange("Posting Date", StartOfMonth, EndOfMonth);
         if SalesInvoiceLine.FindSet() then begin
 
             repeat
@@ -925,8 +929,10 @@ xmlport 90016 "mio47"
                 TempGRN."Inv/Cred" := 'Invoice';
                 TempGRN."Cred Reason" := '';
                 TempGRN."Unit Cost (LCY)" := SalesInvoiceLine."Unit Cost (LCY)";
+
                 if L_Item.Get(SalesInvoiceLine."No.") then;
                 TempGRN."Vendor No." := L_Item."Vendor No.";
+
                 SalesInvoiceHeader.Reset();
                 SalesInvoiceHeader.SetRange("No.", SalesInvoiceLine."Document No.");
                 if SalesInvoiceHeader.FindFirst() then begin
@@ -976,13 +982,19 @@ xmlport 90016 "mio47"
         SalesCRHeader: Record "Sales Cr.Memo Header";
         cust: Record Customer;
         L_Item: Record Item;
+        L_Variant: Record "Item Variant";
         //CreditLineNo: Text[10];
         sales_Shipment_Header: Record "Sales Shipment Header";
+        StartOfMonth: Date;
+        EndOfMonth: Date;
     begin
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        StartOfMonth := DMY2Date(1, Date2DMY(TODAY, 2), Date2DMY(TODAY, 3));
+        //EndOfMonth := CALCDATE('<+1M-1D>', StartOfMonth);
         SalesCRLine.Reset();
         SalesCRLine.SetFilter(Quantity, '>%1', 0);
         SalesCRLine.SetRange(Type, SalesCRLine.Type::Item);
+        SalesCRLine.SetRange("Posting Date", StartOfMonth, WorkDate());
         if SalesCRLine.FindSet() then begin
             repeat
                 NoOfRecs := SalesCRLine.Count;
@@ -1014,8 +1026,11 @@ xmlport 90016 "mio47"
                 TempGRN."Inv/Cred" := 'Credit';
                 TempGRN."Cred Reason" := SalesCRLine."Return Reason Code";
                 TempGRN."Unit Cost (LCY)" := SalesCRLine."Unit Cost (LCY)";
+
+                L_Item.Reset();
                 if L_Item.Get(SalesCRLine."No.") then;
                 TempGRN."Vendor No." := L_Item."Vendor No.";
+
                 SalesCRHeader.Reset();
                 SalesCRHeader.SetRange("No.", SalesCRLine."Document No.");
                 if SalesCRHeader.FindFirst() then begin
@@ -1034,16 +1049,17 @@ xmlport 90016 "mio47"
                     TempGRN."Currency Code" := SalesCRHeader."Currency Code";
                     TempGRN."Shipment Date" := SalesCRHeader."Shipment Date";
                     TempGRN."Header Amount" := SalesCRHeader.Amount;
+
                     cust.Reset();
                     cust.SetRange("No.", SalesCRHeader."Sell-to Customer No.");
                     if cust.FindFirst() then begin
                         TempGRN."Territory Code" := cust."Territory Code";
                     end;
+
                     sales_Shipment_Header.Reset();
                     sales_Shipment_Header.SetRange("Order No.", SalesCRHeader."Return Order No.");
                     if sales_Shipment_Header.FindFirst() then begin
                         TempGRN."Promised Delivery Date" := sales_Shipment_Header."Promised Delivery Date";
-
                     end;
                 end;
                 TempGRN.Insert();

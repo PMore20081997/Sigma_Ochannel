@@ -61,7 +61,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
-                // Visible = false;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -230,7 +230,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
-                //Visible = false;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
@@ -398,13 +398,13 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test30';
                 Promoted = true;
-                /// Visible = false;
+                Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin
-                    Xmlport.Run(Xmlport::"mio47-1", false, false);
+                    Xmlport.Run(Xmlport::"Product variant", false, false);
                 end;
             }
             action(Test31)
@@ -416,8 +416,10 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Image = Export;
                 ApplicationArea = All;
                 trigger OnAction()
+                var
+                    CreateCsv: Codeunit "Datawarehouse-WebDezign";
                 begin
-                    Xmlport.Run(Xmlport::mio47, false, false);
+                    CreateCsv.CreateGRN();
                 end;
             }
 

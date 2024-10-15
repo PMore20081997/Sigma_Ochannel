@@ -10,7 +10,7 @@ xmlport 90007 "mio06dp"
     Format = VariableText;
     TextEncoding = UTF8;
     UseRequestPage = false;
-    FileName = 'mio6dp.csv';
+    FileName = 'mio06dp.csv';
 
     schema
     {
