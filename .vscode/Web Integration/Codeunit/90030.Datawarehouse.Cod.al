@@ -605,7 +605,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Shipping Agent Code");  // Round
                     CSVBuffer.InsertEntry(LineNo, 15, DelChr(Format(L_SalesInvoiceLine."Unit Price"), '=', ','));  // Pack Price
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesInvoiceLine."Item Category Code");  // Prod Group
-                    CSVBuffer.InsertEntry(LineNo, 17, DelChr(Format(L_SalesInvoiceLine."Unit Price" - L_SalesInvoiceLine."Unit Cost"), '=', ','));  // Margin
+                    CSVBuffer.InsertEntry(LineNo, 17, DelChr(Format((L_SalesInvoiceLine."Unit Price" - L_SalesInvoiceLine."Unit Cost") * L_SalesInvoiceLine.Quantity), '=', ','));  // Margin
                     CSVBuffer.InsertEntry(LineNo, 18, CopyStr(Format(L_SalesInvoiceHeader."Posting Date", 0, '<Month Text>'), 1, 3));  // Period
                     if L_Item.Get(L_SalesInvoiceLine."No.") then;
                     CSVBuffer.InsertEntry(LineNo, 19, L_Item."Vendor No.");  // Supp Code
@@ -659,7 +659,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 60, Format(L_SalesInvoiceLine."Line No."));  // Sord Line No
                     CSVBuffer.InsertEntry(LineNo, 61, '');  // Pord Line No
                     CSVBuffer.InsertEntry(LineNo, 62, DelChr(Format(L_SalesInvoiceLine."Line Amount"), '=', ','));  // ActCst
-                    CSVBuffer.InsertEntry(LineNo, 63, DelChr((Format(L_SalesCreditMemoLine.Description)), '=', ','));  // Sord Line Desc
+                    CSVBuffer.InsertEntry(LineNo, 63, DelChr(Format(L_SalesInvoiceLine.Description), '=', ','));  // Sord Line Desc
                     CSVBuffer.InsertEntry(LineNo, 64, DelChr(Format(L_SalesInvoiceLine."Original Order Quantity"), '=', ','));  // Qty Ordered
                     CSVBuffer.InsertEntry(LineNo, 65, DelChr(Format(L_SalesInvoiceLine."Unit Cost (LCY)"), '=', ','));  // Landed Cost
                     CSVBuffer.InsertEntry(LineNo, 66, DelChr(Format(L_SalesInvoiceHeader.Amount), '=', ','));  // FC Val
@@ -707,7 +707,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 14, L_SalesCreditMemoHeader."Shipping Agent Code");  // Round
                     CSVBuffer.InsertEntry(LineNo, 15, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine."Unit Price")), '=', ','));  // Pack Price
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesCreditMemoLine."Item Category Code");  // Prod Group
-                    CSVBuffer.InsertEntry(LineNo, 17, '-' + Format(Abs((L_SalesCreditMemoLine."Unit Price" - L_SalesCreditMemoLine."Unit Cost") * L_SalesCreditMemoLine.Quantity)));  // Margin
+                    CSVBuffer.InsertEntry(LineNo, 17, '-' + DelChr(Format(Abs((L_SalesCreditMemoLine."Unit Price" - L_SalesCreditMemoLine."Unit Cost") * L_SalesCreditMemoLine.Quantity)), '=', ','));  // Margin
                     CSVBuffer.InsertEntry(LineNo, 18, CopyStr(Format(L_SalesCreditMemoHeader."Posting Date", 0, '<Month Text>'), 1, 3));  // Period
                     if L_Item.Get(L_SalesCreditMemoLine."No.") then;
                     CSVBuffer.InsertEntry(LineNo, 19, L_Item."Vendor No.");  // Supp Code
