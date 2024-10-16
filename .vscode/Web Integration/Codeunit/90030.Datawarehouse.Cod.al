@@ -586,7 +586,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
                 if L_SalesInvoiceHeader.FindFirst() then begin
                     L_SalesInvoiceHeader.CalcFields(Amount);
                     CSVBuffer.InsertEntry(LineNo, 1, L_SalesInvoiceHeader."Sell-to Customer No.");  // Cust Code
-                    CSVBuffer.InsertEntry(LineNo, 2, L_SalesInvoiceLine."No.");  // Prod Code
+                    if L_SalesInvoiceLine."Variant Code" = '' then begin
+                        CSVBuffer.InsertEntry(LineNo, 2, L_SalesInvoiceLine."No.");  // Prod Code
+                    end else begin
+                        CSVBuffer.InsertEntry(LineNo, 2, L_SalesInvoiceLine."Variant Code");  // Prod Code
+                    end;
                     CSVBuffer.InsertEntry(LineNo, 3, DelChr(Format(L_SalesInvoiceLine.Quantity), '=', ','));  // Qty
                     CSVBuffer.InsertEntry(LineNo, 4, DelChr(Format(L_SalesInvoiceLine.Amount), '=', ','));  // Val
                     CSVBuffer.InsertEntry(LineNo, 5, DelChr(Format(L_SalesInvoiceLine."Unit Cost (LCY)"), '=', ','));  // Cst
@@ -688,7 +692,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
                 if L_SalesCreditMemoHeader.FindFirst() then begin
                     L_SalesCreditMemoHeader.CalcFields(Amount);
                     CSVBuffer.InsertEntry(LineNo, 1, L_SalesCreditMemoHeader."Sell-to Customer No.");  // Cust Code
-                    CSVBuffer.InsertEntry(LineNo, 2, L_SalesCreditMemoLine."No.");  // Prod Code
+                    if L_SalesCreditMemoLine."Variant Code" = '' then begin
+                        CSVBuffer.InsertEntry(LineNo, 2, L_SalesCreditMemoLine."No.");  // Prod Code
+                    end else begin
+                        CSVBuffer.InsertEntry(LineNo, 2, L_SalesCreditMemoLine."Variant Code");
+                    end;
                     CSVBuffer.InsertEntry(LineNo, 3, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine.Quantity)), '=', ','));  // Qty
                     CSVBuffer.InsertEntry(LineNo, 4, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine.Amount)), '=', ','));  // Val
                     CSVBuffer.InsertEntry(LineNo, 5, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine."Unit Cost (LCY)")), '=', ','));  // Cst
@@ -787,8 +795,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Filename := 'mio47.csv';
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
-        //DownloadFromStream(GRNInstream, '', '', '', Filename);
-        UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
+        DownloadFromStream(GRNInstream, '', '', '', Filename);
+        //UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
