@@ -53,7 +53,7 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
                         repeat
                             Clear(L_RequiredRelease);
                             Rec_SalesHeader.Reset();
-                            Rec_SalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type"::Order);
+                            Rec_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type");
                             Rec_SalesHeader.SetRange("No.", L_SalesHeader."No.");
                             if Rec_SalesHeader.FindFirst() then begin
                                 //Open SO
@@ -67,8 +67,13 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
 
                                 //Send for Release order if Approval not required
                                 if L_RequiredRelease = true then begin
-                                    CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
-                                    Commit();
+                                    L_ReleaseSalesHeader.Reset();
+                                    L_ReleaseSalesHeader.SetRange("No.", Rec_SalesHeader."No.");
+                                    L_ReleaseSalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type");
+                                    if L_ReleaseSalesHeader.FindFirst() then begin
+                                        CU_ReleaseSalesDoc.PerformManualRelease(L_ReleaseSalesHeader);
+                                        Commit();
+                                    end;
                                     // L_ReleaseSalesHeader.Reset();
                                     // L_ReleaseSalesHeader.SetRange("No.", Rec_SalesHeader."No.");
                                     // L_ReleaseSalesHeader.SetRange("Document Type", Rec_SalesHeader."Document Type");

@@ -141,6 +141,8 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
             L_ItemLedgerEntry.CalcSums(Quantity);
             TotalInventory := L_ItemLedgerEntry.Quantity;
         end;
+        if TotalInventory < 0 then
+            TotalInventory := 0;
 
 
         Clear(QtyOnSO);
@@ -154,6 +156,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
             QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
         end;
+        if QtyOnSO < 0 then
+            QtyOnSO := 0;
+
 
         if (TotalInventory - QtyOnSO) > 0 then
             exit(TotalInventory - QtyOnSO)
@@ -185,6 +190,8 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
             L_ItemLedgerEntry.CalcSums(Quantity);
             PhysicalInventory := L_ItemLedgerEntry.Quantity;
         end;
+        if PhysicalInventory < 0 then
+            PhysicalInventory := 0;
 
         Clear(QtyOnSO);
         L_SalesLine.Reset();
@@ -199,6 +206,8 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
             QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
         end;
+        if QtyOnSO < 0 then
+            QtyOnSO := 0;
 
         if (PhysicalInventory - QtyOnSO) > 0 then
             exit(PhysicalInventory - QtyOnSO)
