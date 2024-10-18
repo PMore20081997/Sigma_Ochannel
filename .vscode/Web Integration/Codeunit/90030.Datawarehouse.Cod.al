@@ -110,20 +110,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio47" 05
-        // Clear(TempBlob);
-        // Clear(XMLInStream);
-        // Clear(XMLOutStream);
-        // FileName := 'mio47.csv';
-        // TempBlob.CreateOutStream(XMLOutStream);
-        // xmlmio47.SetDestination(XMLOutStream);
-        // xmlmio47.Export();
-        // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
-        // // DownloadFromStream(XMLInStream, '', '', '', FileName);
-        CreateGRN();
-        #endregion
-
-        #region "mio10" 06
+        #region "mio10" 05
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -136,7 +123,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio0617" 07
+        #region "mio0617" 06
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -149,7 +136,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06cc" 08
+        #region "mio06cc" 07
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -162,7 +149,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06cl" 09
+        #region "mio06cl" 08
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -175,7 +162,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06con" 10
+        #region "mio06con" 09
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -188,7 +175,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06cr" 11
+        #region "mio06cr" 10
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -201,7 +188,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06dp" 12
+        #region "mio06dp" 11
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -214,7 +201,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06mc" 13
+        #region "mio06mc" 12
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -227,7 +214,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06oc" 14
+        #region "mio06oc" 13
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -240,7 +227,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06rd" 15
+        #region "mio06rd" 14
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -253,7 +240,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06rp" 16
+        #region "mio06rp" 15
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -266,7 +253,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06tm" 17
+        #region "mio06tm" 16
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -279,7 +266,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06vt" 18
+        #region "mio06vt" 17
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -292,7 +279,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06cu" 19
+        #region "mio06cu" 18
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -305,7 +292,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06pg" 20
+        #region "mio06pg" 19
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -318,7 +305,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio09" 21
+        #region "mio09" 20
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -331,7 +318,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio86" 22
+        #region "mio86" 21
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -344,7 +331,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "productsc" 23
+        #region "productsc" 22
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -357,7 +344,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "sigusage" 24
+        #region "sigusage" 23
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -370,7 +357,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio82" 25
+        #region "mio82" 24
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -383,7 +370,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "contractprices" 26
+        #region "contractprices" 25
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -396,7 +383,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio06ct" 27
+        #region "mio06ct" 26
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -409,7 +396,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "productvariant" 28
+        #region "productvariant" 27
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
@@ -422,8 +409,18 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-
-
+        #region "mio47" 28
+        // Clear(TempBlob);
+        // Clear(XMLInStream);
+        // Clear(XMLOutStream);
+        // FileName := 'mio47.csv';
+        // TempBlob.CreateOutStream(XMLOutStream);
+        // xmlmio47.SetDestination(XMLOutStream);
+        // xmlmio47.Export();
+        // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        CreateGRN();
+        #endregion
 
     end;
 
