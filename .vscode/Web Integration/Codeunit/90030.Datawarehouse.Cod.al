@@ -795,8 +795,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Filename := 'mio47.csv';
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
-        DownloadFromStream(GRNInstream, '', '', '', Filename);
-        //UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
+        //DownloadFromStream(GRNInstream, '', '', '', Filename);
+        UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
