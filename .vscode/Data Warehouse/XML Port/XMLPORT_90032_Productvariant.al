@@ -377,12 +377,14 @@ xmlport 90032 "Product variant"
             tableelement("Item_Variant"; "Item Variant")
             {
 
+
                 textelement("Prod_Code")
                 {
                 }
 
                 textelement("Prod_Desc")
                 {
+
                 }
 
                 textelement("Prod_Group")
@@ -627,7 +629,7 @@ xmlport 90032 "Product variant"
 
                     end;
                     Prod_Code := Item_Variant.Code;  //variant code
-                    Prod_Desc := Item_Variant.Description;
+                    Prod_Desc := Format(Item_Variant.Description);
                     Prod_Type := '';
                     AC_2 := '';
                     AC_3 := '';

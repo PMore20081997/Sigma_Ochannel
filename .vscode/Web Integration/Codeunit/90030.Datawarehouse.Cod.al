@@ -474,6 +474,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         sales_Shipment_Header: Record "Sales Shipment Header";
         L_SalesCreditMemoLine: Record "Sales Cr.Memo Line";
         L_SalesCreditMemoHeader: Record "Sales Cr.Memo Header";
+        ItemVendor: Record "Item Vendor";
 
     begin
         Clear(CSVBuffer);
@@ -608,8 +609,22 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesInvoiceLine."Item Category Code");  // Prod Group
                     CSVBuffer.InsertEntry(LineNo, 17, DelChr(Format((L_SalesInvoiceLine."Unit Price" - L_SalesInvoiceLine."Unit Cost") * L_SalesInvoiceLine.Quantity), '=', ','));  // Margin
                     CSVBuffer.InsertEntry(LineNo, 18, CopyStr(Format(L_SalesInvoiceHeader."Posting Date", 0, '<Month Text>'), 1, 3));  // Period
-                    if L_Item.Get(L_SalesInvoiceLine."No.") then;
-                    CSVBuffer.InsertEntry(LineNo, 19, L_Item."Vendor No.");  // Supp Code
+                    //if L_Item.Get(L_SalesInvoiceLine."No.") then;
+                    if L_SalesInvoiceLine."Variant Code" = '' then begin
+                        ItemVendor.Reset();
+                        ItemVendor.SetRange("Item No.", L_SalesInvoiceLine."No.");
+                        if ItemVendor.FindFirst() then begin
+                            CSVBuffer.InsertEntry(LineNo, 19, ItemVendor."Vendor No.");  // Supp Code
+                        end else
+                            CSVBuffer.InsertEntry(LineNo, 19, '');
+                    end else begin
+                        ItemVendor.Reset();
+                        ItemVendor.SetRange("Variant Code", L_SalesInvoiceLine."Variant Code");
+                        if ItemVendor.FindFirst() then begin
+                            CSVBuffer.InsertEntry(LineNo, 19, ItemVendor."Vendor No.");  // Supp Code
+                        end else
+                            CSVBuffer.InsertEntry(LineNo, 19, '');
+                    end;
                     CSVBuffer.InsertEntry(LineNo, 20, DelChr(Format(L_SalesInvoiceLine."Net Weight"), '=', ','));  // Weight
                     CSVBuffer.InsertEntry(LineNo, 21, FormatDateForCSV(L_SalesInvoiceHeader."Order Date"));  // Ord Date
                     CSVBuffer.InsertEntry(LineNo, 22, 'Paid Sale');  // FOC Ind
