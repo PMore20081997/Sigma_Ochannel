@@ -325,6 +325,7 @@ page 90029 "Web Order Header API Card"
 
         Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
         Rec.Modify();
+        Commit();
     end;
 
     local procedure GetImplementation(var NoSeriesLine: Record "No. Series Line"): Interface "No. Series - Single"

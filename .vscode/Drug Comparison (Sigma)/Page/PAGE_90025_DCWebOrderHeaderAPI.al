@@ -328,6 +328,7 @@ page 90025 "DC Web Order Header API Card"
 
         Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
         Rec.Modify();
+        Commit();
     end;
 
 

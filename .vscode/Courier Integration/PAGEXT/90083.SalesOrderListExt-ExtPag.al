@@ -69,6 +69,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                     L_Location: Record Location;
                     MinOrder_Header: Record "Sales Header";
                     L_SumMin: Decimal;
+                    L_WarehouseActivityHeader: Record "Warehouse Activity Header";
                 begin
                     Commit();
                     Clear(L_SalesHeader);
@@ -85,6 +86,26 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                             if Rec_SalesHeader.FindFirst() then begin
                                 UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
                                 Commit();
+
+                                // if Rec_SalesHeader."Knapp Order" = true then begin
+                                //     if Rec_SalesHeader."Sent to Knapp" = true then
+                                //         break
+                                //     else begin
+                                //         UdateVariantonSO.RevalidateVariantOnSalesOrder(Rec_SalesHeader);
+                                //         Commit();
+                                //     end;
+                                // end else begin
+                                //     L_WarehouseActivityHeader.Reset();
+                                //     L_WarehouseActivityHeader.SetRange("Source Document", L_WarehouseActivityHeader."Source Document"::"Sales Order");
+                                //     L_WarehouseActivityHeader.SetRange("Source No.", Rec_SalesHeader."No.");
+                                //     L_WarehouseActivityHeader.SetRange(Type, L_WarehouseActivityHeader.Type::"Invt. Pick");
+                                //     if L_WarehouseActivityHeader.FindFirst() then
+                                //         break
+                                //     else begin
+                                //         UdateVariantonSO.RevalidateVariantOnSalesOrder(Rec_SalesHeader);
+                                //         Commit();
+                                //     end;
+                                // end;
 
                                 #Region Converting to Knapp Order and Send Approval if Update Variant is Done
                                 L_SalesLine.Reset();
