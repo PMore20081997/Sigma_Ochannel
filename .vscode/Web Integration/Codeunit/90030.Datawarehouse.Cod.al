@@ -729,8 +729,21 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesCreditMemoLine."Item Category Code");  // Prod Group
                     CSVBuffer.InsertEntry(LineNo, 17, '-' + DelChr(Format(Abs((L_SalesCreditMemoLine."Unit Price" - L_SalesCreditMemoLine."Unit Cost") * L_SalesCreditMemoLine.Quantity)), '=', ','));  // Margin
                     CSVBuffer.InsertEntry(LineNo, 18, CopyStr(Format(L_SalesCreditMemoHeader."Posting Date", 0, '<Month Text>'), 1, 3));  // Period
-                    if L_Item.Get(L_SalesCreditMemoLine."No.") then;
-                    CSVBuffer.InsertEntry(LineNo, 19, L_Item."Vendor No.");  // Supp Code
+                    if L_SalesCreditMemoLine."Variant Code" = '' then begin
+                        ItemVendor.Reset();
+                        ItemVendor.SetRange("Item No.", L_SalesCreditMemoLine."No.");
+                        if ItemVendor.FindFirst() then begin
+                            CSVBuffer.InsertEntry(LineNo, 19, ItemVendor."Vendor No.");  // Supp Code
+                        end else
+                            CSVBuffer.InsertEntry(LineNo, 19, '');
+                    end else begin
+                        ItemVendor.Reset();
+                        ItemVendor.SetRange("Variant Code", L_SalesCreditMemoLine."Variant Code");
+                        if ItemVendor.FindFirst() then begin
+                            CSVBuffer.InsertEntry(LineNo, 19, ItemVendor."Vendor No.");  // Supp Code
+                        end else
+                            CSVBuffer.InsertEntry(LineNo, 19, '');
+                    end;
                     CSVBuffer.InsertEntry(LineNo, 20, DelChr(Format(L_SalesCreditMemoLine."Net Weight"), '=', ','));  // Weight
                     CSVBuffer.InsertEntry(LineNo, 21, FormatDateForCSV(L_SalesCreditMemoHeader."Document Date"));  // Ord Date
                     CSVBuffer.InsertEntry(LineNo, 22, 'Paid Sale');  // FOC Ind
@@ -807,8 +820,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Filename := 'mio47.csv';
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
-        //DownloadFromStream(GRNInstream, '', '', '', Filename);
         UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
+        // DownloadFromStream(GRNInstream, '', '', '', Filename);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
