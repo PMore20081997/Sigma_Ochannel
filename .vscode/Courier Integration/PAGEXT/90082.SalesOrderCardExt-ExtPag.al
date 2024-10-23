@@ -65,7 +65,9 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     if L_SalesHeader.FindFirst() then begin
                         L_SalesHeader.TestField(Status, L_SalesHeader.Status::Open);
                         L_SalesHeader.TestField("Web Order", false);
-                        UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
+                        // UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
+                        // Commit();
+                        UdateVariantonSO.RevalidateVariantOnSalesOrder(L_SalesHeader);
                         Commit();
 
                         #Region Converting to Knapp Order
