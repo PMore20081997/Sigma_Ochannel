@@ -555,17 +555,17 @@ xmlport 90017 "mio03"
                 begin
 
                     Prod_Code := Item."No.";
-                    Prod_Desc := Item.Description;
+                    Prod_Desc := format(Item.Description);
                     Prod_Group := Item."Item Category Code";
                     Prod_Type := '';
                     AC_1 := item."Child Category";
-                    AC_2 := '';
+                    AC_2 := Format(Item."Business Sensitive");
                     AC_3 := format(Item."Top Category");
                     Pref_Supp := Item."Vendor No.";
                     Vat_Code := Item."VAT Prod. Posting Group";
                     AC_4 := Item."No. 2";
                     AC_5 := '';
-                    AC_6 := '';
+                    AC_6 := Format(Item.Ari);
                     if Item.Blocked = true then begin
                         Discon := 'Discontinued';
                     end else
@@ -626,7 +626,7 @@ xmlport 90017 "mio03"
                     Unit_Weight := Format(Item."Net Weight");
                     compInfo.Get();
                     Company := compInfo.Name;
-                    Zero_Discount := '';
+                    Zero_Discount := Format(Item."Zero Discount");
                     if item."Sales Blocked" = true then begin
                         Operational_Stop := 'Y';
                         Temp_Stop_on_Sales := 'Y';

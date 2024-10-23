@@ -254,7 +254,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             {
                 Caption = 'Test16';
                 Promoted = true;
-                Visible = false;
+                //Visible = false;
                 PromotedCategory = Process;
                 Image = Export;
                 ApplicationArea = All;

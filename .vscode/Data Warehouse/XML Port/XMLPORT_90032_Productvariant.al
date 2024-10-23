@@ -620,8 +620,12 @@ xmlport 90032 "Product variant"
                         Average_Cost := Format(L_Item."Unit Cost");
                         L_Item.CalcFields("Parent Category", "Child Category");
                         AC_1 := L_Item."Child Category";
-                        Parent_Category := L_Item."Parent Category";
+                        AC_2 := Format(L_Item."Business Sensitive");
+                        AC_3 := Format(L_Item."Top Category");
                         AC_4 := L_Item."No. 2";
+                        AC_6 := Format(L_Item.Ari);
+                        Parent_Category := L_Item."Parent Category";
+                        Zero_Discount := Format(L_Item."Zero Discount");
                         if L_Item.Blocked = true then begin
                             Discon := 'Discontinued';
                         end else
@@ -631,12 +635,9 @@ xmlport 90032 "Product variant"
                     Prod_Code := Item_Variant.Code;  //variant code
                     Prod_Desc := Format(Item_Variant.Description);
                     Prod_Type := '';
-                    AC_2 := '';
-                    AC_3 := '';
                     Pref_Supp := '';
                     Vat_Code := '';
                     AC_5 := '';
-                    AC_6 := '';
                     Bako_DS_Scheme := '';
                     Sedes_Pip_Code := '';
                     Sedes_AAH_Code := '';
@@ -677,7 +678,7 @@ xmlport 90032 "Product variant"
                     Unit_Weight := '';
                     compInfo.Get();
                     Company := compInfo.Name;
-                    Zero_Discount := '';
+
                     Operational_Stop := '';
                     Temp_Stop_on_Sales := '';
                     Commodity_Code := '';
