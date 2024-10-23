@@ -269,65 +269,74 @@ page 90025 "DC Web Order Header API Card"
         L_OrderLevelResponse: Record "Order Level Response";
         L_InterimSalesHeader: Record "Interim Sales Header";
     begin
-        #Region All product lines rejected Error SEQ13
-        Clear(LineCount);
-        L_Line.Reset();
-        L_Line.SetRange("Document Type", Rec."Document Type");
-        L_Line.SetRange("Document No", Rec."No.");
-        L_Line.SetRange(Type, L_Line.Type::Item);
-        if L_Line.FindSet() then
-            LineCount := L_Line.Count;
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetRange("Document Type", Rec."Document Type");
+        L_InterimSalesHeader.SetRange("No.", Rec."No.");
+        if L_InterimSalesHeader.FindFirst() then begin
+            #Region All product lines rejected Error SEQ13
+            Clear(LineCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", Rec."Document Type");
+            L_Line.SetRange("Document No", Rec."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            if L_Line.FindSet() then
+                LineCount := L_Line.Count;
 
-        Clear(ErrorCount);
-        L_Line.Reset();
-        L_Line.SetRange("Document Type", Rec."Document Type");
-        L_Line.SetRange("Document No", Rec."No.");
-        L_Line.SetRange(Type, L_Line.Type::Item);
-        L_Line.CalcFields("No of Error");
-        L_Line.SetFilter("No of Error", '>%1', 0);
-        if L_Line.FindSet() then
-            ErrorCount := L_Line.Count;
+            Clear(ErrorCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", Rec."Document Type");
+            L_Line.SetRange("Document No", Rec."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            L_Line.CalcFields("No of Error");
+            L_Line.SetFilter("No of Error", '>%1', 0);
+            if L_Line.FindSet() then
+                ErrorCount := L_Line.Count;
 
-        if LineCount = ErrorCount then begin
-            CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
-            Rec.status := Rec.status::Rejected;
-        end;
-        #endregion
-
-        PartnerErrorLog.Reset();
-        PartnerErrorLog.SetRange("Document No.", Rec."No.");
-        PartnerErrorLog.SetFilter("Item No.", '%1', '');
-        PartnerErrorLog.SetCurrentKey("Sequence No.");
-        PartnerErrorLog.Ascending(true);
-        IF PartnerErrorLog.FindFirst() THEN begin
-            L_OrderLevelResponse.Reset();
-            L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
-            if L_OrderLevelResponse.FindFirst() then begin
-                Rec."Reason Code" := L_OrderLevelResponse.Reason;
-                Rec."Reason Message" := L_OrderLevelResponse.Message;
+            if LineCount = ErrorCount then begin
+                CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
             end;
-        end else begin
-            Rec."Reason Code" := 'Order Created';
-            Rec."Reason Message" := 'Accepted';
-        end;
+            #endregion
 
-        if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
-            L_InterimSalesLine.Reset();
-            L_InterimSalesLine.SetRange("Document Type", Rec."Document Type");
-            L_InterimSalesLine.SetRange("Document No", Rec."No.");
-            L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
-            if L_InterimSalesLine.FindFirst() then begin
-                Rec.status := Rec.status::Accepted;
-                Rec."Ready to process" := true;
+            PartnerErrorLog.Reset();
+            PartnerErrorLog.SetRange("Document No.", Rec."No.");
+            PartnerErrorLog.SetFilter("Item No.", '%1', '');
+            PartnerErrorLog.SetCurrentKey("Sequence No.");
+            PartnerErrorLog.Ascending(true);
+            IF PartnerErrorLog.FindFirst() THEN begin
+                L_OrderLevelResponse.Reset();
+                L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+                if L_OrderLevelResponse.FindFirst() then begin
+                    Rec."Reason Code" := L_OrderLevelResponse.Reason;
+                    Rec."Reason Message" := L_OrderLevelResponse.Message;
+                    L_InterimSalesHeader."Reason Code" := L_OrderLevelResponse.Reason;
+                    L_InterimSalesHeader."Reason Message" := L_OrderLevelResponse.Message;
+                end;
             end else begin
-                Rec.status := Rec.status::Rejected;
+                Rec."Reason Code" := 'Order Created';
+                Rec."Reason Message" := 'Accepted';
+                L_InterimSalesHeader."Reason Code" := 'Order Created';
+                L_InterimSalesHeader."Reason Message" := 'Accepted';
             end;
-        end else begin
-            Rec.status := Rec.status::Rejected;
-        end;
 
-        Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
-        Rec.Modify();
+            if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
+                L_InterimSalesLine.Reset();
+                L_InterimSalesLine.SetRange("Document Type", Rec."Document Type");
+                L_InterimSalesLine.SetRange("Document No", Rec."No.");
+                L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                if L_InterimSalesLine.FindFirst() then begin
+                    L_InterimSalesHeader.status := L_InterimSalesHeader.status::Accepted;
+                    L_InterimSalesHeader."Ready to process" := true;
+                end else begin
+                    L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
+                end;
+            end else begin
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
+            end;
+
+            L_InterimSalesHeader."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
+            L_InterimSalesHeader.Modify();
+        end;
         Commit();
     end;
 
