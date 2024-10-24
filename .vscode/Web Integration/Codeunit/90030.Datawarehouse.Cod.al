@@ -56,6 +56,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         XMLOutStream: OutStream;
         XMLInStream: InStream;
         FileName: Text;
+        TempILE: Record TempILE;
     begin
 
         #region "mio24" 01
@@ -69,6 +70,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        TempILE.DeleteAll();
         #endregion
 
         #region "mio03" 02
