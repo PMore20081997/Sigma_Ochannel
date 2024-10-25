@@ -1334,10 +1334,10 @@ codeunit 90000 "Web Order Mgt"
         L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
         //L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
         L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
-        L_ItemLedgerEntry.SetFilter(Quantity, '>%1', 0);
+        L_ItemLedgerEntry.SetRange(Open, true);
         if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            PhysicalInventory := L_ItemLedgerEntry.Quantity;
+            L_ItemLedgerEntry.CalcSums("Remaining Quantity");
+            PhysicalInventory := L_ItemLedgerEntry."Remaining Quantity";
         end;
         if PhysicalInventory < 0 then
             PhysicalInventory := 0;

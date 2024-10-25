@@ -126,6 +126,7 @@ codeunit 90026 "Udate Variant on SO"
         QtyOnSO: Decimal;
         PhysicalInventory: Decimal;
         L_ItemLedgerEntry: Record "Item Ledger Entry";
+        tes: Codeunit "Graph Mgt - Sales Order Buffer";
     begin
 
         // L_ItemVariant.Reset();
@@ -178,14 +179,15 @@ codeunit 90026 "Udate Variant on SO"
             L_ItemLedgerEntry.Reset();
             L_ItemLedgerEntry.SETRANGE("Item No.", _SalesLine."No.");
             L_ItemLedgerEntry.SetRange("Variant Code", _ItemVariant.Code);
+            L_ItemLedgerEntry.SetRange(Open, true);
             _SalesLine.CalcFields("Saleable Location");
             if _SalesLine."Saleable Location" = false then
                 L_ItemLedgerEntry.SETRANGE("Location Code", _SalesLine."Location Code")
             else
                 L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
             if L_ItemLedgerEntry.FindSet() then begin
-                L_ItemLedgerEntry.CalcSums(Quantity);
-                PhysicalInventory := L_ItemLedgerEntry.Quantity;
+                L_ItemLedgerEntry.CalcSums("Remaining Quantity");
+                PhysicalInventory := L_ItemLedgerEntry."Remaining Quantity";
             end;
             if PhysicalInventory < 0 then
                 PhysicalInventory := 0;
@@ -274,115 +276,115 @@ codeunit 90026 "Udate Variant on SO"
     end;
 
 
-    procedure UpdateVariantOnSalesOrder(Var _SalesHeader: Record "Sales Header")
-    var
-        L_SalesLine: Record "Sales Line";
-        L_NewLineRequired: Boolean;
-        RemQty: Decimal;
-        CustomeCodeunit: Codeunit "Udate Variant on SO";
-        L_ItemVariant: Record "Item Variant";
-        L_Count: Integer;
-        QtyToApply: Decimal;
-        Window: Dialog;
-        Counter: Integer;
-        Text005: TextConst ENU = 'Updating the Variant Code...\\', ENG = 'Updating the Variant Code...\\';
-        Text006: TextConst ENU = 'Progress', ENG = 'Progress';
-        NoOfRecords: Integer;
-        Count: Integer;
-    begin
-        if _SalesHeader.IsEmpty then
-            exit;
+    // procedure UpdateVariantOnSalesOrder(Var _SalesHeader: Record "Sales Header")
+    // var
+    //     L_SalesLine: Record "Sales Line";
+    //     L_NewLineRequired: Boolean;
+    //     RemQty: Decimal;
+    //     CustomeCodeunit: Codeunit "Udate Variant on SO";
+    //     L_ItemVariant: Record "Item Variant";
+    //     L_Count: Integer;
+    //     QtyToApply: Decimal;
+    //     Window: Dialog;
+    //     Counter: Integer;
+    //     Text005: TextConst ENU = 'Updating the Variant Code...\\', ENG = 'Updating the Variant Code...\\';
+    //     Text006: TextConst ENU = 'Progress', ENG = 'Progress';
+    //     NoOfRecords: Integer;
+    //     Count: Integer;
+    // begin
+    //     if _SalesHeader.IsEmpty then
+    //         exit;
 
-        //Start Process to Update Variant Code++
-        Clear(NoOfRecords);
-        Clear(Counter);
-        Window.OPEN('Updating the Variant Code...' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+    //     //Start Process to Update Variant Code++
+    //     Clear(NoOfRecords);
+    //     Clear(Counter);
+    //     Window.OPEN('Updating the Variant Code...' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
 
-        repeat
-            NoOfRecords := _SalesHeader.Count;
-            Counter += 1;
-            IF NoOfRecords <= 100 THEN
-                Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
-            ELSE
-                IF Count MOD (NoOfRecords DIV 100) = 0 THEN BEGIN
-                    Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
-                END;
-            Window.UPDATE(3, _SalesHeader."No.");
+    //     repeat
+    //         NoOfRecords := _SalesHeader.Count;
+    //         Counter += 1;
+    //         IF NoOfRecords <= 100 THEN
+    //             Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
+    //         ELSE
+    //             IF Count MOD (NoOfRecords DIV 100) = 0 THEN BEGIN
+    //                 Window.UPDATE(1, (Counter / NoOfRecords * 10000) DIV 1)
+    //             END;
+    //         Window.UPDATE(3, _SalesHeader."No.");
 
-            L_SalesLine.Reset();
-            L_SalesLine.CalcFields("Variant Code mandatory");
-            L_SalesLine.SetRange("Document Type", _SalesHeader."Document Type");
-            L_SalesLine.SetRange("Document No.", _SalesHeader."No.");
-            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-            L_SalesLine.SetFilter("Variant Code", '%1', '');
-            L_SalesLine.SetRange("Variant Code mandatory", true);
-            L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
-            L_SalesLine.SetFilter("Location Code", '<>%1', '');
-            if L_SalesLine.FindSet() then begin
-                repeat
-                    Clear(L_NewLineRequired);
-                    Clear(RemQty);
-                    //Total required quantity 
-                    RemQty := L_SalesLine.Quantity;
+    //         L_SalesLine.Reset();
+    //         L_SalesLine.CalcFields("Variant Code mandatory");
+    //         L_SalesLine.SetRange("Document Type", _SalesHeader."Document Type");
+    //         L_SalesLine.SetRange("Document No.", _SalesHeader."No.");
+    //         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+    //         L_SalesLine.SetFilter("Variant Code", '%1', '');
+    //         L_SalesLine.SetRange("Variant Code mandatory", true);
+    //         L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
+    //         L_SalesLine.SetFilter("Location Code", '<>%1', '');
+    //         if L_SalesLine.FindSet() then begin
+    //             repeat
+    //                 Clear(L_NewLineRequired);
+    //                 Clear(RemQty);
+    //                 //Total required quantity 
+    //                 RemQty := L_SalesLine.Quantity;
 
-                    //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    //Set PriorityWithoutZero++
-                    Clear(L_ItemVariant);
-                    L_ItemVariant.Reset();
-                    CustomeCodeunit.SetPriorityWithoutZero(L_SalesLine, L_ItemVariant);
-                    Clear(L_Count);
-                    L_Count := L_ItemVariant.Count;
+    //                 //Without Zero and based on priority++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //                 //Set PriorityWithoutZero++
+    //                 Clear(L_ItemVariant);
+    //                 L_ItemVariant.Reset();
+    //                 CustomeCodeunit.SetPriorityWithoutZero(L_SalesLine, L_ItemVariant);
+    //                 Clear(L_Count);
+    //                 L_Count := L_ItemVariant.Count;
 
-                    //Process to update variant code and create new line if required++
-                    if L_Count > 0 then begin
-                        while (RemQty > 0) AND (L_Count > 0) do begin
-                            if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) > 0 then begin
-                                if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then begin
-                                    if L_NewLineRequired = false then begin
-                                        L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
-                                        L_SalesLine.Validate("Original Quantity", L_SalesLine.Quantity);
-                                        L_SalesLine.Validate("Variant Created By", L_SalesLine."Line No."); //Original Line Number
-                                        L_SalesLine.Modify();
-                                        RemQty := RemQty - L_SalesLine.Quantity;
-                                    end else begin
-                                        Clear(QtyToApply);
-                                        if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
-                                            QtyToApply := RemQty
-                                        else
-                                            QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+    //                 //Process to update variant code and create new line if required++
+    //                 if L_Count > 0 then begin
+    //                     while (RemQty > 0) AND (L_Count > 0) do begin
+    //                         if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) > 0 then begin
+    //                             if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then begin
+    //                                 if L_NewLineRequired = false then begin
+    //                                     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+    //                                     L_SalesLine.Validate("Original Quantity", L_SalesLine.Quantity);
+    //                                     L_SalesLine.Validate("Variant Created By", L_SalesLine."Line No."); //Original Line Number
+    //                                     L_SalesLine.Modify();
+    //                                     RemQty := RemQty - L_SalesLine.Quantity;
+    //                                 end else begin
+    //                                     Clear(QtyToApply);
+    //                                     if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+    //                                         QtyToApply := RemQty
+    //                                     else
+    //                                         QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
 
-                                        CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
-                                        RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
-                                    end;
-                                end else begin
-                                    if L_NewLineRequired = false then begin
-                                        L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
-                                        L_SalesLine.Validate(Quantity, CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant));
-                                        L_SalesLine.Validate("Original Quantity", RemQty);
-                                        L_SalesLine.Modify();
-                                        RemQty := RemQty - L_SalesLine.Quantity;
-                                        L_NewLineRequired := true;
-                                    end else begin
-                                        Clear(QtyToApply);
-                                        if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
-                                            QtyToApply := RemQty
-                                        else
-                                            QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
-                                        CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
-                                        RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
-                                    end;
-                                end;
-                            end;
+    //                                     CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+    //                                     RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+    //                                 end;
+    //                             end else begin
+    //                                 if L_NewLineRequired = false then begin
+    //                                     L_SalesLine.Validate("Variant Code", L_ItemVariant.Code);
+    //                                     L_SalesLine.Validate(Quantity, CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant));
+    //                                     L_SalesLine.Validate("Original Quantity", RemQty);
+    //                                     L_SalesLine.Modify();
+    //                                     RemQty := RemQty - L_SalesLine.Quantity;
+    //                                     L_NewLineRequired := true;
+    //                                 end else begin
+    //                                     Clear(QtyToApply);
+    //                                     if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant) >= RemQty then
+    //                                         QtyToApply := RemQty
+    //                                     else
+    //                                         QtyToApply := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+    //                                     CustomeCodeunit.InsertNewSalesLine(L_SalesLine, L_ItemVariant, QtyToApply);
+    //                                     RemQty := RemQty - CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(L_SalesLine, L_ItemVariant);
+    //                                 end;
+    //                             end;
+    //                         end;
 
-                            L_Count := L_Count - 1;
-                            L_ItemVariant.Next();
-                        end;
-                    end;
-                until L_SalesLine.Next() = 0;
-            end;
-        until _SalesHeader.Next() = 0;
-        Window.CLOSE;
-    end;
+    //                         L_Count := L_Count - 1;
+    //                         L_ItemVariant.Next();
+    //                     end;
+    //                 end;
+    //             until L_SalesLine.Next() = 0;
+    //         end;
+    //     until _SalesHeader.Next() = 0;
+    //     Window.CLOSE;
+    // end;
 
 
     procedure RevalidateVariantOnSalesOrder(_SalesHeader: Record "Sales Header")
