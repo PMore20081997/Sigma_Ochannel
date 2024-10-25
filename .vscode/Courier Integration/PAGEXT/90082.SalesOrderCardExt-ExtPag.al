@@ -184,6 +184,21 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                 CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                                 Commit();
                             end;
+                        end else begin
+                            if L_SalesHeader."Credit Limit Approval" = true then
+                                Message('Credit Limit Approval Required');
+
+                            if L_SalesHeader."SO Min Order Approval Required" = true then
+                                Message('SO Min Order Approval Required');
+
+                            if L_SalesHeader."Zero Price Approval" = true then
+                                Message('Zero Price Approval Required');
+
+                            if L_SalesHeader."Sales Quota Approval" = true then
+                                Message('Sales Quota Approval Required');
+
+                            if L_SalesHeader."SO Approval Required" = true then
+                                Message('SO Approval Required');
                         end;
 
 
