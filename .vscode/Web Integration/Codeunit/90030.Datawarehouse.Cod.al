@@ -70,7 +70,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
-        TempILE.DeleteAll();
+        //TempILE.DeleteAll();
         #endregion
 
         #region "mio03" 02
