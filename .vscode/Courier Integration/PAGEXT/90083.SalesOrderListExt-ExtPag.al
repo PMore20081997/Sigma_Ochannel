@@ -207,14 +207,15 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                         // end;
 
                                         //Send for Release order if Approval not required
-                                        Rec_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
+                                        Rec_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
                                         if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
                                             Clear(L_SumMin);
                                             MinOrder_Header.Reset();
                                             MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
                                             MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
-                                            MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                                            MinOrder_Header.SetRange("Shipment Date", Rec_SalesHeader."Shipment Date");
                                             MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                                            MinOrder_Header.SetRange("Web Order", false);
                                             if MinOrder_Header.FindSet() then begin
                                                 repeat
                                                     MinOrder_Header.CalcFields(Amount);
@@ -223,9 +224,12 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                             end;
 
                                             if Rec_SalesHeader."Min Order Value" <> 0 then begin
-                                                if L_SumMin >= Rec_SalesHeader.Amount then begin
+                                                if L_SumMin >= Rec_SalesHeader."Min Order Value" then begin
                                                     CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
                                                     Commit();
+                                                end else begin
+                                                    Rec_SalesHeader."SO Min Order Approval Required" := true;
+                                                    Rec_SalesHeader.Modify();
                                                 end;
                                             end else begin
                                                 CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);

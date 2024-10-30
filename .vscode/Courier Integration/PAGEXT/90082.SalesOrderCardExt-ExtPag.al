@@ -61,7 +61,6 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     Clear(L_SalesHeader);
                     L_SalesHeader := Rec;
                     CurrPage.SetSelectionFilter(L_SalesHeader);
-
                     if L_SalesHeader.FindFirst() then begin
                         L_SalesHeader.TestField(Status, L_SalesHeader.Status::Open);
                         L_SalesHeader.TestField("Web Order", false);
@@ -160,14 +159,15 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                         #endregion
 
                         //Send for Release order if Approval not required
-                        L_SalesHeader.CalcFields("Zero Price Approval", "SO Min Order Approval Required", Amount, "Sales Quota Approval");
+                        L_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
                         if (L_SalesHeader."Zero Price Approval" = false) AND (L_SalesHeader."Sales Quota Approval" = false) AND (L_SalesHeader."SO Approval Required" = false) AND (L_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (L_SalesHeader."SO Min Order Approval Required" = false) AND (L_SalesHeader."Credit Limit Approval" = false) then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
                             MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
                             MinOrder_Header.SetRange("Sell-to Customer No.", L_SalesHeader."Sell-to Customer No.");
-                            MinOrder_Header.SetRange("Document Date", L_SalesHeader."Document Date");
+                            MinOrder_Header.SetRange("Shipment Date", L_SalesHeader."Shipment Date");
                             MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                            MinOrder_Header.SetRange("Web Order", false);
                             if MinOrder_Header.FindSet() then begin
                                 repeat
                                     MinOrder_Header.CalcFields(Amount);
@@ -176,9 +176,12 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                             end;
 
                             if L_SalesHeader."Min Order Value" <> 0 then begin
-                                if L_SumMin >= L_SalesHeader.Amount then begin
+                                if L_SumMin >= L_SalesHeader."Min Order Value" then begin
                                     CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                                     Commit();
+                                end else begin
+                                    L_SalesHeader."SO Min Order Approval Required" := true;
+                                    L_SalesHeader.Modify();
                                 end;
                             end else begin
                                 CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);

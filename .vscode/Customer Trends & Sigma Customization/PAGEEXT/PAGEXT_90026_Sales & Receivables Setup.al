@@ -84,7 +84,7 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
                                     //         MinOrder_Header.Reset();
                                     //         MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
                                     //         MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
-                                    //         MinOrder_Header.SetRange("Document Date", Rec_SalesHeader."Document Date");
+                                    //         MinOrder_Header.SetRange("Shipment Date", L_SalesHeader."Shipment Date");
                                     //         MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
                                     //         if MinOrder_Header.FindSet() then begin
                                     //             repeat
