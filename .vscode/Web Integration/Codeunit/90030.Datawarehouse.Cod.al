@@ -56,7 +56,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         XMLOutStream: OutStream;
         XMLInStream: InStream;
         FileName: Text;
-        TempILE: Record TempILE;
+        TempILE1: Record TempILE1;
     begin
 
 

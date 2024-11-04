@@ -178,7 +178,7 @@ xmlport 90001 "mio24"
             }
 
 
-            tableelement(TempILE; TempILE)
+            tableelement(TempILE1; TempILE1)
             {
 
                 // CalcFields = "Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order", Inventory;
@@ -319,7 +319,7 @@ xmlport 90001 "mio24"
                     // if Check = true then
                     //     updateheadercaption();
                     L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
+                    L_ILE.SetRange(L_ILE."Item No.", TempILE1."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Purchase);
                     if L_ILE.FindLast() then begin
                         LG_Date := FormatDateForCSV(L_ILE."Posting Date");
@@ -327,31 +327,31 @@ xmlport 90001 "mio24"
                         LG_Number := format(L_ILE."Document No.");
                     end;
                     L_ILE.Reset();
-                    L_ILE.SetRange(L_ILE."Item No.", TempILE."Item No.");
+                    L_ILE.SetRange(L_ILE."Item No.", TempILE1."Item No.");
                     L_ILE.SetRange(L_ILE."Entry Type", L_ILE."Entry Type"::Sale);
                     if L_ILE.FindLast() then begin
                         LS_Date := FormatDateForCSV(L_ILE."Posting Date");
                         // LS_Date := format(L_ILE."Posting Date", 0, '<Day,2>/<Month,2>/<Year,4>');
                     end;
-                    DepotCode := TempILE."Depot Code";
-                    if L_item.Get(TempILE."Item No.") then;
+                    DepotCode := TempILE1."Depot Code";
+                    if L_item.Get(TempILE1."Item No.") then;
                     L_item.CalcFields("Qty. on Sales Order", "Qty. on Purch. Order", "Qty. on Web Order");
-                    if TempILE."Variant Code" = '' then begin
-                        Prod_Code := TempILE."Item No.";
-                        Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
-                        On_Order := format(QtyOnPOrder(TempILE));
-                        Backorder := format(QtyOnSOrder(TempILE));
+                    if TempILE1."Variant Code" = '' then begin
+                        Prod_Code := TempILE1."Item No.";
+                        Alloc_Stock := Format(QtyOnSOrder(TempILE1) + L_item."Qty. on Web Order");
+                        On_Order := format(QtyOnPOrder(TempILE1));
+                        Backorder := format(QtyOnSOrder(TempILE1));
                     end else begin
-                        Prod_Code := TempILE."Variant Code";
-                        Alloc_Stock := Format(QtyOnSOrder(TempILE) + L_item."Qty. on Web Order");
-                        On_Order := format(QtyOnPOrder(TempILE));
-                        Backorder := format(QtyOnSOrder(TempILE));
+                        Prod_Code := TempILE1."Variant Code";
+                        Alloc_Stock := Format(QtyOnSOrder(TempILE1) + L_item."Qty. on Web Order");
+                        On_Order := format(QtyOnPOrder(TempILE1));
+                        Backorder := format(QtyOnSOrder(TempILE1));
 
                     end;
                     // Alloc_Stock := Format(L_item."Qty. on Sales Order" + L_item."Qty. on Web Order");
                     // On_Order := format(L_item."Qty. on Purch. Order");
                     // Backorder := format(L_item."Qty. on Sales Order");
-                    Phys_Stock := format(TempILE."ILE Qty.");
+                    Phys_Stock := format(TempILE1."ILE Qty.");
                     LPP_Cost := format(L_item."Last Direct Cost");
                     Avg_Cost := format(L_item."Unit Cost");
                     True_Cost := format(L_item."Unit List Price");
@@ -378,47 +378,47 @@ xmlport 90001 "mio24"
     }
     local procedure getlastentryno(): Integer
     var
-        TempILE: Record TempILE;
+        TempILE1: Record TempILE1;
     begin
-        TempILE.Reset();
-        IF TempILE.FINDLAST THEN
-            exit(TempILE."Entry No." + 1)
+        TempILE1.Reset();
+        IF TempILE1.FINDLAST THEN
+            exit(TempILE1."Entry No." + 1)
         ELSE
             exit(1);
     end;
 
     trigger OnPreXmlPort()
     var
-        TempILE: Record TempILE;
+        TempILE1: Record TempILE1;
         ILE: Record "Item Ledger Entry";
         ILE2: Record "Item Ledger Entry";
     begin
-        TempILE.DeleteAll();
+        TempILE1.DeleteAll();
         ILE.Reset();
         if ILE.FindSet() then begin
             repeat
-                TempILE.Reset();
-                TempILE.SetRange("Item No.", ILE."Item No.");
-                TempILE.SetRange("Variant Code", ILE."Variant Code");
-                TempILE.SetRange("Depot Code", ILE."Location Code");
-                if not TempILE.FindFirst() then begin
-                    TempILE.Init();
-                    TempILE."Entry No." := getlastentryno();
-                    TempILE."Item No." := ILE."Item No.";
-                    TempILE."Variant Code" := ILE."Variant Code";
-                    TempILE."Depot Code" := ILE."Location Code";
+                TempILE1.Reset();
+                TempILE1.SetRange("Item No.", ILE."Item No.");
+                TempILE1.SetRange("Variant Code", ILE."Variant Code");
+                TempILE1.SetRange("Depot Code", ILE."Location Code");
+                if not TempILE1.FindFirst() then begin
+                    TempILE1.Init();
+                    TempILE1."Entry No." := getlastentryno();
+                    TempILE1."Item No." := ILE."Item No.";
+                    TempILE1."Variant Code" := ILE."Variant Code";
+                    TempILE1."Depot Code" := ILE."Location Code";
                     ILE2.Reset();
                     ILE2.SetRange("Item No.", ILE."Item No.");
                     ILE2.SetRange("Variant Code", ILE."Variant Code");
                     ILE2.SetRange("Location Code", ILE."Location Code");
                     if ILE2.FindSet() then begin
                         repeat
-                            TempILE."ILE Qty." += ILE2.Quantity;
+                            TempILE1."ILE Qty." += ILE2.Quantity;
                         until ILE2.Next() = 0;
 
                     end;
 
-                    TempILE.Insert()
+                    TempILE1.Insert()
                 end;
             until ILE.Next() = 0;
         end;
@@ -443,7 +443,7 @@ xmlport 90001 "mio24"
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
 
-    local procedure QtyOnSOrder(var TempIle: Record TempILE): Decimal
+    local procedure QtyOnSOrder(var TempIle1: Record TempILE1): Decimal
     var
         L_SalesLine: Record "Sales Line";
         QtyOnSO: Decimal;
@@ -453,11 +453,11 @@ xmlport 90001 "mio24"
 
         L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SETRANGE("No.", TempIle."Item No.");
-        if TempIle."Variant Code" <> '' then begin
-            L_SalesLine.SetRange("Variant Code", TempIle."Variant Code");
+        L_SalesLine.SETRANGE("No.", TempILE1."Item No.");
+        if TempILE1."Variant Code" <> '' then begin
+            L_SalesLine.SetRange("Variant Code", TempILE1."Variant Code");
         end;
-        L_SalesLine.SetRange("Location Code", TempIle."Depot Code");
+        L_SalesLine.SetRange("Location Code", TempILE1."Depot Code");
         L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
         if L_SalesLine.FindSet() then begin
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
@@ -470,7 +470,7 @@ xmlport 90001 "mio24"
             exit(0);
     end;
 
-    local procedure QtyOnPOrder(var TempIle: Record TempILE): Decimal
+    local procedure QtyOnPOrder(var TempIle1: Record TempILE1): Decimal
     var
         L_PurchaseLine: Record "Purchase Line";
         QtyOnPO: Decimal;
@@ -479,11 +479,11 @@ xmlport 90001 "mio24"
         L_PurchaseLine.Reset();
         L_PurchaseLine.SetRange("Document Type", L_PurchaseLine."Document Type"::Order);
         L_PurchaseLine.SetRange(Type, L_PurchaseLine.Type::Item);
-        L_PurchaseLine.SETRANGE("No.", TempIle."Item No.");
-        if TempIle."Variant Code" <> '' then begin
-            L_PurchaseLine.SetRange("Variant Code", TempIle."Variant Code");
+        L_PurchaseLine.SETRANGE("No.", TempILE1."Item No.");
+        if TempILE1."Variant Code" <> '' then begin
+            L_PurchaseLine.SetRange("Variant Code", TempILE1."Variant Code");
         end;
-        L_PurchaseLine.SetRange("Location Code", TempIle."Depot Code");
+        L_PurchaseLine.SetRange("Location Code", TempILE1."Depot Code");
         L_PurchaseLine.SetFilter("Outstanding Quantity", '>%1', 0);
         if L_PurchaseLine.FindSet() then begin
             L_PurchaseLine.CalcSums("Outstanding Qty. (Base)");
