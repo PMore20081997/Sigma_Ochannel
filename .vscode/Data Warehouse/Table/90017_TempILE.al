@@ -1,6 +1,7 @@
 table 90017 TempILE
 {
     DataClassification = ToBeClassified;
+    TableType = Temporary;
 
     fields
     {

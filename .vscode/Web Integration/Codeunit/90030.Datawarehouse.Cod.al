@@ -59,19 +59,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempILE: Record TempILE;
     begin
 
-        #region "mio24" 01
-        Clear(TempBlob);
-        Clear(XMLInStream);
-        Clear(XMLOutStream);
-        FileName := 'mio24.csv';
-        TempBlob.CreateOutStream(XMLOutStream);
-        xmlmio24.SetDestination(XMLOutStream);
-        xmlmio24.Export();
-        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
-        // DownloadFromStream(XMLInStream, '', '', '', FileName);
-        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
-        //TempILE.DeleteAll();
-        #endregion
+
 
         #region "mio03" 02
         Clear(TempBlob);
@@ -422,6 +410,20 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // // DownloadFromStream(XMLInStream, '', '', '', FileName);
         CreateGRN();
+        #endregion
+
+        #region "mio24" 01
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio24.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmio24.SetDestination(XMLOutStream);
+        xmlmio24.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        //TempILE.DeleteAll();
         #endregion
 
     end;
