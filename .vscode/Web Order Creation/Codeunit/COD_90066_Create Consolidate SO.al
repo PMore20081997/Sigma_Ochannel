@@ -885,15 +885,13 @@ codeunit 90066 "Create Consolidate SO"
                     //Process to update variant code and create new line if required++
                     if L_Count > 0 then begin
                         while (RemQty > 0) AND (L_Count > 0) do begin
-                            // if CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant) > 0 then begin
                             L_ItemVariantWithFreeQty.Init();
                             L_ItemVariantWithFreeQty.Priority := L_ItemVariant.Priority;
                             L_ItemVariantWithFreeQty."Item No." := L_ItemVariant."Item No.";
                             L_ItemVariantWithFreeQty."Variant Code" := L_ItemVariant.Code;
-                            L_ItemVariantWithFreeQty.Quantity := CustomeCodeunit.CheckTotalAvailablityQtyVariantWise(InsertedSL, L_ItemVariant);
+                            L_ItemVariantWithFreeQty.Quantity := CustomeCodeunit.CheckTotalAvailablityQtyVariantWiseAtthetimeofcosolidation(InsertedSL, L_ItemVariant);
                             if L_ItemVariantWithFreeQty.Quantity > 0 then
                                 L_ItemVariantWithFreeQty.Insert();
-                            //end;
                             L_Count := L_Count - 1;
                             L_ItemVariant.Next();
                         end;

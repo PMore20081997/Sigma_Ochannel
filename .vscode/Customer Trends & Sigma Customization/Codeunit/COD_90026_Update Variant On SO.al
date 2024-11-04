@@ -92,16 +92,6 @@ codeunit 90026 "Udate Variant on SO"
 
     procedure SetPriorityWithoutZero(_SalesLine: Record "Sales Line"; var _ItemVariant: Record "Item Variant")
     begin
-        // Clear(_ItemVariant);
-        // _ItemVariant.Reset();
-        // _ItemVariant.SetRange("Item No.", _SalesLine."No.");
-        // _ItemVariant.SetFilter(Priority, '<>%1', 0);
-        // _ItemVariant.SetCurrentKey(Priority);
-        // _ItemVariant.Ascending(true);
-        // if _ItemVariant.FindFirst() then;
-
-
-        //New Code++
         Clear(_ItemVariant);
         _ItemVariant.Reset();
         _ItemVariant.SetRange("Item No.", _SalesLine."No.");
@@ -126,49 +116,7 @@ codeunit 90026 "Udate Variant on SO"
         QtyOnSO: Decimal;
         PhysicalInventory: Decimal;
         L_ItemLedgerEntry: Record "Item Ledger Entry";
-        tes: Codeunit "Graph Mgt - Sales Order Buffer";
     begin
-
-        // L_ItemVariant.Reset();
-        // L_ItemVariant.SetRange("Item No.", _SalesLine."No.");
-        // //L_ItemVariant.SetFilter("Location Filter", _SalesLine."Location Code");
-        // L_ItemVariant.SetFilter("Location Filter", LocationFilter);
-        // L_ItemVariant.SetRange(Blocked, false);
-        // L_ItemVariant.SetRange("Sales Blocked", false);
-        // L_ItemVariant.SetRange(Code, _ItemVariant.Code);
-        // if L_ItemVariant.FindSet() then begin
-        //     repeat
-        //         L_ItemVariant.CalcFields("Saleable Inventory", "Qty on SO(Saleable)");
-        //         L_TotalInventory += L_ItemVariant."Saleable Inventory";
-        //         L_TotalRequestedQty += L_ItemVariant."Qty on SO(Saleable)";
-        //     until L_ItemVariant.Next() = 0;
-
-        //     if L_TotalInventory > 0 then
-        //         if (L_TotalInventory - L_TotalRequestedQty) > 0 then
-        //             exit(L_TotalInventory - L_TotalRequestedQty)
-        //         else
-        //             exit(0)
-        //     else
-        //         exit(0);
-        // end else
-        //     exit(0);
-
-        // //New Code++
-        // Clear(L_TotalInventory);
-        // Clear(L_TotalRequestedQty);
-
-        // Clear(LocationFilter);
-        // L_Location.Reset();
-        // L_Location.SetRange("Saleable Location", true);
-        // if L_Location.FindSet() then begin
-        //     repeat
-        //         LocationFilter += L_Location.Code + '|';
-        //     until L_Location.Next() = 0;
-        //     LocationFilter := LocationFilter.TrimEnd('|');
-        // end;
-
-
-        //New Code+++
         Clear(PhysicalInventory);
         L_ItemVariant.Reset();
         L_ItemVariant.SetRange("Item No.", _SalesLine."No.");
@@ -212,8 +160,59 @@ codeunit 90026 "Udate Variant on SO"
             exit(PhysicalInventory - QtyOnSO);
         end else
             exit(0);
+    end;
 
+    procedure CheckTotalAvailablityQtyVariantWiseAtthetimeofcosolidation(_SalesLine: Record "Sales Line"; _ItemVariant: Record "Item Variant"): Decimal
+    var
+        LocationFilter: Text;
+        L_Location: Record Location;
+        L_SalesLine: Record "Sales Line";
+        QtyOnSO: Decimal;
+        PhysicalInventory: Decimal;
+        L_Item: Record Item;
+    begin
+        //GetSaleable Location++
+        Clear(LocationFilter);
+        L_Location.Reset();
+        L_Location.SetRange("Saleable Location", true);
+        if L_Location.FindSet() then begin
+            repeat
+                if LocationFilter <> '' then
+                    LocationFilter := LocationFilter + '|' + L_Location.Code
+                else
+                    LocationFilter := L_Location.Code;
+            until L_Location.Next() = 0;
+        end;
 
+        //Get Physical+++
+        Clear(PhysicalInventory);
+        L_Item.Reset();
+        L_Item.SetRange("No.", _SalesLine."No.");
+        L_Item.SetRange("Variant Filter", _ItemVariant.Code);
+        L_Item.SetFilter("Location Filter", LocationFilter);
+        L_Item.CalcFields(Inventory);
+        PhysicalInventory := L_Item.Inventory;
+        if PhysicalInventory < 0 then
+            PhysicalInventory := 0;
+
+        //Get ALlocated SOs++
+        Clear(QtyOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SETRANGE("No.", _SalesLine."No.");
+        L_SalesLine.SetRange("Variant Code", _ItemVariant.Code);
+        L_SalesLine.SETRANGE("Saleable Location", true);
+        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+        if QtyOnSO < 0 then
+            QtyOnSO := 0;
+
+        exit(PhysicalInventory - QtyOnSO);
     end;
 
 
