@@ -1,7 +1,6 @@
 table 90017 TempILE
 {
     DataClassification = ToBeClassified;
-    TableType = Temporary;
 
     fields
     {
@@ -9,12 +8,10 @@ table 90017 TempILE
         {
             DataClassification = ToBeClassified;
             AutoIncrement = true;
-
         }
         field(2; "Item No."; Code[50])
         {
             DataClassification = ToBeClassified;
-
         }
         field(3; "Variant Code"; Code[50])
         {
@@ -28,8 +25,6 @@ table 90017 TempILE
         {
             DataClassification = ToBeClassified;
         }
-
-
     }
 
     keys
@@ -39,33 +34,4 @@ table 90017 TempILE
             Clustered = true;
         }
     }
-
-    fieldgroups
-    {
-        // Add changes to field groups here
-    }
-
-    var
-        myInt: Integer;
-
-    trigger OnInsert()
-    begin
-
-    end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

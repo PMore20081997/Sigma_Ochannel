@@ -2,7 +2,7 @@
   "id": "932326fa-e5e0-46a0-87c9-1aa01a038111",
   "name": "Ochannel 2.0",
   "publisher": "Robosol",
-  "version": "24.0.0.95",
+  "version": "24.0.0.96",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -27,7 +27,7 @@
       "id": "89b2d3ff-cff9-4506-9a14-597a5b6d370f",
       "name": "Interim WMS BC Customisation",
       "publisher": "Robosol",
-      "version": "24.0.0.74"
+      "version": "24.0.0.94"
     },
     {
       "id": "1a0f1d96-00b3-4f86-b25b-d0af4bcd74f4",
@@ -39,7 +39,7 @@
       "id": "5b6c6c41-8944-489c-8020-627e5ff808d3",
       "name": "Knapp Integration",
       "publisher": "Robosol",
-      "version": "24.0.0.36"
+      "version": "24.0.0.50"
     },
     {
       "id": "9d21f859-860e-4a4d-ab73-d2bf6815a030",
@@ -51,13 +51,13 @@
       "id": "996edaf0-a9f0-4939-aea6-cfbc08d07710",
       "name": "Item Sales Quota",
       "publisher": "Robosol",
-      "version": "24.0.0.7"
+      "version": "24.0.0.9"
     },
     {
       "id": "7597bb61-04b5-46dd-80f5-7d812ac0c2c8",
       "name": "Robosol Order Cancellation",
       "publisher": "Robosol",
-      "version": "24.0.0.14"
+      "version": "24.0.0.16"
     }
   ],
   "screenshots": [],
