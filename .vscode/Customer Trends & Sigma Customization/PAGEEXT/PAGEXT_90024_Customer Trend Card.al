@@ -25,6 +25,7 @@ pageextension 90024 "OC Customer Trend Card" extends "Customer Trend Card"
                     L_CustomertrendLine2: Record CustomerTrends;
                     L_Amount: Decimal;
                     L_PriceExist: Boolean;
+                    Billtocustomer: Record Customer;
                 begin
                     L_PriceExist := false;
                     //Confirmation Message++
@@ -59,10 +60,20 @@ pageextension 90024 "OC Customer Trend Card" extends "Customer Trend Card"
                             L_Customer.Reset();
                             L_Customer.SetRange("No.", Rec."Customer No.");
                             if L_Customer.FindFirst() then begin
-                                if L_Customer."Credit Limit (LCY)" < L_Amount then
-                                    Error('Credit limit should not be exceeded');
+                                if L_Customer."Bill-to Customer No." <> '' then begin
+                                    Billtocustomer.Reset();
+                                    Billtocustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
+                                    if Billtocustomer.FindFirst() then begin
+                                        if Billtocustomer."Credit Limit (LCY)" < L_Amount then
+                                            Error('Credit limit should not be exceeded');
+                                    end;
+                                end else begin
+                                    if L_Customer."Credit Limit (LCY)" < L_Amount then
+                                        Error('Credit limit should not be exceeded');
+                                end;
                             end;
                         end;
+
                         if L_PriceExist = true then
                             Error('Price should not be zero');
                     end;

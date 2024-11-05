@@ -208,5 +208,7 @@ permissionset 90000 OChannel
         xmlport "mio47-1" = X,
         codeunit "Manage Time duration" = X,
         page "FTP Web Order Header API Card" = X,
-        page "FTP Web Order Line Subpage" = X;
+        page "FTP Web Order Line Subpage" = X,
+        tabledata TempILE1 = RIMD,
+        table TempILE1 = X;
 }
