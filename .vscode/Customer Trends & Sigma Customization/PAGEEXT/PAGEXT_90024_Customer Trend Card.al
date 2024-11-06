@@ -64,12 +64,16 @@ pageextension 90024 "OC Customer Trend Card" extends "Customer Trend Card"
                                     Billtocustomer.Reset();
                                     Billtocustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
                                     if Billtocustomer.FindFirst() then begin
-                                        if Billtocustomer."Credit Limit (LCY)" < L_Amount then
-                                            Error('Credit limit should not be exceeded');
+                                        if Billtocustomer."Credit Limit (LCY)" > 0 then begin
+                                            if Billtocustomer."Credit Limit (LCY)" < L_Amount then
+                                                Error('Credit limit should not be exceeded');
+                                        end;
                                     end;
                                 end else begin
-                                    if L_Customer."Credit Limit (LCY)" < L_Amount then
-                                        Error('Credit limit should not be exceeded');
+                                    if L_Customer."Credit Limit (LCY)" > 0 then begin
+                                        if L_Customer."Credit Limit (LCY)" < L_Amount then
+                                            Error('Credit limit should not be exceeded');
+                                    end;
                                 end;
                             end;
                         end;

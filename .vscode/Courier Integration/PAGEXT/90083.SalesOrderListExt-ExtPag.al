@@ -72,6 +72,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                     L_WarehouseActivityHeader: Record "Warehouse Activity Header";
                     IsOrderReleased: Boolean;
                     L_ReleaseSalesHeader: Record "Sales Header";
+                    L_CheckDecimalQty: Decimal;
                 begin
                     Commit();
                     Clear(L_SalesHeader);
@@ -95,9 +96,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                 // UdateVariantonSO.UpdateVariantOnSalesOrder(Rec_SalesHeader);
                                 // Commit();
                                 if Rec_SalesHeader."Knapp Order" = true then begin
-                                    if Rec_SalesHeader."Sent to Knapp" = true then
-                                        break
-                                    else begin
+                                    if Rec_SalesHeader."Sent to Knapp" = false then begin
                                         UdateVariantonSO.RevalidateVariantOnSalesOrder(Rec_SalesHeader);
                                         Commit();
                                     end;
@@ -106,9 +105,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                     L_WarehouseActivityHeader.SetRange("Source Document", L_WarehouseActivityHeader."Source Document"::"Sales Order");
                                     L_WarehouseActivityHeader.SetRange("Source No.", Rec_SalesHeader."No.");
                                     L_WarehouseActivityHeader.SetRange(Type, L_WarehouseActivityHeader.Type::"Invt. Pick");
-                                    if L_WarehouseActivityHeader.FindFirst() then
-                                        break
-                                    else begin
+                                    if not L_WarehouseActivityHeader.FindFirst() then begin
                                         UdateVariantonSO.RevalidateVariantOnSalesOrder(Rec_SalesHeader);
                                         Commit();
                                     end;
@@ -134,8 +131,8 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                     L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
                                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                                     if not L_SalesLine.FindFirst() then begin
-                                        Rec_SalesHeader.CalcFields(Shipped, "Drop/Special Order");
-                                        if (Rec_SalesHeader."Knapp Order" = false) and (Rec_SalesHeader."Drop/Special Order" = false) and (Rec_SalesHeader.Shipped = false) then begin
+                                        Rec_SalesHeader.CalcFields(Shipped, "Drop/Special Order", "Special Order");
+                                        if (Rec_SalesHeader."Knapp Order" = false) and (Rec_SalesHeader."Drop/Special Order" = false) and (Rec_SalesHeader.Shipped = false) and (Rec_SalesHeader."Special Order" = false) then begin
                                             L_SalesLine.Reset();
                                             L_SalesLine.SetRange("Document Type", Rec_SalesHeader."Document Type");
                                             L_SalesLine.SetRange("Document No.", Rec_SalesHeader."No.");
@@ -151,26 +148,38 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                                 Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
                                                 Rec_SalesLine.Ascending(true);
                                                 if Rec_SalesLine.FindSet() then begin
-                                                    repeat
-                                                        if Rec_SalesLine."Variant Code" = '' then begin
-                                                            if not ItemList.Contains(Rec_SalesLine."No.") then begin
-                                                                ItemList.Add(Rec_SalesLine."No.");
-                                                                KnappOrder := true;
+                                                    Clear(L_CheckDecimalQty);
+                                                    Rec_SalesLine.CalcSums("Outstanding Quantity");
+                                                    L_CheckDecimalQty := Rec_SalesLine.Quantity;
+                                                    if L_CheckDecimalQty MOD 1 = 0 then
+                                                        KnappOrder := true
+                                                    else
+                                                        KnappOrder := false;
+
+                                                    //CHeck Others condition+++   
+                                                    if KnappOrder = true then begin
+                                                        repeat
+                                                            if Rec_SalesLine."Variant Code" = '' then begin
+                                                                if not ItemList.Contains(Rec_SalesLine."No.") then begin
+                                                                    ItemList.Add(Rec_SalesLine."No.");
+                                                                    KnappOrder := true;
+                                                                end
+                                                                else begin
+                                                                    KnappOrder := false;
+                                                                end;
                                                             end
                                                             else begin
-                                                                KnappOrder := false;
+                                                                if not ItemList.Contains(Rec_SalesLine."Variant Code") then begin
+                                                                    ItemList.Add(Rec_SalesLine."Variant Code");
+                                                                    KnappOrder := true;
+                                                                end
+                                                                else begin
+                                                                    KnappOrder := false;
+                                                                end;
                                                             end;
-                                                        end
-                                                        else begin
-                                                            if not ItemList.Contains(Rec_SalesLine."Variant Code") then begin
-                                                                ItemList.Add(Rec_SalesLine."Variant Code");
-                                                                KnappOrder := true;
-                                                            end
-                                                            else begin
-                                                                KnappOrder := false;
-                                                            end;
-                                                        end;
-                                                    until Rec_SalesLine.Next() = 0;
+
+                                                        until Rec_SalesLine.Next() = 0;
+                                                    end;
                                                 end;
 
                                                 if KnappOrder = true then begin

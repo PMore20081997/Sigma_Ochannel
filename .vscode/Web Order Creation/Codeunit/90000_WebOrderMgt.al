@@ -1381,7 +1381,9 @@ codeunit 90000 "Web Order Mgt"
         #endregion
 
         Clear(AvailableInventory);
-        AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
+        //AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
+        if PhysicalInventory - (QtyOnSO + QtyonWebOrder) > 0 then
+            AvailableInventory := Round(PhysicalInventory - (QtyOnSO + QtyonWebOrder), 1, '=');
         if AvailableInventory < 0 then
             AvailableInventory := 0;
 
