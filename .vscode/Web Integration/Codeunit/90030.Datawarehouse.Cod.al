@@ -810,7 +810,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 72, '');  // Indirect OH
                     CSVBuffer.InsertEntry(LineNo, 73, '');  // Finishing Costs
                     CSVBuffer.InsertEntry(LineNo, 74, '');  // Transfer Disc
-                    CSVBuffer.InsertEntry(LineNo, 75, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine."Unit Cost")), '=', ','));  // Av Cost Value
+                    CSVBuffer.InsertEntry(LineNo, 75, Format(L_SalesCreditMemoLine."Unit Cost"));  // Av Cost Value
                     CSVBuffer.InsertEntry(LineNo, 76, '');
                 end;
             until L_SalesCreditMemoLine.Next() = 0;
@@ -825,7 +825,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
         UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
-        // DownloadFromStream(GRNInstream, '', '', '', Filename);
+        //DownloadFromStream(GRNInstream, '', '', '', Filename);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];

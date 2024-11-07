@@ -297,7 +297,10 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement("Customer_Group_Header")
+                {
 
+                }
 
                 textelement(XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
                 {
@@ -365,6 +368,7 @@ xmlport 90002 "mio01"
                     "Daily_Min_Order_Value_Header" := 'Daily Min Order Value';
                     "Min_Order_Value_Header" := 'Min Order Value';
                     LTD_Name_Header := 'LTD Name';
+                    "Customer_Group_Header" := 'Customer Group';
                     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX := XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
                 end;
@@ -652,6 +656,11 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement("Customer_Group")
+                {
+
+                }
+
 
 
 
@@ -734,7 +743,7 @@ xmlport 90002 "mio01"
                     "Daily_Min_Order_Value" := '';
                     "Min_Order_Value" := Format(Customer."Min Order Value");
                     LTD_Name := Customer."Name 2";
-
+                    Customer_Group := Customer."Bill-to Customer No.";
                 end;
             }
 
