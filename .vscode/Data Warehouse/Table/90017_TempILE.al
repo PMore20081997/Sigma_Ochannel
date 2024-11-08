@@ -1,10 +1,11 @@
 table 90017 TempILE
 {
     DataClassification = ToBeClassified;
+  
 
     fields
     {
-        field(1; "Entry No."; Integer)
+     field(1; "Entry No."; Integer)
         {
             DataClassification = ToBeClassified;
             AutoIncrement = true;

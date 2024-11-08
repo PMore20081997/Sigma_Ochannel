@@ -479,6 +479,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         L_SalesCreditMemoLine: Record "Sales Cr.Memo Line";
         L_SalesCreditMemoHeader: Record "Sales Cr.Memo Header";
         ItemVendor: Record "Item Vendor";
+        StartDate: Date;
+        EndDate: Date;
 
     begin
         Clear(CSVBuffer);
@@ -568,9 +570,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
 
         //Create Body++
         //Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        //GetStartAndEndDates(StartDate, EndDate);
         L_SalesInvoiceLine.Reset();
         L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
         L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+        //L_SalesInvoiceLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesInvoiceLine.FindSet() then begin
             repeat
                 // NoOfRecs := L_SalesInvoiceLine.Count;
@@ -583,6 +587,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                 //     END;
                 // Windows.UPDATE(3, L_SalesInvoiceLine."No.");
                 LineNo += 1;
+
                 L_SalesInvoiceHeader.Reset();
                 L_SalesInvoiceHeader.SetRange("No.", L_SalesInvoiceLine."Document No.");
                 if L_SalesInvoiceHeader.FindFirst() then begin
@@ -697,9 +702,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
             until L_SalesInvoiceLine.Next() = 0;
         end;
 
+        // GetStartAndEndDates(StartDate, EndDate);
         L_SalesCreditMemoLine.Reset();
         L_SalesCreditMemoLine.SetFilter(Quantity, '>%1', 0);
         L_SalesCreditMemoLine.SetRange(Type, L_SalesCreditMemoLine.Type::Item);
+        //L_SalesCreditMemoLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesCreditMemoLine.FindSet() then begin
             repeat
                 LineNo += 1;
@@ -810,7 +817,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 72, '');  // Indirect OH
                     CSVBuffer.InsertEntry(LineNo, 73, '');  // Finishing Costs
                     CSVBuffer.InsertEntry(LineNo, 74, '');  // Transfer Disc
-                    CSVBuffer.InsertEntry(LineNo, 75, Format(L_SalesCreditMemoLine."Unit Cost"));  // Av Cost Value
+                    CSVBuffer.InsertEntry(LineNo, 75, DelChr(Format(L_SalesCreditMemoLine."Unit Cost"), '=', ','));  // Av Cost Value
                     CSVBuffer.InsertEntry(LineNo, 76, '');
                 end;
             until L_SalesCreditMemoLine.Next() = 0;
@@ -846,6 +853,19 @@ codeunit 90030 "Datawarehouse-WebDezign"
             MonthStr := '0' + MonthStr;
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
+
+    procedure GetStartAndEndDates(var StartDate: Date; var EndDate: Date)
+    begin
+
+        EndDate := WorkDate();
+        if Date2DMY(WorkDate(), 2) <= 7 then begin
+            StartDate := DMY2Date(1, Date2DMY(WorkDate(), 2) - 1, Date2DMY(WorkDate(), 3));
+        end else begin
+            StartDate := DMY2Date(1, Date2DMY(WorkDate(), 2), Date2DMY(WorkDate(), 3));
+        end;
+    end;
+
+
 
     var
         StartParameter: Text;
