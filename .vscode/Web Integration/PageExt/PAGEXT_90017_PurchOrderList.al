@@ -418,7 +418,11 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 trigger OnAction()
                 var
                     CreateCsv: Codeunit "Datawarehouse-WebDezign";
+                    StartDate: Date;
+                    EndDate: Date;
+
                 begin
+                    CreateCsv.GetStartAndEndDates(StartDate, EndDate);
                     CreateCsv.CreateGRN();
                 end;
             }

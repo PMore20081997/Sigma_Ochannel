@@ -481,6 +481,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         ItemVendor: Record "Item Vendor";
         StartDate: Date;
         EndDate: Date;
+        MM: Text[10];
+        YYYY: Text[10];
 
     begin
         Clear(CSVBuffer);
@@ -569,23 +571,24 @@ codeunit 90030 "Datawarehouse-WebDezign"
 
 
         //Create Body++
-        //Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
-        //GetStartAndEndDates(StartDate, EndDate);
+        Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
+        GetStartAndEndDates(StartDate, EndDate);
         L_SalesInvoiceLine.Reset();
         L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
         L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
-        //L_SalesInvoiceLine.SetRange("Posting Date", StartDate, EndDate);
+        L_SalesInvoiceLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesInvoiceLine.FindSet() then begin
             repeat
-                // NoOfRecs := L_SalesInvoiceLine.Count;
-                // ProgressCount += 1;
-                // IF NoOfRecs <= 100 THEN
-                //     Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                // ELSE
-                //     IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
-                //         Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                //     END;
-                // Windows.UPDATE(3, L_SalesInvoiceLine."No.");
+
+                NoOfRecs := L_SalesInvoiceLine.Count;
+                ProgressCount += 1;
+                IF NoOfRecs <= 100 THEN
+                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                ELSE
+                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                    END;
+                Windows.UPDATE(3, L_SalesInvoiceLine."No.");
                 LineNo += 1;
 
                 L_SalesInvoiceHeader.Reset();
@@ -702,13 +705,23 @@ codeunit 90030 "Datawarehouse-WebDezign"
             until L_SalesInvoiceLine.Next() = 0;
         end;
 
-        // GetStartAndEndDates(StartDate, EndDate);
+        GetStartAndEndDates(StartDate, EndDate);
+        Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         L_SalesCreditMemoLine.Reset();
         L_SalesCreditMemoLine.SetFilter(Quantity, '>%1', 0);
         L_SalesCreditMemoLine.SetRange(Type, L_SalesCreditMemoLine.Type::Item);
-        //L_SalesCreditMemoLine.SetRange("Posting Date", StartDate, EndDate);
+        L_SalesCreditMemoLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesCreditMemoLine.FindSet() then begin
             repeat
+                NoOfRecs := L_SalesCreditMemoLine.Count;
+                ProgressCount += 1;
+                IF NoOfRecs <= 100 THEN
+                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                ELSE
+                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                    END;
+                Windows.UPDATE(3, L_SalesCreditMemoLine."No.");
                 LineNo += 1;
                 L_SalesCreditMemoHeader.Reset();
                 L_SalesCreditMemoHeader.SetRange("No.", L_SalesCreditMemoLine."Document No.");
@@ -828,11 +841,15 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Clear(TempBLOB);
         Clear(Filename);
         Clear(GRNInstream);
-        Filename := 'mio47.csv';
+        Clear(MM);
+        Clear(YYYY);
+        MM := Format(Date2DMY(StartDate, 2));
+        YYYY := Format(Date2DMY(StartDate, 3));
+        Filename := 'mio47' + YYYY + MM + '.csv';
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
-        UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
-        //DownloadFromStream(GRNInstream, '', '', '', Filename);
+        //UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
+        DownloadFromStream(GRNInstream, '', '', '', Filename);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
@@ -857,11 +874,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
     procedure GetStartAndEndDates(var StartDate: Date; var EndDate: Date)
     begin
 
-        EndDate := WorkDate();
-        if Date2DMY(WorkDate(), 2) <= 7 then begin
-            StartDate := DMY2Date(1, Date2DMY(WorkDate(), 2) - 1, Date2DMY(WorkDate(), 3));
+        EndDate := CalcDate('+CM', WorkDate());
+        if Date2DMY(WorkDate(), 1) <= 7 then begin
+            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
         end else begin
-            StartDate := DMY2Date(1, Date2DMY(WorkDate(), 2), Date2DMY(WorkDate(), 3));
+            StartDate := CalcDate('<-CM>', WorkDate());
         end;
     end;
 
