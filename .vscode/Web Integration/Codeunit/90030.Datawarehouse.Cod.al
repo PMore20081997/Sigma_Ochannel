@@ -705,7 +705,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
             until L_SalesInvoiceLine.Next() = 0;
         end;
 
-        GetStartAndEndDates(StartDate, EndDate);
+        //GetStartAndEndDates(StartDate, EndDate);
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         L_SalesCreditMemoLine.Reset();
         L_SalesCreditMemoLine.SetFilter(Quantity, '>%1', 0);
@@ -848,8 +848,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Filename := 'mio47' + YYYY + MM + '.csv';
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
-        //UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
-        DownloadFromStream(GRNInstream, '', '', '', Filename);
+        UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
+       // DownloadFromStream(GRNInstream, '', '', '', Filename);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];
