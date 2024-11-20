@@ -12,7 +12,7 @@ codeunit 90027 "Create Inv Pick Non-Knapp"
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
         L_SalesHeader.SetRange("Knapp Order", false);
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Released);
-        L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
+        //L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());//Discussed with Team
         L_SalesHeader.SetRange(Shipped, false);
         if L_SalesHeader.FindSet() then begin
             repeat
