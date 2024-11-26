@@ -704,7 +704,7 @@ xmlport 90002 "mio01"
                     Sedes_Cust_Code := '';
                     Nu_Care_Baseline := '';
                     Closed := '';
-                    Cred_Cont := '';
+                    Cred_Cont := Customer."Shop Group";
                     Default_Round := Customer."Shipping Agent Service Code";
                     Cust_Anal_1 := '';
                     Cust_Anal_2 := '';
