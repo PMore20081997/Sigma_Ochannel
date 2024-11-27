@@ -199,8 +199,8 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                                     Rec_SalesLine.SetRange(Type, Rec_SalesLine.Type::Item);
                                                     Rec_SalesLine.SetRange("Knapp Line", true);
                                                     if Rec_SalesLine.FindSet() then begin
-                                                        Rec_SalesLine.ModifyAll("Qty. to Ship", 0);
-                                                        Rec_SalesLine.ModifyAll("Qty. to Invoice", 0);
+                                                        Rec_SalesLine.ModifyAll("Qty. to Ship", 0, true);
+                                                        Rec_SalesLine.ModifyAll("Qty. to Invoice", 0, true);
                                                         Rec_SalesLine.ModifyAll("Location Code", Rec_SalesHeader."Location Code");
                                                     end;
                                                     Commit();

@@ -1173,6 +1173,16 @@ codeunit 90000 "Web Order Mgt"
                         end;
                     end;
 
+                    //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
+                    if L_ErrorRecorded = false then begin
+                        if L_Item.Get(L_InterimSalesLine."No.") then begin
+                            if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end;
+
                     //Response SEQ9 and SEQ11++
                     if L_ErrorRecorded = false then begin
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
@@ -1194,7 +1204,7 @@ codeunit 90000 "Web Order Mgt"
                                         end;
                                     end else begin
                                         Sigma_InsertErrorLog('Product out of stock because of Quota', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
-                                        L_ErrorRecorded := TRUE;
+                                        //L_ErrorRecorded := TRUE;
 
                                         //Update Line
                                         L_InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
@@ -1203,16 +1213,6 @@ codeunit 90000 "Web Order Mgt"
                                         L_InterimSalesLine.Modify();
                                     end;
                                 end;
-                            end;
-                        end;
-                    end;
-
-                    //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
-                    if L_ErrorRecorded = false then begin
-                        if L_Item.Get(L_InterimSalesLine."No.") then begin
-                            if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
-                                Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
-                                L_ErrorRecorded := TRUE;
                             end;
                         end;
                     end;

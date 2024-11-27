@@ -256,6 +256,16 @@ page 90032 "Avibuyer Order Line Subpage"
                 end;
             end;
 
+            //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
+            if L_ErrorRecorded = false then begin
+                if L_Item.Get(_InterimSalesLine."No.") then begin
+                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
             //Response SEQ9 and SEQ11++
             if L_ErrorRecorded = false then begin
                 if L_Item.Get(_InterimSalesLine."No.") then begin
@@ -285,16 +295,6 @@ page 90032 "Avibuyer Order Line Subpage"
                                 _InterimSalesLine."Qty. to Deliver" := 0;
                             end;
                         end;
-                    end;
-                end;
-            end;
-
-            //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
-            if L_ErrorRecorded = false then begin
-                if L_Item.Get(_InterimSalesLine."No.") then begin
-                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
-                        L_ErrorRecorded := TRUE;
                     end;
                 end;
             end;

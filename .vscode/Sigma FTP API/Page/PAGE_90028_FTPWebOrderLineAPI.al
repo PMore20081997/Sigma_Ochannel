@@ -256,6 +256,16 @@ page 90028 "FTP Web Order Line Subpage"
                 end;
             end;
 
+            //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
+            if L_ErrorRecorded = false then begin
+                if L_Item.Get(_InterimSalesLine."No.") then begin
+                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
+                        L_ErrorRecorded := TRUE;
+                    end;
+                end;
+            end;
+
             //Response SEQ9 and SEQ11++
             if L_ErrorRecorded = false then begin
                 if L_Item.Get(_InterimSalesLine."No.") then begin
@@ -277,7 +287,7 @@ page 90028 "FTP Web Order Line Subpage"
                                 end;
                             end else begin
                                 CU_WebOrderManagement.Sigma_InsertErrorLog('Product out of stock because of Quota', P_InterimSalesHeader, _InterimSalesLine, 'SEQ11', false, '');
-                                L_ErrorRecorded := TRUE;
+                                //L_ErrorRecorded := TRUE;
 
                                 //Update Line
                                 _InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
@@ -289,15 +299,6 @@ page 90028 "FTP Web Order Line Subpage"
                 end;
             end;
 
-            //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
-            if L_ErrorRecorded = false then begin
-                if L_Item.Get(_InterimSalesLine."No.") then begin
-                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
-                        L_ErrorRecorded := TRUE;
-                    end;
-                end;
-            end;
         end;
     end;
 }
