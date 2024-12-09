@@ -616,7 +616,11 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 11, L_SalesInvoiceHeader."Order No.");  // Ord No
                     CSVBuffer.InsertEntry(LineNo, 12, L_SalesInvoiceHeader."Salesperson Code");  // Op Code
                     CSVBuffer.InsertEntry(LineNo, 13, '');  // Ord Type
-                    CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Shipping Agent Code");  // Round
+                    if L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code" = '' then begin
+                        CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Shipping Agent Service Code");  // Round
+                    end else begin
+                        CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");  // Round
+                    end;
                     CSVBuffer.InsertEntry(LineNo, 15, DelChr(Format(L_SalesInvoiceLine."Unit Price"), '=', ','));  // Pack Price
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesInvoiceLine."Item Category Code");  // Prod Group
                     CSVBuffer.InsertEntry(LineNo, 17, DelChr(Format((L_SalesInvoiceLine."Unit Price" - L_SalesInvoiceLine."Unit Cost") * L_SalesInvoiceLine.Quantity), '=', ','));  // Margin
@@ -748,7 +752,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 11, L_SalesCreditMemoHeader."Return Order No.");  // Ord No
                     CSVBuffer.InsertEntry(LineNo, 12, L_SalesCreditMemoHeader."Salesperson Code");  // Op Code
                     CSVBuffer.InsertEntry(LineNo, 13, '');  // Ord Type
-                    CSVBuffer.InsertEntry(LineNo, 14, L_SalesCreditMemoHeader."Shipping Agent Code");  // Round
+                    CSVBuffer.InsertEntry(LineNo, 14, L_SalesCreditMemoHeader."Shipping Agent Service Code");  // Round
                     CSVBuffer.InsertEntry(LineNo, 15, '-' + DelChr(Format(Abs(L_SalesCreditMemoLine."Unit Price")), '=', ','));  // Pack Price
                     CSVBuffer.InsertEntry(LineNo, 16, L_SalesCreditMemoLine."Item Category Code");  // Prod Group
                     CSVBuffer.InsertEntry(LineNo, 17, '-' + DelChr(Format(Abs((L_SalesCreditMemoLine."Unit Price" - L_SalesCreditMemoLine."Unit Cost") * L_SalesCreditMemoLine.Quantity)), '=', ','));  // Margin
@@ -849,7 +853,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         CSVBuffer.SaveDataToBlob(TempBLOB, ',');
         TempBLOB.CreateInStream(GRNInstream);
         UploadFileToEDIAzureContainer(GRNInstream, FileName, StartParameter);
-       // DownloadFromStream(GRNInstream, '', '', '', Filename);
+        // DownloadFromStream(GRNInstream, '', '', '', Filename);
     end;
 
     procedure FormatDateForCSV(MyDate: Date): Text[10];

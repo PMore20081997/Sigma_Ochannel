@@ -40,7 +40,7 @@ xmlport 90004 "mio06con"
             }
             tableelement("Price_List_Header"; "Price List Header")
             {
-
+                SourceTableView = where(Status = const(Active));
 
                 textelement(Cont_Code)
                 {
