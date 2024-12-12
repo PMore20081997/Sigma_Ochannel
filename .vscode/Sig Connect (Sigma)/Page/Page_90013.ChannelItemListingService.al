@@ -75,6 +75,14 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = ALL;
                 }
+                field("Sales Blocked"; Rec."Sales Blocked")
+                {
+                    ApplicationArea = All;
+                }
+                field("Ops Sales Blocked"; Rec."Ops Sales Blocked")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

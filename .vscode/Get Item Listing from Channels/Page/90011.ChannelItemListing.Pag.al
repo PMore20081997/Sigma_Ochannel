@@ -126,6 +126,14 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     ToolTip = 'Acknowledgment from Portal that Inventory has synced on their side';
                 }
+                field("Sales Blocked"; Rec."Sales Blocked")
+                {
+                    ApplicationArea = All;
+                }
+                field("Ops Sales Blocked"; Rec."Ops Sales Blocked")
+                {
+                    ApplicationArea = All;
+                }
                 field(Remarks; Rec.Remarks)
                 {
                     ApplicationArea = All;
@@ -248,6 +256,8 @@ page 90011 "Channel Item Listing"
                                     ChannelItemListing."Inventory Synced" := false;
                                     ChannelItemListing."Modified On" := CurrentDateTime;
                                 end;
+                                ChannelItemListing."Sales Blocked" := L_Item."Sales Blocked";
+                                ChannelItemListing."Ops Sales Blocked" := L_Item."Ops Sales Blocked";
                             end else begin
                                 ChannelItemListing.Remarks := 'Item Not Found ' + ChannelItemListing."Item No.";
                                 ChannelItemListing."Modified On" := CurrentDateTime;

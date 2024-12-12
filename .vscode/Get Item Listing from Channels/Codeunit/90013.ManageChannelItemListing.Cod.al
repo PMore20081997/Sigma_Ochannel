@@ -64,6 +64,8 @@ codeunit 90013 "Manage Channel Item Listing"
                                         if L_Item.FindFirst() then begin
                                             L_Item.CalcFields(Inventory);
                                             ChannelItemListing.Validate("Channel Inventory", L_Item.Inventory);
+                                            ChannelItemListing."Sales Blocked" := L_Item."Sales Blocked";
+                                            ChannelItemListing."Ops Sales Blocked" := L_Item."Ops Sales Blocked";
                                         end;
 
                                         ChannelItemListing.MODIFY(TRUE);
@@ -88,6 +90,8 @@ codeunit 90013 "Manage Channel Item Listing"
                                         if L_Item.FindFirst() then begin
                                             L_Item.CalcFields(Inventory);
                                             ChannelItemListing.Validate("Channel Inventory", L_Item.Inventory);
+                                            ChannelItemListing."Sales Blocked" := L_Item."Sales Blocked";
+                                            ChannelItemListing."Ops Sales Blocked" := L_Item."Ops Sales Blocked";
                                         end;
                                         ChannelItemListing.Status := ChannelItemListing.Status::Active;
                                         ChannelItemListing.INSERT;
@@ -104,6 +108,8 @@ codeunit 90013 "Manage Channel Item Listing"
 
                                     P_Item.CalcFields(Inventory);
                                     ChannelItemListing.Validate("Channel Inventory", P_Item.Inventory);
+                                    ChannelItemListing."Sales Blocked" := P_Item."Sales Blocked";
+                                    ChannelItemListing."Ops Sales Blocked" := P_Item."Ops Sales Blocked";
                                     ChannelItemListing.MODIFY(TRUE);
                                 END
                                 ELSE BEGIN
@@ -116,6 +122,8 @@ codeunit 90013 "Manage Channel Item Listing"
                                     P_Item.CalcFields(Inventory);
                                     ChannelItemListing.Validate("Channel Inventory", P_Item.Inventory);
                                     ChannelItemListing.Status := ChannelItemListing.Status::Active;
+                                    ChannelItemListing."Sales Blocked" := P_Item."Sales Blocked";
+                                    ChannelItemListing."Ops Sales Blocked" := P_Item."Ops Sales Blocked";
                                     ChannelItemListing.INSERT;
                                 END;
                             end;

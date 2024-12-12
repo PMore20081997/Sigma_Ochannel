@@ -268,6 +268,14 @@ table 90011 "Channel Item Listing"
         {
             DataClassification = ToBeClassified;
         }
+        field(50; "Sales Blocked"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(51; "Ops Sales Blocked"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys

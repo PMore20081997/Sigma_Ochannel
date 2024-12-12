@@ -88,6 +88,8 @@ codeunit 90017 "Update Channel Item Inventory"
                         L_ChannelItemListing."Inventory Synced" := false;
                         L_ChannelItemListing."Modified On" := CurrentDateTime;
                     end;
+                    L_ChannelItemListing."Sales Blocked" := L_Item."Sales Blocked";
+                    L_ChannelItemListing."Ops Sales Blocked" := L_Item."Ops Sales Blocked";
                 end
                 else begin
                     L_ChannelItemListing.Remarks := 'Item Not Found ' + L_ChannelItemListing."Item No.";
