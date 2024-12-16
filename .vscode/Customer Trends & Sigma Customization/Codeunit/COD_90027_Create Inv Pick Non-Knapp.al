@@ -16,18 +16,25 @@ codeunit 90027 "Create Inv Pick Non-Knapp"
         L_SalesHeader.SetRange(Shipped, false);
         if L_SalesHeader.FindSet() then begin
             repeat
-                L_Customer.Reset();
-                L_Customer.SetRange("No.", L_SalesHeader."Sell-to Customer No.");
-                if L_Customer.FindFirst() then begin
-                    if L_Customer.Blocked = L_Customer.Blocked::" " then begin
-                        WhseRequest.Reset();
-                        WhseRequest.SetCurrentKey("Source Document", "Source No.");
-                        WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
-                        WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
-                        REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
-                        Commit();
-                    end;
-                end;
+                // L_Customer.Reset();
+                // L_Customer.SetRange("No.", L_SalesHeader."Sell-to Customer No.");
+                // if L_Customer.FindFirst() then begin
+                //     if L_Customer.Blocked = L_Customer.Blocked::" " then begin
+                //         WhseRequest.Reset();
+                //         WhseRequest.SetCurrentKey("Source Document", "Source No.");
+                //         WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
+                //         WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
+                //         REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
+                //         Commit();
+                //     end;
+                //end;
+
+                WhseRequest.Reset();
+                WhseRequest.SetCurrentKey("Source Document", "Source No.");
+                WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
+                WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
+                REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
+                Commit();
             until L_SalesHeader.Next() = 0;
         end;
     end;

@@ -48,16 +48,34 @@ codeunit 90066 "Create Consolidate SO"
         L_InterimSL.SetFilter("Qty. to Deliver", '>%1', 0);
         if L_InterimSL.FindSet() then begin
             repeat
-                //Added the Condition here again to Check Item because 
-                //User can make any product Block or keep it Open anytime in between Working Shifts
-                //So need to skip those lines as discussed with Adesh
+                // //Added the Condition here again to Check Item because 
+                // //User can make any product Block or keep it Open anytime in between Working Shifts
+                // //So need to skip those lines as discussed with Adesh
+                // L_CUstomer.Reset();
+                // L_CUstomer.SetRange("No.", _InterimSH."Sell-to Customer No.");
+                // if L_CUstomer.FindFirst() then begin
+                //     if (L_CUstomer.Blocked = L_CUstomer.Blocked::" ") and (L_CUstomer.Status = L_CUstomer.Status::Released) and (L_CUstomer."QAU Approved" = true) then begin
+                //         L_Item.Reset();
+                //         if L_Item.Get(L_InterimSL."No.") then begin
+                //             if (L_Item.Blocked = false) and (L_Item."Sales Blocked" = false) and (L_Item."Ops Sales Blocked" = false) and (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) and (L_Item."Gen. Prod. Posting Group" <> '') then begin
+                //                 //Create Lines++
+                //                 CreateTemporarySalesLine(L_InterimSL, _InterimSH);
+
+                //                 //This code Move into ProcessTemporarySalesLinetoSalesOrder function to reduce the time+++
+                //                 // //Create Lines For Loop++ 
+                //                 // CreateTemporarySalesLine_ForLoop(L_InterimSL, _InterimSH);
+                //             end;
+                //         end;
+                //     end;
+                // end;
+
                 L_CUstomer.Reset();
                 L_CUstomer.SetRange("No.", _InterimSH."Sell-to Customer No.");
                 if L_CUstomer.FindFirst() then begin
-                    if (L_CUstomer.Blocked = L_CUstomer.Blocked::" ") and (L_CUstomer.Status = L_CUstomer.Status::Released) and (L_CUstomer."QAU Approved" = true) then begin
+                    if (L_CUstomer.Status = L_CUstomer.Status::Released) and (L_CUstomer."QAU Approved" = true) then begin
                         L_Item.Reset();
                         if L_Item.Get(L_InterimSL."No.") then begin
-                            if (L_Item.Blocked = false) and (L_Item."Sales Blocked" = false) and (L_Item."Ops Sales Blocked" = false) and (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) and (L_Item."Gen. Prod. Posting Group" <> '') then begin
+                            if (L_Item.Status = L_Item.Status::Released) and (L_Item."QAU Approved" = true) and (L_Item."Gen. Prod. Posting Group" <> '') then begin
                                 //Create Lines++
                                 CreateTemporarySalesLine(L_InterimSL, _InterimSH);
 
