@@ -107,6 +107,7 @@ codeunit 90082 "EDI Invoice"
         Clear(HeaderInfo11);
 
         CompanyInfo.get();
+        //posting date
         Dateformat := Date2DMY(Salesinvoicehead."Order Date", 1);
         if Dateformat < 10 then
             DateText := '0' + Format(Dateformat)
@@ -120,6 +121,21 @@ codeunit 90082 "EDI Invoice"
         Yearformat := Date2DMY(Salesinvoicehead."Order Date", 3);
         YearText := Format(Yearformat);
         DMYPostingFormat := YearText + MonthText + DateText;
+        //Due Date
+        DueDateformat := Date2DMY(Salesinvoicehead."Due Date", 1);
+        if DueDateformat < 10 then
+            DueDateText := '0' + Format(DueDateformat)
+        else
+            DueDateText := format(DueDateformat);
+        DueMonthformat := Date2DMY(Salesinvoicehead."Due Date", 2);
+        if DueMonthformat < 10 then
+            DueMonthText := '0' + Format(DueMonthformat)
+        else
+            DueMonthText := format(DueMonthformat);
+        DueYearformat := Date2DMY(Salesinvoicehead."Due Date", 3);
+        DueYearText := Format(DueYearformat);
+        DMYDueDateFormat := DueYearText + DueMonthText + DueDateText;
+
         Time1 := DT2Time(Salesinvoicehead.SystemCreatedAt);
         TimeText := Format(Time1, 0, '<Hours24,2><Minutes,2><Seconds,2>');
         InvNo := Salesinvoicehead."No.";
@@ -130,7 +146,7 @@ codeunit 90082 "EDI Invoice"
         //TotalAmt := SalesHeader."Amount Including VAT";
         Salesinvoicehead.CalcFields("Amount Including VAT", Amount);
         TaxAmount := Salesinvoicehead."Amount Including VAT" - Salesinvoicehead.Amount;
-        BuyerRef := Salesinvoicehead."Your Reference";
+        BuyerRef := Salesinvoicehead."External Document No.";
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
@@ -147,19 +163,21 @@ codeunit 90082 "EDI Invoice"
                 Clear(gtin);
                 Clear(PackSize);
                 Clear(Desc);
+                Clear(SubtotalCharges);
                 item.Reset();
                 if item.Get(salesinvoiceline."No.") then begin
                     gtin := item.GTIN;
                     PackSize := item."EDI Pack size";
                     Desc := item."EDI Description";
+                    SubtotalCharges += ((salesinvoiceline."Unit Price" * salesinvoiceline.Quantity) - salesinvoiceline."Line Discount Amount");
                 end;
                 count += 1;
                 TotalAmtIncVat += salesinvoiceline."Amount Including VAT";
                 TotalAmtExcVat += salesinvoiceline.Amount;
                 DiscountAmt += salesinvoiceline."Line Discount Amount";
-                LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesinvoiceline.Quantity) + '^' + '2' + '^^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesinvoiceline."VAT %") + '^' + format(salesinvoiceline."Amount Including VAT" - salesinvoiceline.Amount) + '^^^' + CRLF[1];
+                LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesinvoiceline.Quantity) + '^' + '2' + '^^' + format(salesinvoiceline."Unit Price") + '^' + Format(salesinvoiceline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesinvoiceline."VAT %") + '^' + format(salesinvoiceline."Amount Including VAT" - salesinvoiceline.Amount) + '^^^' + CRLF[1];
                 LineInfo2 := '**P' + '^' + 'O' + '^' + salesinvoiceline."No." + '^' + gtin + '^^^^^^' + Desc + '^^' + Format(PackSize) + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
-                LineInfo3 := '**G^O^' + format(salesinvoiceline."Amount Including VAT") + '^' + Format(salesinvoiceline.Amount) + '^^^^^^^^^^^' + CRLF[1];
+                LineInfo3 := '**G^O^' + format(salesinvoiceline.Amount) + '^' + Format(salesinvoiceline."Unit Price") + '^^^^^^^^^^^^' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
             until salesinvoiceline.Next() = 0;
 
@@ -167,13 +185,13 @@ codeunit 90082 "EDI Invoice"
         HeaderInfoAll := '';
         HeaderInfo1 := '**!' + '1.02.30' + 'G' + 'INV' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + '^^^^' + CRLF[1];
-        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYPostingFormat + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
+        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYDueDateFormat + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + CompGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + CompGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + Salesinvoicehead."Ship-to Name" + '^' + Salesinvoicehead."Ship-to Address" + '^' + Salesinvoicehead."Ship-to Address 2" + '^' + Salesinvoicehead."Ship-to City" + '^' + Salesinvoicehead."Ship-to County" + '^' + Salesinvoicehead."Ship-to Post Code" + '^' + Salesinvoicehead."Ship-to Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^0^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^' + CRLF[1];
+        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(SubtotalCharges) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^' + CRLF[1];
         HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + format(DiscountAmt) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^^^^^' + CRLF[1];
         HeaderInfo11 := '**@' + InvNo + '1     1     ' + Format(count);
         HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
@@ -775,13 +793,20 @@ codeunit 90082 "EDI Invoice"
 
         FileName: Text;
         Dateformat: Integer;
+        DueDateformat: Integer;
         Monthformat: Integer;
+        DueMonthformat: Integer;
         Yearformat: Integer;
+        DueYearformat: Integer;
         DMYPostingFormat: Text;
+        DMYDueDateFormat: Text;
         DMYShipmentFormat: Text;
         YearText: Text;
+        DueYearText: Text;
         MonthText: Text;
+        DueMonthText: Text;
         DateText: Text;
+        DueDateText: Text;
         TimeFormat: Text;
         TimeText: Text;
         TimeStr: Text;
@@ -809,6 +834,7 @@ codeunit 90082 "EDI Invoice"
         TradepartnerRecord: Record "Trade Partner";
         PackSize: Decimal;
         Desc: text[40];
+        SubtotalCharges: Decimal;
         totalqty: Decimal;
         TaxCode: Code[10];
         TaxCodeLine: Code[10];
