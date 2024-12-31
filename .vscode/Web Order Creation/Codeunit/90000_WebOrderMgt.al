@@ -1333,7 +1333,8 @@ codeunit 90000 "Web Order Mgt"
         L_ItemLedgerEntry.SETRANGE("Item No.", P_InterimSalesLine."No.");
         L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
         //L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
-        L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
+        //L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(P_InterimSalesLine."No."));
         L_ItemLedgerEntry.SetRange(Open, true);
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums("Remaining Quantity");
@@ -2608,6 +2609,30 @@ codeunit 90000 "Web Order Mgt"
                     end;
                 end;
             end;
+        end;
+    end;
+
+    local procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
         end;
     end;
 

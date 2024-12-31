@@ -62,7 +62,7 @@ codeunit 90023 "Inventory Calculation"
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."Item No.");
         L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Units of Measure");
         L_ItemLedgerEntry.SetRange("Saleable Location", true);
-        L_ItemLedgerEntry.SetRange("Daily Priority Exist", _Rec."Variant Code mandatory");
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."Item No."));
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
@@ -294,4 +294,29 @@ codeunit 90023 "Inventory Calculation"
     //         exit(0);
     // end;
     //----------------------------------------Purcahse Order-------------------------------------
+
+
+    local procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
+        end;
+    end;
 }

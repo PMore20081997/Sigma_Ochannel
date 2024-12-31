@@ -41,10 +41,11 @@ codeunit 90017 "Update Channel Item Inventory"
                     L_ItemLedgerEntry.Reset();
                     L_ItemLedgerEntry.SetRange("Item No.", L_ChannelItemListing."Item No.");
                     L_ItemLedgerEntry.SetRange("Saleable Location", true);
-                    if L_ChannelItemListing."Variant Code Mandatory" = true then
-                        L_ItemLedgerEntry.SetRange("Daily Priority Exist", true)
-                    else
-                        L_ItemLedgerEntry.SetRange("Daily Priority Exist", false);
+                    // if L_ChannelItemListing."Variant Code Mandatory" = true then
+                    //     L_ItemLedgerEntry.SetRange("Daily Priority Exist", true)
+                    // else
+                    //     L_ItemLedgerEntry.SetRange("Daily Priority Exist", false);
+                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(L_ChannelItemListing."Item No."));
                     L_ItemLedgerEntry.CalcSums(Quantity);
                     PhysicalInventory := L_ItemLedgerEntry.Quantity;
                     if PhysicalInventory < 0 then
@@ -99,6 +100,30 @@ codeunit 90017 "Update Channel Item Inventory"
                 L_ChannelItemListing.Modify(true);
                 Commit();
             Until L_ChannelItemListing.Next() = 0;
+        end;
+    end;
+
+    local procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
         end;
     end;
 }
