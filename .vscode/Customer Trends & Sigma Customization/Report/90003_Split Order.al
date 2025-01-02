@@ -109,6 +109,7 @@ report 90003 "Check & Split Order"
                     field(OrderDateFilter; OrderDateFilter)
                     {
                         Caption = 'Order Date: ';
+                        ApplicationArea = All;
                     }
                 }
             }
