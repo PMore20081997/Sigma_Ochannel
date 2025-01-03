@@ -301,6 +301,11 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement("Block_Reason_Code_Header")
+                {
+
+                }
+
 
                 textelement(XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
                 {
@@ -369,6 +374,7 @@ xmlport 90002 "mio01"
                     "Min_Order_Value_Header" := 'Min Order Value';
                     LTD_Name_Header := 'LTD Name';
                     "Customer_Group_Header" := 'Customer Group';
+                    Block_Reason_Code_Header := 'Block Reason Code';
                     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX := XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
                 end;
@@ -660,6 +666,10 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement(Block_Reason_Code)
+                {
+
+                }
 
 
 
@@ -744,6 +754,7 @@ xmlport 90002 "mio01"
                     "Min_Order_Value" := Format(Customer."Min Order Value");
                     LTD_Name := Customer."Name 2";
                     Customer_Group := Customer."Bill-to Customer No.";
+                    Block_Reason_Code := Customer."Block Reason";
                 end;
             }
 

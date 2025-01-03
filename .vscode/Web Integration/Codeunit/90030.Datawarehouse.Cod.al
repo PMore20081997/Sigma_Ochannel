@@ -52,14 +52,13 @@ codeunit 90030 "Datawarehouse-WebDezign"
         xmlmio82: XmlPort mio82;
         xmlcontractprices: XmlPort "Contract Price Lists";
         xmlmio06ct: XmlPort mio06ct;
+        xmlmio06rc: XmlPort mio06rc;
         xmlproductvariant: XmlPort "Product variant";
         XMLOutStream: OutStream;
         XMLInStream: InStream;
         FileName: Text;
         TempILE1: Record TempILE1;
     begin
-
-
 
         #region "mio03" 02
         Clear(TempBlob);
@@ -424,6 +423,19 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         //TempILE.DeleteAll();
+        #endregion
+
+        #region "mio06rc" 29
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio06rc.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmio06rc.SetDestination(XMLOutStream);
+        xmlmio06rc.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
     end;
