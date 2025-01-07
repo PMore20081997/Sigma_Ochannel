@@ -143,6 +143,7 @@ codeunit 90082 "EDI Invoice"
         Curr := Salesinvoicehead."Currency Code";
         RefCurr := P_customer."Currency Code";
         taxDate := Salesinvoicehead."VAT Reporting Date";
+        PaymentTermDays := Salesinvoicehead."Due Date" - Salesinvoicehead."Order Date";
         //TotalAmt := SalesHeader."Amount Including VAT";
         Salesinvoicehead.CalcFields("Amount Including VAT", Amount);
         TaxAmount := Salesinvoicehead."Amount Including VAT" - Salesinvoicehead.Amount;
@@ -185,15 +186,15 @@ codeunit 90082 "EDI Invoice"
         HeaderInfoAll := '';
         HeaderInfo1 := '**!' + '1.02.30' + 'G' + 'INV' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + '^^^^' + CRLF[1];
-        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYDueDateFormat + '^' + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
+        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYDueDateFormat + '^' + Format(PaymentTermDays) + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + Format(SalesInvoiceHeader."Payment Discount %") + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
         HeaderInfo12 := '*DH' + '^' + SalesInvoiceHeader."Order No." + '^' + DMYPostingFormat + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + CompGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + CompGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + Salesinvoicehead."Ship-to Name" + '^' + Salesinvoicehead."Ship-to Address" + '^' + Salesinvoicehead."Ship-to Address 2" + '^' + Salesinvoicehead."Ship-to City" + '^' + Salesinvoicehead."Ship-to County" + '^' + Salesinvoicehead."Ship-to Post Code" + '^' + Salesinvoicehead."Ship-to Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(SubtotalCharges) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^' + CRLF[1];
-        HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + format(DiscountAmt) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(TotalAmtIncVat) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^^^^^' + CRLF[1];
+        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(SubtotalCharges) + '^' + format(TotalAmtExcVat - DiscountAmt + SubtotalCharges) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtExcVat - DiscountAmt + SubtotalCharges + TotalAmtIncVat - TotalAmtExcVat) + '^^^^' + CRLF[1];
+        HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + format(DiscountAmt) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(salesinvoiceline."VAT Base Amount") + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^^^^^' + CRLF[1];
         HeaderInfo11 := '**@' + InvNo + '1     1     ' + Format(count);
         HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo12 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
@@ -207,8 +208,8 @@ codeunit 90082 "EDI Invoice"
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            //DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
+            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
+            //UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
         end;
     end;
 
@@ -845,4 +846,5 @@ codeunit 90082 "EDI Invoice"
         StorageAccountName: Text;
         SharedAccessKey: SecretText;
         ArchiveContainerName: Text;
+        PaymentTermDays: Integer;
 }

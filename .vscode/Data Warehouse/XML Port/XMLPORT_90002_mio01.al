@@ -715,7 +715,12 @@ xmlport 90002 "mio01"
                     Nu_Care_Baseline := '';
                     Closed := '';
                     Cred_Cont := Customer."Shop Group";
-                    Default_Round := Customer."Shipping Agent Service Code";
+                    if Customer."Shipping Agent Service Code" = '' then begin
+                        Default_Round := Customer."Weekend Ship. Agnt. Serv. Code";
+                    end
+                    else begin
+                        Default_Round := Customer."Shipping Agent Service Code";
+                    end;
                     Cust_Anal_1 := '';
                     Cust_Anal_2 := '';
                     Cust_Anal_4 := '';
