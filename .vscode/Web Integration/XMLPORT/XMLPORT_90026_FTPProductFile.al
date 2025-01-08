@@ -71,7 +71,7 @@ xmlport 90026 "Product File FTP"
             }
             tableelement(Item; Item)
             {
-                SourceTableView = where(Blocked = const(false), Status = filter(Released));
+                SourceTableView = where(Blocked = const(false), Status = filter(Released), "Sales Blocked" = const(false), "Ops Sales Blocked" = const(false));
                 CalcFields = Inventory, "Qty. on Sales Order", "Qty. on Web Order", "Parent Category";
                 textelement(SigmaProductCode)
                 {
@@ -142,15 +142,6 @@ xmlport 90026 "Product File FTP"
                     if InvPrice.Contains(',') then
                         InvPrice := InvPrice.Replace(',', '');
 
-                    // Clear(L_LiveStock);
-                    // L_LiveStock := Item.Inventory - (Item."Qty. on Sales Order" + Item."Qty. on Web Order");
-                    // if L_LiveStock > 0 then begin
-                    //     LiveStock := Format(L_LiveStock);
-                    //     if LiveStock.Contains(',') then
-                    //         LiveStock := LiveStock.Replace(',', '');
-                    // end
-                    // else
-                    //     LiveStock := '0';
                     Clear(IsVariantMandatory);
                     L_Variant.Reset();
                     L_Variant.SetRange("Item No.", Item."No.");
@@ -163,7 +154,8 @@ xmlport 90026 "Product File FTP"
                     Clear(L_Physical);
                     L_ItemLedgerEntry.Reset();
                     L_ItemLedgerEntry.SetRange("Item No.", Item."No.");
-                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", IsVariantMandatory);
+                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(Item."No."));
+                    //L_ItemLedgerEntry.SetRange("Daily Priority Exist", IsVariantMandatory);
                     L_ItemLedgerEntry.SetRange("Saleable Location", true);
                     L_ItemLedgerEntry.CalcSums(Quantity);
                     L_Physical := L_ItemLedgerEntry.Quantity;
@@ -212,4 +204,28 @@ xmlport 90026 "Product File FTP"
             }
         }
     }
+
+    local procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
+        end;
+    end;
 }

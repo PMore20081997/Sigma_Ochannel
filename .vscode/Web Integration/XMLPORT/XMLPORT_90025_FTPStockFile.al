@@ -31,7 +31,7 @@ xmlport 90025 "Stock File FTP"
             }
             tableelement(Item; Item)
             {
-                SourceTableView = where(Blocked = const(false), Status = filter(Released));
+                SourceTableView = where(Blocked = const(false), Status = filter(Released), "Sales Blocked" = const(false), "Ops Sales Blocked" = const(false));
                 CalcFields = Inventory, "Qty. on Sales Order", "Qty. on Web Order";
                 textelement(ProductCode)
                 {
@@ -51,15 +51,6 @@ xmlport 90025 "Stock File FTP"
                     G_WebOrderQty: Decimal;
                 begin
                     ProductCode := Item."No.";
-                    // Clear(L_FreeStock);
-                    // L_FreeStock := Item.Inventory - (Item."Qty. on Sales Order" + Item."Qty. on Web Order");
-                    // if L_FreeStock > 0 then begin
-                    //     FreeStock := Format(L_FreeStock);
-                    //     if FreeStock.Contains(',') then
-                    //         FreeStock := FreeStock.Replace(',', '');
-                    // end
-                    // else
-                    //     FreeStock := '0';
 
                     Clear(IsVariantMandatory);
                     L_Variant.Reset();
@@ -73,7 +64,8 @@ xmlport 90025 "Stock File FTP"
                     Clear(L_Physical);
                     L_ItemLedgerEntry.Reset();
                     L_ItemLedgerEntry.SetRange("Item No.", Item."No.");
-                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", IsVariantMandatory);
+                    L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(Item."No."));
+                    //L_ItemLedgerEntry.SetRange("Daily Priority Exist", IsVariantMandatory);
                     L_ItemLedgerEntry.SetRange("Saleable Location", true);
                     L_ItemLedgerEntry.CalcSums(Quantity);
                     L_Physical := L_ItemLedgerEntry.Quantity;
@@ -117,4 +109,28 @@ xmlport 90025 "Stock File FTP"
             }
         }
     }
+
+    local procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
+        end;
+    end;
 }
