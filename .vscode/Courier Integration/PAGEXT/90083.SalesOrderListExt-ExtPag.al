@@ -48,20 +48,19 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                 end;
             }
 
-            action("Ckeck & Split Order")
-            {
-                ApplicationArea = All;
-                Image = Create;
-                Promoted = true;
-                PromotedCategory = Process;
-                Visible = false;
-                trigger OnAction()
-                var
-                    CheckAndSplitOrder: Report "Check & Split Order";
-                begin
-                    CheckAndSplitOrder.Run();
-                end;
-            }
+            // action("Ckeck & Split Order")
+            // {
+            //     ApplicationArea = All;
+            //     Image = Create;
+            //     Promoted = true;
+            //     PromotedCategory = Process;
+            //     trigger OnAction()
+            //     var
+            //         CheckAndSplitOrder: Report "Check & Split Order";
+            //     begin
+            //         CheckAndSplitOrder.Run();
+            //     end;
+            // }
 
             action("Update Variant, KNAPP Check & Release")
             {

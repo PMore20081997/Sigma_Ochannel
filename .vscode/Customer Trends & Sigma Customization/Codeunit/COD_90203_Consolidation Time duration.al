@@ -25,25 +25,34 @@ codeunit 90203 "Manage Time duration"
         L_SalesHeader.SetRange("Document Type", SalesHeader."Document Type");
         L_SalesHeader.SetRange("No.", SalesHeader."No.");
         if L_SalesHeader.FindFirst() then begin
-            if L_SalesHeader."Web Order" = true then begin
-                //Credit Limit++
-                L_SalesHeader."Credit Limit Approval" := CheckCreditLimit.SalesHeaderCheck(L_SalesHeader);
-                L_SalesHeader.Modify();
-                if L_SalesHeader."Credit Limit Approval" = true then
-                    IsHandled := true;
+            if L_SalesHeader."Document Type" = L_SalesHeader."Document Type"::Order then begin
+                if L_SalesHeader."Web Order" = true then begin
+                    //Credit Limit++
+                    L_SalesHeader."Credit Limit Approval" := CheckCreditLimit.SalesHeaderCheck(L_SalesHeader);
+                    L_SalesHeader.Modify();
+                    if L_SalesHeader."Credit Limit Approval" = true then
+                        IsHandled := true;
 
 
 
-                //Sales quota Check+++
-                L_SalesLine.Reset();
-                L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
-                L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
-                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                if L_SalesLine.FindSet() then begin
-                    repeat
-                        if L_SalesLine.Quantity > 0 then begin
-                            IF RecUserSetup.GET(USERID) THEN BEGIN
-                                IF NOT RecUserSetup."SO Override MaxQty Calculation" THEN BEGIN
+                    //Sales quota Check+++
+                    L_SalesLine.Reset();
+                    L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                    L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                    L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                    if L_SalesLine.FindSet() then begin
+                        repeat
+                            if L_SalesLine.Quantity > 0 then begin
+                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                    IF NOT RecUserSetup."SO Override MaxQty Calculation" THEN BEGIN
+                                        AllEvent.CheckMaxOrderQty2(L_SalesLine);
+                                        L_SalesLine.Modify();
+
+                                        L_SalesHeader.CalcFields("Sales Quota Approval");
+                                        if L_SalesHeader."Sales Quota Approval" = true then
+                                            IsHandled := true;
+                                    END;
+                                END ELSE BEGIN
                                     AllEvent.CheckMaxOrderQty2(L_SalesLine);
                                     L_SalesLine.Modify();
 
@@ -51,26 +60,19 @@ codeunit 90203 "Manage Time duration"
                                     if L_SalesHeader."Sales Quota Approval" = true then
                                         IsHandled := true;
                                 END;
-                            END ELSE BEGIN
-                                AllEvent.CheckMaxOrderQty2(L_SalesLine);
-                                L_SalesLine.Modify();
+                            end;
+                        until L_SalesLine.Next() = 0;
+                    end;
+                end else begin
+                    //Credit Limit++
+                    if L_SalesHeader."Credit Limit Approval" = true then
+                        IsHandled := true;
 
-                                L_SalesHeader.CalcFields("Sales Quota Approval");
-                                if L_SalesHeader."Sales Quota Approval" = true then
-                                    IsHandled := true;
-                            END;
-                        end;
-                    until L_SalesLine.Next() = 0;
+                    //Sales Quota++
+                    L_SalesHeader.CalcFields("Sales Quota Approval");
+                    if L_SalesHeader."Sales Quota Approval" = true then
+                        IsHandled := true;
                 end;
-            end else begin
-                //Credit Limit++
-                if L_SalesHeader."Credit Limit Approval" = true then
-                    IsHandled := true;
-
-                //Sales Quota++
-                L_SalesHeader.CalcFields("Sales Quota Approval");
-                if L_SalesHeader."Sales Quota Approval" = true then
-                    IsHandled := true;
             end;
         end;
     end;

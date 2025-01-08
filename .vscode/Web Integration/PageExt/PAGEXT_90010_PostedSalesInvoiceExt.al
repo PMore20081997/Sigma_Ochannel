@@ -2,7 +2,14 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
 {
     layout
     {
-
+        addafter("Knapp Customer")
+        {
+            field("Web Order"; Rec."Web Order")
+            {
+                ApplicationArea = All;
+                Editable = false;
+            }
+        }
     }
 
     actions

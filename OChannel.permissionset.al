@@ -210,5 +210,8 @@ permissionset 90000 OChannel
         page "FTP Web Order Header API Card" = X,
         page "FTP Web Order Line Subpage" = X,
         tabledata TempILE1 = RIMD,
-        table TempILE1 = X;
+        table TempILE1 = X,
+        xmlport mio06rc = X,
+        page "Avibuyer Order Header API Card" = X,
+        page "Avibuyer Order Line Subpage" = X;
 }
