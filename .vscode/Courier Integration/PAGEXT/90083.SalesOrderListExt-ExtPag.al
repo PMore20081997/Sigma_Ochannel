@@ -214,9 +214,9 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
                                                     Rec_SalesLine.SetRange("Knapp Line", true);
                                                     if Rec_SalesLine.FindSet() then begin
                                                         Rec_SalesLine.ModifyAll("Qty. to Ship", 0, true);
-                                                        Rec_SalesLine.ModifyAll("Qty. Shipped (Base)", 0, true);
+                                                        Rec_SalesLine.ModifyAll("Qty. to Ship (Base)", 0, true);
                                                         Rec_SalesLine.ModifyAll("Qty. to Invoice", 0, true);
-                                                        Rec_SalesLine.ModifyAll("Qty. Invoiced (Base)", 0, true);
+                                                        Rec_SalesLine.ModifyAll("Qty. to Invoice (Base)", 0, true);
                                                         Rec_SalesLine.ModifyAll("Location Code", Rec_SalesHeader."Location Code");
                                                     end;
                                                     Commit();
