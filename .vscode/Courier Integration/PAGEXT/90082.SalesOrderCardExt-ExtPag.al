@@ -59,19 +59,23 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                     MinOrder_Header: Record "Sales Header";
                     L_SumMin: Decimal;
                     L_CheckDecimalQty: Decimal;
+                    RecUserSetup: Record "User Setup";
                 begin
                     Clear(L_SalesHeader);
                     L_SalesHeader := Rec;
                     CurrPage.SetSelectionFilter(L_SalesHeader);
                     if L_SalesHeader.FindFirst() then begin
+                        //Check Filters++
                         L_SalesHeader.TestField(Status, L_SalesHeader.Status::Open);
                         L_SalesHeader.TestField("Web Order", false);
+
+                        //Update and Revalidate Variant as per the priority++++
                         // UdateVariantonSO.UpdateVariantOnSalesOrder(L_SalesHeader);
                         // Commit();
                         UdateVariantonSO.RevalidateVariantOnSalesOrder(L_SalesHeader);
                         Commit();
 
-                        #Region Converting to Knapp Order
+                        #Region Converting to Knapp Order++++
                         L_SalesLine.Reset();
                         L_SalesLine.CalcFields("Variant Code mandatory");
                         L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
@@ -171,11 +175,66 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                 Message('This order can not be converted into knapp order as the header part is not satisfying the conditions');
                             end;
                         end;
-                        #endregion
+                        #EndRegion Converting to Knapp Order++++
 
-                        //Send for Release order if Approval not required
-                        L_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
-                        if (L_SalesHeader."Zero Price Approval" = false) AND (L_SalesHeader."Sales Quota Approval" = false) AND (L_SalesHeader."SO Approval Required" = false) AND (L_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (L_SalesHeader."SO Min Order Approval Required" = false) AND (L_SalesHeader."Credit Limit Approval" = false) then begin
+
+
+                        #Region Check All Approval and User Permission before rellease++++
+                        // //Send for Release order if Approval not required
+                        // L_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
+                        // if (L_SalesHeader."Zero Price Approval" = false) AND (L_SalesHeader."Sales Quota Approval" = false) AND (L_SalesHeader."SO Approval Required" = false) AND (L_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (L_SalesHeader."SO Min Order Approval Required" = false) AND (L_SalesHeader."Credit Limit Approval" = false) then begin
+                        //     Clear(L_SumMin);
+                        //     MinOrder_Header.Reset();
+                        //     MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                        //     MinOrder_Header.SetRange("Sell-to Customer No.", L_SalesHeader."Sell-to Customer No.");
+                        //     MinOrder_Header.SetRange("Shipment Date", L_SalesHeader."Shipment Date");
+                        //     MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                        //     MinOrder_Header.SetRange("Web Order", false);
+                        //     if MinOrder_Header.FindSet() then begin
+                        //         repeat
+                        //             MinOrder_Header.CalcFields(Amount);
+                        //             L_SumMin += MinOrder_Header.Amount;
+                        //         until MinOrder_Header.Next() = 0;
+                        //     end;
+
+                        //     if L_SalesHeader."Min Order Value" <> 0 then begin
+                        //         if L_SumMin >= L_SalesHeader."Min Order Value" then begin
+                        //             CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                        //             Commit();
+                        //         end else begin
+                        //             L_SalesHeader."SO Min Order Approval Required" := true;
+                        //             L_SalesHeader.Modify();
+                        //         end;
+                        //     end else begin
+                        //         CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end else begin
+                        //     if L_SalesHeader."Credit Limit Approval" = true then
+                        //         Message('Credit Limit Approval Required');
+
+                        //     if L_SalesHeader."SO Min Order Approval Required" = true then
+                        //         Message('SO Min Order Approval Required');
+
+                        //     if L_SalesHeader."Zero Price Approval" = true then
+                        //         Message('Zero Price Approval Required');
+
+                        //     if L_SalesHeader."Sales Quota Approval" = true then
+                        //         Message('Sales Quota Approval Required');
+
+                        //     if L_SalesHeader."SO Approval Required" = true then
+                        //         Message('SO Approval Required');
+                        // end;
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(L_SalesHeader) then begin
+                        //     if L_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(L_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+                        #Region New Code - 21/01/2025+++++
+                        //Update Min Price Field on SO before releas+++
+                        if L_SalesHeader."Min Order Value" <> 0 then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
                             MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
@@ -188,50 +247,161 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                     MinOrder_Header.CalcFields(Amount);
                                     L_SumMin += MinOrder_Header.Amount;
                                 until MinOrder_Header.Next() = 0;
-                            end;
 
-                            if L_SalesHeader."Min Order Value" <> 0 then begin
                                 if L_SumMin >= L_SalesHeader."Min Order Value" then begin
-                                    CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
-                                    Commit();
+                                    L_SalesHeader."SO Min Order Approval Required" := false;
+                                    L_SalesHeader.Modify();
                                 end else begin
                                     L_SalesHeader."SO Min Order Approval Required" := true;
                                     L_SalesHeader.Modify();
                                 end;
-                            end else begin
-                                CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
-                                Commit();
                             end;
                         end else begin
-                            if L_SalesHeader."Credit Limit Approval" = true then
-                                Message('Credit Limit Approval Required');
-
-                            if L_SalesHeader."SO Min Order Approval Required" = true then
-                                Message('SO Min Order Approval Required');
-
-                            if L_SalesHeader."Zero Price Approval" = true then
-                                Message('Zero Price Approval Required');
-
-                            if L_SalesHeader."Sales Quota Approval" = true then
-                                Message('Sales Quota Approval Required');
-
-                            if L_SalesHeader."SO Approval Required" = true then
-                                Message('SO Approval Required');
+                            L_SalesHeader."SO Min Order Approval Required" := false;
+                            L_SalesHeader.Modify();
                         end;
 
+                        //Update the value before send to Release+++
+                        Commit();
 
-                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(L_SalesHeader) then begin
-                        //     if L_SalesHeader.SalesLinesExist() then begin
-                        //         ApprovalsMgmt.OnSendSalesDocForApproval(L_SalesHeader);
-                        //         Commit();
-                        //     end;
-                        // end;
+                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                            Commit();
+                        end else begin
+                            if L_SalesHeader.Hospital = true then begin
+                                //For Hospital Order Ignore Credit Limit Approval+++
+                                if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                    CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                    Commit();
+                                end else begin
+                                    if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                Commit();
+                                            end else
+                                                Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
+                                        end else
+                                            Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
+                                    end else begin
+                                        if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                    Commit();
+                                                end else
+                                                    Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
+                                            end else
+                                                Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
+                                        end else begin
+                                            if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."Export Customer Release" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                        Commit();
+                                                    end else
+                                                        Error('You cannot release this sales order because it requires approval for ExportCustomer');
+                                                end else
+                                                    Error('You cannot release this sales order because it requires approval for ExportCustomer');
+                                            end;
+                                        end;
+                                    end;
+                                end;
+                            end else begin
+                                //Non Hospital orders Check all Approval and Permission before release+++
+                                if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                    RecUserSetup.Reset();
+                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                        if RecUserSetup."Credit Limit Release" = true then begin
+                                            CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                            Commit();
+                                        end else
+                                            Error('You cannot release this sales order because it requires approval for Credit Limit');
+                                    end else
+                                        Error('You cannot release this sales order because it requires approval for Credit Limit');
+                                end else begin
+                                    if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO Release spec. (NonExport)" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                Commit();
+                                            end else
+                                                Error('You cannot release this sales order because it requires approval for Credit Limit & SO-MOV-ZeroPrice-SalesQuota');
+                                        end else
+                                            Error('You cannot release this sales order because it requires approval for Credit Limit & SO-MOV-ZeroPrice-SalesQuota');
+                                    end else begin
+                                        if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                    Commit();
+                                                end else
+                                                    Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer');
+                                            end else
+                                                Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer');
+                                        end else begin
+                                            if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                        Commit();
+                                                    end else
+                                                        Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer & SO-MOV-ZeroPrice-SalesQuota');
+                                                end else
+                                                    Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer & SO-MOV-ZeroPrice-SalesQuota');
+                                            end else begin
+                                                if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                                    RecUserSetup.Reset();
+                                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                        if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                            CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                            Commit();
+                                                        end else
+                                                            Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
+                                                    end else
+                                                        Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
+                                                end else begin
+                                                    if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                        RecUserSetup.Reset();
+                                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                            if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                                CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                                Commit();
+                                                            end else
+                                                                Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
+                                                        end else
+                                                            Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
+                                                    end else begin
+                                                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                            RecUserSetup.Reset();
+                                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                                if RecUserSetup."Export Customer Release" = true then begin
+                                                                    CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
+                                                                    Commit();
+                                                                end else
+                                                                    Error('You cannot release this sales order because it requires approval for ExportCustomer');
+                                                            end else
+                                                                Error('You cannot release this sales order because it requires approval for ExportCustomer');
+                                                        end;
+                                                    end;
+                                                end;
+                                            end;
+                                        end;
+                                    end;
+                                end;
+                            end;
+                        end;
+                        #EndRegion New Code - 21/01/2025+++++
+                        #EndRegion Check All Approval and User Permission before rellease++++
 
-
-                        //CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
-                        //Commit();
-
-                        Message('Process Completed');
+                        //Final Message
+                        Message('Process Completed..');
                     end;
                 end;
             }
@@ -458,5 +628,41 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
     [IntegrationEvent(false, false)]
     local procedure OnAfterUpdateHandledInterimSalesLine(var SalesLine: Record "Sales Line")
     begin
+    end;
+
+    local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
+    begin
+        if _SalesHeader."Credit Limit Approval" = true then
+            exit(true)
+        else
+            exit(false);
+    end;
+
+    local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
+    begin
+        _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
+        if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
+            exit(true)
+        else
+            exit(false);
+    end;
+
+    local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
+    var
+        L_DefaultDimension: Record "Default Dimension";
+    begin
+        L_DefaultDimension.Reset();
+        L_DefaultDimension.SetRange("SO Approval Required", true);
+        L_DefaultDimension.SetRange("Table ID", 18);
+        L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
+        if L_DefaultDimension.FindSet() then begin
+            repeat
+                L_DefaultDimension.CalcFields("Dimension Value Name");
+                if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
+                    exit(true)
+            until L_DefaultDimension.Next() = 0;
+        end;
+
+        exit(false);
     end;
 }

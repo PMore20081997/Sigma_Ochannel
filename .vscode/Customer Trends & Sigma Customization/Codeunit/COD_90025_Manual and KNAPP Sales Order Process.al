@@ -26,6 +26,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         NonKnappOrderLabel: Label 'NonKnappOrders';
         KnappNonKnappOrdersLabel: Label 'KnappNonKnappOrders';
         CU_ReleaseSalesDoc: Codeunit "Release Sales Document";
+        RecUserSetup: Record "User Setup";
 
     local procedure UpdateKnappOrders()
     var
@@ -82,12 +83,51 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
-                        //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
-                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                        #Region Check All Approval and User Permission before rellease++++
+                        // //Send for Release order if Approval not required
+                        // Rec_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
+                        // if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                        //     Clear(L_SumMin);
+                        //     MinOrder_Header.Reset();
+                        //     MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                        //     MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                        //     MinOrder_Header.SetRange("Shipment Date", Rec_SalesHeader."Shipment Date");
+                        //     MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                        //     MinOrder_Header.SetRange("Web Order", true);
+                        //     if MinOrder_Header.FindSet() then begin
+                        //         repeat
+                        //             MinOrder_Header.CalcFields(Amount);
+                        //             L_SumMin += MinOrder_Header.Amount;
+                        //         until MinOrder_Header.Next() = 0;
+                        //     end;
+
+                        //     if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                        //         if L_SumMin >= Rec_SalesHeader."Min Order Value" then begin
+                        //             CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                        //             Commit();
+                        //         end else begin
+                        //             Rec_SalesHeader."SO Min Order Approval Required" := true;
+                        //             Rec_SalesHeader.Modify();
+                        //         end;
+                        //     end else begin
+                        //         CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
+                        //     if Rec_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+                        #Region New Code - 21/01/2025+++++
+                        //Update Min Price Field on SO before releas+++
+                        if Rec_SalesHeader."Min Order Value" <> 0 then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
-                            MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                            MinOrder_Header.SetRange("Document Type", Rec_SalesHeader."Document Type");
                             MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
                             MinOrder_Header.SetRange("Shipment Date", Rec_SalesHeader."Shipment Date");
                             MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
@@ -97,28 +137,135 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                     MinOrder_Header.CalcFields(Amount);
                                     L_SumMin += MinOrder_Header.Amount;
                                 until MinOrder_Header.Next() = 0;
-                            end;
 
-                            if Rec_SalesHeader."Min Order Value" <> 0 then begin
                                 if L_SumMin >= Rec_SalesHeader."Min Order Value" then begin
-                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                                    Commit();
+                                    Rec_SalesHeader."SO Min Order Approval Required" := false;
+                                    Rec_SalesHeader.Modify();
                                 end else begin
                                     Rec_SalesHeader."SO Min Order Approval Required" := true;
                                     Rec_SalesHeader.Modify();
                                 end;
-                            end else begin
-                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                                Commit();
                             end;
+                        end else begin
+                            Rec_SalesHeader."SO Min Order Approval Required" := false;
+                            Rec_SalesHeader.Modify();
                         end;
 
-                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
-                        //     if Rec_SalesHeader.SalesLinesExist() then begin
-                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
-                        //         Commit();
-                        //     end;
-                        // end;
+                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                            Commit();
+                        end else begin
+                            if Rec_SalesHeader.Hospital = true then begin
+                                //For Hospital Order Ignore Credit Limit Approval+++
+                                if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                    Commit();
+                                end else begin
+                                    if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                Commit();
+                                            end;
+                                        end;
+                                    end else begin
+                                        if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                    Commit();
+                                                end;
+                                            end;
+                                        end else begin
+                                            if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."Export Customer Release" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                        Commit();
+                                                    end;
+                                                end;
+                                            end;
+                                        end;
+                                    end;
+                                end;
+                            end else begin
+                                //Non Hospital orders Check all Approval and Permission before release+++
+                                if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    RecUserSetup.Reset();
+                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                        if RecUserSetup."Credit Limit Release" = true then begin
+                                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                            Commit();
+                                        end;
+                                    end;
+                                end else begin
+                                    if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO Release spec. (NonExport)" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                Commit();
+                                            end;
+                                        end;
+                                    end else begin
+                                        if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                    Commit();
+                                                end;
+                                            end;
+                                        end else begin
+                                            if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                        Commit();
+                                                    end;
+                                                end;
+                                            end else begin
+                                                if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                                    RecUserSetup.Reset();
+                                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                        if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                            Commit();
+                                                        end;
+                                                    end;
+                                                end else begin
+                                                    if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                        RecUserSetup.Reset();
+                                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                            if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                                Commit();
+                                                            end;
+                                                        end;
+                                                    end else begin
+                                                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                            RecUserSetup.Reset();
+                                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                                if RecUserSetup."Export Customer Release" = true then begin
+                                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                                    Commit();
+                                                                end;
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end;
+                                            end;
+                                        end;
+                                    end;
+                                end;
+                            end;
+                        end;
+                        #EndRegion New Code - 21/01/2025+++++
+                        #EndRegion Check All Approval and User Permission before rellease++++
                     end;
 
                     //Code to process only 500 Orders then exit the code
@@ -181,12 +328,51 @@ codeunit 90025 "Manual/KNAAP SO Process"
                     L_SalesLine.SetFilter("Quantity Shipped", '%1', 0);
                     L_SalesLine.SetFilter("Location Code", '<>%1', '');
                     if not L_SalesLine.FindFirst() then begin
-                        //Send for Release order if Approval not required
-                        Rec_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
-                        if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                        #Region Check All Approval and User Permission before rellease++++
+                        // //Send for Release order if Approval not required
+                        // Rec_SalesHeader.CalcFields("Zero Price Approval", Amount, "Sales Quota Approval");
+                        // if (Rec_SalesHeader."Zero Price Approval" = false) AND (Rec_SalesHeader."Sales Quota Approval" = false) AND (Rec_SalesHeader."SO Approval Required" = false) AND (Rec_SalesHeader."Shortcut Dimension 3 Code" <> 'M – EXPORT') AND (Rec_SalesHeader."Credit Limit Approval" = false) then begin
+                        //     Clear(L_SumMin);
+                        //     MinOrder_Header.Reset();
+                        //     MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                        //     MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
+                        //     MinOrder_Header.SetRange("Shipment Date", Rec_SalesHeader."Shipment Date");
+                        //     MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
+                        //     MinOrder_Header.SetRange("Web Order", true);
+                        //     if MinOrder_Header.FindSet() then begin
+                        //         repeat
+                        //             MinOrder_Header.CalcFields(Amount);
+                        //             L_SumMin += MinOrder_Header.Amount;
+                        //         until MinOrder_Header.Next() = 0;
+                        //     end;
+
+                        //     if Rec_SalesHeader."Min Order Value" <> 0 then begin
+                        //         if L_SumMin >= Rec_SalesHeader."Min Order Value" then begin
+                        //             CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                        //             Commit();
+                        //         end else begin
+                        //             Rec_SalesHeader."SO Min Order Approval Required" := true;
+                        //             Rec_SalesHeader.Modify();
+                        //         end;
+                        //     end else begin
+                        //         CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
+                        //     if Rec_SalesHeader.SalesLinesExist() then begin
+                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
+                        //         Commit();
+                        //     end;
+                        // end;
+
+                        #Region New Code - 21/01/2025+++++
+                        //Update Min Price Field on SO before releas+++
+                        if Rec_SalesHeader."Min Order Value" <> 0 then begin
                             Clear(L_SumMin);
                             MinOrder_Header.Reset();
-                            MinOrder_Header.SetRange("Document Type", MinOrder_Header."Document Type"::Order);
+                            MinOrder_Header.SetRange("Document Type", Rec_SalesHeader."Document Type");
                             MinOrder_Header.SetRange("Sell-to Customer No.", Rec_SalesHeader."Sell-to Customer No.");
                             MinOrder_Header.SetRange("Shipment Date", Rec_SalesHeader."Shipment Date");
                             MinOrder_Header.SetFilter("Min Order Value", '<>%1', 0);
@@ -196,27 +382,135 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                     MinOrder_Header.CalcFields(Amount);
                                     L_SumMin += MinOrder_Header.Amount;
                                 until MinOrder_Header.Next() = 0;
-                            end;
 
-                            if Rec_SalesHeader."Min Order Value" <> 0 then begin
                                 if L_SumMin >= Rec_SalesHeader."Min Order Value" then begin
-                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                                    Commit();
+                                    Rec_SalesHeader."SO Min Order Approval Required" := false;
+                                    Rec_SalesHeader.Modify();
                                 end else begin
                                     Rec_SalesHeader."SO Min Order Approval Required" := true;
                                     Rec_SalesHeader.Modify();
                                 end;
+                            end;
+                        end else begin
+                            Rec_SalesHeader."SO Min Order Approval Required" := false;
+                            Rec_SalesHeader.Modify();
+                        end;
+
+                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                            Commit();
+                        end else begin
+                            if Rec_SalesHeader.Hospital = true then begin
+                                //For Hospital Order Ignore Credit Limit Approval+++
+                                if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                    Commit();
+                                end else begin
+                                    if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                Commit();
+                                            end;
+                                        end;
+                                    end else begin
+                                        if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                    Commit();
+                                                end;
+                                            end;
+                                        end else begin
+                                            if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."Export Customer Release" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                        Commit();
+                                                    end;
+                                                end;
+                                            end;
+                                        end;
+                                    end;
+                                end;
                             end else begin
-                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
-                                Commit();
+                                //Non Hospital orders Check all Approval and Permission before release+++
+                                if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    RecUserSetup.Reset();
+                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                        if RecUserSetup."Credit Limit Release" = true then begin
+                                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                            Commit();
+                                        end;
+                                    end;
+                                end else begin
+                                    if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."SO Release spec. (NonExport)" = true then begin
+                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                Commit();
+                                            end;
+                                        end;
+                                    end else begin
+                                        if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            RecUserSetup.Reset();
+                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                    Commit();
+                                                end;
+                                            end;
+                                        end else begin
+                                            if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                RecUserSetup.Reset();
+                                                IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                    if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                        CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                        Commit();
+                                                    end;
+                                                end;
+                                            end else begin
+                                                if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                                    RecUserSetup.Reset();
+                                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                        if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
+                                                            CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                            Commit();
+                                                        end;
+                                                    end;
+                                                end else begin
+                                                    if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                        RecUserSetup.Reset();
+                                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                            if RecUserSetup."SO Release Specialist (Export)" = true then begin
+                                                                CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                                Commit();
+                                                            end;
+                                                        end;
+                                                    end else begin
+                                                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                            RecUserSetup.Reset();
+                                                            IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                                if RecUserSetup."Export Customer Release" = true then begin
+                                                                    CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
+                                                                    Commit();
+                                                                end;
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end;
+                                            end;
+                                        end;
+                                    end;
+                                end;
                             end;
                         end;
-                        // if ApprovalsMgmt.IsSalesApprovalsWorkflowEnabled(Rec_SalesHeader) then begin
-                        //     if Rec_SalesHeader.SalesLinesExist() then begin
-                        //         ApprovalsMgmt.OnSendSalesDocForApproval(Rec_SalesHeader);
-                        //         Commit();
-                        //     end;
-                        // end;
+                        #EndRegion New Code - 21/01/2025+++++
+                        #EndRegion Check All Approval and User Permission before rellease++++
                     end;
                 end;
             until L_SalesHeader.Next() = 0;
@@ -265,4 +559,40 @@ codeunit 90025 "Manual/KNAAP SO Process"
     //         until L_SalesHeader.Next() = 0;
     //     end;
     // end;
+
+    local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
+    begin
+        if _SalesHeader."Credit Limit Approval" = true then
+            exit(true)
+        else
+            exit(false);
+    end;
+
+    local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
+    begin
+        _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
+        if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
+            exit(true)
+        else
+            exit(false);
+    end;
+
+    local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
+    var
+        L_DefaultDimension: Record "Default Dimension";
+    begin
+        L_DefaultDimension.Reset();
+        L_DefaultDimension.SetRange("SO Approval Required", true);
+        L_DefaultDimension.SetRange("Table ID", 18);
+        L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
+        if L_DefaultDimension.FindSet() then begin
+            repeat
+                L_DefaultDimension.CalcFields("Dimension Value Name");
+                if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
+                    exit(true)
+            until L_DefaultDimension.Next() = 0;
+        end;
+
+        exit(false);
+    end;
 }

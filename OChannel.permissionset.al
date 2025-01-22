@@ -1,5 +1,3 @@
-namespace OChannel;
-
 permissionset 90000 OChannel
 {
     Assignable = true;
@@ -22,7 +20,6 @@ permissionset 90000 OChannel
         tabledata LinnWorksLocation = RIMD,
         tabledata "Order Level Response" = RIMD,
         tabledata "Product Level Response" = RIMD,
-        tabledata "Sales Line TOS" = RIMD,
         tabledata "Shipment Tracking" = RIMD,
         tabledata "Shipping Rule" = RIMD,
         tabledata TempGRN = RIMD,
@@ -50,7 +47,6 @@ permissionset 90000 OChannel
         table LinnWorksLocation = X,
         table "Order Level Response" = X,
         table "Product Level Response" = X,
-        table "Sales Line TOS" = X,
         table "Shipment Tracking" = X,
         table "Shipping Rule" = X,
         table TempGRN = X,
@@ -59,6 +55,7 @@ permissionset 90000 OChannel
         table "Trade Partner" = X,
         table "Web Buffer" = X,
         table "Web Payment" = X,
+        report "Check & Split Order" = X,
         report "Handled Delivery Note" = X,
         report "Move Scanned Order to Handled" = X,
         report "Process Web Orders" = X,
@@ -78,10 +75,11 @@ permissionset 90000 OChannel
         codeunit "Courier Integration" = X,
         codeunit "Create Consolidate SO" = X,
         codeunit "Create Inv Pick Non-Knapp" = X,
+        codeunit "Create Inv Pick Non-Knapp(IRP)" = X,
+        codeunit "Create InvPick Non-(KNAP&IRP)" = X,
         codeunit "Customer Trend Sales Quota New" = X,
         codeunit "DataPlast Order Request API" = X,
         codeunit "Datawarehouse-WebDezign" = X,
-        codeunit "DC Sales TOS Lines" = X,
         codeunit "DHL Courier" = X,
         codeunit "DPD Courier" = X,
         codeunit "Drug Comparison API" = X,
@@ -169,7 +167,6 @@ permissionset 90000 OChannel
         page "Customer List Service" = X,
         page "Customer Price Service" = X,
         page "Customer Reference" = X,
-        page "DC TOS Line Details" = X,
         page "DC Web Order Header API Card" = X,
         page "DC Web Order Line Subpage" = X,
         page "Despatch Lines" = X,
@@ -220,5 +217,9 @@ permissionset 90000 OChannel
         query "Total No Orders By Trolley" = X,
         query "Validate Interim Sales Return" = X,
         query "Validate Return Order Screen" = X,
+        tabledata "Sales Line TOS" = RIMD,
+        table "Sales Line TOS" = X,
+        codeunit "DC Sales TOS Lines" = X,
+        page "DC TOS Line Details" = X,
         page "Web Buffer TOS Modify" = X;
 }
