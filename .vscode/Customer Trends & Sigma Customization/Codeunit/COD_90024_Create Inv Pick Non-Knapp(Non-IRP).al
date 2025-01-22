@@ -21,7 +21,6 @@ codeunit 90024 "Create InvPick Non-(KNAP&IRP)"
         L_SalesHeader.SetRange(Shipped, false);
         L_SalesHeader.SetRange("Knapp Order", false);
         L_SalesHeader.SetRange("Check & Split Order", false);
-        L_SalesHeader.SetRange("No.", '9000044326');
         if L_SalesHeader.FindSet() then begin
             repeat
                 L_SplitSalesHeader.Reset();
@@ -50,7 +49,6 @@ codeunit 90024 "Create InvPick Non-(KNAP&IRP)"
         L_SalesHeader.SetRange(Shipped, false);
         L_SalesHeader.SetRange("Inv. Pick Exist", false);
         L_SalesHeader.SetRange("Web Order", false);
-        L_SalesHeader.SetRange("No.", '9000044326');
         if L_SalesHeader.FindSet() then begin
             repeat
                 WhseRequest.Reset();
