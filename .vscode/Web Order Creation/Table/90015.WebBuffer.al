@@ -12,6 +12,14 @@ table 90015 "Web Buffer"
         {
             DataClassification = ToBeClassified;
         }
+        field(3; "TOS Checked"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(4; "Created At"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys

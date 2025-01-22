@@ -573,6 +573,7 @@ codeunit 90005 "Process Web Order"
             TempSalesHeader.INIT;
             TempSalesHeader."Web Document No." := WebNo;
             TempSalesHeader."Sales Document No." := SalesNo;
+            TempSalesHeader."Created At" := WorkDate();
             TempSalesHeader.INSERT;
         END;
     end;

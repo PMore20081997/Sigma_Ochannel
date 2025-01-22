@@ -986,6 +986,7 @@ codeunit 90066 "Create Consolidate SO"
                     TempSalesHeader.INIT;
                     TempSalesHeader."Web Document No." := L_InterimSalesHeader."No.";
                     TempSalesHeader."Sales Document No." := SalesNo;
+                    TempSalesHeader."Created At" := WorkDate();
                     TempSalesHeader.INSERT;
                 END;
             until L_InterimSalesHeader.Next() = 0;
@@ -1131,6 +1132,7 @@ codeunit 90066 "Create Consolidate SO"
             TempSalesHeader.INIT;
             TempSalesHeader."Web Document No." := WebNo;
             TempSalesHeader."Sales Document No." := SalesNo;
+            TempSalesHeader."Created At" := WorkDate();
             TempSalesHeader.INSERT;
         END;
     end;

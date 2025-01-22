@@ -22,6 +22,41 @@ page 90023 "Web Buffer"
                 {
                     ApplicationArea = All;
                 }
+                field("TOS Checked"; Rec."TOS Checked")
+                {
+                    ApplicationArea = All;
+                }
+                field("Created At"; Rec."Created At")
+                {
+                    ApplicationArea = All;
+                }
+            }
+        }
+    }
+    actions
+    {
+        area(Processing)
+        {
+            action("Update Created At Date")
+            {
+                ApplicationArea = All;
+                Visible = false;
+
+                trigger OnAction()
+                var
+                    WebBuffer: Record "Web Buffer";
+                begin
+                    Clear(WebBuffer);
+                    WebBuffer := Rec;
+                    CurrPage.SetSelectionFilter(WebBuffer);
+
+                    if WebBuffer.FindSet() then begin
+                        repeat
+                            WebBuffer."Created At" := Today;
+                            WebBuffer.Modify();
+                        until WebBuffer.Next() = 0;
+                    end;
+                end;
             }
         }
     }

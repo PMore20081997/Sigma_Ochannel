@@ -31,6 +31,10 @@ page 90000 "General Setup - Channels"
                 {
                     ApplicationArea = All;
                 }
+                field("DC TOS Start Date"; Rec."DC TOS Start Date")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

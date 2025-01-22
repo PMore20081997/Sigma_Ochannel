@@ -72,5 +72,9 @@ table 90000 "General Setup - Channels"
         {
             DataClassification = ToBeClassified;
         }
+        field(20; "DC TOS Start Date"; Date)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }
