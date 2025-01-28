@@ -81,7 +81,7 @@ codeunit 90082 "EDI Invoice"
         CompanyInfo: Record "Company Information";
         salesinvoiceline: Record "Sales Invoice Line";
         item: Record Item;
-        test: Record Customer;
+        Customer1: Record Customer;
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -105,7 +105,8 @@ codeunit 90082 "EDI Invoice"
         Clear(HeaderInfo9);
         Clear(HeaderInfo10);
         Clear(HeaderInfo11);
-
+        Clear(CompGLN);
+        Clear(PartnerGLN);
         CompanyInfo.get();
         //posting date
         Dateformat := Date2DMY(Salesinvoicehead."Order Date", 1);
@@ -139,6 +140,11 @@ codeunit 90082 "EDI Invoice"
         Time1 := DT2Time(Salesinvoicehead.SystemCreatedAt);
         TimeText := Format(Time1, 0, '<Hours24,2><Minutes,2><Seconds,2>');
         InvNo := Salesinvoicehead."No.";
+        Customer1.Reset();
+        Customer1.SetFilter("No.", P_customer."Bill-to Customer No.");
+        if Customer1.FindFirst() THEN begin
+            PartnerGLN := Customer1.GLN;
+        end;
         CompGLN := P_customer.GLN;
         Curr := Salesinvoicehead."Currency Code";
         RefCurr := P_customer."Currency Code";
@@ -151,31 +157,33 @@ codeunit 90082 "EDI Invoice"
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
+        Clear(LineInfo1);
+        Clear(LineInfo2);
+        Clear(LineInfo3);
+        Clear(item);
+        Clear(gtin);
+        Clear(PackSize);
+        Clear(Desc);
+        Clear(Subtotalgoodsval);
         salesinvoiceline.Reset();
         salesinvoiceline.SetRange("Document No.", Salesinvoicehead."No.");
         //salesinvoiceline.SetRange("Document Type", Salesinvoicehead."Document Type");
         salesinvoiceline.SetRange(Type, salesinvoiceline.Type::Item);
         if salesinvoiceline.findset() then begin
             repeat
-                Clear(LineInfo1);
-                Clear(LineInfo2);
-                Clear(LineInfo3);
-                Clear(item);
-                Clear(gtin);
-                Clear(PackSize);
-                Clear(Desc);
-                Clear(SubtotalCharges);
+
                 item.Reset();
                 if item.Get(salesinvoiceline."No.") then begin
                     gtin := item.GTIN;
                     PackSize := item."EDI Pack size";
                     Desc := item."EDI Description";
-                    SubtotalCharges += ((salesinvoiceline."Unit Price" * salesinvoiceline.Quantity) - salesinvoiceline."Line Discount Amount");
+                    Subtotalgoodsval += ((salesinvoiceline."Unit Price" * salesinvoiceline.Quantity));
                 end;
                 count += 1;
                 TotalAmtIncVat += salesinvoiceline."Amount Including VAT";
                 TotalAmtExcVat += salesinvoiceline.Amount;
                 DiscountAmt += salesinvoiceline."Line Discount Amount";
+                totalVatBaseAmt += salesinvoiceline."VAT Base Amount";
                 LineInfo1 := '*IL' + '^' + InvNo + '^' + format(count) + '^' + BuyerRef + '^' + DMYPostingFormat + '^^' + format(salesinvoiceline.Quantity) + '^' + '2' + '^^' + format(salesinvoiceline."Unit Price") + '^' + Format(salesinvoiceline.Amount) + '^' + 'VAT' + '^' + 'E' + '^' + 'N' + '^' + format(salesinvoiceline."VAT %") + '^' + format(salesinvoiceline."Amount Including VAT" - salesinvoiceline.Amount) + '^^^' + CRLF[1];
                 LineInfo2 := '**P' + '^' + 'O' + '^' + salesinvoiceline."No." + '^' + gtin + '^^^^^^' + Desc + '^^' + Format(PackSize) + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
                 LineInfo3 := '**G^O^' + format(salesinvoiceline.Amount) + '^' + Format(salesinvoiceline."Unit Price") + '^^^^^^^^^^^^' + CRLF[1];
@@ -190,11 +198,11 @@ codeunit 90082 "EDI Invoice"
         HeaderInfo12 := '*DH' + '^' + SalesInvoiceHeader."Order No." + '^' + DMYPostingFormat + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + CompGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
+        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + PartnerGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + CompGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + Salesinvoicehead."Ship-to Name" + '^' + Salesinvoicehead."Ship-to Address" + '^' + Salesinvoicehead."Ship-to Address 2" + '^' + Salesinvoicehead."Ship-to City" + '^' + Salesinvoicehead."Ship-to County" + '^' + Salesinvoicehead."Ship-to Post Code" + '^' + Salesinvoicehead."Ship-to Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(SubtotalCharges) + '^' + format(TotalAmtExcVat - DiscountAmt + SubtotalCharges) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtExcVat - DiscountAmt + SubtotalCharges + TotalAmtIncVat - TotalAmtExcVat) + '^^^^' + CRLF[1];
-        HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + format(DiscountAmt) + '^' + format(TotalAmtExcVat) + '^' + format(DiscountAmt) + '^' + format(salesinvoiceline."VAT Base Amount") + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(TotalAmtIncVat) + '^^^^^^^^' + CRLF[1];
+        HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(Subtotalgoodsval) + '^' + format(DiscountAmt) + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + Format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(Subtotalgoodsval - DiscountAmt + TotalAmtIncVat - TotalAmtExcVat) + '^^^^' + CRLF[1];
+        HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(Subtotalgoodsval) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(Subtotalgoodsval - DiscountAmt + TotalAmtIncVat - TotalAmtExcVat) + '^^^^^^^^' + CRLF[1];
         HeaderInfo11 := '**@' + InvNo + '1     1     ' + Format(count);
         HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo12 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
@@ -817,6 +825,7 @@ codeunit 90082 "EDI Invoice"
         Datetime1: DateTime;
         Time1: Time;
         CompGLN: Code[20];
+        PartnerGLN: Code[20];
         Curr: Code[20];
         RefCurr: Code[20];
         taxDate: Date;
@@ -837,7 +846,7 @@ codeunit 90082 "EDI Invoice"
         TradepartnerRecord: Record "Trade Partner";
         PackSize: Decimal;
         Desc: text[40];
-        SubtotalCharges: Decimal;
+        Subtotalgoodsval: Decimal;
         totalqty: Decimal;
         TaxCode: Code[10];
         TaxCodeLine: Code[10];
@@ -847,4 +856,5 @@ codeunit 90082 "EDI Invoice"
         SharedAccessKey: SecretText;
         ArchiveContainerName: Text;
         PaymentTermDays: Integer;
+        totalVatBaseAmt: Decimal;
 }
