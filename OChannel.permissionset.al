@@ -221,5 +221,12 @@ permissionset 90000 OChannel
         table "Sales Line TOS" = X,
         codeunit "DC Sales TOS Lines" = X,
         page "DC TOS Line Details" = X,
-        page "Web Buffer TOS Modify" = X;
+        page "Web Buffer TOS Modify" = X,
+        codeunit "Workflow SO Management" = X,
+        page "Dataplast Order Header API" = X,
+        page "Dataplast Order Line API" = X,
+        page "MedEpos Order Header API" = X,
+        page "MedEpos Order Line API" = X,
+        page "Victoria Order Header API" = X,
+        page "Victoria Order Line API" = X;
 }

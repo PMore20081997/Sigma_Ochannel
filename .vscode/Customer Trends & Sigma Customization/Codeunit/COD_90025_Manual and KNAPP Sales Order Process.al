@@ -27,6 +27,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         KnappNonKnappOrdersLabel: Label 'KnappNonKnappOrders';
         CU_ReleaseSalesDoc: Codeunit "Release Sales Document";
         RecUserSetup: Record "User Setup";
+        L_CheckConditipon: Codeunit "Manage Time duration";
 
     local procedure UpdateKnappOrders()
     var
@@ -151,17 +152,17 @@ codeunit 90025 "Manual/KNAAP SO Process"
                             Rec_SalesHeader.Modify();
                         end;
 
-                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                             CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
                             Commit();
                         end else begin
                             if Rec_SalesHeader.Hospital = true then begin
                                 //For Hospital Order Ignore Credit Limit Approval+++
-                                if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
                                     Commit();
                                 end else begin
-                                    if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -170,7 +171,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                             end;
                                         end;
                                     end else begin
-                                        if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -179,7 +180,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                 end;
                                             end;
                                         end else begin
-                                            if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."Export Customer Release" = true then begin
@@ -193,7 +194,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                 end;
                             end else begin
                                 //Non Hospital orders Check all Approval and Permission before release+++
-                                if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                         if RecUserSetup."Credit Limit Release" = true then begin
@@ -202,7 +203,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                         end;
                                     end;
                                 end else begin
-                                    if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO Release spec. (NonExport)" = true then begin
@@ -211,7 +212,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                             end;
                                         end;
                                     end else begin
-                                        if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -220,7 +221,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                 end;
                                             end;
                                         end else begin
-                                            if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -229,7 +230,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                     end;
                                                 end;
                                             end else begin
-                                                if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                                if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                                     RecUserSetup.Reset();
                                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                                         if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -238,7 +239,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                         end;
                                                     end;
                                                 end else begin
-                                                    if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                    if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                         RecUserSetup.Reset();
                                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                                             if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -247,7 +248,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                             end;
                                                         end;
                                                     end else begin
-                                                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                             RecUserSetup.Reset();
                                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                                 if RecUserSetup."Export Customer Release" = true then begin
@@ -396,17 +397,17 @@ codeunit 90025 "Manual/KNAAP SO Process"
                             Rec_SalesHeader.Modify();
                         end;
 
-                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                             CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
                             Commit();
                         end else begin
                             if Rec_SalesHeader.Hospital = true then begin
                                 //For Hospital Order Ignore Credit Limit Approval+++
-                                if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     CU_ReleaseSalesDoc.PerformManualRelease(Rec_SalesHeader);
                                     Commit();
                                 end else begin
-                                    if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -415,7 +416,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                             end;
                                         end;
                                     end else begin
-                                        if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -424,7 +425,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                 end;
                                             end;
                                         end else begin
-                                            if (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."Export Customer Release" = true then begin
@@ -438,7 +439,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                 end;
                             end else begin
                                 //Non Hospital orders Check all Approval and Permission before release+++
-                                if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                         if RecUserSetup."Credit Limit Release" = true then begin
@@ -447,7 +448,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                         end;
                                     end;
                                 end else begin
-                                    if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO Release spec. (NonExport)" = true then begin
@@ -456,7 +457,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                             end;
                                         end;
                                     end else begin
-                                        if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -465,7 +466,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                 end;
                                             end;
                                         end else begin
-                                            if (CreditLimitCheck(Rec_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -474,7 +475,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                     end;
                                                 end;
                                             end else begin
-                                                if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
+                                                if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                                     RecUserSetup.Reset();
                                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                                         if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -483,7 +484,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                         end;
                                                     end;
                                                 end else begin
-                                                    if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                    if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                         RecUserSetup.Reset();
                                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                                             if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -492,7 +493,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                                             end;
                                                         end;
                                                     end else begin
-                                                        if (CreditLimitCheck(Rec_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
+                                                        if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = true)) then begin
                                                             RecUserSetup.Reset();
                                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                                 if RecUserSetup."Export Customer Release" = true then begin
@@ -560,39 +561,39 @@ codeunit 90025 "Manual/KNAAP SO Process"
     //     end;
     // end;
 
-    local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
-    begin
-        if _SalesHeader."Credit Limit Approval" = true then
-            exit(true)
-        else
-            exit(false);
-    end;
+    // local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // begin
+    //     if _SalesHeader."Credit Limit Approval" = true then
+    //         exit(true)
+    //     else
+    //         exit(false);
+    // end;
 
-    local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
-    begin
-        _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
-        if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
-            exit(true)
-        else
-            exit(false);
-    end;
+    // local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // begin
+    //     _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
+    //     if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
+    //         exit(true)
+    //     else
+    //         exit(false);
+    // end;
 
-    local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
-    var
-        L_DefaultDimension: Record "Default Dimension";
-    begin
-        L_DefaultDimension.Reset();
-        L_DefaultDimension.SetRange("SO Approval Required", true);
-        L_DefaultDimension.SetRange("Table ID", 18);
-        L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
-        if L_DefaultDimension.FindSet() then begin
-            repeat
-                L_DefaultDimension.CalcFields("Dimension Value Name");
-                if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
-                    exit(true)
-            until L_DefaultDimension.Next() = 0;
-        end;
+    // local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // var
+    //     L_DefaultDimension: Record "Default Dimension";
+    // begin
+    //     L_DefaultDimension.Reset();
+    //     L_DefaultDimension.SetRange("SO Approval Required", true);
+    //     L_DefaultDimension.SetRange("Table ID", 18);
+    //     L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
+    //     if L_DefaultDimension.FindSet() then begin
+    //         repeat
+    //             L_DefaultDimension.CalcFields("Dimension Value Name");
+    //             if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
+    //                 exit(true)
+    //         until L_DefaultDimension.Next() = 0;
+    //     end;
 
-        exit(false);
-    end;
+    //     exit(false);
+    // end;
 }

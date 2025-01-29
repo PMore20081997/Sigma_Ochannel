@@ -264,17 +264,17 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                         //Update the value before send to Release+++
                         Commit();
 
-                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                        if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                             CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                             Commit();
                         end else begin
                             if L_SalesHeader.Hospital = true then begin
                                 //For Hospital Order Ignore Credit Limit Approval+++
-                                if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                     CU_ReleaseSalesDoc.PerformManualRelease(L_SalesHeader);
                                     Commit();
                                 end else begin
-                                    if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -285,7 +285,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                         end else
                                             Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
                                     end else begin
-                                        if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -296,7 +296,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                             end else
                                                 Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
                                         end else begin
-                                            if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."Export Customer Release" = true then begin
@@ -312,7 +312,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                 end;
                             end else begin
                                 //Non Hospital orders Check all Approval and Permission before release+++
-                                if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                         if RecUserSetup."Credit Limit Release" = true then begin
@@ -323,7 +323,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                     end else
                                         Error('You cannot release this sales order because it requires approval for Credit Limit');
                                 end else begin
-                                    if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                    if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                             if RecUserSetup."SO Release spec. (NonExport)" = true then begin
@@ -334,7 +334,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                         end else
                                             Error('You cannot release this sales order because it requires approval for Credit Limit & SO-MOV-ZeroPrice-SalesQuota');
                                     end else begin
-                                        if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                        if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                 if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -345,7 +345,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                             end else
                                                 Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer');
                                         end else begin
-                                            if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                            if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
                                                     if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -356,7 +356,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                                 end else
                                                     Error('You cannot release this sales order because it requires approval for Credit Limit & ExportCustomer & SO-MOV-ZeroPrice-SalesQuota');
                                             end else begin
-                                                if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                                if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                                     RecUserSetup.Reset();
                                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                                         if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = true then begin
@@ -367,7 +367,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                                     end else
                                                         Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota');
                                                 end else begin
-                                                    if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                    if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                                         RecUserSetup.Reset();
                                                         IF RecUserSetup.GET(USERID) THEN BEGIN
                                                             if RecUserSetup."SO Release Specialist (Export)" = true then begin
@@ -378,7 +378,7 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
                                                         end else
                                                             Error('You cannot release this sales order because it requires approval for SO-MOV-ZeroPrice-SalesQuota & ExportCustomer');
                                                     end else begin
-                                                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                        if (L_CheckConditipon.CreditLimitCheck(L_SalesHeader) = false) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                                             RecUserSetup.Reset();
                                                             IF RecUserSetup.GET(USERID) THEN BEGIN
                                                                 if RecUserSetup."Export Customer Release" = true then begin
@@ -442,6 +442,9 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
             }
         }
     }
+
+    var
+        L_CheckConditipon: Codeunit "Manage Time duration";
 
     local procedure SetWeborderFilter(_SalesOrderNo: Code[20]): Text
     var
@@ -630,39 +633,39 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
     begin
     end;
 
-    local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
-    begin
-        if _SalesHeader."Credit Limit Approval" = true then
-            exit(true)
-        else
-            exit(false);
-    end;
+    // local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // begin
+    //     if _SalesHeader."Credit Limit Approval" = true then
+    //         exit(true)
+    //     else
+    //         exit(false);
+    // end;
 
-    local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
-    begin
-        _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
-        if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
-            exit(true)
-        else
-            exit(false);
-    end;
+    // local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // begin
+    //     _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
+    //     if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
+    //         exit(true)
+    //     else
+    //         exit(false);
+    // end;
 
-    local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
-    var
-        L_DefaultDimension: Record "Default Dimension";
-    begin
-        L_DefaultDimension.Reset();
-        L_DefaultDimension.SetRange("SO Approval Required", true);
-        L_DefaultDimension.SetRange("Table ID", 18);
-        L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
-        if L_DefaultDimension.FindSet() then begin
-            repeat
-                L_DefaultDimension.CalcFields("Dimension Value Name");
-                if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
-                    exit(true)
-            until L_DefaultDimension.Next() = 0;
-        end;
+    // local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
+    // var
+    //     L_DefaultDimension: Record "Default Dimension";
+    // begin
+    //     L_DefaultDimension.Reset();
+    //     L_DefaultDimension.SetRange("SO Approval Required", true);
+    //     L_DefaultDimension.SetRange("Table ID", 18);
+    //     L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
+    //     if L_DefaultDimension.FindSet() then begin
+    //         repeat
+    //             L_DefaultDimension.CalcFields("Dimension Value Name");
+    //             if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
+    //                 exit(true)
+    //         until L_DefaultDimension.Next() = 0;
+    //     end;
 
-        exit(false);
-    end;
+    //     exit(false);
+    // end;
 }

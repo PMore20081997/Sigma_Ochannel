@@ -274,7 +274,7 @@ codeunit 90203 "Manage Time duration"
 
 
 
-    local procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
+    procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean
     begin
         if _SalesHeader."Credit Limit Approval" = true then
             exit(true)
@@ -282,7 +282,7 @@ codeunit 90203 "Manage Time duration"
             exit(false);
     end;
 
-    local procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
+    procedure SOMOVZeroPriceAndQuotaCheck(_SalesHeader: Record "Sales Header"): Boolean
     begin
         _SalesHeader.CalcFields("Zero Price Approval", "Sales Quota Approval");
         if (_SalesHeader."SO Approval Required" = true) OR (_SalesHeader."SO Min Order Approval Required" = true) OR (_SalesHeader."Zero Price Approval" = true) OR (_SalesHeader."Sales Quota Approval" = true) then
@@ -291,7 +291,7 @@ codeunit 90203 "Manage Time duration"
             exit(false);
     end;
 
-    local procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
+    procedure ExportCustomerCheck(_SalesHeader: Record "Sales Header"): Boolean
     var
         L_DefaultDimension: Record "Default Dimension";
     begin
@@ -309,7 +309,4 @@ codeunit 90203 "Manage Time duration"
 
         exit(false);
     end;
-
-
-
 }
