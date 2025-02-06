@@ -308,7 +308,10 @@ xmlport 90032 "Product variant"
                 textelement("Parent_Category_Header")
                 {
                 }
+                textelement("BC_Code_Header")
+                {
 
+                }
 
                 trigger OnAfterGetRecord()
                 var
@@ -372,6 +375,7 @@ xmlport 90032 "Product variant"
                     Commodity_Code_Header := 'Commodity Code';
                     "Average_Cost_Header" := 'Average Cost';
                     Parent_Category_Header := 'Parent Category';
+                    BC_Code_Header := 'BC Code';
                 end;
             }
             tableelement("Item_Variant"; "Item Variant")
@@ -606,6 +610,10 @@ xmlport 90032 "Product variant"
                 {
 
                 }
+                textelement(BC_Code)
+                {
+
+                }
 
 
                 trigger OnAfterGetRecord()
@@ -618,6 +626,7 @@ xmlport 90032 "Product variant"
                     if L_Item.FindFirst() then begin
                         Prod_Group := L_Item."Item Category Code";
                         Average_Cost := Format(L_Item."Unit Cost");
+                        BC_Code := L_Item."No.";
                         L_Item.CalcFields("Parent Category", "Child Category");
                         AC_1 := L_Item."Child Category";
                         AC_2 := Format(L_Item."Business Sensitive");
