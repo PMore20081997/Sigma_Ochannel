@@ -48,11 +48,14 @@ page 90015 "Customer Price Service"
                 {
                     ApplicationArea = All;
                 }
-                field("Last Modified At"; rec.SystemModifiedAt)
+                field("Last Modified At"; Rec.SystemModifiedAt)
                 {
                     ApplicationArea = all;
                 }
-
+                field("Last Modified By"; Rec.SystemModifiedBy)
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

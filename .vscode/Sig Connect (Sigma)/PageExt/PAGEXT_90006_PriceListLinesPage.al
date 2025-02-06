@@ -19,6 +19,7 @@ pageextension 90006 "Price List Line Ext" extends "Price List Lines"
             {
                 ApplicationArea = All;
                 Editable = false;
+                Visible = false;
                 ToolTip = 'Acknowledgment from Portal that Price has synced on their side';
             }
         }
