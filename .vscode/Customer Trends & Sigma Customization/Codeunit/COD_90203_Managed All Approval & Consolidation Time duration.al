@@ -301,8 +301,8 @@ codeunit 90203 "Manage Time duration"
         L_DefaultDimension.SetRange("No.", _SalesHeader."Sell-to Customer No.");
         if L_DefaultDimension.FindSet() then begin
             repeat
-                L_DefaultDimension.CalcFields("Dimension Value Name");
-                if UpperCase(L_DefaultDimension."Dimension Value Name") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
+                L_DefaultDimension.CalcFields("Dimension Value Name 2");
+                if UpperCase(L_DefaultDimension."Dimension Value Name 2") = UpperCase(_SalesHeader."Shortcut Dimension 3 Code") then
                     exit(true)
             until L_DefaultDimension.Next() = 0;
         end;

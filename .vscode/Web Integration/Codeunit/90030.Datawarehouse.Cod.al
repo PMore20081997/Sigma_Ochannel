@@ -629,7 +629,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 12, L_SalesInvoiceHeader."Salesperson Code");  // Op Code
                     CSVBuffer.InsertEntry(LineNo, 13, '');  // Ord Type
                     if L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code" = '' then begin
-                        CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Shipping Agent Service Code");  // Round
+                        CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Shipping Agent Service Code 2");  // Round
                     end else begin
                         CSVBuffer.InsertEntry(LineNo, 14, L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");  // Round
                     end;

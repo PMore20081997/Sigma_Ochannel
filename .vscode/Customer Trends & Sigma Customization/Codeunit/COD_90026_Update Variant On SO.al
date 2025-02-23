@@ -191,7 +191,9 @@ codeunit 90026 "Udate Variant on SO"
         L_Item.SetRange("Variant Filter", _ItemVariant.Code);
         L_Item.SetFilter("Location Filter", LocationFilter);
         L_Item.CalcFields(Inventory);
-        PhysicalInventory := L_Item.Inventory;
+        L_Item.SetAutoCalcFields(Inventory);
+        if L_Item.FindFirst() then
+            PhysicalInventory := L_Item.Inventory;
         if PhysicalInventory < 0 then
             PhysicalInventory := 0;
 
