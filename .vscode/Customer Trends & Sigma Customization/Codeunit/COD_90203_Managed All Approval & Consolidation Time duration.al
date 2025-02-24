@@ -117,36 +117,29 @@ codeunit 90203 "Manage Time duration"
         L_SalesHeader.SetRange("Document Type", SalesHeader."Document Type");
         L_SalesHeader.SetRange("No.", SalesHeader."No.");
         if L_SalesHeader.FindFirst() then begin
-            if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
-                //Need to check if it is required in future++
-            end else begin
-                if L_SalesHeader.Hospital = false then begin
-                    //Non Hospital orders Check all Approval and Permission before release+++
-                    if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
-                        RecUserSetup.Reset();
-                        IF RecUserSetup.GET(USERID) THEN BEGIN
-                            if RecUserSetup."Credit Limit Release" = false then
-                                IsHandled := true;
-                        end else
-                            IsHandled := true;
-                    end else begin
-                        if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+            if L_SalesHeader."Document Type" = L_SalesHeader."Document Type"::Order then begin
+                if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                    //Need to check if it is required in future++
+                end else begin
+                    if L_SalesHeader.Hospital = false then begin
+                        //Non Hospital orders Check all Approval and Permission before release+++
+                        if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
                             RecUserSetup.Reset();
                             IF RecUserSetup.GET(USERID) THEN BEGIN
-                                if RecUserSetup."SO Release spec. (NonExport)" = false then
+                                if RecUserSetup."Credit Limit Release" = false then
                                     IsHandled := true;
                             end else
                                 IsHandled := true;
                         end else begin
-                            if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                            if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                 RecUserSetup.Reset();
                                 IF RecUserSetup.GET(USERID) THEN BEGIN
-                                    if RecUserSetup."SO Release Specialist (Export)" = false then
+                                    if RecUserSetup."SO Release spec. (NonExport)" = false then
                                         IsHandled := true;
                                 end else
                                     IsHandled := true;
                             end else begin
-                                if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
                                         if RecUserSetup."SO Release Specialist (Export)" = false then
@@ -154,64 +147,73 @@ codeunit 90203 "Manage Time duration"
                                     end else
                                         IsHandled := true;
                                 end else begin
-                                    if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                                    if (CreditLimitCheck(L_SalesHeader) = true) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                         RecUserSetup.Reset();
                                         IF RecUserSetup.GET(USERID) THEN BEGIN
-                                            if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = false then
+                                            if RecUserSetup."SO Release Specialist (Export)" = false then
                                                 IsHandled := true;
                                         end else
                                             IsHandled := true;
                                     end else begin
-                                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                        if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                             RecUserSetup.Reset();
                                             IF RecUserSetup.GET(USERID) THEN BEGIN
-                                                if RecUserSetup."SO Release Specialist (Export)" = false then
+                                                if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = false then
                                                     IsHandled := true;
                                             end else
                                                 IsHandled := true;
                                         end else begin
-                                            if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                            if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                                 RecUserSetup.Reset();
                                                 IF RecUserSetup.GET(USERID) THEN BEGIN
-                                                    if RecUserSetup."Export Customer Release" = false then
+                                                    if RecUserSetup."SO Release Specialist (Export)" = false then
                                                         IsHandled := true;
                                                 end else
                                                     IsHandled := true;
+                                            end else begin
+                                                if (CreditLimitCheck(L_SalesHeader) = false) AND (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                                    RecUserSetup.Reset();
+                                                    IF RecUserSetup.GET(USERID) THEN BEGIN
+                                                        if RecUserSetup."Export Customer Release" = false then
+                                                            IsHandled := true;
+                                                    end else
+                                                        IsHandled := true;
+                                                end;
                                             end;
                                         end;
                                     end;
                                 end;
                             end;
                         end;
-                    end;
-                end else begin
-                    //For Hospital Order Ignore Credit Limit Approval+++
-                    if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
-                        //Need to check if it is required in future++
                     end else begin
-                        if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
-                            RecUserSetup.Reset();
-                            IF RecUserSetup.GET(USERID) THEN BEGIN
-                                if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = false then
-                                    IsHandled := true;
-                            end else
-                                IsHandled := true;
+                        //For Hospital Order Ignore Credit Limit Approval+++
+                        if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
+                            //Need to check if it is required in future++
                         end else begin
-                            if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                            if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = false)) then begin
                                 RecUserSetup.Reset();
                                 IF RecUserSetup.GET(USERID) THEN BEGIN
-                                    if RecUserSetup."SO Release Specialist (Export)" = false then
+                                    if RecUserSetup."SO/MOV/Quota/ZeroPrice Release" = false then
                                         IsHandled := true;
                                 end else
                                     IsHandled := true;
                             end else begin
-                                if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = true) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
-                                        if RecUserSetup."Export Customer Release" = false then
+                                        if RecUserSetup."SO Release Specialist (Export)" = false then
                                             IsHandled := true;
                                     end else
                                         IsHandled := true;
+                                end else begin
+                                    if (SOMOVZeroPriceAndQuotaCheck(L_SalesHeader) = false) AND ((ExportCustomerCheck(L_SalesHeader) = true)) then begin
+                                        RecUserSetup.Reset();
+                                        IF RecUserSetup.GET(USERID) THEN BEGIN
+                                            if RecUserSetup."Export Customer Release" = false then
+                                                IsHandled := true;
+                                        end else
+                                            IsHandled := true;
+                                    end;
                                 end;
                             end;
                         end;

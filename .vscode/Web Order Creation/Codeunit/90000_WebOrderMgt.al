@@ -952,6 +952,8 @@ codeunit 90000 "Web Order Mgt"
         ItemBlockedError: Text;
         L_RemainingQty: Decimal;
         L_BilltoCustomer: Code[20];
+        L_SalesHeader: Record "Sales Header" temporary;
+        CheckCreditLimit: codeunit "Cust-Check Cr. Limit";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
 
@@ -1018,7 +1020,7 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) then begin
+                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) or (L_Cust."QAU Approved" = false) then begin
                         Sigma_InsertErrorLog('Customer locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
@@ -1040,7 +1042,14 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
+                    L_SalesHeader.DeleteAll();
+                    L_SalesHeader.Init();
+                    L_SalesHeader.Validate("Document Type", L_SalesHeader."Document Type"::Order);
+                    L_SalesHeader.Validate("No.", P_InterimSalesHeader."No.");
+                    L_SalesHeader.Validate("Sell-to Customer No.", L_Cust."No.");
+                    L_SalesHeader.Insert(true);
+                    if ((CheckCreditLimit.SalesHeaderCheck(L_SalesHeader) = true) or (L_Cust.Blocked = L_Cust.Blocked::Invoice)) then begin
+                        //If L_Cust.Blocked = L_Cust.Blocked::Invoice then begin
                         Sigma_InsertErrorLog('Account on Payment Stop - Contact Sigma', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ8', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
