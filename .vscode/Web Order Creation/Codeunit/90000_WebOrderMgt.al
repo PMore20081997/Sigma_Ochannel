@@ -1018,7 +1018,7 @@ codeunit 90000 "Web Order Mgt"
             if L_ErrorRecorded = false then begin
                 L_Cust.Reset();
                 if L_Cust.Get(P_InterimSalesHeader."Sell-to Customer No.") then begin
-                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) then begin
+                    If (L_Cust.Blocked = L_Cust.Blocked::All) or (L_Cust.Status = L_Cust.Status::Open) or (L_Cust."QAU Approved" = false) then begin
                         Sigma_InsertErrorLog('Customer locked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ6', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
