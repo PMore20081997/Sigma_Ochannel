@@ -83,6 +83,10 @@ page 90013 "Channel Item Listing Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Last Modified By"; Rec.SystemModifiedBy)
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

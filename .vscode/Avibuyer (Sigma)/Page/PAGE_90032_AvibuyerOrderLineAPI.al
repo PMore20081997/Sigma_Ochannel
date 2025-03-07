@@ -81,6 +81,7 @@ page 90032 "Avibuyer Order Line Subpage"
     trigger OnInsertRecord(BelowxRec: Boolean): Boolean
     var
         MyHeader: Record "Interim Sales Header";
+        MyLine: Record "Interim Sales Line";
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
         PartnerErrorLog: Record "Incoming/Outgoing Error Log";
         L_ProductLevelResponse: Record "Product Level Response";
@@ -123,6 +124,7 @@ page 90032 "Avibuyer Order Line Subpage"
             //Check Validation+++
             Sigma_LineValidations(MyHeader, Rec);
 
+
             //Update Interim header and Interim Line Response Code and Message++
             //Line++
             if (UpperCase(Rec."Reason Code") <> UpperCase('Partial Quantity Delivered')) then begin
@@ -138,18 +140,71 @@ page 90032 "Avibuyer Order Line Subpage"
                         Rec."Reason Code" := L_ProductLevelResponse.Reason;
                         Rec."Reason Message" := L_ProductLevelResponse.Message;
                         Rec."Qty. to Deliver" := 0;
+                        // if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
+                        //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+                        //     Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+                        // end else begin
+                        //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+                        //     Rec."Reason Message" := L_ProductLevelResponse.Message;
+                        // end;
                     end;
                 end else begin
                     Rec."Reason Code" := 'Order Line Created';
                     Rec."Reason Message" := 'Successful';
                 end;
             end;
+            // PartnerErrorLog.RESET;
+            // PartnerErrorLog.SETRANGE("Document No.", MyHeader."No.");
+            // PartnerErrorLog.SetFilter("Item No.", Rec."No.");
+            // PartnerErrorLog.SetCurrentKey("Sequence No.");
+            // PartnerErrorLog.Ascending(true);
+            // IF PartnerErrorLog.FindFirst() THEN begin
+            //     L_ProductLevelResponse.Reset();
+            //     L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            //     if L_ProductLevelResponse.FindFirst() then begin
+            //         Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         Rec."Reason Message" := L_ProductLevelResponse.Message;
+            //         // if L_ProductLevelResponse."Error Code" = 'SEQ8' then begin
+            //         //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         //     Rec."Reason Message" := PartnerErrorLog.Attribute + ' ' + L_ProductLevelResponse.Message;
+            //         // end else begin
+            //         //     Rec."Reason Code" := L_ProductLevelResponse.Reason;
+            //         //     Rec."Reason Message" := L_ProductLevelResponse.Message;
+            //         // end;
+            //     end;
+            // end else begin
+            //     Rec."Reason Code" := 'Order Line Created';
+            //     Rec."Reason Message" := 'Successful';
+            // end;
+
+            // //Update Qty to Deliver as 0 is any error on line level except quota becuase we are managed the quota in Validation function+++
+            // if (UpperCase(Rec."Reason Code") <> UpperCase('Partial Quantity Delivered')) then begin
+            //     PartnerErrorLog.RESET;
+            //     PartnerErrorLog.SETRANGE("Document No.", MyHeader."No.");
+            //     PartnerErrorLog.SetFilter("Item No.", Rec."No.");
+            //     PartnerErrorLog.SetCurrentKey("Sequence No.");
+            //     PartnerErrorLog.Ascending(true);
+            //     IF PartnerErrorLog.FindFirst() THEN begin
+            //         L_ProductLevelResponse.Reset();
+            //         L_ProductLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+            //         if L_ProductLevelResponse.FindFirst() then begin
+            //             Rec."Qty. to Deliver" := 0;
+            //         end;
+            //     end;
+            // end;
         end;
     end;
 
     trigger OnNewRecord(BelowxRec: Boolean)
     var
         MyHeader: Record "Interim Sales Header";
+        L_Item: Record Item;
+        CU_WebOrderManagement: Codeunit "Web Order Mgt";
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        PartnerErrorLog: Record "Incoming/Outgoing Error Log";
+        L_OrderLevelResponse: Record "Order Level Response";
+        L_ProductLevelResponse: Record "Product Level Response";
+
     begin
         MyHeader.Reset();
         IsDeepInsert := IsNullGuid(Rec."Header Id");
@@ -175,6 +230,7 @@ page 90032 "Avibuyer Order Line Subpage"
         ELSE
             EXIT(10000);
     end;
+
 
     procedure Sigma_LineValidations(var P_InterimSalesHeader: Record "Interim Sales Header"; Var _InterimSalesLine: Record "Interim Sales Line")
     var
@@ -294,6 +350,16 @@ page 90032 "Avibuyer Order Line Subpage"
                                 _InterimSalesLine."Reason Message" := 'Partial Quantity Delivered';
                                 _InterimSalesLine."Qty. to Deliver" := 0;
                             end;
+                        end else begin
+                            if _InterimSalesLine."Qty. to Deliver" <> 0 then
+                                if _InterimSalesLine."Qty. to Deliver" < _InterimSalesLine.Quantity then begin
+                                    CU_WebOrderManagement.Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, _InterimSalesLine, 'SEQ11', false, '');
+                                    L_ErrorRecorded := TRUE;
+
+                                    //Update Line
+                                    _InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
+                                    _InterimSalesLine."Reason Message" := 'Partial Quantity Delivered';
+                                end;
                         end;
                     end;
                 end;

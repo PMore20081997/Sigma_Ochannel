@@ -1212,6 +1212,18 @@ codeunit 90000 "Web Order Mgt"
                                         L_InterimSalesLine."Qty. to Deliver" := 0;
                                         L_InterimSalesLine.Modify();
                                     end;
+                                end else begin
+                                    if ((P_InterimSalesHeader."Trade Partner Code" = 'AVIBUYERS') OR (P_InterimSalesHeader."Trade Partner Code" = 'AVIBUYERNEW')) then begin
+                                        if L_InterimSalesLine."Qty. to Deliver" <> 0 then
+                                            if L_InterimSalesLine."Qty. to Deliver" < L_InterimSalesLine.Quantity then begin
+                                                Sigma_InsertErrorLog('Partial Quantity Delivered', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ11', false, '');
+                                                L_ErrorRecorded := TRUE;
+
+                                                //Update Line
+                                                L_InterimSalesLine."Reason Code" := 'Partial Quantity Delivered';
+                                                L_InterimSalesLine."Reason Message" := 'Partial Quantity Delivered';
+                                            end;
+                                    end;
                                 end;
                             end;
                         end;
