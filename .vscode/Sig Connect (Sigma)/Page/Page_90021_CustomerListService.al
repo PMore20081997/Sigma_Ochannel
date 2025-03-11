@@ -92,6 +92,14 @@ page 90021 "Customer List Service"
                 {
                     ApplicationArea = All;
                 }
+                field("Last Modified By"; Rec.SystemModifiedBy)
+                {
+                    ApplicationArea = All;
+                }
+                field("Last Modified At"; Rec.SystemCreatedAt)
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }

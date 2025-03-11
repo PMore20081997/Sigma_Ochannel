@@ -43,6 +43,9 @@ codeunit 90025 "Manual/KNAAP SO Process"
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
         MinOrder_Header: Record "Sales Header";
         L_SumMin: Decimal;
+        L_Customer: Record Customer;
+        L_BilltoCustomer: Record Customer;
+        CheckCreditLimit: codeunit "Cust-Check Cr. Limit";
     begin
         GeneralSetupChannel.Get();
         Clear(Counter);
@@ -193,6 +196,29 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                     end;
                                 end;
                             end else begin
+                                // L_Customer.Reset();
+                                // L_Customer.SetRange("No.", Rec_SalesHeader."Sell-to Customer No.");
+                                // if L_Customer.FindFirst() then begin
+                                //     if L_Customer."Bill-to Customer No." <> '' then begin
+
+                                //         L_BilltoCustomer.Reset();
+                                //         L_BilltoCustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
+                                //         if L_BilltoCustomer.FindFirst() then begin
+                                //             L_BilltoCustomer.CalcFields("Balance (LCY)");
+                                //             if L_BilltoCustomer."Balance (LCY)" > L_BilltoCustomer."Credit Limit (LCY)" then
+                                //                 Rec_SalesHeader."Credit limit Exceeded" := true;
+                                //         end;
+                                //     end else begin
+                                //         if L_Customer."Balance (LCY)" > L_Customer."Credit Limit (LCY)" then
+                                //             Rec_SalesHeader."Credit limit Exceeded" := true;
+                                //     end;
+
+                                // end;
+                                // Rec_SalesHeader."Overdue Balance" := CheckCreditLimit.SalesHeaderCheck(Rec_SalesHeader);
+
+
+                                // if ((Rec_SalesHeader."Credit limit Exceeded" = true) or (Rec_SalesHeader."Overdue Balance" = true)) then
+                                //     Rec_SalesHeader."Credit Limit Approval" := true;
                                 //Non Hospital orders Check all Approval and Permission before release+++
                                 if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     RecUserSetup.Reset();
@@ -291,6 +317,9 @@ codeunit 90025 "Manual/KNAAP SO Process"
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
         MinOrder_Header: Record "Sales Header";
         L_SumMin: Decimal;
+        L_Customer: Record Customer;
+        L_BilltoCustomer: Record Customer;
+        CheckCreditLimit: codeunit "Cust-Check Cr. Limit";
     begin
         Clear(L_SalesHeader);
         L_SalesHeader.Reset();
@@ -439,6 +468,29 @@ codeunit 90025 "Manual/KNAAP SO Process"
                                 end;
                             end else begin
                                 //Non Hospital orders Check all Approval and Permission before release+++
+                                // L_Customer.Reset();
+                                // L_Customer.SetRange("No.", Rec_SalesHeader."Sell-to Customer No.");
+                                // if L_Customer.FindFirst() then begin
+                                //     if L_Customer."Bill-to Customer No." <> '' then begin
+
+                                //         L_BilltoCustomer.Reset();
+                                //         L_BilltoCustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
+                                //         if L_BilltoCustomer.FindFirst() then begin
+                                //             L_BilltoCustomer.CalcFields("Balance (LCY)");
+                                //             if L_BilltoCustomer."Balance (LCY)" > L_BilltoCustomer."Credit Limit (LCY)" then
+                                //                 Rec_SalesHeader."Credit limit Exceeded" := true;
+                                //         end;
+                                //     end else begin
+                                //         if L_Customer."Balance (LCY)" > L_Customer."Credit Limit (LCY)" then
+                                //             Rec_SalesHeader."Credit limit Exceeded" := true;
+                                //     end;
+
+                                // end;
+                                // Rec_SalesHeader."Overdue Balance" := CheckCreditLimit.SalesHeaderCheck(Rec_SalesHeader);
+
+
+                                // if ((Rec_SalesHeader."Credit limit Exceeded" = true) or (Rec_SalesHeader."Overdue Balance" = true)) then
+                                //     Rec_SalesHeader."Credit Limit Approval" := true;
                                 if (L_CheckConditipon.CreditLimitCheck(Rec_SalesHeader) = true) AND (L_CheckConditipon.SOMOVZeroPriceAndQuotaCheck(Rec_SalesHeader) = false) AND ((L_CheckConditipon.ExportCustomerCheck(Rec_SalesHeader) = false)) then begin
                                     RecUserSetup.Reset();
                                     IF RecUserSetup.GET(USERID) THEN BEGIN
