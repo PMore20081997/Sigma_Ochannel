@@ -228,5 +228,8 @@ permissionset 90000 OChannel
         page "MedEpos Order Header API" = X,
         page "MedEpos Order Line API" = X,
         page "Victoria Order Header API" = X,
-        page "Victoria Order Line API" = X;
+        page "Victoria Order Line API" = X,
+        codeunit "Revalidate Sales Order" = X,
+        page "Avibuyer New Order Header API" = X,
+        page "Avibuyer New Order Line" = X;
 }

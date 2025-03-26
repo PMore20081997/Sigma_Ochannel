@@ -586,7 +586,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         GetStartAndEndDates(StartDate, EndDate);
         L_SalesInvoiceLine.Reset();
-        L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+        //L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
         L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
         L_SalesInvoiceLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesInvoiceLine.FindSet() then begin
@@ -724,7 +724,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         //GetStartAndEndDates(StartDate, EndDate);
         Windows.OPEN('Downloading..' + ' @1@@@@@@@@@@@@@\' + 'Updating..' + ' #3##########' + 'Please Wait..');
         L_SalesCreditMemoLine.Reset();
-        L_SalesCreditMemoLine.SetFilter(Quantity, '>%1', 0);
+        //L_SalesCreditMemoLine.SetFilter(Quantity, '>%1', 0);
         L_SalesCreditMemoLine.SetRange(Type, L_SalesCreditMemoLine.Type::Item);
         L_SalesCreditMemoLine.SetRange("Posting Date", StartDate, EndDate);
         if L_SalesCreditMemoLine.FindSet() then begin
