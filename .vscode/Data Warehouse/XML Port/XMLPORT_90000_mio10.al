@@ -962,7 +962,7 @@ xmlport 90000 "mio10"
 
                 begin
 
-                    L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.");
+                    if L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.") then;
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
                     if Purchase_Line."Variant Code" = '' then begin
                         Prod_Code := Purchase_Line."No.";
