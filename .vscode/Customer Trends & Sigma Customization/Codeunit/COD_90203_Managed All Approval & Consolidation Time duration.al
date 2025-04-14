@@ -10,6 +10,13 @@
 
 codeunit 90203 "Manage Time duration"
 {
+    SingleInstance = true;
+
+
+    var
+        G_CalledFromReleaseProcess: Boolean;
+        G_OrderNo: Code[20];
+        G_DocumentType: Enum "Sales Document Type";
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Release Sales Document", 'OnBeforePerformManualReleaseProcedure', '', false, false)]
     local procedure OnBeforePerformManualReleaseProcedure(var SalesHeader: Record "Sales Header"; var IsHandled: Boolean)
@@ -76,6 +83,9 @@ codeunit 90203 "Manage Time duration"
         // end;
 
         //New Code - 13/01/2025++++
+        Clear(G_CalledFromReleaseProcess);
+        Clear(G_OrderNo);
+        Clear(G_DocumentType);
         L_SalesHeader.Reset();
         L_SalesHeader.SetRange("Document Type", SalesHeader."Document Type");
         L_SalesHeader.SetRange("No.", SalesHeader."No.");
@@ -83,8 +93,11 @@ codeunit 90203 "Manage Time duration"
             if L_SalesHeader."Document Type" = L_SalesHeader."Document Type"::Order then begin
                 if L_SalesHeader."Web Order" = true then begin
                     //Credit Limit++
-                    L_SalesHeader."Credit Limit Approval" := CheckCreditLimit.SalesHeaderCheck(L_SalesHeader);
-                    L_SalesHeader.Modify();
+                    G_CalledFromReleaseProcess := true;
+                    G_OrderNo := L_SalesHeader."No.";
+                    G_DocumentType := L_SalesHeader."Document Type";
+                    CheckCreditLimit.SalesHeaderCheck(L_SalesHeader);
+
 
 
                     //Sales quota Check+++
@@ -225,6 +238,80 @@ codeunit 90203 "Manage Time duration"
     end;
 
 
+    //Update Credit Limit and OverDue for IRP order at the time of relaese SO+++
+    [EventSubscriber(ObjectType::Page, Page::"Check Credit Limit", OnShowWarningOnBeforeExitValue, '', false, false)]
+    local procedure OnShowWarningOnBeforeExitValue(ExitValue: Integer)
+    var
+        L_SalesHeader: Record "Sales Header";
+    begin
+        if G_CalledFromReleaseProcess = true then begin
+            L_SalesHeader.Reset();
+            L_SalesHeader.SetRange("No.", G_OrderNo);
+            L_SalesHeader.SetRange("Document Type", G_DocumentType);
+            if L_SalesHeader.FindFirst() then begin
+                if L_SalesHeader."IRP Order" = true then begin
+                    if ExitValue = 1 then begin
+                        L_SalesHeader."Credit limit Exceeded" := true
+                    end else
+                        L_SalesHeader."Credit limit Exceeded" := false;
+
+                    if ExitValue = 2 then begin
+                        L_SalesHeader."Overdue Balance" := true
+                    end else
+                        L_SalesHeader."Overdue Balance" := false;
+
+                    if ExitValue = 3 then begin
+                        L_SalesHeader."Credit limit Exceeded" := true;
+                        L_SalesHeader."Overdue Balance" := true;
+                    end;
+
+                    //+++++++
+                    if ExitValue <> 0 then begin
+                        if (L_SalesHeader."Exempt from Overdue check" = false) AND (L_SalesHeader.Hospital = false) then begin
+                            L_SalesHeader."Credit Limit Approval" := true;
+                            L_SalesHeader.Modify();
+                        end else begin
+                            if (L_SalesHeader."Exempt from Overdue check" = true) AND (L_SalesHeader.Hospital = true) then begin
+                                L_SalesHeader."Credit Limit Approval" := false;
+                                L_SalesHeader.Modify();
+                            end else begin
+                                if (L_SalesHeader."Exempt from Overdue check" = true) AND (L_SalesHeader.Hospital = false) then begin
+                                    if (ExitValue = 1) OR (ExitValue = 3) then begin
+                                        L_SalesHeader."Credit Limit Approval" := true;
+                                        L_SalesHeader.Modify();
+                                    end else begin
+                                        L_SalesHeader."Credit Limit Approval" := false;
+                                        L_SalesHeader.Modify();
+                                    end;
+                                end else begin
+                                    if (L_SalesHeader."Exempt from Overdue check" = false) AND (L_SalesHeader.Hospital = true) then begin
+                                        if (ExitValue = 2) OR (ExitValue = 3) then begin
+                                            L_SalesHeader."Credit Limit Approval" := true;
+                                            L_SalesHeader.Modify();
+                                        end else begin
+                                            L_SalesHeader."Credit Limit Approval" := false;
+                                            L_SalesHeader.Modify();
+                                        end;
+                                    end;
+                                end;
+                            end;
+                        end;
+                    end else begin
+                        L_SalesHeader."Credit Limit Approval" := false;
+                        L_SalesHeader.Modify();
+                    end;
+                end;
+            end;
+        end;
+
+        //CLear Variable++++
+        Clear(G_OrderNo);
+        Clear(G_DocumentType);
+        Clear(G_CalledFromReleaseProcess);
+    end;
+
+
+
 
 
     //Remove Default Credit limit check at the time consolidation++++
@@ -257,23 +344,6 @@ codeunit 90203 "Manage Time duration"
             end;
         end;
     end;
-
-
-
-
-
-    //FIN-28[08/01/2025]+++++
-    [EventSubscriber(ObjectType::Page, PAGE::"Check Credit Limit", OnCalcOverdueBalanceLCYAfterSetFilter, '', false, false)]
-    local procedure OnCalcOverdueBalanceLCYAfterSetFilter(var Customer: Record Customer)
-    var
-        L_SalesAndRecvSetup: Record "Sales & Receivables Setup";
-    begin
-        L_SalesAndRecvSetup.Get();
-        L_SalesAndRecvSetup.TestField("Due Date Buffer");
-        Customer.SetRange("Date Filter");
-        Customer.SetFilter("Date Filter", '..%1', CalcDate(Format(L_SalesAndRecvSetup."Due Date Buffer"), WorkDate()));
-    end;
-
 
 
     procedure CreditLimitCheck(_SalesHeader: Record "Sales Header"): Boolean

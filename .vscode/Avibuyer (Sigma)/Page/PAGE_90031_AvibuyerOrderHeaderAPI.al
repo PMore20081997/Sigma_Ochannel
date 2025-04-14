@@ -361,6 +361,7 @@ page 90031 "Avibuyer Order Header API Card"
         ErrorCount: Integer;
         CU_WebOrderManagement: Codeunit "Web Order Mgt";
         L_BilltoCustomer: Code[20];
+        L_CheckCreditLimit: Codeunit "Check Crdit/OverDue for IRP";
     begin
         IF P_InterimSalesHeader."Document Type" <> P_InterimSalesHeader."Document Type"::Quote THEN BEGIN
             L_TradePartner.Get(P_InterimSalesHeader."Trade Partner Code");
@@ -460,10 +461,18 @@ page 90031 "Avibuyer Order Header API Card"
                         L_BilltoCustomer := L_Cust."No.";
                 end;
 
+                // L_Cust.Reset();
+                // if L_Cust.Get(L_BilltoCustomer) then begin
+                //     L_Cust.CalcFields("Balance (LCY)");
+                //     if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
+                //         CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
+                //         L_ErrorRecorded := TRUE;
+                //     end;
+                // end;
+
                 L_Cust.Reset();
                 if L_Cust.Get(L_BilltoCustomer) then begin
-                    L_Cust.CalcFields("Balance (LCY)");
-                    if L_Cust."Balance (LCY)" > L_Cust."Credit Limit (LCY)" then begin
+                    if L_CheckCreditLimit.CheckCreditLimitAndOverDue(L_Cust."No.") = true then begin
                         CU_WebOrderManagement.Sigma_InsertErrorLog(STRSUBSTNO('Customer No %1 is Over Credit Limit***', P_InterimSalesHeader."Sell-to Customer No."), P_InterimSalesHeader, L_InterimSalesLine, 'SEQ9', true, '');
                         L_ErrorRecorded := TRUE;
                     end;
