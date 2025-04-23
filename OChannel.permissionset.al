@@ -231,5 +231,7 @@ permissionset 90000 OChannel
         page "Victoria Order Line API" = X,
         codeunit "Revalidate Sales Order" = X,
         page "Avibuyer New Order Header API" = X,
-        page "Avibuyer New Order Line" = X;
+        page "Avibuyer New Order Line" = X,
+        codeunit "Check Crdit/OverDue for IRP" = X,
+        codeunit "Send SO Approval Jobqueue" = X;
 }
