@@ -26,6 +26,7 @@ codeunit 90033 "Revalidate Sales Order"
         L_SalesHeader.SetFilter("Shipment Date", '%1..%2', CalcDate('-1D', WorkDate()), 20990101D);
         L_SalesHeader.SetRange("Sent to Knapp", false);
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+        L_SalesHeader.SetFilter(Status, '%1|%2', L_SalesHeader.Status::Open, L_SalesHeader.Status::Released);
         if L_SalesHeader.FindSet() then begin
             repeat
                 Clear(L_RequiredRelease);
