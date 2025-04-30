@@ -211,13 +211,13 @@ report 90003 "Check & Split Order"
         L_NewSalesLine.TransferFields(_SalesLine);
         L_NewSalesLine.Validate("Document No.", _SalesHeader."No.");
         L_NewSalesLine.Validate("Line No.", GetLastLineNo(_SalesHeader."No."));
+        L_NewSalesLine.Validate("Location Code", _SalesHeader."Location Code");
         // L_NewSalesLine.VALIDATE("Document Type", _SalesHeader."Document Type");
         // L_NewSalesLine.VALIDATE("Document No.", _SalesHeader."No.");
         // L_NewSalesLine.VALIDATE("Line No.", GetLastLineNo(_SalesHeader."No."));
         // L_NewSalesLine.VALIDATE(Type, L_NewSalesLine.Type::Item);
         // L_NewSalesLine.VALIDATE("No.", _SalesLine."No.");
         // L_NewSalesLine.VALIDATE(Quantity, _SalesLine.Quantity);
-        // L_NewSalesLine.Validate("Location Code", _SalesHeader."Location Code");
         // L_NewSalesLine.Validate("Knapp Line", _SalesLine."Knapp Line");
         // L_NewSalesLine.Validate("Knapp Item", _SalesLine."Knapp Item");
         // if _SalesLine."Variant Code" <> '' then
@@ -243,6 +243,5 @@ report 90003 "Check & Split Order"
 
     var
         L_SplitOrder: Boolean;
-
 
 }
