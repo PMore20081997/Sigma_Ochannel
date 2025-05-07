@@ -38,6 +38,7 @@ report 90003 "Check & Split Order"
                         L_KNAPPLine.SetRange("Document No.", SalesHeaderLoop."No.");
                         L_KNAPPLine.SetRange(Type, L_KNAPPLine.Type::Item);
                         L_KNAPPLine.SetRange("Knapp Line", true);
+                        L_KNAPPLine.SetFilter(Quantity, '>%1', 0);
                         if L_KNAPPLine.FindSet() then begin
                             //Creatr New Header+++
                             CreateNewSH(NewSalesHeader, SalesHeaderLoop);
