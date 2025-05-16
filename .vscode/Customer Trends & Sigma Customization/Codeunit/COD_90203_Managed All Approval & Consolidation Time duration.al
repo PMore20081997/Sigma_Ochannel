@@ -18,6 +18,17 @@ codeunit 90203 "Manage Time duration"
         G_OrderNo: Code[20];
         G_DocumentType: Enum "Sales Document Type";
 
+        //Prathamesh++
+        CustCheckCreditLimit: Page "Check Credit Limit";
+        InstructionMgt: Codeunit "Instruction Mgt.";
+        InstructionTypeTxt: Label 'Check Cr. Limit';
+        CreditLimitNotificationMsg: Label 'The customer''s credit limit has been exceeded.';
+        OverdueBalanceNotificationMsg: Label 'This customer has an overdue balance.';
+        GetDetailsTxt: Label 'Show details';
+        NotificationLifecycleMgt: Codeunit "Notification Lifecycle Mgt.";
+        NotificationId: Guid;
+    //Prathamesh--
+
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Release Sales Document", 'OnBeforePerformManualReleaseProcedure', '', false, false)]
     local procedure OnBeforePerformManualReleaseProcedure(var SalesHeader: Record "Sales Header"; var IsHandled: Boolean)
     var
@@ -96,7 +107,11 @@ codeunit 90203 "Manage Time duration"
                     G_CalledFromReleaseProcess := true;
                     G_OrderNo := L_SalesHeader."No.";
                     G_DocumentType := L_SalesHeader."Document Type";
-                    CheckCreditLimit.SalesHeaderCheck(L_SalesHeader);
+
+                    if GuiAllowed = true then
+                        CheckCreditLimit.SalesHeaderCheck(L_SalesHeader) //Prathamesh++
+                    else
+                        SalesHeaderCheckNew(L_SalesHeader); //Prathamesh++
 
 
 
@@ -243,6 +258,7 @@ codeunit 90203 "Manage Time duration"
     local procedure OnShowWarningOnBeforeExitValue(ExitValue: Integer)
     var
         L_SalesHeader: Record "Sales Header";
+        CustCheckCrLimit: Codeunit "Cust-Check Cr. Limit";
     begin
         if G_CalledFromReleaseProcess = true then begin
             L_SalesHeader.Reset();
@@ -251,18 +267,21 @@ codeunit 90203 "Manage Time duration"
             if L_SalesHeader.FindFirst() then begin
                 if L_SalesHeader."IRP Order" = true then begin
                     if ExitValue = 1 then begin
-                        L_SalesHeader."Credit limit Exceeded" := true
+                        L_SalesHeader."Credit limit Exceeded" := true;
+                        NotificationId := CustCheckCrLimit.GetCreditLimitNotificationId();
                     end else
                         L_SalesHeader."Credit limit Exceeded" := false;
 
                     if ExitValue = 2 then begin
-                        L_SalesHeader."Overdue Balance" := true
+                        L_SalesHeader."Overdue Balance" := true;
+                        NotificationId := CustCheckCrLimit.GetCreditLimitNotificationId();
                     end else
                         L_SalesHeader."Overdue Balance" := false;
 
                     if ExitValue = 3 then begin
                         L_SalesHeader."Credit limit Exceeded" := true;
                         L_SalesHeader."Overdue Balance" := true;
+                        NotificationId := CustCheckCrLimit.GetCreditLimitNotificationId();
                     end;
 
                     //+++++++
@@ -381,4 +400,32 @@ codeunit 90203 "Manage Time duration"
 
         exit(false);
     end;
+
+    //Prathamesh++
+    #Region to execute code if GUIAllowed is false(Executing scheduled Job Queue)++++
+    local procedure SalesHeaderCheckNew(var SalesHeader: Record "Sales Header") CreditLimitExceeded: Boolean
+    var
+        AdditionalContextId: Guid;
+        IsHandled: Boolean;
+    begin
+        IsHandled := false;
+        if SalesHeaderShowWarningAndGetCause(SalesHeader, AdditionalContextId) then
+            SalesHeader.CustomerCreditLimitNotExceeded()
+        else begin
+            CreditLimitExceeded := true;
+            SalesHeader.CustomerCreditLimitExceeded(CustCheckCreditLimit.GetNotificationId());
+        end;
+        // end;
+    end;
+
+    local procedure SalesHeaderShowWarningAndGetCause(SalesHeader: Record "Sales Header"; var NotificationContextGuidOut: Guid): Boolean
+    var
+        Result: Boolean;
+    begin
+        Result := CustCheckCreditLimit.SalesHeaderShowWarning(SalesHeader);
+        NotificationContextGuidOut := NotificationId;
+        exit(Result);
+    end;
+    //Prathamesh--
+    #endregion
 }
