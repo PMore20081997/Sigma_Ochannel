@@ -34,6 +34,12 @@ page 90000 "General Setup - Channels"
                 field("DC TOS Start Date"; Rec."DC TOS Start Date")
                 {
                     ApplicationArea = All;
+                    //Visible = false;
+                }
+                field("No. Of Days"; rec."No. Of Days")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
                 }
             }
         }

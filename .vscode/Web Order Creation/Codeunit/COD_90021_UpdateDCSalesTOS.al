@@ -8,14 +8,17 @@ codeunit 90021 "DC Sales TOS Lines"
         L_SalesHeader: Record "Sales Header";
         L_WhseActivityLine: Record "Warehouse Activity Line";
         GeneralSetupChannel: Record "General Setup - Channels";
+        StartDate: Date;
     begin
         GeneralSetupChannel.Get();
         SalesLineTOS.DeleteAll();
+        StartDate := CalculateStartDate(GeneralSetupChannel."No. Of Days");
 
         L_WebBuffer.Reset();
         L_WebBuffer.SetFilter("Web Document No.", 'DC*');
         L_WebBuffer.SetRange("TOS Checked", false);
-        L_WebBuffer.SetFilter("Created At", '%1..', GeneralSetupChannel."DC TOS Start Date");
+        L_WebBuffer.SetFilter("Created At", '%1..', StartDate);
+        //L_WebBuffer.SetFilter("Created At", '%1..', GeneralSetupChannel."DC TOS Start Date");
         if L_WebBuffer.FindSet() then begin
             repeat
                 L_SalesHeader.Reset();
@@ -148,5 +151,35 @@ codeunit 90021 "DC Sales TOS Lines"
                 exit(L_HandledInterimSalesLine."Channel SKU");
             end;
         end;
+    end;
+
+    local procedure CalculateStartDate(InputText: Text): Date
+    var
+        UnitCode: Text[1];
+        NumberText: Text;
+        DurationNumber: Integer;
+        StartDate: Date;
+    begin
+        if InputText = '' then
+            exit(Today);
+
+        UnitCode := UpperCase(CopyStr(InputText, StrLen(InputText), 1));
+        NumberText := CopyStr(InputText, 1, StrLen(InputText) - 1);
+
+        if not Evaluate(DurationNumber, NumberText) then
+            Error('Invalid number in "No. of Days": %1', InputText);
+
+        case UnitCode of
+            'D':
+                StartDate := Today - DurationNumber;
+            'W':
+                StartDate := Today - (DurationNumber * 7);
+            'M':
+                StartDate := CalcDate('<-' + Format(DurationNumber) + 'M>', Today);
+            else
+                Error('Invalid unit in "No. of Days": %1. Use D, W, or M.', UnitCode);
+        end;
+
+        exit(StartDate);
     end;
 }

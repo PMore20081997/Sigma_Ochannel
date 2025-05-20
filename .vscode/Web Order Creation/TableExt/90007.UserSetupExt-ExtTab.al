@@ -23,5 +23,13 @@ tableextension 90007 "OC UserSetupExt" extends "User Setup"
         {
             DataClassification = ToBeClassified;
         }
+        field(90005; "Allow to Delete Bulk Invoices"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(90006; "Allow Delete Bulk Credit Memos"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }

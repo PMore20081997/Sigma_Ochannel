@@ -25,6 +25,18 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
                 ApplicationArea = All;
                 ToolTip = 'Specifies if user has permission to delete bulk selected sales orders';
             }
+            field("Allow to Delete Bulk Invoices"; rec."Allow to Delete Bulk Invoices")
+            {
+                ApplicationArea = All;
+                ToolTip = 'Specifies if user has permission to delete bulk selected sales invoices';
+            }
+            field("Allow Delete Bulk Credit Memos"; rec."Allow Delete Bulk Credit Memos")
+            {
+                ApplicationArea = All;
+                Caption = 'Allow to Delete Bulk Credit Memos';
+                ToolTip = 'Specifies if user has permission to delete bulk selected sales credit memos';
+            }
+
         }
         addafter("Allowed Quota Manag. for CD")
         {

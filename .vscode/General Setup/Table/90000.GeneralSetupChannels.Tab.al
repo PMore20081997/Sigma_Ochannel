@@ -76,5 +76,9 @@ table 90000 "General Setup - Channels"
         {
             DataClassification = ToBeClassified;
         }
+        field(21; "No. Of Days"; Code[10])
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }
