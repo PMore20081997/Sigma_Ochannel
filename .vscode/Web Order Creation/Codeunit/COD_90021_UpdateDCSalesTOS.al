@@ -161,7 +161,7 @@ codeunit 90021 "DC Sales TOS Lines"
         StartDate: Date;
     begin
         if InputText = '' then
-            exit(Today);
+            exit(WorkDate());
 
         UnitCode := UpperCase(CopyStr(InputText, StrLen(InputText), 1));
         NumberText := CopyStr(InputText, 1, StrLen(InputText) - 1);
@@ -171,11 +171,11 @@ codeunit 90021 "DC Sales TOS Lines"
 
         case UnitCode of
             'D':
-                StartDate := Today - DurationNumber;
+                StartDate := WorkDate() - DurationNumber;
             'W':
-                StartDate := Today - (DurationNumber * 7);
+                StartDate := WorkDate() - (DurationNumber * 7);
             'M':
-                StartDate := CalcDate('<-' + Format(DurationNumber) + 'M>', Today);
+                StartDate := CalcDate('<-' + Format(DurationNumber) + 'M>', WorkDate());
             else
                 Error('Invalid unit in "No. of Days": %1. Use D, W, or M.', UnitCode);
         end;

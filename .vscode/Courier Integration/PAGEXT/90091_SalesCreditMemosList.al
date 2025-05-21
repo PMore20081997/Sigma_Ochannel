@@ -20,16 +20,13 @@ pageextension 90091 SalesCreditMemosList extends "Sales Credit Memos"
                     L_SalesHeader: Record "Sales Header";
                     UserSetup: Record "User Setup";
                 begin
-                    Commit();
                     UserSetup.Reset();
                     if UserSetup.Get(UserId) then begin
                         if UserSetup."Allow Delete Bulk Credit Memos" = true then begin
                             Clear(L_SalesHeader);
                             L_SalesHeader := Rec;
                             CurrPage.SetSelectionFilter(L_SalesHeader);
-
                             L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::"Credit Memo");
-
                             if L_SalesHeader.FindSet() then begin
                                 repeat
                                     L_SalesHeader.Delete(true);
@@ -38,7 +35,8 @@ pageextension 90091 SalesCreditMemosList extends "Sales Credit Memos"
                             end;
                         end else
                             Message('You do not have permission to delete bulk sales credit memos.');
-                    end;
+                    end else
+                        Message('You do not have permission to delete bulk sales invoices.');
                 end;
             }
         }
