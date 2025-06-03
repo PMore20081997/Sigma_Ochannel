@@ -23,6 +23,7 @@ tableextension 90009 "CustomerAdd" extends Customer
         field(90004; "EDI Invoice/Credit"; Boolean)
         {
             DataClassification = ToBeClassified;
+            Caption = 'EDI Customer/Vendor';
         }
         modify("Customer Price Group")
         {

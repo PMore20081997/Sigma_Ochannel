@@ -35,7 +35,8 @@ codeunit 90023 "Inventory Calculation"
     var
         L_CstomerTrend: Record CustomerTrends;
         _CurrentLineQty: Decimal;
-
+        L_ExcludeQty: Decimal;
+        L_BinContent: Record "Bin Content";
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         _Physical: Decimal;
         L_SalesLine: Record "Sales Line";
@@ -89,6 +90,25 @@ codeunit 90023 "Inventory Calculation"
         _Rec.CalcFields("Web Orders Qty", "Qty On Customer Trends");
         Clear(_Free);
         _Free := (_Physical + _CurrentLineQty) - (_AllocatedOnSO + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _Rec."Item No.");
+        L_BinContent.SetRange("Location Code", _Rec."Location Code");
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            _Free := _Free - L_ExcludeQty;
+        //Prathamesh-- SBB-291
+
         if _Free > 0 then
             Exit(_Free)
         else
@@ -130,6 +150,8 @@ codeunit 90023 "Inventory Calculation"
         _AllocatedOnSO: Decimal;
         _AllocatedOnSO_SameOrderDifferentLine: Decimal;
         L_Location: Record Location;
+        L_ExcludeQty: Decimal;
+        L_BinContent: Record "Bin Content";
     begin
         _Rec.CalcFields("Saleable Location");
 
@@ -201,6 +223,25 @@ codeunit 90023 "Inventory Calculation"
         else
             _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine);
 
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _Rec."No.");
+        L_BinContent.SetRange("Location Code", _Rec."Location Code");
+        L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            _Free := _Free - L_ExcludeQty;
+        //Prathamesh-- SBB-291
         if _Free > 0 then
             exit(_Free)
         else
@@ -213,6 +254,8 @@ codeunit 90023 "Inventory Calculation"
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         _Physical: Decimal;
         _AllocatedOnSO: Decimal;
+        L_ExcludeQty: Decimal;
+        L_BinContent: Record "Bin Content";
     begin
         _Rec.CalcFields("Saleable Location");
 
@@ -261,6 +304,25 @@ codeunit 90023 "Inventory Calculation"
         else
             _Free := _Physical - _AllocatedOnSO;
 
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _Rec."No.");
+        L_BinContent.SetRange("Location Code", _Rec."Location Code");
+        L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            _Free := _Free - L_ExcludeQty;
+        //Prathamesh-- SBB-291
         if _Free > 0 then
             exit(_Free)
         else

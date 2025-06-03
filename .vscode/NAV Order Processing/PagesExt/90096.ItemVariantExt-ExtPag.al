@@ -132,6 +132,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         QtyOnSO: Decimal;
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         TotalInventory: Decimal;
+        L_BinContent: Record "Bin Content"; //Prathamesh++
+        L_ExcludeQty: Decimal; //Prathamesh++
+        G_FreeQuantity: Decimal; //Prathamesh++
     begin
         Clear(TotalInventory);
         L_ItemLedgerEntry.Reset();
@@ -159,9 +162,29 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
+        Clear(G_FreeQuantity);
+        G_FreeQuantity := TotalInventory - QtyOnSO;
 
-        if (TotalInventory - QtyOnSO) > 0 then
-            exit(TotalInventory - QtyOnSO)
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _Rec."Item No.");
+        L_BinContent.SetRange("Variant Code", _Rec.Code);
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            G_FreeQuantity := G_FreeQuantity - L_ExcludeQty;
+
+        if G_FreeQuantity > 0 then
+            exit(G_FreeQuantity)
         else
             exit(0);
 
@@ -180,6 +203,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         QtyOnSO: Decimal;
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         PhysicalInventory: Decimal;
+        L_BinContent: Record "Bin Content"; //Prathamesh++
+        L_ExcludeQty: Decimal; //Prathamesh++
+        G_FreeQuantity: Decimal; //Prathamesh++
     begin
         Clear(PhysicalInventory);
         L_ItemLedgerEntry.Reset();
@@ -209,8 +235,29 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
-        if (PhysicalInventory - QtyOnSO) > 0 then
-            exit(PhysicalInventory - QtyOnSO)
+        Clear(G_FreeQuantity);
+        G_FreeQuantity := PhysicalInventory - QtyOnSO;
+
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _Rec."Item No.");
+        L_BinContent.SetRange("Variant Code", _Rec.Code);
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            G_FreeQuantity := G_FreeQuantity - L_ExcludeQty;
+
+        if G_FreeQuantity > 0 then
+            exit(G_FreeQuantity)
         else
             exit(0);
 

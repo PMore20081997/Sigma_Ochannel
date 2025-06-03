@@ -199,8 +199,8 @@ codeunit 90082 "EDI Invoice"
         HeaderInfo12 := '*DH' + '^' + Salesinvoicehead."Order No." + '^' + DMYPostingFormat + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
         HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + PartnerGLN + '^^^^^^' + P_customer.Name + '^' + P_customer.Address + '^' + P_customer."Address 2" + '^' + P_customer.City + '^' + P_customer.County + '^' + P_customer."Post Code" + '^' + P_customer."Country/Region Code" + '^' + CRLF[1];
-        HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + CompGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
+        HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + PartnerGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
+        HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + PartnerGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo8 := '**A' + '^' + '0' + '^' + '0' + '^' + 'SHIP TO' + '^' + P_customer.GLN + '^^^^^' + P_customer.GLN + '^' + Salesinvoicehead."Ship-to Name" + '^' + Salesinvoicehead."Ship-to Address" + '^' + Salesinvoicehead."Ship-to Address 2" + '^' + Salesinvoicehead."Ship-to City" + '^' + Salesinvoicehead."Ship-to County" + '^' + Salesinvoicehead."Ship-to Post Code" + '^' + Salesinvoicehead."Ship-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo9 := '*IS^' + InvNo + '^VAT^E^' + Format(salesinvoiceline."VAT %") + '^' + format(count) + '^' + format(Subtotalgoodsval) + '^' + format(DiscountAmt) + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + Format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(Subtotalgoodsval - DiscountAmt + TotalAmtIncVat - TotalAmtExcVat) + '^^^^' + CRLF[1];
         HeaderInfo10 := '*IT^' + InvNo + '^1^' + Format(count) + '^' + format(Subtotalgoodsval) + '^' + format(DiscountAmt) + '^' + 'N' + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + '0' + '^' + format(Subtotalgoodsval - DiscountAmt) + '^' + format(TotalAmtIncVat - TotalAmtExcVat) + '^' + format(Subtotalgoodsval - DiscountAmt + TotalAmtIncVat - TotalAmtExcVat) + '^^^^^^^^' + CRLF[1];
@@ -361,7 +361,7 @@ codeunit 90082 "EDI Invoice"
         end;
         EDIMessage := HeaderInfoAll + EDIMessage;
         if EDIMessage <> '' then begin
-            FileName := '$' + purchHeader."No." + '.fif';
+            FileName := '$' + purchHeader."No." + '.ord';
             Clear(tempblob);
             Clear(TextInstream);
             Clear(TextOutstream);

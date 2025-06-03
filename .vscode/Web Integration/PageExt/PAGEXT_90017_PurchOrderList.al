@@ -31,8 +31,12 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                         repeat
                             Clear(vendor);
                             vendor.Reset();
-                            if vendor.get(purchHeader."Buy-from Vendor No.") then
-                                EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor);
+                            if vendor.get(purchHeader."Buy-from Vendor No.") then begin
+                                if vendor."EDI Invoice/Credit" = true then begin
+                                    EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor);
+                                end else
+                                    Error('The Vendor %1 is not EDI Customer/Vendor', vendor."No.");
+                            end;
                         until purchHeader.Next() = 0;
                     end;
                 end;

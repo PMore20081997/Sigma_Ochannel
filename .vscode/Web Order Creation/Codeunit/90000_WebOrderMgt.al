@@ -1346,6 +1346,8 @@ codeunit 90000 "Web Order Mgt"
         QtyonWebOrder: Decimal;
         AvailableInventory: Decimal;
         L_InterimSalesLine: Record "Interim Sales Line";
+        L_BinContent: Record "Bin Content"; //Prathamesh++
+        L_ExcludeQty: Decimal; //Prathamesh++
     begin
         #Region Physical Inventory from Item Ledger Entry
         Clear(PhysicalInventory);
@@ -1409,6 +1411,26 @@ codeunit 90000 "Web Order Mgt"
             AvailableInventory := Round(PhysicalInventory - (QtyOnSO + QtyonWebOrder), 1, '=');
         if AvailableInventory < 0 then
             AvailableInventory := 0;
+        #Region Exclude Quantiy from Receive Bin.
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", P_InterimSalesLine."No.");
+        L_BinContent.SetRange("Location Code", P_InterimSalesLine."Location Code");
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            AvailableInventory := AvailableInventory - L_ExcludeQty;
+        //Prathamesh-- SBB-291
+        #endregion
 
         if AvailableInventory > 0 then begin
             if AvailableInventory < P_InterimSalesLine.Quantity then begin

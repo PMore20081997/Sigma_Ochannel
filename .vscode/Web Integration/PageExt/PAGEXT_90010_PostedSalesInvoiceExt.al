@@ -38,8 +38,12 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                         repeat
                             Clear(Customer);
                             Customer.Reset();
-                            if Customer.get(SalesinvoiceHeader."Sell-to Customer No.") then
-                                EDIInvoiceCOD.ProcessEDIFile(SalesinvoiceHeader, Customer);
+                            if Customer.get(SalesinvoiceHeader."Sell-to Customer No.") then begin
+                                if Customer."EDI Invoice/Credit" = true then begin
+                                    EDIInvoiceCOD.ProcessEDIFile(SalesinvoiceHeader, Customer);
+                                end else
+                                    Error('The Customer %1 is not EDI Customer/Vendor', Customer."No.");
+                            end;
                         until SalesinvoiceHeader.Next() = 0;
                     end;
                 end;
