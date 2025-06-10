@@ -561,7 +561,7 @@ codeunit 90082 "EDI Invoice"
 
             EDIMessage := HeaderInfoAll + EDIMessage;
             if EDIMessage <> '' then begin
-                FileName := '$' + SalesCrHeader."No." + '.fif';
+                FileName := '$' + SalesCrHeader."No." + '.crn';
                 Clear(tempblob);
                 Clear(TextInstream);
                 Clear(TextOutstream);

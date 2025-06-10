@@ -2,13 +2,13 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
 {
     layout
     {
-        addafter(Status)
-        {
-            field("Web Order"; Rec."Web Order")
-            {
-                ApplicationArea = All;
-            }
-        }
+        // addafter(Status)
+        // {
+        //     field("Web Order"; Rec."Web Order")
+        //     {
+        //         ApplicationArea = All;
+        //     }
+        // }
     }
 
     actions

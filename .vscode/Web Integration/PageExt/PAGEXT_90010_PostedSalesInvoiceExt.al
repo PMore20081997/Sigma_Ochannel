@@ -48,6 +48,47 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                     end;
                 end;
             }
+            action("Sync Job")
+            {
+                ApplicationArea = All;
+                Image = New;
+
+                trigger OnAction()
+                var
+                    L_SalesInvoiceHeader: Record "Sales Invoice Header";
+                    ePODIntegration: Codeunit "POD Father Integration";
+                begin
+                    L_SalesInvoiceHeader.Reset();
+                    CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
+                    L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+                    if L_SalesInvoiceHeader.FindSet() then begin
+                        repeat
+                            ePODIntegration.Job_OnPODFatherPortal(L_SalesInvoiceHeader."No.", 'EPOD')
+                        until L_SalesInvoiceHeader.Next() = 0;
+                    end;
+
+                end;
+            }
+            action("Update Job")
+            {
+                ApplicationArea = All;
+                Image = Change;
+
+                trigger OnAction()
+                var
+                    L_SalesInvoiceHeader: Record "Sales Invoice Header";
+                    ePODIntegration: Codeunit "POD Father Integration";
+                begin
+                    L_SalesInvoiceHeader.Reset();
+                    CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
+                    if L_SalesInvoiceHeader.FindSet() then begin
+                        repeat
+                            ePODIntegration.GetJobAndUpdateSalesInvoice(L_SalesInvoiceHeader."No.", 'EPOD')
+                        until L_SalesInvoiceHeader.Next() = 0;
+                    end;
+
+                end;
+            }
         }
     }
 

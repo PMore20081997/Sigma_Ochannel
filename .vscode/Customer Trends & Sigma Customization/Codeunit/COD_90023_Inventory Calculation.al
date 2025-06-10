@@ -97,6 +97,7 @@ codeunit 90023 "Inventory Calculation"
         L_BinContent.SetRange("Location Code", _Rec."Location Code");
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."Item No."));
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
@@ -164,6 +165,7 @@ codeunit 90023 "Inventory Calculation"
         else
             L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
@@ -231,6 +233,7 @@ codeunit 90023 "Inventory Calculation"
         L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
@@ -268,6 +271,7 @@ codeunit 90023 "Inventory Calculation"
         else
             L_ItemLedgerEntry.SetRange("Saleable Location", true);
         L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
@@ -312,6 +316,106 @@ codeunit 90023 "Inventory Calculation"
         L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            _Free := _Free - L_ExcludeQty;
+        //Prathamesh-- SBB-291
+        if _Free > 0 then
+            exit(_Free)
+        else
+            exit(0);
+
+    end;
+
+    procedure Upload_CheckFreeQuantity_OnValidate(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]) _Free: Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        _Physical: Decimal;
+        _AllocatedOnSO: Decimal;
+        L_Location: Record Location;
+        L_SaleableLocation: Boolean;
+        L_WebOrderQty: Decimal;
+        L_Item: Record Item;
+        L_ExcludeQty: Decimal;
+        L_BinContent: Record "Bin Content";
+    begin
+        Clear(L_SaleableLocation);
+        L_Location.Reset();
+        L_Location.SetRange(Code, _LocationCode);
+        if L_Location.FindFirst() then
+            if L_Location."Saleable Location" = true then
+                L_SaleableLocation := true
+            else
+                L_SaleableLocation := false;
+
+
+        Clear(_Physical);
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SetRange("Item No.", _ItemNo);
+        if L_SaleableLocation = false then
+            L_ItemLedgerEntry.SetRange("Location Code", _LocationCode)
+        else
+            L_ItemLedgerEntry.SetRange("Saleable Location", true);
+        L_ItemLedgerEntry.SetRange("Variant Code", _VariantCode);
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            _Physical := L_ItemLedgerEntry.Quantity;
+        end;
+        if _Physical < 0 then
+            _Physical := 0;
+
+
+        Clear(_AllocatedOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SetRange("No.", _ItemNo);
+        if L_SaleableLocation = false then
+            L_SalesLine.SetRange("Location Code", _LocationCode)
+        else
+            L_SalesLine.SetRange("Saleable Location", true);
+        L_SalesLine.SetRange("Variant Code", _VariantCode);
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Quantity");
+            _AllocatedOnSO := L_SalesLine."Outstanding Quantity";
+        end;
+        if _AllocatedOnSO < 0 then
+            _AllocatedOnSO := 0;
+
+        Clear(L_WebOrderQty);
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            L_Item.CalcFields("Qty. on Web Order");
+            L_WebOrderQty := L_Item."Qty. on Web Order";
+        end;
+
+        Clear(_Free);
+        if L_SaleableLocation = true then
+            _Free := _Physical - (_AllocatedOnSO + L_WebOrderQty)
+        else
+            _Free := _Physical - _AllocatedOnSO;
+
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _ItemNo);
+        L_BinContent.SetRange("Location Code", _LocationCode);
+        L_BinContent.SetRange("Variant Code", _VariantCode);
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");

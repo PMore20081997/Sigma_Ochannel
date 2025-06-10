@@ -1419,6 +1419,7 @@ codeunit 90000 "Web Order Mgt"
         L_BinContent.SetRange("Location Code", P_InterimSalesLine."Location Code");
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(P_InterimSalesLine."No."));
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");

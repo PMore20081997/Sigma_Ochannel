@@ -193,6 +193,10 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = all;
                 }
+                field("ePOD Template ID"; Rec."ePOD Template ID")
+                {
+                    ApplicationArea = All;
+                }
             }
 
             group("Feature Setup")

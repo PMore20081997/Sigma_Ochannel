@@ -2,15 +2,15 @@ pageextension 90082 "Sales Order Card Ext" extends "Sales Order"
 {
     layout
     {
-        addlast(General)
-        {
-            field("_Web Order"; reC."Web Order")
-            {
-                ApplicationArea = All;
-                Editable = false;
-                Caption = 'Web Order';
-            }
-        }
+        // addlast(General)
+        // {
+        //     field("_Web Order"; reC."Web Order")
+        //     {
+        //         ApplicationArea = All;
+        //         Editable = false;
+        //         Caption = 'Web Order';
+        //     }
+        // }
         modify("Customer Posting Group")
         {
             Editable = true;

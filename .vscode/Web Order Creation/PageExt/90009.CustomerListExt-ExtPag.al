@@ -37,6 +37,51 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
                     ManageCustomerListing.CreateChannelCustomerlistingForMultipleSelection(G_Customer);
                 end;
             }
+            group("EPOD")
+            {
+                action("Sync Customer & Site")
+                {
+                    ApplicationArea = All;
+                    Image = New;
+
+                    trigger OnAction()
+                    var
+                        L_customer: Record Customer;
+                        ePODIntegration: Codeunit "POD Father Integration";
+                    begin
+                        L_customer.Reset();
+                        CurrPage.SetSelectionFilter(L_customer);
+                        L_customer.SetRange("Podfather Customer", true);
+                        if L_customer.FindSet() then begin
+                            repeat
+                                ePODIntegration.CustomerAndSite_OnPODFatherPortal(L_customer."No.", 'EPOD')
+                            until L_customer.Next() = 0;
+                        end;
+
+                    end;
+                }
+                action("Update Customer & Site")
+                {
+                    ApplicationArea = All;
+                    Image = Change;
+
+                    trigger OnAction()
+                    var
+                        L_customer: Record Customer;
+                        ePODIntegration: Codeunit "POD Father Integration";
+                    begin
+                        L_customer.Reset();
+                        CurrPage.SetSelectionFilter(L_customer);
+                        L_customer.SetRange("Podfather Customer", true);
+                        if L_customer.FindSet() then begin
+                            repeat
+                                ePODIntegration.UpdateCustomerAndSites_OnPODFatherPortal(L_customer."No.", 'EPOD')
+                            until L_customer.Next() = 0;
+                        end;
+
+                    end;
+                }
+            }
         }
         addafter(ApplyTemplate)
         {

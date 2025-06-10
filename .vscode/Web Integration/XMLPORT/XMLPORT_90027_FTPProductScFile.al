@@ -134,6 +134,8 @@ xmlport 90027 "ProductSC File FTP"
                     L_QtyOnSO: Decimal;
                     G_WebOrderQty: Decimal;
                     L_ItemLedgerEntry: Record "Item Ledger Entry";
+                    L_ExcludeQty: Decimal;
+                    L_BinContent: Record "Bin Content";
                 begin
                     SigmaProductCode := Item."No.";
 
@@ -201,6 +203,27 @@ xmlport 90027 "ProductSC File FTP"
                     //Calculate Free Qty+++
                     Clear(L_LiveStock);
                     L_LiveStock := L_Physical - (L_QtyOnSO + G_WebOrderQty);
+
+                    // //New+++SBB-291
+                    if L_LiveStock > 0 then begin
+                        Clear(L_ExcludeQty);
+                        L_BinContent.Reset();
+                        L_BinContent.SetRange("Item No.", Item."No.");
+                        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+                        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+                        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(Item."No."));
+                        if L_BinContent.FindSet() then begin
+                            repeat
+                                L_BinContent.CalcFields("Quantity (Base)");
+                                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
+                                L_ExcludeQty += L_BinContent."Quantity (Base)";
+                            until L_BinContent.Next() = 0;
+                        end;
+                        if L_ExcludeQty > 0 then
+                            L_LiveStock := L_LiveStock - L_ExcludeQty;
+                    end;
+                    // //New+++SBB-291
+
                     if L_LiveStock > 0 then begin
                         LiveStock := Format(L_LiveStock);
                         if LiveStock.Contains(',') then

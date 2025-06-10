@@ -309,6 +309,10 @@ table 90001 "Trade Partner"
             DataClassification = ToBeClassified;
             TableRelation = "No. Series".Code;
         }
+        field(73; "ePOD Template ID"; Integer)
+        {
+
+        }
     }
     keys
     {
