@@ -58,9 +58,12 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                     L_SalesInvoiceHeader: Record "Sales Invoice Header";
                     ePODIntegration: Codeunit "POD Father Integration";
                 begin
+                    Commit();
                     L_SalesInvoiceHeader.Reset();
                     CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
                     L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+                    L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+                    L_SalesInvoiceHeader.Ascending(true);
                     if L_SalesInvoiceHeader.FindSet() then begin
                         repeat
                             ePODIntegration.Job_OnPODFatherPortal(L_SalesInvoiceHeader."No.", 'EPOD')
@@ -79,8 +82,11 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                     L_SalesInvoiceHeader: Record "Sales Invoice Header";
                     ePODIntegration: Codeunit "POD Father Integration";
                 begin
+                    Commit();
                     L_SalesInvoiceHeader.Reset();
                     CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
+                    L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+                    L_SalesInvoiceHeader.Ascending(true);
                     if L_SalesInvoiceHeader.FindSet() then begin
                         repeat
                             ePODIntegration.GetJobAndUpdateSalesInvoice(L_SalesInvoiceHeader."No.", 'EPOD')

@@ -1352,12 +1352,10 @@ codeunit 90000 "Web Order Mgt"
         #Region Physical Inventory from Item Ledger Entry
         Clear(PhysicalInventory);
         CLEAR(L_ItemLedgerEntry);
-        P_InterimSalesLine.CalcFields("Variant Code Mandatory");
         L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
         L_ItemLedgerEntry.SETRANGE("Item No.", P_InterimSalesLine."No.");
         L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
         //L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
-        //L_ItemLedgerEntry.SetRange("Daily Priority Exist", P_InterimSalesLine."Variant Code Mandatory");
         L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(P_InterimSalesLine."No."));
         L_ItemLedgerEntry.SetRange(Open, true);
         if L_ItemLedgerEntry.FindSet() then begin
@@ -1375,7 +1373,7 @@ codeunit 90000 "Web Order Mgt"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SETRANGE("No.", P_InterimSalesLine."No.");
         L_SalesLine.SETRANGE("Saleable Location", true);
-        L_SalesLine.SETRANGE("Unit of Measure Code", P_InterimSalesLine."Unit of Measure Code");
+        //L_SalesLine.SETRANGE("Unit of Measure Code", P_InterimSalesLine."Unit of Measure Code");
         L_SalesLine.SetFilter("Outstanding Qty. (Base)", '>0');
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
@@ -1411,19 +1409,20 @@ codeunit 90000 "Web Order Mgt"
             AvailableInventory := Round(PhysicalInventory - (QtyOnSO + QtyonWebOrder), 1, '=');
         if AvailableInventory < 0 then
             AvailableInventory := 0;
+
+
         #Region Exclude Quantiy from Receive Bin.
         //Prathamesh++ SBB-291
         Clear(L_ExcludeQty);
         L_BinContent.Reset();
         L_BinContent.SetRange("Item No.", P_InterimSalesLine."No.");
-        L_BinContent.SetRange("Location Code", P_InterimSalesLine."Location Code");
+        L_BinContent.SetRange("Saleable Location", true);
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
         L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(P_InterimSalesLine."No."));
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
-                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
                 L_ExcludeQty += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;

@@ -25,7 +25,7 @@ tableextension 90002 "OC ePOD Job Header" extends "ePOD Job Header"
         PODFatherIntegration: Codeunit "POD Father Integration";
     begin
         //Check if job exist in POD father system+++
-        if PODFatherIntegration.CheckJobinPODFather(Rec."No.", 'EPOD') = false then begin
+        if PODFatherIntegration.CheckDeleteJobinPODFather(Rec."ePOD ID", 'EPOD') = true then begin
             L_ePODJobLine.Reset();
             L_ePODJobLine.SetRange("Document No.", Rec."No.");
             if L_ePODJobLine.FindSet() then begin
@@ -33,8 +33,7 @@ tableextension 90002 "OC ePOD Job Header" extends "ePOD Job Header"
                     L_SalesInvoiceHeader.Reset();
                     L_SalesInvoiceHeader.SetRange("No.", L_ePODJobLine."BC Invoice Number");
                     if L_SalesInvoiceHeader.FindFirst() then begin
-                        L_SalesInvoiceHeader."ePOD Job Consolidated" := true;
-                        L_SalesInvoiceHeader.Modify();
+                        PODFatherIntegration.UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(L_SalesInvoiceHeader."No.");
                     end;
                 until L_ePODJobLine.Next() = 0;
             end;
@@ -44,6 +43,6 @@ tableextension 90002 "OC ePOD Job Header" extends "ePOD Job Header"
             if L_ePODJobLine.FindSet() then
                 L_ePODJobLine.DeleteAll();
         end else
-            Error('You cannot delete this job because it exists in the POD Father system');
+            Error('You cannot delete this job because it is exists in the POD Father system');
     end;
 }

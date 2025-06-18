@@ -8,6 +8,8 @@ codeunit 90024 "Create InvPick Non-(KNAP&IRP)"
         L_SplitSalesHeader: Record "Sales Header";
         L_CheckSplitOrder: Report "Check & Split Order";
         L_SalesLine: Record "Sales Line";
+        L_SalesAndRecSetup: Record "Sales & Receivables Setup";
+        L_PickDateFilter: date;
     begin
         //Split The Orders(KNAPP OR Non-KNAPP)+++
         Clear(L_CheckSplitOrder);
@@ -38,6 +40,11 @@ codeunit 90024 "Create InvPick Non-(KNAP&IRP)"
 
 
 
+        Clear(L_PickDateFilter);
+        L_SalesAndRecSetup.Get();
+        L_SalesAndRecSetup.TestField("Pick Date Filter");
+        L_PickDateFilter := CalcDate(L_SalesAndRecSetup."Pick Date Filter", WorkDate());
+
         //Create Inve Picks++
         Clear(L_SalesHeader);
         L_SalesHeader.Reset();
@@ -52,12 +59,14 @@ codeunit 90024 "Create InvPick Non-(KNAP&IRP)"
         if L_SalesHeader.FindSet() then begin
             repeat
                 if (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Hospital) OR (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Wholesale) OR (L_SalesHeader."Order Category" = L_SalesHeader."Order Category"::Tender) then begin
-                    WhseRequest.Reset();
-                    WhseRequest.SetCurrentKey("Source Document", "Source No.");
-                    WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
-                    WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
-                    REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
-                    Commit();
+                    if L_SalesHeader."Shipment Date" >= L_PickDateFilter then begin
+                        WhseRequest.Reset();
+                        WhseRequest.SetCurrentKey("Source Document", "Source No.");
+                        WhseRequest.SetRange("Source Document", WhseRequest."Source Document"::"Sales Order");
+                        WhseRequest.SetRange("Source No.", L_SalesHeader."No.");
+                        REPORT.RunModal(REPORT::"Create Invt. Pick", false, false, WhseRequest);
+                        Commit();
+                    end;
                 end else begin
                     L_SalesHeader.CalcFields(Shipped, "Inv. Pick Exist");
                     if (L_SalesHeader.Shipped = false) AND (L_SalesHeader."Inv. Pick Exist" = false) then begin

@@ -342,6 +342,7 @@ codeunit 90038 "POD Father Integration"
         L_Sitesrequired: Boolean;
         L_Synced: Boolean;
         L_Customer1: Record Customer;
+        Test: Page 6630;
     begin
         //Clear All Variable +++
         ClearAll();
@@ -376,10 +377,14 @@ codeunit 90038 "POD Father Integration"
                         L_Customer1.Modify();
                     end;
                 end else begin
-                    L_Customer1."Customer Synced" := false;
-                    L_Customer1."ePOD ID" := 0;
-                    L_Customer1."Customer Site ID" := 0;
-                    L_Customer1.Modify();
+                    L_Customer1.Reset();
+                    L_Customer1.SetRange("No.", L_Customer."No.");
+                    if L_Customer1.FindFirst() then begin
+                        L_Customer1."Customer Synced" := false;
+                        L_Customer1."ePOD ID" := 0;
+                        L_Customer1."Customer Site ID" := 0;
+                        L_Customer1.Modify();
+                    end;
                 end;
 
             until L_Customer.Next() = 0;
@@ -728,7 +733,7 @@ codeunit 90038 "POD Father Integration"
 
             //++++
             HeaderRequest := StrSubstNo('{"name":"%1","address1":"%2","address2":"%3","address3":"%4","city":"%5","region":"%6","postcode":"%7","country":"%8"'
-            + ',"phone":"%9","email":"%10","accountNumber":"%11","accountNumber2":"%12","autoEmail":%13,"active":%14}', L_Customer.Name, L_Customer.Address, L_Customer."Address 2", '', L_Customer.City, '', L_Customer."Post Code", L_country, L_Customer."Phone No.", L_Customer."E-Mail", L_Customer."No.", '', 'false', L_ListingStatus);
+            + ',"phone":"%9","email":"%10","accountNumber":"%11","accountNumber2":"%12","autoEmail":%13,"active":%14}', L_Customer."No.", L_Customer.Name, L_Customer.Address, L_Customer."Address 2", L_Customer.City, '', L_Customer."Post Code", L_country, L_Customer."Phone No.", L_Customer."E-Mail", L_Customer."No.", '', 'false', L_ListingStatus);
         end;
 
         exit(HeaderRequest);
@@ -776,7 +781,7 @@ codeunit 90038 "POD Father Integration"
 
             //++++
             HeaderRequest := StrSubstNo('{"customer":%1,"name":"%2","address1":"%3","address2":"%4","address3":"%5","city":"%6","region":"%7","postcode":"%8","country":"%9",' + L_CoordinateArry
-           + ',"contact":"%10","phone":"%11","email":"%12","active":%13,"autoEmail":%14,"jobCreatedEmailNotifications":%15,"jobCreatedSmsNotifications":%16,"etaEmailNotifications":%17,"etaSmsNotifications":%18,"jobCompletedSmsNotifications":%19,"notes":"%20"}', _ePODId, L_Customer.Name, L_Customer.Address, L_Customer."Address 2", '', L_Customer.City, '', L_Customer."Post Code", L_country, L_Customer.Contact, L_Customer."Phone No.", L_Customer."E-Mail", L_ListingStatus, 'false', 'false', 'false', 'false', 'false', 'false', L_Customer.Comment);
+           + ',"contact":"%10","phone":"%11","email":"%12","active":%13,"autoEmail":%14,"jobCreatedEmailNotifications":%15,"jobCreatedSmsNotifications":%16,"etaEmailNotifications":%17,"etaSmsNotifications":%18,"jobCompletedSmsNotifications":%19,"notes":"%20"}', _ePODId, L_Customer."No.", L_Customer.Name, L_Customer.Address, L_Customer."Address 2", L_Customer.City, '', L_Customer."Post Code", L_country, L_Customer.Contact, L_Customer."Phone No.", L_Customer."E-Mail", L_ListingStatus, 'false', 'false', 'false', 'false', 'false', 'false', L_Customer.Comment);
 
         end;
 
@@ -884,6 +889,8 @@ codeunit 90038 "POD Father Integration"
         if _SalesInvoiceNumber <> '' then
             L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
         L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+        L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+        L_SalesInvoiceHeader.Ascending(true);
         if L_SalesInvoiceHeader.FindSet() then begin
             repeat
                 L_Customer.Reset();
@@ -900,15 +907,16 @@ codeunit 90038 "POD Father Integration"
                                         //Create Job+++
                                         PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
                                     end else begin
-                                        Error(GetLastErrorText);
+                                        if GuiAllowed = true then
+                                            Error(GetLastErrorText);
                                     end;
                                 end else begin
                                     if GuiAllowed = true then
-                                        Error('Depot is not linked with ePOD');
+                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                                 end;
                             end else begin
                                 if GuiAllowed = true then
-                                    Error('Depot is not linked with ePOD');
+                                    Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                             end;
                         end else begin
                             L_ShippingAgent.Reset();
@@ -924,11 +932,11 @@ codeunit 90038 "POD Father Integration"
                                     end;
                                 end else begin
                                     if GuiAllowed = true then
-                                        Error('Depot is not linked with ePOD');
+                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                                 end;
                             end else begin
                                 if GuiAllowed = true then
-                                    Error('Depot is not linked with ePOD');
+                                    Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                             end;
                         end;
                         // L_Location.Reset();
@@ -946,13 +954,16 @@ codeunit 90038 "POD Father Integration"
                         // end;
                     end else begin
                         if GuiAllowed = true then
-                            Error('Customer is not linked with ePOD');
+                            Error('Customer %1 is not linked with ePOD', L_Customer."No.");
                     end;
+                end else begin
+                    if GuiAllowed = true then
+                        Error('Customer %1 is not linked with ePOD', L_Customer."No.");
                 end;
             until L_SalesInvoiceHeader.Next() = 0;
         end else begin
             if GuiAllowed = true then
-                Error('No job available to sync');
+                Error('No job available for sync');
         end;
     end;
 
@@ -976,6 +987,7 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader.Reset();
         L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
         if L_SalesInvoiceHeader.FindFirst() then begin
+            //Check Run +++
             if IsRunAvailable(L_SalesInvoiceHeader."No.") = false then begin
                 //Get Credential & URL Detail +++ 
                 GetCredentials(ChannelCode);
@@ -989,7 +1001,7 @@ codeunit 90038 "POD Father Integration"
                 Clear(body);
                 body := Run_Body(L_SalesInvoiceHeader."No.", ChannelCode);
                 if StrLen(body) = 0 then
-                    exit;
+                    exit(false);
 
                 //Post Order to POD portal++
                 L_httpcontent.WriteFrom(body);
@@ -1057,6 +1069,7 @@ codeunit 90038 "POD Father Integration"
                 exit(true);
         end;
 
+        //Run is not Synced++
         exit(false);
     end;
 
@@ -1090,8 +1103,11 @@ codeunit 90038 "POD Father Integration"
                 Clear(L_DepotID);
                 L_ShippingAgent.Reset();
                 L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                if L_ShippingAgent.FindFirst() then
+                if L_ShippingAgent.FindFirst() then begin
+                    if L_ShippingAgent."ePOD ID" = 0 then
+                        exit('');
                     L_DepotID := L_ShippingAgent."ePOD ID";
+                end;
             end else begin
                 //Name++
                 L_Name := L_SalesInvoiceHeader."Shipping Agent Service Code";
@@ -1100,13 +1116,18 @@ codeunit 90038 "POD Father Integration"
                 Clear(L_DepotID);
                 L_ShippingAgent.Reset();
                 L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                if L_ShippingAgent.FindFirst() then
+                if L_ShippingAgent.FindFirst() then begin
+                    if L_ShippingAgent."ePOD ID" = 0 then
+                        exit('');
                     L_DepotID := L_ShippingAgent."ePOD ID";
+                end;
             end;
 
 
 
             //Get Date+++
+            if L_SalesInvoiceHeader."Shipment Date" = 0D then
+                exit('');
             Clear(L_Date);
             L_Date := Format(L_SalesInvoiceHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>');
 
@@ -1159,9 +1180,6 @@ codeunit 90038 "POD Father Integration"
                 exit(true)
             else
                 exit(false);
-
-
-
         end;
     end;
 
@@ -1196,8 +1214,11 @@ codeunit 90038 "POD Father Integration"
             //Create Body+++
             Clear(body);
             body := Job_Body(L_SalesInvoiceHeader."No.", ChannelCode);
-            if StrLen(body) = 0 then
+            if StrLen(body) = 0 then begin
+                if GuiAllowed = true then
+                    Error('Job is not synced');
                 exit;
+            end;
 
             //Post Order to POD portal++
             L_httpcontent.WriteFrom(body);
@@ -1430,7 +1451,8 @@ codeunit 90038 "POD Father Integration"
                 L_Second := '0' + L_Second;
 
             Clear(L_finalStartDate);
-            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            //L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
 
 
             //Get the End Date+++
@@ -1454,7 +1476,8 @@ codeunit 90038 "POD Father Integration"
                 L_Second := '0' + L_Second;
 
             Clear(L_finalEndDate);
-            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            //L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
 
             //Get RunID+++
             Clear(L_ePODRunID);
@@ -1491,7 +1514,12 @@ codeunit 90038 "POD Father Integration"
                     L_DropNumber := 0;
             end;
             if L_DropNumber = 0 then
-                L_DropNumber := 12;
+                L_DropNumber := 0001;
+
+            //Check Mandatory fields++
+            if (L_CustomerSiteID = 0) AND (L_CustomerePODID = 0) AND (L_LocationePODID = 0) AND (L_TemplateID = 0) AND (L_SalesInvoiceHeader."Shipment Date" = 0D) AND (L_ePODRunID = 0) AND (L_DropNumber = 0) then
+                exit('');
+
 
 
 
@@ -1760,6 +1788,8 @@ codeunit 90038 "POD Father Integration"
         if _SalesInvoiceNumber <> '' then
             L_salesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
         L_salesInvoiceHeader.SetFilter("ePOD ID", '<>%1', 0);
+        L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+        L_SalesInvoiceHeader.Ascending(true);
         if L_salesInvoiceHeader.FindSet() then begin
             repeat
                 //Get Credential & URL Detail +++ 
@@ -1818,6 +1848,14 @@ codeunit 90038 "POD Father Integration"
 
                         //++
                         if ModificationRequired = true then begin
+                            if L_SalesInvoiceHeader."ePOD Status" = L_SalesInvoiceHeader."ePOD Status"::Deleted then begin
+                                if L_SalesInvoiceHeader."ePOD Job Consolidated" = false then begin
+                                    L_SalesInvoiceHeader."ePOD ID" := 0;
+                                    L_SalesInvoiceHeader."ePOD RunID" := 0;
+                                end else begin
+                                    Message('Job is deleted in ePOD Father but you cannot resend the Invoice %1 to POD Father because this invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.', L_SalesInvoiceHeader."No.")
+                                end;
+                            end;
                             L_SalesInvoiceHeader.Modify();
                         end;
                     end;
@@ -1828,9 +1866,8 @@ codeunit 90038 "POD Father Integration"
     end;
 
 
-    procedure CheckJobinPODFather(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]): Boolean
+    procedure CheckDeleteJobinPODFather(_ePODID: Integer; _ChannelCode: Code[50]): Boolean
     var
-        L_salesInvoiceHeader: Record "Sales Invoice Header";
         L_httpheaders: HttpHeaders;
         L_httpclient: HttpClient;
         L_URL: Text;
@@ -1850,33 +1887,47 @@ codeunit 90038 "POD Father Integration"
         //Check Mandatory fields+++
         CheckMandatoryfieldForJob(_ChannelCode);
 
-        L_salesInvoiceHeader.Reset();
-        if _SalesInvoiceNumber <> '' then
-            L_salesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        L_salesInvoiceHeader.SetFilter("ePOD ID", '<>%1', 0);
-        if L_salesInvoiceHeader.FindSet() then begin
-            repeat
-                //Get Credential & URL Detail +++ 
-                GetCredentials(_ChannelCode);
+        //Get Credential & URL Detail +++ 
+        GetCredentials(_ChannelCode);
 
-                L_httpheaders := L_httpclient.DefaultRequestHeaders;
-                L_URL := ServiceURL + 'jobs/' + Format(L_salesInvoiceHeader."ePOD ID");
-                L_httpheaders.Add('Accept', 'application/json');
-                L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+        L_httpheaders := L_httpclient.DefaultRequestHeaders;
+        L_URL := ServiceURL + 'jobs/' + Format(_ePODID);
+        L_httpheaders.Add('Accept', 'application/json');
+        L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-                if L_httpclient.Get(L_URL, L_httpResponseMessage) then begin
-                    L_httpResponseMessage.Content.ReadAs(Response);
+        if L_httpclient.Get(L_URL, L_httpResponseMessage) then begin
+            L_httpResponseMessage.Content.ReadAs(Response);
 
-                    //Response 200 means Successful+++ 
-                    if L_httpResponseMessage.HttpStatusCode = 200 then begin
-                        exit(true);
-                    end;
+            //Response 200 means Successful+++ 
+            if L_httpResponseMessage.HttpStatusCode = 200 then begin
+                //Read the response in JObject+++
+                JObject.ReadFrom(Response);
+                JObject1 := GetJsonToken(jObject, 'data').AsObject();
+                //JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+
+                //Get ePOD Status+++
+                Clear(L_Status);
+                L_Status := GetJsonvalue(JObject1, 'status').AsText();
+                if GetJsonvalue(JObject1, 'status').AsText() = 'deleted' then
+                    exit(true)
+                else
                     exit(false);
-                end;
-
-            until L_salesInvoiceHeader.Next() = 0;
+            end;
+            exit(false);
         end;
         exit(false);
+    end;
+
+    procedure UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(_InvoiceNumber: Code[20])
+    var
+        L_PostedSalesInvoiceHeader: Record "Sales Invoice Header";
+    begin
+        L_PostedSalesInvoiceHeader.Reset();
+        L_PostedSalesInvoiceHeader.SetRange("No.", _InvoiceNumber);
+        if L_PostedSalesInvoiceHeader.FindFirst() then begin
+            L_PostedSalesInvoiceHeader."ePOD Job Consolidated" := false;
+            L_PostedSalesInvoiceHeader.Modify();
+        end;
     end;
 
     #EndRegion Job+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1930,8 +1981,11 @@ codeunit 90038 "POD Father Integration"
             //Create Body+++
             Clear(body);
             body := ConsolidatedJob_Body(L_ePODJobHeader."No.", ChannelCode);
-            if StrLen(body) = 0 then
+            if StrLen(body) = 0 then begin
+                if GuiAllowed = true then
+                    Error('LoadingJob is not synced');
                 exit;
+            end;
 
             //Post Order to POD portal++
             L_httpcontent.WriteFrom(body);
@@ -2069,7 +2123,8 @@ codeunit 90038 "POD Father Integration"
                 L_Second := '0' + L_Second;
 
             Clear(L_finalStartDate);
-            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            //L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
 
 
             //Get End Date
@@ -2105,8 +2160,8 @@ codeunit 90038 "POD Father Integration"
                 L_Second := '0' + L_Second;
 
             Clear(L_finalEndDate);
-            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
-
+            //L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
 
 
             //Get RunID+++
@@ -2118,6 +2173,10 @@ codeunit 90038 "POD Father Integration"
             // if L_DropNumber = 0 then
             //     L_DropNumber := 12;
             L_DropNumber := 0;
+
+            //Check Mandatory fields++
+            if (L_CustomerSiteID = 0) AND (L_CustomerePODID = 0) AND (L_LocationePODID = 0) AND (L_TemplateID = 0) AND (L_ePODJobHeader."Shipment Date" = 0D) AND (L_ePODRunID = 0) AND (L_DropNumber = 0) then
+                exit('');
 
 
 
