@@ -51,26 +51,6 @@ pageextension 90027 "OCH ePOD Run List" extends "ePOD Run List"
                 RunObject = page "ePOD Job List";
                 RunPageLink = "ePOD RunID" = field("Run ID");
             }
-
-            action(Test)
-            {
-                ApplicationArea = All;
-                Image = New;
-                trigger OnAction()
-                var
-                    L_SalesInvoiceHeader: Record "Sales Invoice Header";
-                    PODFatherIntegration: Codeunit "POD Father Integration";
-                begin
-                    L_SalesInvoiceHeader.Reset();
-                    L_SalesInvoiceHeader.SetFilter("No.", '%1|%2|%3', '5001077915', '5001077916', '5001080558');
-                    if L_SalesInvoiceHeader.FindSet() then begin
-                        repeat
-                            PODFatherIntegration.UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(L_SalesInvoiceHeader."No.");
-                        until L_SalesInvoiceHeader.Next() = 0;
-                    end;
-                end;
-
-            }
         }
     }
 

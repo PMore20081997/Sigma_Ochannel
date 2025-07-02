@@ -3,6 +3,8 @@ codeunit 90038 "POD Father Integration"
     TableNo = "Job Queue Entry";
     Permissions = tabledata 112 = m;
     trigger OnRun()
+    var
+        _Error: Text;
     begin
         Clear(StartParameter);
         Clear(RunType);
@@ -26,7 +28,7 @@ codeunit 90038 "POD Father Integration"
                 end;
             'UpdateSalesInvoiceStatus':
                 begin
-                    GetJobAndUpdateSalesInvoice('', StartParameter);
+                    GetJobAndUpdateSalesInvoice('', StartParameter, _Error);
                 end;
 
         end;
@@ -1625,7 +1627,10 @@ codeunit 90038 "POD Father Integration"
                                 if L_WarhouseClass.CD = true then
                                     L_Group := 'SFCD';
 
-                                if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) then
+                                if L_WarhouseClass.Specials = true then
+                                    L_Group := 'Specials';
+
+                                if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) AND (L_WarhouseClass.Specials = false) then
                                     L_Group := 'Box';
                             end else
                                 L_Group := 'Box'
@@ -1762,7 +1767,7 @@ codeunit 90038 "POD Father Integration"
     End;
 
 
-    procedure GetJobAndUpdateSalesInvoice(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50])
+    procedure GetJobAndUpdateSalesInvoice(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]; var _ErrorMessage: Text)
     var
         L_salesInvoiceHeader: Record "Sales Invoice Header";
         L_httpheaders: HttpHeaders;
@@ -1853,7 +1858,8 @@ codeunit 90038 "POD Father Integration"
                                     L_SalesInvoiceHeader."ePOD ID" := 0;
                                     L_SalesInvoiceHeader."ePOD RunID" := 0;
                                 end else begin
-                                    Message('Job is deleted in ePOD Father but you cannot resend the Invoice %1 to POD Father because this invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.', L_SalesInvoiceHeader."No.")
+                                    //Message('Job is deleted in ePOD Father but you cannot resend the Invoice %1 to POD Father because this invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.', L_SalesInvoiceHeader."No.")
+                                    _ErrorMessage := 'Job is deleted in ePOD Father but you cannot resend the Invoice to POD Father because the invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.';
                                 end;
                             end;
                             L_SalesInvoiceHeader.Modify();
@@ -1930,6 +1936,88 @@ codeunit 90038 "POD Father Integration"
         end;
     end;
 
+
+
+    procedure OpenRequestPageForePODjobSync()
+    var
+        OrderFilter: Record "Sync ePODJob Table" temporary;
+        Windows: Dialog;
+        L_SalesInvoiceHeader: Record "Sales Invoice Header";
+        ProgressCount: Integer;
+        NoOfRecs: Integer;
+        Count: Integer;
+    begin
+        #Region Creating a Temporary Entry for Filter Popup Page
+        OrderFilter.DeleteAll();
+        OrderFilter.Init();
+        OrderFilter."Primary key" := 'ePOD';
+        OrderFilter."Shipment Date" := 0D;
+        OrderFilter."Shipping Agent Code" := '';
+        OrderFilter."Shipping Agent Service Code" := '';
+        OrderFilter."Customer Sync" := true;
+        OrderFilter."Route Sync" := true;
+        OrderFilter.Insert();
+        #endregion
+
+        //Clear Variable++
+        Clear(ProgressCount);
+        Clear(NoOfRecs);
+
+        if Page.RunModal(90048, OrderFilter) = Action::LookupOK then begin
+            if OrderFilter."Shipment Date" = 0D then
+                Error('Please enter a valid Shipment Date');
+
+            if OrderFilter."Weekend Shipping Agent Code" = '' then begin
+                if OrderFilter."Shipping Agent Code" = '' then
+                    Error('Please choose a valid Shipping Agent Code');
+                if OrderFilter."Shipping Agent Service Code" = '' then
+                    Error('Please choose a valid Shipping Agent Service Code');
+            end else begin
+                if OrderFilter."Weekend Shipping Agent Code" = '' then
+                    Error('Please choose a valid Weekend Shipping Agent Code');
+                if OrderFilter."Weekend Shipping Service Code" = '' then
+                    Error('Please choose a valid Weekend Shipping Agent Service Code');
+            end;
+            if Confirm(StrSubstNo('You have selected Shipment Date "%1" and Shipping Agent Code "%2" and Shipping Agent Service Code "%3" and Shipping Agent Service Code "%4". Are you sure you want to continue?', OrderFilter."Shipment Date", OrderFilter."Shipping Agent Code", OrderFilter."Shipping Agent Service Code")) then begin
+                Windows.OPEN('Generating Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+
+                Clear(L_SalesInvoiceHeader);
+                L_SalesInvoiceHeader.Reset();
+                L_SalesInvoiceHeader.SetRange("Shipment Date", OrderFilter."Shipment Date");
+                L_SalesInvoiceHeader.SetRange("Customer Synced", OrderFilter."Customer Sync");
+                L_SalesInvoiceHeader.SetRange("Route Synced", OrderFilter."Route Sync");
+                L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+                if OrderFilter."Weekend Shipping Agent Code" <> '' then begin
+                    L_SalesInvoiceHeader.SetRange("Weekend Shipping Agent Code", OrderFilter."Shipping Agent Code");
+                    L_SalesInvoiceHeader.SetFilter("Weekend Ship. Agnt. Serv. Code", OrderFilter."Shipping Agent Service Code");
+                end else begin
+                    L_SalesInvoiceHeader.SetRange("Shipping Agent Code", OrderFilter."Shipping Agent Code");
+                    L_SalesInvoiceHeader.SetFilter("Shipping Agent Service Code", OrderFilter."Shipping Agent Service Code");
+                end;
+                if L_SalesInvoiceHeader.FindSet() then begin
+                    NoOfRecs := L_SalesInvoiceHeader.Count;
+                    repeat
+                        ProgressCount += 1;
+                        if NoOfRecs > 0 then begin
+                            if NoOfRecs <= 100 then begin
+                                Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                            end else begin
+                                IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                END;
+                            end;
+                        end;
+
+                        //Process to sync job
+                        Job_OnPODFatherPortal(L_SalesInvoiceHeader."No.", 'EPOD')
+                    until L_SalesInvoiceHeader.Next() = 0;
+
+                    //Final Message++
+                    Message('Process Completed');
+                end;
+            end;
+        end;
+    end;
     #EndRegion Job+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     #Region Consolidated Job++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2358,7 +2446,10 @@ codeunit 90038 "POD Father Integration"
                                     if L_WarhouseClass.CD = true then
                                         L_Group := '4SFCD';
 
-                                    if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) then
+                                    if L_WarhouseClass.Specials = true then
+                                        L_Group := '5Specials';
+
+                                    if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) AND (L_WarhouseClass.Specials = false) then
                                         L_Group := '2Box';
                                 end else
                                     L_Group := '2Box'
