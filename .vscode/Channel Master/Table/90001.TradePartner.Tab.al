@@ -313,6 +313,7 @@ table 90001 "Trade Partner"
         {
 
         }
+
     }
     keys
     {

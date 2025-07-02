@@ -236,5 +236,8 @@ permissionset 90000 OChannel
         codeunit "Send SO Approval Jobqueue" = X,
         codeunit "Manage Split Order" = X,
         codeunit GLNValidation = X,
-        codeunit "POD Father Integration" = X;
+        codeunit "POD Father Integration" = X,
+        tabledata "Sync ePODJob Table" = RIMD,
+        table "Sync ePODJob Table" = X,
+        page "Sync ePODJob Filter" = X;
 }
