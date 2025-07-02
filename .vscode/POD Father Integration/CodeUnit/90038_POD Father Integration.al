@@ -1733,6 +1733,7 @@ codeunit 90038 "POD Father Integration"
                         L_KnappOrderResponse.Reset();
                         L_KnappOrderResponse.SetRange("Document Type", L_KnappOrderResponse."Document Type"::Order);
                         L_KnappOrderResponse.SetRange("Document No.", L_SalesInvoiceLine."Order No.");
+                        L_KnappOrderResponse.SetFilter(Quantity, '<>%1', 0);
                         L_KnappOrderResponse.SetCurrentKey("Load Unit");
                         L_KnappOrderResponse.Ascending(true);
                         if L_KnappOrderResponse.FindSet() then begin
@@ -2509,6 +2510,7 @@ codeunit 90038 "POD Father Integration"
                             L_KnappOrderResponse.Reset();
                             L_KnappOrderResponse.SetRange("Document Type", L_KnappOrderResponse."Document Type"::Order);
                             L_KnappOrderResponse.SetRange("Document No.", L_SalesInvoiceLine."Order No.");
+                            L_KnappOrderResponse.SetFilter(Quantity, '<>%1', 0);
                             L_KnappOrderResponse.SetCurrentKey("Load Unit");
                             L_KnappOrderResponse.Ascending(true);
                             if L_KnappOrderResponse.FindSet() then begin
