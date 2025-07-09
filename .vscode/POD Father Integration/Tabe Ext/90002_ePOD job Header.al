@@ -43,6 +43,6 @@ tableextension 90002 "OC ePOD Job Header" extends "ePOD Job Header"
             if L_ePODJobLine.FindSet() then
                 L_ePODJobLine.DeleteAll();
         end else
-            Error('You cannot delete this job because it is exists in the POD Father system');
+            Error('You cannot delete this job because it exists in the POD Father system.');
     end;
 }

@@ -1919,10 +1919,12 @@ codeunit 90038 "POD Father Integration"
                     exit(true)
                 else
                     exit(false);
-            end;
-            exit(false);
+            end else
+                exit(true); // It mean Job Is not avaible in POD so let sysntem delete the Loading job++
+        end else begin
+            Error('Not able to proceed. Please check with Admin');
+            //exit(true); // It mean Job Is not avaible in POD so let sysntem delete the Loading job++
         end;
-        exit(false);
     end;
 
     procedure UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(_InvoiceNumber: Code[20])
@@ -2357,6 +2359,7 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader.SetRange("ePOD Job Consolidated", false);
         L_SalesInvoiceHeader.SetRange("ePOD RunID", _ePODRunID);
         L_SalesInvoiceHeader.SetRange("Shipment Date", _ShipmentDate);
+        L_SalesInvoiceHeader.SetFilter("ePOD ID", '>%1', 0);
         if L_SalesInvoiceHeader.FindSet() then begin
             repeat
                 if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin

@@ -17,7 +17,7 @@ table 90021 "Sync ePODJob Table"
         {
             TableRelation = "Shipping Agent" where("ePOD ID" = filter(> 0));
         }
-        field(4; "Shipping Agent Service Code"; Code[10])
+        field(4; "Shipping Agent Service Code"; Code[100])
         {
             TableRelation = "Shipping Agent Services".Code where("Shipping Agent Code" = field("Shipping Agent Code"));
             ValidateTableRelation = false;
@@ -37,7 +37,7 @@ table 90021 "Sync ePODJob Table"
         {
             TableRelation = "Shipping Agent" where("ePOD ID" = filter(> 0));
         }
-        field(10; "Weekend Shipping Service Code"; Code[10])
+        field(10; "Weekend Shipping Service Code"; Code[100])
         {
             Caption = 'Weekend Shipping Agent Service Code';
             TableRelation = "Shipping Agent Services".Code where("Shipping Agent Code" = field("Weekend Shipping Agent Code"));
