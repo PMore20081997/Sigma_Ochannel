@@ -4,6 +4,9 @@ page 90020 "Handled Web Order Line"
     PageType = List;
     SourceTable = "Handled Interim Sales Line";
     Editable = false;
+    ApplicationArea = All;
+    Caption = 'Handled Order Lines';
+    UsageCategory = Lists;
 
     layout
     {

@@ -30,6 +30,7 @@ page 90048 "Sync ePODJob Filter"
                     begin
                         if Rec."Shipment Date" = 0D then
                             Error('Please enter a valid Shipment Date');
+
                         if (Rec."Shipment Date" <> 0D) and (Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') then begin
                             CalculateOrderDetails(Rec);
                         end;
@@ -42,18 +43,20 @@ page 90048 "Sync ePODJob Filter"
                     trigger OnValidate()
                     var
                     begin
-                        if Rec."Shipping Agent Code" = '' then
-                            Error('Please choose a valid Shipping Agent Code')
-                        else begin
+                        if Rec."Shipping Agent Code" = '' then begin
+                            //Error('Please choose a valid Shipping Agent Code')
+                        end else begin
                             if Rec."Weekend Shipping Agent Code" <> '' then
                                 Error('Weekend Shipping Agent Code should be blank');
 
                             if Rec."Weekend Shipping Service Code" <> '' then
                                 Error('Weekend Shipping Agent Service Code should be blank');
                         end;
+
                         if (Rec."Shipment Date" <> 0D) and (Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') then begin
                             CalculateOrderDetails(Rec);
-                        end;
+                        end else
+                            TotalOrderCount := 0;
                     end;
                 }
                 field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
@@ -63,18 +66,20 @@ page 90048 "Sync ePODJob Filter"
                     trigger OnValidate()
                     var
                     begin
-                        if Rec."Shipping Agent Service Code" = '' then
-                            Error('Please choose a valid Shipping Agent Service Code')
-                        else begin
+                        if Rec."Shipping Agent Service Code" = '' then begin
+                            //Error('Please choose a valid Shipping Agent Service Code')
+                        end else begin
                             if Rec."Weekend Shipping Agent Code" <> '' then
                                 Error('Weekend Shipping Agent Code should be blank');
 
                             if Rec."Weekend Shipping Service Code" <> '' then
                                 Error('Weekend Shipping Agent Service Code should be blank');
                         end;
+
                         if (Rec."Shipment Date" <> 0D) and (Rec."Shipping Agent Code" <> '') and (Rec."Shipping Agent Service Code" <> '') then begin
                             CalculateOrderDetails(Rec);
-                        end;
+                        end else
+                            TotalOrderCount := 0;
                     end;
                 }
                 field("Weekend Shipping Agent Code"; Rec."Weekend Shipping Agent Code")
@@ -85,18 +90,20 @@ page 90048 "Sync ePODJob Filter"
                     trigger OnValidate()
                     var
                     begin
-                        if Rec."Weekend Shipping Agent Code" = '' then
-                            Error('Please choose a valid Weekend Shipping Agent Code')
-                        else begin
+                        if Rec."Weekend Shipping Agent Code" = '' then begin
+                            //Error('Please choose a valid Weekend Shipping Agent Code');
+                        end else begin
                             if Rec."Shipping Agent Code" <> '' then
                                 Error('Shipping Agent Code should be blank');
 
                             if Rec."Shipping Agent Service Code" <> '' then
                                 Error('Shipping Agent Service Code should be blank');
                         end;
+
                         if (Rec."Shipment Date" <> 0D) and (Rec."Weekend Shipping Agent Code" <> '') and (Rec."Weekend Shipping Service Code" <> '') then begin
                             CalculateOrderDetails(Rec);
-                        end;
+                        end else
+                            TotalOrderCount := 0;
                     end;
                 }
                 field("Weekend Shipping Service Code"; REc."Weekend Shipping Service Code")
@@ -107,15 +114,20 @@ page 90048 "Sync ePODJob Filter"
                     trigger OnValidate()
                     var
                     begin
-                        if Rec."Weekend Shipping Service Code" = '' then
-                            Error('Please choose a valid Weekend Shipping Agent Service Code')
-                        else begin
-                            Rec.TestField("Shipping Agent Code");
-                            Rec.TestField("Shipping Agent Service Code");
+                        if Rec."Weekend Shipping Service Code" = '' then begin
+                            //Error('Please choose a valid Weekend Shipping Agent Service Code')
+                        end else begin
+                            if Rec."Shipping Agent Code" <> '' then
+                                Error('Shipping Agent Code should be blank');
+
+                            if Rec."Shipping Agent Service Code" <> '' then
+                                Error('Shipping Agent Service Code should be blank');
                         end;
+
                         if (Rec."Shipment Date" <> 0D) and (Rec."Weekend Shipping Agent Code" <> '') and (Rec."Weekend Shipping Service Code" <> '') then begin
                             CalculateOrderDetails(Rec);
-                        end;
+                        end else
+                            TotalOrderCount := 0;
                     end;
                 }
                 group("Total Orders Details")

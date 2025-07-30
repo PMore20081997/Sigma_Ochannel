@@ -76,9 +76,11 @@ page 90025 "DC Web Order Header API Card"
         L_CustomerRef: Record "Customer Reference";
         OrderResponse: Text;
         L_ShippingAgentService: Record "Shipping Agent Services";
-    // NumberSeries: Record "No. Series Line";
-    // NextNo: Code[20];
-    // NoSeriesSingle: Interface "No. Series - Single";
+        // NumberSeries: Record "No. Series Line";
+        // NextNo: Code[20];
+        // NoSeriesSingle: Interface "No. Series - Single";
+        L_SalesHeader: Record "Sales Header";
+        NoSeries: Codeunit "No. Series";
     begin
         //Clear(NextNo);
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
@@ -89,10 +91,17 @@ page 90025 "DC Web Order Header API Card"
             end;
 
             //Insert Header Record++
+            #Region New Code for No series+++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
-            Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
-            NoSeriesManagement.SaveState();
+            if ChannelPartner."Tracking No Valid. Required" = false then begin
+                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
+                NoSeriesManagement.SaveState();
+            end else begin
+                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                Sleep(5);
+            end;
+            #EndRegion New Code for No series+++
             // NumberSeries.Reset();
             // NumberSeries.SetRange("Series Code", ChannelPartner."Channel Order No. Series");
             // if NumberSeries.FindFirst() then begin

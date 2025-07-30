@@ -9,7 +9,7 @@ codeunit 90035 "Send SO Approval Jobqueue"
     begin
         L_SalesHeader.Reset();
         L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
-        L_SalesHeader.SetRange("IRP Order", true);
+        L_SalesHeader.SetRange("Web Order", true);
         L_SalesHeader.SetRange(Status, L_SalesHeader.Status::Open);
         L_SalesHeader.SetRange(Shipped, false);
         L_SalesHeader.SetFilter("Document Date", '%1..%2', CalcDate('-1D', WorkDate()), WorkDate());
