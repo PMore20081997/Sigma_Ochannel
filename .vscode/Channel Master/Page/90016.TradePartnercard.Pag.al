@@ -94,6 +94,10 @@ page 90016 "Trade Partner card"
                     ApplicationArea = All;
                     ToolTip = 'Channel Specific Web Order No. Series';
                 }
+                field("PMR Order Issue"; Rec."PMR Order Issue")
+                {
+                    ApplicationArea = All;
+                }
                 group("Customer trends")
                 {
                     field("Customer Trend Code"; Rec."Customer Trend Code")

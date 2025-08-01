@@ -74,6 +74,7 @@ page 90029 "Web Order Header API Card"
         NoSeriesManagement: Codeunit "No. Series - Batch";
         L_Date: Record Date;
         L_ShippingAgentService: Record "Shipping Agent Services";
+        NoSeries: Codeunit "No. Series";
     begin
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
@@ -85,9 +86,13 @@ page 90029 "Web Order Header API Card"
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
-
-            Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
-            NoSeriesManagement.SaveState();
+            if ChannelPartner."PMR Order Issue" = false then begin
+                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
+                NoSeriesManagement.SaveState();
+            end else begin
+                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                Sleep(5);
+            end;
 
             Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("ET Access Code", Rec."ET Access Code");

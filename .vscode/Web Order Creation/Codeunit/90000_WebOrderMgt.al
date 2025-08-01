@@ -101,6 +101,7 @@ codeunit 90000 "Web Order Mgt"
         BillToCustomer: Record Customer;
         L_Date: Record Date;
         L_ShippingAgentService: Record "Shipping Agent Services";
+        NoSeries: Codeunit "No. Series";
     Begin
         ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
         ChannelPartner.TestField("Channel Order No. Series");
@@ -108,8 +109,13 @@ codeunit 90000 "Web Order Mgt"
         //Insert Header+++
         L_InterimSalesHeader.Init();
         L_InterimSalesHeader."Document Type" := L_InterimSalesHeader."Document Type"::Order;
-        L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
-        NoSeriesManagement.SaveState();
+        if ChannelPartner."PMR Order Issue" = false then begin
+            L_InterimSalesHeader."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
+            NoSeriesManagement.SaveState();
+        end else begin
+            L_InterimSalesHeader."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+            Sleep(5);
+        end;
         L_InterimSalesHeader.Validate(Status, L_InterimSalesHeader.Status::Accepted);
         L_InterimSalesHeader.Validate("Trade Partner Code", P_InterimSalesHeader."Trade Partner Code");
         L_InterimSalesHeader.Validate("ET Access Code", P_InterimSalesHeader."ET Access Code");

@@ -80,9 +80,10 @@ page 90046 "Avibuyer New Order Header API"
         L_CustomerRef: Record "Customer Reference";
         OrderResponse: Text;
         L_ShippingAgentService: Record "Shipping Agent Services";
-    // NumberSeries: Record "No. Series Line";
-    // NextNo: Code[20];
-    // NoSeriesSingle: Interface "No. Series - Single";
+        // NumberSeries: Record "No. Series Line";
+        // NextNo: Code[20];
+        // NoSeriesSingle: Interface "No. Series - Single";
+        NoSeries: Codeunit "No. Series";
     begin
         //Clear(NextNo);
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
@@ -95,8 +96,13 @@ page 90046 "Avibuyer New Order Header API"
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
-            Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
-            NoSeriesManagement.SaveState();
+            if ChannelPartner."PMR Order Issue" = false then begin
+                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
+                NoSeriesManagement.SaveState();
+            end else begin
+                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                Sleep(5);
+            end;
             // NumberSeries.Reset();
             // NumberSeries.SetRange("Series Code", ChannelPartner."Channel Order No. Series");
             // if NumberSeries.FindFirst() then begin

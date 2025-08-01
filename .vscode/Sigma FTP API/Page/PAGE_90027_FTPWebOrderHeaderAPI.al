@@ -80,6 +80,7 @@ page 90027 "FTP Web Order Header API Card"
         L_CustomerRef: Record "Customer Reference";
         OrderResponse: Text;
         L_ShippingAgentService: Record "Shipping Agent Services";
+        NoSeries: Codeunit "No. Series";
     begin
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
@@ -91,9 +92,13 @@ page 90027 "FTP Web Order Header API Card"
             //Insert Header Record++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
-            Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
-            NoSeriesManagement.SaveState();
-
+            if ChannelPartner."PMR Order Issue" = false then begin
+                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
+                NoSeriesManagement.SaveState();
+            end else begin
+                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                Sleep(5);
+            end;
             Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("Order Date", WorkDate);
             Rec.Validate("ET Access Code", Rec."ET Access Code");

@@ -94,7 +94,7 @@ page 90025 "DC Web Order Header API Card"
             #Region New Code for No series+++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
-            if ChannelPartner."Tracking No Valid. Required" = false then begin
+            if ChannelPartner."PMR Order Issue" = false then begin
                 Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
                 NoSeriesManagement.SaveState();
             end else begin

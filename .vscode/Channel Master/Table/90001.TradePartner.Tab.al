@@ -313,6 +313,10 @@ table 90001 "Trade Partner"
         {
 
         }
+        field(74; "PMR Order Issue"; Boolean)
+        {
+
+        }
 
     }
     keys
