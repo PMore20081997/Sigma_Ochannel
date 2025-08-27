@@ -476,6 +476,92 @@ codeunit 90023 "Inventory Calculation"
             exit(0);
 
     end;
+
+
+    procedure UploadIRP_CheckFreeQuantity_OnValidate(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]) _Free: Decimal
+    var
+        L_SalesLine: Record "Sales Line";
+        L_ItemLedgerEntry: Record "Item Ledger Entry";
+        _Physical: Decimal;
+        _AllocatedOnSO: Decimal;
+        L_Location: Record Location;
+        L_SaleableLocation: Boolean;
+        L_WebOrderQty: Decimal;
+        L_Item: Record Item;
+        L_ExcludeQty: Decimal;
+        L_BinContent: Record "Bin Content";
+    begin
+        //Pysical+++
+        Clear(_Physical);
+        L_ItemLedgerEntry.Reset();
+        L_ItemLedgerEntry.SetRange("Item No.", _ItemNo);
+        L_ItemLedgerEntry.SetRange("Saleable Location", true);
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+        if L_ItemLedgerEntry.FindSet() then begin
+            L_ItemLedgerEntry.CalcSums(Quantity);
+            _Physical := L_ItemLedgerEntry.Quantity;
+        end;
+        if _Physical < 0 then
+            _Physical := 0;
+
+
+        //ALlocated On SO++
+        Clear(_AllocatedOnSO);
+        L_SalesLine.Reset();
+        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+        L_SalesLine.SetRange("No.", _ItemNo);
+        L_SalesLine.SetRange("Saleable Location", true);
+        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+        if L_SalesLine.FindSet() then begin
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        end;
+        if _AllocatedOnSO < 0 then
+            _AllocatedOnSO := 0;
+
+        //Web Order Qty++
+        Clear(L_WebOrderQty);
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            L_Item.CalcFields("Qty. on Web Order");
+            L_WebOrderQty := L_Item."Qty. on Web Order";
+        end;
+
+        //Free Qty++
+        Clear(_Free);
+        if L_SaleableLocation = true then
+            _Free := _Physical - (_AllocatedOnSO + L_WebOrderQty)
+        else
+            _Free := _Physical - _AllocatedOnSO;
+
+
+        //Prathamesh++ SBB-291
+        Clear(L_ExcludeQty);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _ItemNo);
+        L_BinContent.SetRange("Saleable Location", true);
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                L_ExcludeQty += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+
+        if L_ExcludeQty > 0 then
+            _Free := _Free - L_ExcludeQty;
+        //Prathamesh-- SBB-291
+
+        if _Free > 0 then
+            Exit(_Free)
+        else
+            exit(0);
+
+    end;
     //----------------------------------------Sales Order----------------------------------------
 
 

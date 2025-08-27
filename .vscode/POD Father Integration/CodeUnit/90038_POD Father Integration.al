@@ -880,6 +880,7 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader: Record "Sales Invoice Header";
         L_Customer: Record Customer;
         L_ShippingAgent: Record "Shipping Agent";
+        L_SalesInvoiceLine: Record "Sales Invoice Line";
     begin
         //Clear All Variable +++
         ClearAll();
@@ -895,72 +896,78 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader.Ascending(true);
         if L_SalesInvoiceHeader.FindSet() then begin
             repeat
-                L_Customer.Reset();
-                L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
-                if L_Customer.FindFirst() then begin
-                    if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
-                        if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                            L_ShippingAgent.Reset();
-                            L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                            if L_ShippingAgent.FindFirst() then begin
-                                if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                    //Create Run If not Available + + +
-                                    if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                                        //Create Job+++
-                                        PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+                L_SalesInvoiceLine.Reset();
+                L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+                L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+                L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                if L_SalesInvoiceLine.FindFirst() then begin
+                    L_Customer.Reset();
+                    L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
+                    if L_Customer.FindFirst() then begin
+                        if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
+                            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                                L_ShippingAgent.Reset();
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+                                if L_ShippingAgent.FindFirst() then begin
+                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+                                        //Create Run If not Available + + +
+                                        if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+                                            //Create Job+++
+                                            PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+                                        end else begin
+                                            if GuiAllowed = true then
+                                                Error(GetLastErrorText);
+                                        end;
                                     end else begin
                                         if GuiAllowed = true then
+                                            Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                                    end;
+                                end else begin
+                                    if GuiAllowed = true then
+                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                                end;
+                            end else begin
+                                L_ShippingAgent.Reset();
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+                                if L_ShippingAgent.FindFirst() then begin
+                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+                                        //Create Run If not Available + + +
+                                        if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+                                            //Create Job+++
+                                            PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+                                        end else begin
                                             Error(GetLastErrorText);
-                                    end;
-                                end else begin
-                                    if GuiAllowed = true then
-                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
-                                end;
-                            end else begin
-                                if GuiAllowed = true then
-                                    Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
-                            end;
-                        end else begin
-                            L_ShippingAgent.Reset();
-                            L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                            if L_ShippingAgent.FindFirst() then begin
-                                if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                    //Create Run If not Available + + +
-                                    if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                                        //Create Job+++
-                                        PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+                                        end;
                                     end else begin
-                                        Error(GetLastErrorText);
+                                        if GuiAllowed = true then
+                                            Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                                     end;
                                 end else begin
                                     if GuiAllowed = true then
                                         Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                                 end;
-                            end else begin
-                                if GuiAllowed = true then
-                                    Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
                             end;
+                            // L_Location.Reset();
+                            // L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
+                            // if L_Location.FindFirst() then begin
+                            //     if (L_Location."Podfather Depot" = true) AND (L_Location."ePOD ID" <> 0) then begin
+                            //         //Create Run If not Available+++
+                            //         if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+                            //             //Create Job+++
+                            //             PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+                            //         end else begin
+                            //             Error(GetLastErrorText);
+                            //         end;
+                            //     end;
+                            // end;
+                        end else begin
+                            if GuiAllowed = true then
+                                Error('Customer %1 is not linked with ePOD', L_Customer."No.");
                         end;
-                        // L_Location.Reset();
-                        // L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
-                        // if L_Location.FindFirst() then begin
-                        //     if (L_Location."Podfather Depot" = true) AND (L_Location."ePOD ID" <> 0) then begin
-                        //         //Create Run If not Available+++
-                        //         if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                        //             //Create Job+++
-                        //             PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
-                        //         end else begin
-                        //             Error(GetLastErrorText);
-                        //         end;
-                        //     end;
-                        // end;
                     end else begin
                         if GuiAllowed = true then
                             Error('Customer %1 is not linked with ePOD', L_Customer."No.");
                     end;
-                end else begin
-                    if GuiAllowed = true then
-                        Error('Customer %1 is not linked with ePOD', L_Customer."No.");
                 end;
             until L_SalesInvoiceHeader.Next() = 0;
         end else begin
@@ -1062,6 +1069,10 @@ codeunit 90038 "POD Father Integration"
                                     L_SalesInvoiceHeader.Modify();
                                 end else
                                     Error(GetLastErrorText);
+
+                                //Used Commit method to ignore duplicate record in POD father system++
+                                Commit();
+
                                 exit(true);
                             end;
                         end;
@@ -1268,6 +1279,8 @@ codeunit 90038 "POD Father Integration"
                     //++
                     if ModificationRequired = true then begin
                         L_SalesInvoiceHeader.Modify();
+                        //Remove duplicate Invoice in POD father System++
+                        Commit();
                     end;
                 end;
             end
@@ -1949,6 +1962,8 @@ codeunit 90038 "POD Father Integration"
         ProgressCount: Integer;
         NoOfRecs: Integer;
         Count: Integer;
+        AgentCode: Code[10];
+        AgentServiceCode: Code[100];
     begin
         #Region Creating a Temporary Entry for Filter Popup Page
         OrderFilter.DeleteAll();
@@ -1967,9 +1982,11 @@ codeunit 90038 "POD Father Integration"
         Clear(NoOfRecs);
 
         if Page.RunModal(90048, OrderFilter) = Action::LookupOK then begin
+            //Check Shipment Date value++
             if OrderFilter."Shipment Date" = 0D then
-                Error('Please enter a valid Shipment Date');
+                Error('Shipment Date should not be blank');
 
+            #Region Check Shipping details++++
             if OrderFilter."Weekend Shipping Agent Code" = '' then begin
                 if OrderFilter."Shipping Agent Code" = '' then
                     Error('Please choose a valid Shipping Agent Code');
@@ -1981,7 +1998,20 @@ codeunit 90038 "POD Father Integration"
                 if OrderFilter."Weekend Shipping Service Code" = '' then
                     Error('Please choose a valid Weekend Shipping Agent Service Code');
             end;
-            if Confirm(StrSubstNo('You have selected Shipment Date "%1" and Shipping Agent Code "%2" and Shipping Agent Service Code "%3" and Shipping Agent Service Code "%4". Are you sure you want to continue?', OrderFilter."Shipment Date", OrderFilter."Shipping Agent Code", OrderFilter."Shipping Agent Service Code")) then begin
+            #EndRegion Check Shipping details++++
+
+
+            //Confirmation message before process++
+            Clear(AgentCode);
+            Clear(AgentServiceCode);
+            if OrderFilter."Weekend Shipping Agent Code" = '' then begin
+                AgentCode := OrderFilter."Shipping Agent Code";
+                AgentServiceCode := OrderFilter."Shipping Agent Service Code"
+            end else begin
+                AgentCode := OrderFilter."Weekend Shipping Agent Code";
+                AgentServiceCode := OrderFilter."Weekend Shipping Service Code";
+            end;
+            if Confirm(StrSubstNo('You have selected Shipment Date "%1" and Agent Code "%2" and Agent Service Code "%3". Are you sure you want to continue?', OrderFilter."Shipment Date", AgentCode, AgentServiceCode)) then begin
                 Windows.OPEN('Generating Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
 
                 Clear(L_SalesInvoiceHeader);
@@ -1991,8 +2021,8 @@ codeunit 90038 "POD Father Integration"
                 L_SalesInvoiceHeader.SetRange("Route Synced", OrderFilter."Route Sync");
                 L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
                 if OrderFilter."Weekend Shipping Agent Code" <> '' then begin
-                    L_SalesInvoiceHeader.SetRange("Weekend Shipping Agent Code", OrderFilter."Shipping Agent Code");
-                    L_SalesInvoiceHeader.SetFilter("Weekend Ship. Agnt. Serv. Code", OrderFilter."Shipping Agent Service Code");
+                    L_SalesInvoiceHeader.SetRange("Weekend Shipping Agent Code", OrderFilter."Weekend Shipping Agent Code");
+                    L_SalesInvoiceHeader.SetFilter("Weekend Ship. Agnt. Serv. Code", OrderFilter."Weekend Shipping Service Code");
                 end else begin
                     L_SalesInvoiceHeader.SetRange("Shipping Agent Code", OrderFilter."Shipping Agent Code");
                     L_SalesInvoiceHeader.SetFilter("Shipping Agent Service Code", OrderFilter."Shipping Agent Service Code");
@@ -2016,7 +2046,7 @@ codeunit 90038 "POD Father Integration"
                     until L_SalesInvoiceHeader.Next() = 0;
 
                     //Final Message++
-                    Message('Process Completed');
+                    Message('Process Completed..');
                 end;
             end;
         end;

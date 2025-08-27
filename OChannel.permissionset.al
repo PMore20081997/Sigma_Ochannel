@@ -239,5 +239,9 @@ permissionset 90000 OChannel
         codeunit "POD Father Integration" = X,
         tabledata "Sync ePODJob Table" = RIMD,
         table "Sync ePODJob Table" = X,
-        page "Sync ePODJob Filter" = X;
+        page "Sync ePODJob Filter" = X,
+        page "Handled Orders" = X,
+        page "Handled Web Line" = X,
+        page "Line Response" = X,
+        page "Order Response(DC)" = X;
 }

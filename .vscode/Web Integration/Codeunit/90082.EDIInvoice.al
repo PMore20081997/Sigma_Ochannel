@@ -555,7 +555,7 @@ codeunit 90082 "EDI Invoice"
             HeaderInfo1 := '**!1.02.30GCRN0000' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
             HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',,' + ',CRN,,O,' + SalesCrHeader."No." + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
             HeaderInfo3 := '*CH,' + SalesCrHeader."No." + ',' + DMYPostingFormat + ',,,,,,,,,,' + SalesCrHeader."Reason Code" + ',,' + ReasonDesc + ',' + format(TotalAmtExcVat) + ',' + format(TaxAmount) + ',,,B,,INVOICE,' + CRLF[1];
-            HeaderInfo4 := '*IH,' + SalesCrHeader."Applies-to Doc. No." + ',' + DMYPostingFormat + ',' + DMYPostingFormat + ',,,' + DMYDueDateFormat + ',,,,,,,,,,,,' + CRLF[1];
+            HeaderInfo4 := '*IH,' + SalesCrHeader."Sales Return Order Invoice No." + ',' + DMYPostingFormat + ',' + DMYPostingFormat + ',,,' + DMYDueDateFormat + ',,,,,,,,,,,,' + CRLF[1];
             HeaderInfo5 := '*DH,' + SalesCrHeader."External Document No." + ',' + DMYPostingFormat + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
             HeaderInfo6 := '*OH,' + SalesCrHeader."Return Order No." + ',' + DMYPostingFormat + ',,,,,,,,,,,,,,,,,,,,' + CRLF[1];
             HeaderInfo7 := '**A,0,0,PARTNER,' + PartnerGLN + ',,,,,,' + SalesCrHeader."Bill-to Name" + ',' + SalesCrHeader."Bill-to Address" + ',' + SalesCrHeader."Bill-to Address 2" + ',' + SalesCrHeader."Bill-to City" + ',' + SalesCrHeader."Bill-to County" + ',' + SalesCrHeader."Bill-to Post Code" + ',' + SalesCrHeader."Bill-to Country/Region Code" + ',' + CRLF[1];
