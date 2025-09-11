@@ -98,8 +98,9 @@ page 90025 "DC Web Order Header API Card"
                 Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
                 NoSeriesManagement.SaveState();
             end else begin
-                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
-                Sleep(5);
+                // Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                // Sleep(5);
+                Rec."No." := Rec."Channel Order ID";
             end;
             #EndRegion New Code for No series+++
             // NumberSeries.Reset();

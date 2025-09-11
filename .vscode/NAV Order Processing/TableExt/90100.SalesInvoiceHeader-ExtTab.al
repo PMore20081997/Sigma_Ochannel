@@ -27,5 +27,11 @@ tableextension 90100 "Sales Invoice Header" extends "Sales Invoice Header"
             DataClassification = ToBeClassified;
             Caption = 'Export';
         }
+        field(90006; "EDI Synced"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = Lookup("EDI File Details".Sync where("Document No" = field("No."), "Document Type" = const(Invoice)));
+            Caption = 'EDI Synced';
+        }
     }
 }

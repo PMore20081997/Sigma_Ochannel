@@ -9,33 +9,53 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
     {
         addafter("O&rder")
         {
-            action("EDI File")
+            action("Download EDI File")
             {
                 ApplicationArea = All;
-                Image = Journal;
+                Image = Download;
                 PromotedCategory = Process;
                 Promoted = true;
 
                 trigger OnAction()
                 var
-                    EDIInvoiceCOD: Codeunit "EDI Invoice";
+                    EDIInvoiceCOD: Codeunit "EDI File Integration";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
                     purchHeader: Record "Purchase Header";
                     vendor: Record Vendor;
+                    Windows: Dialog;
+                    ProgressCount: Integer;
+                    NoOfRecs: Integer;
+                    Count: Integer;
                 begin
                     Clear(purchHeader);
                     purchHeader := Rec;
                     CurrPage.SetSelectionFilter(purchHeader);
-
                     if purchHeader.FindSet() then begin
+                        Windows.OPEN('Syncing Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+                        NoOfRecs := purchHeader.Count;
                         repeat
+                            ProgressCount += 1;
+                            if NoOfRecs > 0 then begin
+                                if NoOfRecs <= 100 then begin
+                                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                end else begin
+                                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                    END;
+                                end;
+                            end;
+
+                            //Run Process++
                             Clear(vendor);
                             vendor.Reset();
                             if vendor.get(purchHeader."Buy-from Vendor No.") then begin
                                 if vendor."EDI Invoice/Credit" = true then begin
-                                    EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor);
-                                end else
-                                    Error('The Vendor %1 is not EDI Customer/Vendor', vendor."No.");
+                                    EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor, true);
+                                end else begin
+                                    if purchHeader.Count = 1 then
+                                        Error('The Vendor %1 is not EDI Vendor. Document No. %2', vendor."No.", purchHeader."No.");
+                                end;
+
                             end;
                         until purchHeader.Next() = 0;
                     end;

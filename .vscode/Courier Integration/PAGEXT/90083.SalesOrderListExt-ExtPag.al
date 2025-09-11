@@ -468,7 +468,7 @@ pageextension 90083 "Sales Order List Ext" extends "Sales Order List"
 
                 trigger OnAction()
                 var
-                    EDIInvoiceCOD: Codeunit "EDI Invoice";
+                    EDIInvoiceCOD: Codeunit "EDI File Integration";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
                     SalesHeader: Record "Sales Header";
                     Customer: Record Customer;

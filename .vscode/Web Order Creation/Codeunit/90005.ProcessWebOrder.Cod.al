@@ -565,12 +565,18 @@ codeunit 90005 "Process Web Order"
     end;
 
     local procedure InsertIntoTempHeader(WebNo: Code[20]; SalesNo: Code[20])
+    var
+        L_InterimSalesHeader: Record "Interim Sales Header";
     begin
         TempSalesHeader.RESET;
         TempSalesHeader.SETRANGE("Web Document No.", WebNo);
         TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
         IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
             TempSalesHeader.INIT;
+            L_InterimSalesHeader.Reset();
+            L_InterimSalesHeader.SetRange("No.", WebNo);
+            if L_InterimSalesHeader.FindFirst() then
+                TempSalesHeader."Trade Partner Code" := L_InterimSalesHeader."Trade Partner Code";
             TempSalesHeader."Web Document No." := WebNo;
             TempSalesHeader."Sales Document No." := SalesNo;
             TempSalesHeader."Created At" := WorkDate();

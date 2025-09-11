@@ -100,8 +100,9 @@ page 90046 "Avibuyer New Order Header API"
                 Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
                 NoSeriesManagement.SaveState();
             end else begin
-                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
-                Sleep(5);
+                // Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                // Sleep(5);
+                Rec."No." := Rec."Channel Order ID";
             end;
             // NumberSeries.Reset();
             // NumberSeries.SetRange("Series Code", ChannelPartner."Channel Order No. Series");

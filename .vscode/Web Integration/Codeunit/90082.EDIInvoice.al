@@ -1,87 +1,76 @@
-codeunit 90082 "EDI Invoice"
+codeunit 90082 "EDI File Integration"
 {
     TableNo = "Job Queue Entry";
     Permissions = tabledata "Sales Invoice Header" = M;
     trigger OnRun()
     begin
+        Clear(StartParameter);
+        Clear(RunType);
         IF (STRPOS(Rec."Parameter String", ';')) > 0 THEN begin
             StartParameter := COPYSTR(Rec."Parameter String", 1, (STRPOS(Rec."Parameter String", ';') - 1));
             RunType := COPYSTR(Rec."Parameter String", (STRPOS(Rec."Parameter String", ';') + 1), (STRLEN(Rec."Parameter String") - STRPOS(Rec."Parameter String", ';')));
         end;
-
         CASE RunType OF
-
-
-
-            EDICustomerLabel:
+            EDIInvoices:
                 begin
-
-                    GetEDIRecords();
-
+                    GetEDIRecords(); //SalesInvoice
                 end;
-            EDISupplierLabel:
+            EDIPO:
                 begin
-                    GetEDIRecords1();
-
+                    GetEDIRecords1(); //PO
                 end;
-            EDICrMemoLabel:
+            EDICrMemo:
                 begin
-                    GetEDIRecords2();
-
+                    GetEDIRecords2(); //SalesCreditMemo
                 end;
             EDISalesOrderLabel:
                 begin
-                    GetEDIRecords3();
-
+                    GetEDIRecords3(); //Not required now
                 end;
-
-            EDILabel:
+            EDIAllfiles:
                 begin
                     GetEDIRecords(); //SalesInvoice
                     GetEDIRecords1(); //PO
                     GetEDIRecords2(); //SalesCreditMemo
-
                 end;
         end;
     end;
-    //Customer EDI
-    procedure GetEDIRecords() //salesinvoice
+
+
+    #Region EDI Invoices+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    procedure GetEDIRecords()
     var
         NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
-        Salesinvoicehead: Record "Sales Invoice Header";
-
-        //salesHeader: Record "Sales Header";
-        Customer: Record Customer;
+        L_Salesinvoiceheadr: Record "Sales Invoice Header";
+        L_Customer: Record Customer;
     begin
-
-        Customer.Reset();
-        Customer.SetRange("EDI Invoice/Credit", true);
-        if Customer.FindSet() then begin
+        L_Customer.Reset();
+        L_Customer.SetRange("EDI Invoice/Credit", true);
+        if L_Customer.FindSet() then begin
             repeat
-                Salesinvoicehead.Reset();
-                Salesinvoicehead.SetRange("Sell-to Customer No.", Customer."No.");
-                // Salesinvoicehead.SetRange("Document Type", salesHeader."Document Type"::Invoice);
-                if Salesinvoicehead.FindSet() then begin
+                L_Salesinvoiceheadr.Reset();
+                L_Salesinvoiceheadr.SetRange("Sell-to Customer No.", L_Customer."No.");
+                L_Salesinvoiceheadr.SetRange("EDI Synced", false);
+                L_Salesinvoiceheadr.SetFilter("Posting Date", '>%1', 20250901D);
+                if L_Salesinvoiceheadr.FindSet() then begin
                     repeat
-                        ProcessEDIFile(Salesinvoicehead, Customer);
-                    until Salesinvoicehead.Next() = 0;
-
+                        ProcessEDIFile(L_Salesinvoiceheadr, L_Customer, false);
+                    until L_Salesinvoiceheadr.Next() = 0;
                 end;
-            until Customer.Next() = 0;
-
+            until L_Customer.Next() = 0;
         end;
     end;
 
 
-    procedure ProcessEDIFile(var Salesinvoicehead: Record "Sales Invoice Header"; var P_customer: Record Customer)
-    var
-        // SalesHeader: Record "Sales Header";
 
+    procedure ProcessEDIFile(var Salesinvoicehead: Record "Sales Invoice Header"; var P_customer: Record Customer; P_ManualProcess: Boolean)
+    var
         CompanyInfo: Record "Company Information";
         salesinvoiceline: Record "Sales Invoice Line";
         item: Record Item;
         Customer1: Record Customer;
+        EDIFILEDetails: Record "EDI File Details";
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -168,7 +157,6 @@ codeunit 90082 "EDI Invoice"
         Clear(Subtotalgoodsval);
         salesinvoiceline.Reset();
         salesinvoiceline.SetRange("Document No.", Salesinvoicehead."No.");
-        //salesinvoiceline.SetRange("Document Type", Salesinvoicehead."Document Type");
         salesinvoiceline.SetRange(Type, salesinvoiceline.Type::Item);
         if salesinvoiceline.findset() then begin
             repeat
@@ -217,23 +205,42 @@ codeunit 90082 "EDI Invoice"
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            //UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
+            if P_ManualProcess = true then begin
+                if DownloadFromStream(TextInstream, 'EDI', '', '', FileName) = true then begin
+                    // //Insert record in EDI File Details Table
+                    // Clear(EDIFILEDetails);
+                    // EDIFILEDetails.Init();
+                    // EDIFILEDetails."Document No" := Salesinvoicehead."No.";
+                    // EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Invoice;
+                    // EDIFILEDetails."File Name" := FileName;
+                    // EDIFILEDetails.Sync := true;
+                    // EDIFILEDetails."Synced Date" := WorkDate();
+                    // EDIFILEDetails.Insert();
+                end;
+            end else begin
+                if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
+                    //Insert record in EDI File Details Table
+                    Clear(EDIFILEDetails);
+                    EDIFILEDetails.Init();
+                    EDIFILEDetails."Document No" := Salesinvoicehead."No.";
+                    EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Invoice;
+                    EDIFILEDetails."File Name" := FileName;
+                    EDIFILEDetails.Sync := true;
+                    EDIFILEDetails."Synced Date" := WorkDate();
+                    EDIFILEDetails.Insert();
+                end;
+            end;
         end;
     end;
+    #EndRegion EDI Invoices+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-    ///////////////////////////////////////Supplier EDI
-
+    #Region EDI PO++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     procedure GetEDIRecords1() //PO
     var
-        NoSeriesMgmt1: Codeunit "No. Series";
-        NextNo1: Code[20];
-        //Salesinvoicehead: Record "Sales Invoice Header";
         purchHeader: Record "Purchase Header";
         vendor: Record Vendor;
     begin
-
         vendor.Reset();
         vendor.SetRange("EDI Invoice/Credit", true);
         if vendor.FindSet() then begin
@@ -241,23 +248,24 @@ codeunit 90082 "EDI Invoice"
                 purchHeader.Reset();
                 purchHeader.SetRange("Buy-from Vendor No.", vendor."No.");
                 purchHeader.SetRange("Document Type", purchHeader."Document Type"::Order);
+                purchHeader.SetRange("EDI Synced", false);
+                purchHeader.SetFilter("Posting Date", '>%1', 20250901D);
                 if purchHeader.FindSet() then begin
                     repeat
-                        ProcessEDIFile1(purchHeader, vendor);
+                        ProcessEDIFile1(purchHeader, vendor, false);
                     until purchHeader.Next() = 0;
                 end;
             until vendor.Next() = 0;
-
         end;
     end;
 
-    procedure ProcessEDIFile1(var purchHeader: Record "Purchase Header"; var P_vendor: Record Vendor)
+    procedure ProcessEDIFile1(var purchHeader: Record "Purchase Header"; var P_vendor: Record Vendor; P_ManualProcess: Boolean)
     var
-        //PurchHeader: Record "Purchase Header";
         CompanyInfo: Record "Company Information";
         Purchline: Record "Purchase Line";
         item: Record Item;
         quantityInt: Integer;
+        EDIFILEDetails: Record "EDI File Details";
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -368,45 +376,63 @@ codeunit 90082 "EDI Invoice"
             tempblob.CreateOutStream(TextOutstream);
             TextOutstream.WriteText(EDIMessage);
             tempblob.CreateInStream(TextInstream);
-            DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-            //UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
+            if P_ManualProcess = true then begin
+                if DownloadFromStream(TextInstream, 'EDI', '', '', FileName) = true then begin
+                    // //Insert record in EDI File Details Table
+                    // Clear(EDIFILEDetails);
+                    // EDIFILEDetails.Init();
+                    // EDIFILEDetails."Document No" := purchHeader."No.";
+                    // EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Order;
+                    // EDIFILEDetails."File Name" := FileName;
+                    // EDIFILEDetails.Sync := true;
+                    // EDIFILEDetails."Synced Date" := WorkDate();
+                    // EDIFILEDetails.Insert();
+                end;
+            end else begin
+                if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
+                    //Insert record in EDI File Details Table
+                    Clear(EDIFILEDetails);
+                    EDIFILEDetails.Init();
+                    EDIFILEDetails."Document No" := purchHeader."No.";
+                    EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Order;
+                    EDIFILEDetails."File Name" := FileName;
+                    EDIFILEDetails.Sync := true;
+                    EDIFILEDetails."Synced Date" := WorkDate();
+                    EDIFILEDetails.Insert();
+                end;
+            end;
         end;
-        //end;
     end;
+    #EndRegion EDI PO++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    #Region EDI Credit Memo+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     procedure GetEDIRecords2()
     var
         NoSeriesMgmt: Codeunit "No. Series";
         NextNo: Code[20];
         SalesCrHeader: Record "Sales Cr.Memo Header";
-        //salesHeader: Record "Sales Header";
         Customer: Record Customer;
     begin
-
         Customer.Reset();
         Customer.SetRange("EDI Invoice/Credit", true);
         if Customer.FindSet() then begin
             repeat
                 SalesCrHeader.Reset();
                 SalesCrHeader.SetRange("Sell-to Customer No.", Customer."No.");
-                //SalesCrHeader.SetRange("Document Type", SalesCrHeader."Document Type"::"Credit Memo");
+                SalesCrHeader.SetRange("EDI Synced", false);
+                SalesCrHeader.SetFilter("Posting Date", '>%1', 20250901D);
                 if SalesCrHeader.FindSet() then begin
                     repeat
-                        ProcessEDIFile2(SalesCrHeader, Customer);
+                        ProcessEDIFile2(SalesCrHeader, Customer, false);
                     until SalesCrHeader.Next() = 0;
                 end;
             until Customer.Next() = 0;
-
         end;
-        Message('Process Completed Successfully');
     end;
 
-    procedure ProcessEDIFile2(SalesCrHeader: Record "Sales Cr.Memo Header"; var P_customer: Record Customer)
+    procedure ProcessEDIFile2(SalesCrHeader: Record "Sales Cr.Memo Header"; var P_customer: Record Customer; P_ManualProcess: Boolean)
     var
-        //SalesHeader: Record "Sales Header";
-
         CompanyInfo: Record "Company Information";
         salesCRLine: Record "Sales Cr.Memo Line";
         item: Record Item;
@@ -415,6 +441,7 @@ codeunit 90082 "EDI Invoice"
         ReturnReason: Record "Return Reason";
         Reason: Record "Reason Code";
         Customer1: Record Customer;
+        EDIFILEDetails: Record "EDI File Details";
     begin
         CRLF[1] := 13;
         CRLF[2] := 10;
@@ -575,12 +602,37 @@ codeunit 90082 "EDI Invoice"
                 tempblob.CreateOutStream(TextOutstream);
                 TextOutstream.WriteText(EDIMessage);
                 tempblob.CreateInStream(TextInstream);
-                DownloadFromStream(TextInstream, 'EDI', '', '', FileName);
-                // UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter);
+                if P_ManualProcess = true then begin
+                    if DownloadFromStream(TextInstream, 'EDI', '', '', FileName) = true then begin
+                        // //Insert record in EDI File Details Table
+                        // Clear(EDIFILEDetails);
+                        // EDIFILEDetails.Init();
+                        // EDIFILEDetails."Document No" := SalesCrHeader."No.";
+                        // EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::"Credit Memo";
+                        // EDIFILEDetails."File Name" := FileName;
+                        // EDIFILEDetails.Sync := true;
+                        // EDIFILEDetails."Synced Date" := WorkDate();
+                        // EDIFILEDetails.Insert();
+                    end;
+                end else begin
+                    if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
+                        //Insert record in EDI File Details Table
+                        Clear(EDIFILEDetails);
+                        EDIFILEDetails.Init();
+                        EDIFILEDetails."Document No" := SalesCrHeader."No.";
+                        EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::"Credit Memo";
+                        EDIFILEDetails."File Name" := FileName;
+                        EDIFILEDetails.Sync := true;
+                        EDIFILEDetails."Synced Date" := WorkDate();
+                        EDIFILEDetails.Insert();
+                    end;
+                end;
             end;
         end;
     end;
+    #EndRegion EDI Credit Memo+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+    #Region EDI Sales Order+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     procedure GetEDIRecords3()
     var
         NoSeriesMgmt1: Codeunit "No. Series";
@@ -728,8 +780,8 @@ codeunit 90082 "EDI Invoice"
         end;
         //end;
     end;
-
-    local procedure UploadFileToEDIAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
+    #EndRegion EDI Sales Order+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    local procedure UploadFileToEDIAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20]): Boolean
     var
         Authorization: Interface "Storage Service Authorization";
         StorageServiceAuthorization: Codeunit "Storage Service Authorization";
@@ -747,6 +799,10 @@ codeunit 90082 "EDI Invoice"
 
         Clear(Response);
         Response := ABSBlobClient.PutBlobBlockBlobStream(P_FileName, P_FileInstream);
+        if Response.IsSuccessful() then
+            exit(true)
+        else
+            exit(false);
     end;
 
     local procedure GetCredentials(ChannelCode: Code[20])
@@ -878,11 +934,11 @@ codeunit 90082 "EDI Invoice"
         BuyerRef: Text;
         count: Integer;
         gtin: Code[20];
-        EDICustomerLabel: Label 'EDICustomer';
-        EDISupplierLabel: Label 'EDISupplier';
-        EDICrMemoLabel: Label 'EDICrMemo';
+        EDIInvoices: Label 'EDIInvoices';
+        EDIPO: Label 'EDIPO';
+        EDICrMemo: Label 'EDICrMemo';
         EDISalesOrderLabel: Label 'EDISalesOrder';
-        EDILabel: Label 'EDI';
+        EDIAllfiles: Label 'EDIAllfiles';
         StartParameter: Text;
         RunType: Text;
         TradepartnerRecord: Record "Trade Partner";

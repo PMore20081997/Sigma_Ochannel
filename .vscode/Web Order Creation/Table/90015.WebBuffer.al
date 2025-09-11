@@ -20,6 +20,10 @@ table 90015 "Web Buffer"
         {
             DataClassification = ToBeClassified;
         }
+        field(5; "Trade Partner Code"; Code[250])
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys

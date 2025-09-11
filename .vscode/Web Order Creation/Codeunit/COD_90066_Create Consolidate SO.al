@@ -996,6 +996,7 @@ codeunit 90066 "Create Consolidate SO"
                 TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
                 IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
                     TempSalesHeader.INIT;
+                    TempSalesHeader."Trade Partner Code" := L_InterimSalesHeader."Trade Partner Code";
                     TempSalesHeader."Web Document No." := L_InterimSalesHeader."No.";
                     TempSalesHeader."Sales Document No." := SalesNo;
                     TempSalesHeader."Created At" := WorkDate();
@@ -1136,12 +1137,17 @@ codeunit 90066 "Create Consolidate SO"
     local procedure InsertIntoTempHeader(WebNo: Code[20]; SalesNo: Code[20])
     var
         TempSalesHeader: Record "Web Buffer";
+        L_InterimSalesHeader: Record "Interim Sales Header";
     begin
         TempSalesHeader.RESET;
         TempSalesHeader.SETRANGE("Web Document No.", WebNo);
         TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
         IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
             TempSalesHeader.INIT;
+            L_InterimSalesHeader.Reset();
+            L_InterimSalesHeader.SetRange("No.", WebNo);
+            if L_InterimSalesHeader.FindFirst() then
+                TempSalesHeader."Trade Partner Code" := L_InterimSalesHeader."Trade Partner Code";
             TempSalesHeader."Web Document No." := WebNo;
             TempSalesHeader."Sales Document No." := SalesNo;
             TempSalesHeader."Created At" := WorkDate();
