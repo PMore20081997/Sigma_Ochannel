@@ -318,7 +318,7 @@ codeunit 90008 "B&Q"
         FulfillmentChannel: Text[250];
         TradePartner1: Record "Trade Partner";
         IsHandled: Boolean;
-        L_No: Code[20];
+        L_No: Code[250];
     begin
         OnBeforeInsertIntSalesHeader(ChannelOrderId, HeaderObject, ChannelCode, IsHandled);
         if IsHandled then
@@ -622,7 +622,7 @@ codeunit 90008 "B&Q"
         CountryCode: Code[20];
         FulfillmentChannel: Text[250];
         TradePartner1: Record "Trade Partner";
-        L_No: Code[20];
+        L_No: Code[250];
     begin
         Clear(L_No);
         G_TempInterimHeader.Reset();

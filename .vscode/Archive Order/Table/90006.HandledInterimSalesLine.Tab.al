@@ -9,7 +9,7 @@ table 90006 "Handled Interim Sales Line"
             Caption = 'Document Type';
             DataClassification = ToBeClassified;
         }
-        field(2; "Document No"; Code[20])
+        field(2; "Document No"; Code[250])
         {
             DataClassification = ToBeClassified;
         }

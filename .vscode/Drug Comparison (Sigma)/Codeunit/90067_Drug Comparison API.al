@@ -233,7 +233,7 @@ codeunit 90067 "Drug Comparison API"
         end;
     end;
 
-    local procedure GenerateResponse(_orderReferenceNo: Code[20]) _OrderResponse: BigText
+    local procedure GenerateResponse(_orderReferenceNo: Code[250]) _OrderResponse: BigText
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_InterimSalesLine: Record "Interim Sales Line";

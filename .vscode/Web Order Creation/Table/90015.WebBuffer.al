@@ -4,7 +4,7 @@ table 90015 "Web Buffer"
 
     fields
     {
-        field(1; "Web Document No."; Code[20])
+        field(1; "Web Document No."; Code[250])
         {
             DataClassification = ToBeClassified;
         }

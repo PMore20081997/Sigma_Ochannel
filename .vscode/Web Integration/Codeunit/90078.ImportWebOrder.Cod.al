@@ -32,7 +32,7 @@ codeunit 90078 "ImportWebOrder"
         L_InterimLine: Record "Interim Sales Line" temporary;
         L_ShipmnetTracking: Record "Shipment Tracking" temporary;
         L_PaymentDetails: Record "Channel Media" temporary;
-        L_No: Code[20];
+        L_No: Code[250];
         L_TradePartner: Record "Trade Partner";
         LineNo: Integer;
         HeaderCreated: Boolean;

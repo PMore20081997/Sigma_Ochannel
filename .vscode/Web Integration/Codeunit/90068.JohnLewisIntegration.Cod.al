@@ -110,7 +110,7 @@ codeunit 90068 "John Lewis Integration"
         DoubleQuote: Code[2];
         SingleQuote: Code[1];
         L_InterimHeader: Record "Interim Sales Header" temporary;
-        L_No: Code[20];
+        L_No: Code[250];
         L_TradePartner: Record "Trade Partner";
         ResponseText2: Text;
         FileLineNo: Integer;

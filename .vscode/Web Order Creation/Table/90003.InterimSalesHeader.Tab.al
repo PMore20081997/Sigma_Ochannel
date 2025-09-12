@@ -9,7 +9,7 @@ table 90003 "Interim Sales Header"
             Caption = 'Document Type';
             DataClassification = ToBeClassified;
         }
-        field(2; "No."; Code[20])
+        field(2; "No."; Code[250])
         {
             DataClassification = ToBeClassified;
         }

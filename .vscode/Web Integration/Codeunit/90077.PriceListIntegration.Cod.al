@@ -78,7 +78,7 @@ codeunit 90077 "Price List Integration"
     end;
 
     var
-        No: Code[20];
+        No: Code[250];
         OldFeatureSalesPrice: Boolean;
         NewFeatureSalesPrice: Boolean;
         ChackHeader: Boolean;

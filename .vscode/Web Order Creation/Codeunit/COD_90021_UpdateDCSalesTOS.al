@@ -62,7 +62,7 @@ codeunit 90021 "DC Sales TOS Lines"
         end;
     end;
 
-    local procedure InsertTempSalesLine(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[20])
+    local procedure InsertTempSalesLine(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[250])
     var
         SalesLineTOS: Record "Sales Line TOS";
         Rec_SalesLineTOS: Record "Sales Line TOS";
@@ -107,7 +107,7 @@ codeunit 90021 "DC Sales TOS Lines"
             exit(1);
     end;
 
-    local procedure GetETAccessCode(P_WebOrderNo: Code[20]): Code[50]
+    local procedure GetETAccessCode(P_WebOrderNo: Code[250]): Code[50]
     var
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_HandledInterimSalesHeader: Record "Handled Interim Sales Header";

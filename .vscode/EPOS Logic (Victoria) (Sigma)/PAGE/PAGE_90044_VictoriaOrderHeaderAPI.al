@@ -92,8 +92,9 @@ page 90044 "Victoria Order Header API"
                 Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
                 NoSeriesManagement.SaveState();
             end else begin
-                Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
-                Sleep(5);
+                // Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
+                // Sleep(5);
+                Rec."No." := Rec."Channel Order ID";
             end;
 
             Rec.VALIDATE(Status, Rec.Status::Accepted);

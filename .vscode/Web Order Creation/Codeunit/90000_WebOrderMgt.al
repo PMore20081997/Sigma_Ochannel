@@ -2057,7 +2057,7 @@ codeunit 90000 "Web Order Mgt"
     procedure CopyOrder(VAR P_ISH: Record "Interim Sales Header")
     var
         L_TradePartner: Record "Trade Partner";
-        L_DocNo: Code[20];
+        L_DocNo: Code[250];
         RecInterimSalesHeader: Record "Interim Sales Header";
         L_InterimSalesHeader: Record "Interim Sales Header";
         L_InterimSalesLine: Record "Interim Sales Line";

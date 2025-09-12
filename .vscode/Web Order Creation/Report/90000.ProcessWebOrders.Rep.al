@@ -299,7 +299,7 @@ report 90000 "Process Web Orders"
         NoOfItems: Option Single,Multiple,Everything;
         RecItem: Record Item;
         CreateWHInvPick: Codeunit "Process Web Order";
-        LastOrderNo: Code[20];
+        LastOrderNo: Code[250];
         UseLastProcessedOrder: Boolean;
         UseAllocationboolean: Boolean;
         CreateConsollidatedOrder: Codeunit "Process Web Order";

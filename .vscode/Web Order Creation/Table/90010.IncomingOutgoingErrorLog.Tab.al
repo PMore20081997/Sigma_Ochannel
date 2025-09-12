@@ -9,7 +9,7 @@ table 90010 "Incoming/Outgoing Error Log"
         {
             Caption = 'Transaction No.';
         }
-        field(2; "Document No."; Code[20])
+        field(2; "Document No."; Code[250])
         {
             Caption = 'Document No.';
         }

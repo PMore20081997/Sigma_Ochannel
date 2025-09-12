@@ -205,7 +205,7 @@ page 90019 "Handle Web Order"
                 var
                     RecInterimSalesHeader: Record "Interim Sales Header";
                     L_HandledInterimSalesLine: record "Handled Interim Sales Line";
-                    DocNo: Code[20];
+                    DocNo: Code[250];
                     L_InterimSalesHeader: record "Interim Sales Header";
                     InterimSalesLine: record "Interim Sales Line";
                     L_Date: Record Date;

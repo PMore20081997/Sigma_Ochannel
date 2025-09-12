@@ -120,7 +120,7 @@ codeunit 90070 "Shopdirect Integration"
         L_ShipmnetTracking: Record "Shipment Tracking" temporary;
         L_PaymentDetails: Record "Channel Media" temporary;
         e2: XmlElement;
-        L_No: Code[20];
+        L_No: Code[250];
         Flag: Boolean;
         L_TradePartner: Record "Trade Partner";
         ShippingRule: Record "Shipping Rule";
