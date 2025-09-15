@@ -55,6 +55,7 @@ codeunit 90082 "EDI File Integration"
                 L_Salesinvoiceheadr.SetFilter("Posting Date", '>%1', 20250901D);
                 if L_Salesinvoiceheadr.FindSet() then begin
                     repeat
+                        Clear(EDIMessage);
                         ProcessEDIFile(L_Salesinvoiceheadr, L_Customer, false);
                     until L_Salesinvoiceheadr.Next() = 0;
                 end;
@@ -147,6 +148,9 @@ codeunit 90082 "EDI File Integration"
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
+        Clear(TotalAmtExcVat);
+        Clear(totalVatBaseAmt);
+        Clear(DiscountAmt);
         Clear(LineInfo1);
         Clear(LineInfo2);
         Clear(LineInfo3);
@@ -252,6 +256,7 @@ codeunit 90082 "EDI File Integration"
                 purchHeader.SetFilter("Posting Date", '>%1', 20250901D);
                 if purchHeader.FindSet() then begin
                     repeat
+                        Clear(EDIMessage);
                         ProcessEDIFile1(purchHeader, vendor, false);
                     until purchHeader.Next() = 0;
                 end;
@@ -320,7 +325,11 @@ codeunit 90082 "EDI File Integration"
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
+        Clear(TotalAmtExcVat);
         Clear(totalqty);
+        Clear(quantityInt);
+        Clear(totalqty1);
+        Clear(DiscountAmt);
         Purchline.Reset();
         Purchline.SetRange("Document No.", PurchHeader."No.");
         Purchline.SetRange("Document Type", PurchHeader."Document Type");
@@ -424,6 +433,7 @@ codeunit 90082 "EDI File Integration"
                 SalesCrHeader.SetFilter("Posting Date", '>%1', 20250901D);
                 if SalesCrHeader.FindSet() then begin
                     repeat
+                        Clear(EDIMessage);
                         ProcessEDIFile2(SalesCrHeader, Customer, false);
                     until SalesCrHeader.Next() = 0;
                 end;
@@ -523,13 +533,17 @@ codeunit 90082 "EDI File Integration"
         taxDate := SalesCrHeader."VAT Reporting Date";
         //TotalAmt := SalesHeader."Amount Including VAT";
         SalesCrHeader.CalcFields("Amount Including VAT", Amount);
+        Clear(TaxAmount);
         TaxAmount := SalesCrHeader."Amount Including VAT" - SalesCrHeader.Amount;
         BuyerRef := SalesCrHeader."Your Reference";
 
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
-
+        Clear(TotalAmtExcVat);
+        Clear(DiscountAmt);
+        Clear(totalqty);
+        Clear(quantityInt);
         salesCRLine.Reset();
         salesCRLine.SetRange("Document No.", SalesCrHeader."No.");
         //salesline.SetRange("Document Type", SalesCrHeader."Document Type");
@@ -568,7 +582,7 @@ codeunit 90082 "EDI File Integration"
                 count += 1;
                 TotalAmtIncVat += salesCRLine."Amount Including VAT";
                 TotalAmtExcVat += salesCRLine.Amount;
-                TaxAmount := SalesCrHeader."Amount Including VAT" - SalesCrHeader.Amount;
+                //TaxAmount := SalesCrHeader."Amount Including VAT" - SalesCrHeader.Amount;
                 DiscountAmt += salesCRLine."Line Discount Amount";
                 totalqty += salesCRLine.Quantity;
                 Evaluate(quantityInt, DelChr(Format(salesCRLine.Quantity), '<=>', ','));
