@@ -59,25 +59,25 @@ page 90023 "Web Buffer"
                 end;
             }
 
-            action("Update Trade Partner Code")
-            {
-                ApplicationArea = All;
-                trigger OnAction()
-                var
-                    WebBuffer: Record "Web Buffer";
-                begin
-                    Clear(WebBuffer);
-                    WebBuffer := Rec;
-                    CurrPage.SetSelectionFilter(WebBuffer);
-                    WebBuffer.SetFilter("Web Document No.", 'DC*');
-                    if WebBuffer.FindSet() then begin
-                        repeat
-                            WebBuffer."Trade Partner Code" := 'DC';
-                            WebBuffer.Modify();
-                        until WebBuffer.Next() = 0;
-                    end;
-                end;
-            }
+            // action("Update Trade Partner Code")
+            // {
+            //     ApplicationArea = All;
+            //     trigger OnAction()
+            //     var
+            //         WebBuffer: Record "Web Buffer";
+            //     begin
+            //         Clear(WebBuffer);
+            //         WebBuffer := Rec;
+            //         CurrPage.SetSelectionFilter(WebBuffer);
+            //         WebBuffer.SetFilter("Web Document No.", 'DC*');
+            //         if WebBuffer.FindSet() then begin
+            //             repeat
+            //                 WebBuffer."Trade Partner Code" := 'DC';
+            //                 WebBuffer.Modify();
+            //             until WebBuffer.Next() = 0;
+            //         end;
+            //     end;
+            // }
         }
     }
 }

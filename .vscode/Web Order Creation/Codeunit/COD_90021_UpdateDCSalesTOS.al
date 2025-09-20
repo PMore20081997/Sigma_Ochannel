@@ -15,7 +15,8 @@ codeunit 90021 "DC Sales TOS Lines"
         StartDate := CalculateStartDate(GeneralSetupChannel."No. Of Days");
 
         L_WebBuffer.Reset();
-        L_WebBuffer.SetFilter("Web Document No.", 'DC*');
+        //L_WebBuffer.SetFilter("Web Document No.", 'DC*');
+        L_WebBuffer.SetRange("Trade Partner Code", 'DC');
         L_WebBuffer.SetRange("TOS Checked", false);
         L_WebBuffer.SetFilter("Created At", '%1..', StartDate);
         //L_WebBuffer.SetFilter("Created At", '%1..', GeneralSetupChannel."DC TOS Start Date");
@@ -128,7 +129,7 @@ codeunit 90021 "DC Sales TOS Lines"
         end;
     end;
 
-    local procedure GetPipCode(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[20]): Text[50]
+    local procedure GetPipCode(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[250]): Text[50]
     var
         L_InterimSalesLine: Record "Interim Sales Line";
         L_HandledInterimSalesLine: Record "Handled Interim Sales Line";
