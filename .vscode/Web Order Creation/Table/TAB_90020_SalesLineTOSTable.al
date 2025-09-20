@@ -9,7 +9,7 @@ table 90020 "Sales Line TOS"
             DataClassification = ToBeClassified;
             AutoIncrement = true;
         }
-        field(2; "Web Order No."; Code[20])
+        field(2; "Web Order No."; Code[250])
         {
             DataClassification = ToBeClassified;
         }
