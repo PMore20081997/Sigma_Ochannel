@@ -9,6 +9,7 @@ codeunit 90021 "DC Sales TOS Lines"
         L_WhseActivityLine: Record "Warehouse Activity Line";
         GeneralSetupChannel: Record "General Setup - Channels";
         StartDate: Date;
+        L_ApprovalEntry: Record "Approval Entry";
     begin
         GeneralSetupChannel.Get();
         SalesLineTOS.DeleteAll();
@@ -56,6 +57,51 @@ codeunit 90021 "DC Sales TOS Lines"
                                     if L_SalesLine.Quantity <> L_SalesLine."Quantity Shipped" then
                                         InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
                             until L_SalesLine.Next() = 0;
+                        end;
+                    end;
+                end;
+
+
+                //Check Rejected Orders++
+                L_SalesHeader.Reset();
+                L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
+                L_SalesHeader.SetRange("No.", L_WebBuffer."Sales Document No.");
+                L_SalesHeader.SetRange("Approval Exist", true);
+                if L_SalesHeader.FindFirst() then begin
+                    L_ApprovalEntry.Reset();
+                    L_ApprovalEntry.SetRange("Document Type", L_SalesHeader."Document Type");
+                    L_ApprovalEntry.SetRange("Document No.", L_SalesHeader."No.");
+                    if L_ApprovalEntry.FindFirst() then begin
+                        if L_ApprovalEntry.Status = L_ApprovalEntry.Status::Rejected then begin
+                            if L_SalesHeader."Knapp Order" = true then begin
+                                L_SalesLine.Reset();
+                                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                                L_SalesLine.SetRange("Document No.", L_WebBuffer."Sales Document No.");
+                                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                                if L_SalesLine.FindSet() then begin
+                                    repeat
+                                        if L_SalesLine."Quantity Shipped" = 0 then
+                                            InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                    until L_SalesLine.Next() = 0;
+                                end;
+                            end else begin
+                                L_SalesLine.Reset();
+                                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+                                L_SalesLine.SetRange("Document No.", L_WebBuffer."Sales Document No.");
+                                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+                                if L_SalesLine.FindSet() then begin
+                                    repeat
+                                        L_WhseActivityLine.Reset();
+                                        L_WhseActivityLine.SetRange("Source Document", L_WhseActivityLine."Source Document"::"Sales Order");
+                                        L_WhseActivityLine.SetRange("Source No.", L_WebBuffer."Sales Document No.");
+                                        L_WhseActivityLine.SetRange("Source Line No.", L_SalesLine."Line No.");
+                                        L_WhseActivityLine.SetRange("Item No.", L_SalesLine."No.");
+                                        if not L_WhseActivityLine.FindFirst() then
+                                            if L_SalesLine."Quantity Shipped" = 0 then
+                                                InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                    until L_SalesLine.Next() = 0;
+                                end;
+                            end;
                         end;
                     end;
                 end;
