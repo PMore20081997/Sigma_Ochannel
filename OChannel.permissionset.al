@@ -246,5 +246,7 @@ permissionset 90000 OChannel
         page "Handled Orders" = X,
         page "Handled Web Line" = X,
         page "Line Response" = X,
-        page "Order Response(DC)" = X;
+        page "Order Response(DC)" = X,
+        page "Avicenna Order Header API Card" = X,
+        page "Avicenna Order Line Subpage" = X;
 }
