@@ -78,6 +78,7 @@ page 90044 "Victoria Order Header API"
         L_ShippingAgentService: Record "Shipping Agent Services";
         NoSeries: Codeunit "No. Series";
     begin
+        //Clear(NextNo);
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
             IsExist := CU_WebOrderManagement.CheckOrderNotExist(Rec."Trade Partner Code", Rec."Channel Order ID");
@@ -86,16 +87,30 @@ page 90044 "Victoria Order Header API"
             end;
 
             //Insert Header Record++
+            #Region New Code for No series+++
             ChannelPartner.Get(Rec."Trade Partner Code");
             ChannelPartner.TestField("Channel Order No. Series");
             if ChannelPartner."PMR Order Issue" = false then begin
-                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", Today, true);
+                Rec."No." := NoSeriesManagement.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate(), true);
                 NoSeriesManagement.SaveState();
             end else begin
                 // Rec."No." := NoSeries.GetNextNo(ChannelPartner."Channel Order No. Series", WorkDate());
                 // Sleep(5);
                 Rec."No." := Rec."Channel Order ID";
             end;
+            #EndRegion New Code for No series+++
+            // NumberSeries.Reset();
+            // NumberSeries.SetRange("Series Code", ChannelPartner."Channel Order No. Series");
+            // if NumberSeries.FindFirst() then begin
+            //     NumberSeries.LockTable();
+            //     NoSeriesSingle := GetImplementation(NumberSeries);
+            //     NextNo := NoSeriesSingle.GetNextNo(NumberSeries, WorkDate(), true);
+            //     Rec."No." := NextNo;
+            //     if NumberSeries."Last No. Used" <> NextNo then
+            //         NumberSeries."Last No. Used" := NextNo;
+            //     NumberSeries.Modify();
+            //     Clear(NumberSeries);
+            // end;
 
             Rec.VALIDATE(Status, Rec.Status::Accepted);
             Rec.Validate("Order Date", WorkDate);
@@ -134,66 +149,67 @@ page 90044 "Victoria Order Header API"
                 Rec.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
                 Rec.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
                 Rec.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
+                Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
 
-                //Update Shipment Date++
-                L_Date.Reset();
-                L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
-                L_Date.SetRange(L_Date."Period Start", Today);
-                if L_Date.FindFirst() then begin
-                    if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                        if Rec."Weekend Ship Agent Serv Code" <> '' then begin
-                            L_ShippingAgentService.Reset();
-                            L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Weekend Shipping Agent Code");
-                            L_ShippingAgentService.SetRange(Code, Rec."Weekend Ship Agent Serv Code");
-                            if L_ShippingAgentService.FindFirst() then begin
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                    if DT2Time(CurrentDateTime) < 190000T then
-                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        Rec.Validate("Shipment Date", CalcDate('<+3D>', Today));
-                                end;
-                            end;
-                        end
-                        else begin
-                            L_ShippingAgentService.Reset();
-                            L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                            L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                            if L_ShippingAgentService.FindFirst() then begin
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                                    if DT2Time(CurrentDateTime) < 170000T then
-                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                                end;
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                    if DT2Time(CurrentDateTime) < 190000T then
-                                        Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                                end;
-                            end;
-                        end;
-                    end
-                    else begin
-                        L_ShippingAgentService.Reset();
-                        L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                        L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                        if L_ShippingAgentService.FindFirst() then begin
-                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                                if DT2Time(CurrentDateTime) < 170000T then
-                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                else
-                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
-                            end;
-                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                if DT2Time(CurrentDateTime) < 190000T then
-                                    Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                else
-                                    Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
-                            end;
-                        end;
-                    end;
-                end;
+                // //Update Shipment Date++
+                // L_Date.Reset();
+                // L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                // L_Date.SetRange(L_Date."Period Start", Today);
+                // if L_Date.FindFirst() then begin
+                //     if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+                //         if Rec."Weekend Ship Agent Serv Code" <> '' then begin
+                //             L_ShippingAgentService.Reset();
+                //             L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Weekend Shipping Agent Code");
+                //             L_ShippingAgentService.SetRange(Code, Rec."Weekend Ship Agent Serv Code");
+                //             if L_ShippingAgentService.FindFirst() then begin
+                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                //                     if DT2Time(CurrentDateTime) < 190000T then
+                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                //                     else
+                //                         Rec.Validate("Shipment Date", CalcDate('<+3D>', Today));
+                //                 end;
+                //             end;
+                //         end
+                //         else begin
+                //             L_ShippingAgentService.Reset();
+                //             L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                //             L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                //             if L_ShippingAgentService.FindFirst() then begin
+                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                //                     if DT2Time(CurrentDateTime) < 170000T then
+                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                //                     else
+                //                         Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
+                //                 end;
+                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                //                     if DT2Time(CurrentDateTime) < 190000T then
+                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                //                     else
+                //                         Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
+                //                 end;
+                //             end;
+                //         end;
+                //     end
+                //     else begin
+                //         L_ShippingAgentService.Reset();
+                //         L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
+                //         L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
+                //         if L_ShippingAgentService.FindFirst() then begin
+                //             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
+                //                 if DT2Time(CurrentDateTime) < 170000T then
+                //                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                //                 else
+                //                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                //             end;
+                //             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
+                //                 if DT2Time(CurrentDateTime) < 190000T then
+                //                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
+                //                 else
+                //                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                //             end;
+                //         end;
+                //     end;
+                // end;
 
                 L_ShiptoAddress.Reset();
                 L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");
@@ -259,65 +275,75 @@ page 90044 "Victoria Order Header API"
         L_OrderLevelResponse: Record "Order Level Response";
         L_InterimSalesHeader: Record "Interim Sales Header";
     begin
-        #Region All product lines rejected Error SEQ13
-        Clear(LineCount);
-        L_Line.Reset();
-        L_Line.SetRange("Document Type", Rec."Document Type");
-        L_Line.SetRange("Document No", Rec."No.");
-        L_Line.SetRange(Type, L_Line.Type::Item);
-        if L_Line.FindSet() then
-            LineCount := L_Line.Count;
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetRange("Document Type", Rec."Document Type");
+        L_InterimSalesHeader.SetRange("No.", Rec."No.");
+        if L_InterimSalesHeader.FindFirst() then begin
+            #Region All product lines rejected Error SEQ13
+            Clear(LineCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", Rec."Document Type");
+            L_Line.SetRange("Document No", Rec."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            if L_Line.FindSet() then
+                LineCount := L_Line.Count;
 
-        Clear(ErrorCount);
-        L_Line.Reset();
-        L_Line.SetRange("Document Type", Rec."Document Type");
-        L_Line.SetRange("Document No", Rec."No.");
-        L_Line.SetRange(Type, L_Line.Type::Item);
-        L_Line.CalcFields("No of Error");
-        L_Line.SetFilter("No of Error", '>%1', 0);
-        if L_Line.FindSet() then
-            ErrorCount := L_Line.Count;
+            Clear(ErrorCount);
+            L_Line.Reset();
+            L_Line.SetRange("Document Type", Rec."Document Type");
+            L_Line.SetRange("Document No", Rec."No.");
+            L_Line.SetRange(Type, L_Line.Type::Item);
+            L_Line.CalcFields("No of Error");
+            L_Line.SetFilter("No of Error", '>%1', 0);
+            if L_Line.FindSet() then
+                ErrorCount := L_Line.Count;
 
-        if LineCount = ErrorCount then begin
-            CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
-            Rec.status := Rec.status::Rejected;
-        end;
-        #endregion
-
-        PartnerErrorLog.Reset();
-        PartnerErrorLog.SetRange("Document No.", Rec."No.");
-        PartnerErrorLog.SetFilter("Item No.", '%1', '');
-        PartnerErrorLog.SetCurrentKey("Sequence No.");
-        PartnerErrorLog.Ascending(true);
-        IF PartnerErrorLog.FindFirst() THEN begin
-            L_OrderLevelResponse.Reset();
-            L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
-            if L_OrderLevelResponse.FindFirst() then begin
-                Rec."Reason Code" := L_OrderLevelResponse.Reason;
-                Rec."Reason Message" := L_OrderLevelResponse.Message;
+            if LineCount = ErrorCount then begin
+                CU_WebOrderMgmt.Sigma_InsertErrorLog('All product lines rejected', Rec, L_Line, 'SEQ13', true, '');
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
             end;
-        end else begin
-            Rec."Reason Code" := 'Order Created';
-            Rec."Reason Message" := 'Accepted';
-        end;
+            #endregion
 
-        if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
-            L_InterimSalesLine.Reset();
-            L_InterimSalesLine.SetRange("Document Type", Rec."Document Type");
-            L_InterimSalesLine.SetRange("Document No", Rec."No.");
-            L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
-            if L_InterimSalesLine.FindFirst() then begin
-                Rec.status := Rec.status::Accepted;
-                Rec."Ready to process" := true;
+            PartnerErrorLog.Reset();
+            PartnerErrorLog.SetRange("Document No.", Rec."No.");
+            PartnerErrorLog.SetFilter("Item No.", '%1', '');
+            PartnerErrorLog.SetCurrentKey("Sequence No.");
+            PartnerErrorLog.Ascending(true);
+            IF PartnerErrorLog.FindFirst() THEN begin
+                L_OrderLevelResponse.Reset();
+                L_OrderLevelResponse.SetRange("Error Code", PartnerErrorLog."Error Code");
+                if L_OrderLevelResponse.FindFirst() then begin
+                    Rec."Reason Code" := L_OrderLevelResponse.Reason;
+                    Rec."Reason Message" := L_OrderLevelResponse.Message;
+                    L_InterimSalesHeader."Reason Code" := L_OrderLevelResponse.Reason;
+                    L_InterimSalesHeader."Reason Message" := L_OrderLevelResponse.Message;
+                end;
             end else begin
-                Rec.status := Rec.status::Rejected;
+                Rec."Reason Code" := 'Order Created';
+                Rec."Reason Message" := 'Accepted';
+                L_InterimSalesHeader."Reason Code" := 'Order Created';
+                L_InterimSalesHeader."Reason Message" := 'Accepted';
             end;
-        end else begin
-            Rec.status := Rec.status::Rejected;
-        end;
 
-        Rec."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
-        CurrPage.SaveRecord();
+            if UpperCase(Rec."Reason Message") = UpperCase('Accepted') then begin
+                L_InterimSalesLine.Reset();
+                L_InterimSalesLine.SetRange("Document Type", Rec."Document Type");
+                L_InterimSalesLine.SetRange("Document No", Rec."No.");
+                L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+                if L_InterimSalesLine.FindFirst() then begin
+                    L_InterimSalesHeader.status := L_InterimSalesHeader.status::Accepted;
+                    L_InterimSalesHeader."Ready to process" := true;
+                end else begin
+                    L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
+                end;
+            end else begin
+                L_InterimSalesHeader.status := L_InterimSalesHeader.status::Rejected;
+            end;
+
+            L_InterimSalesHeader."No. of Items" := CU_WebOrderMgmt.CalculateNoofItems(Rec);
+            L_InterimSalesHeader.Modify();
+        end;
+        Commit();
     end;
 
 
