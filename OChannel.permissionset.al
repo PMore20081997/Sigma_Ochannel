@@ -248,5 +248,7 @@ permissionset 90000 OChannel
         page "Line Response" = X,
         page "Order Response(DC)" = X,
         page "Avicenna Order Header API Card" = X,
-        page "Avicenna Order Line Subpage" = X;
+        page "Avicenna Order Line Subpage" = X,
+        page "Cambrian New Order Line" = X,
+        page "Cambrian Order Header API" = X;
 }
