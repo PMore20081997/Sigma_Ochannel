@@ -46,6 +46,17 @@ pageextension 90024 "OC Customer Trend Card" extends "Customer Trend Card"
                     if L_CustomertrendLine.IsEmpty then
                         Error('Nothing to Register');
 
+                    //Check If any line has in decimal qty.++
+                    L_CustomertrendLine.Reset();
+                    L_CustomertrendLine.SetRange("Entry Number", Rec."Entry Number");
+                    L_CustomertrendLine.SetFilter("Qty. to be added to SO", '>%1', 0);
+                    if L_CustomertrendLine.FindSet() then begin
+                        repeat
+                            if (L_CustomertrendLine."Qty. to be added to SO" <> Round(L_CustomertrendLine."Qty. to be added to SO", 1)) then
+                                Error('Quantity should not be in decimals for Item %1', L_CustomertrendLine."Item No.");
+                        until L_CustomertrendLine.Next() = 0;
+                    end;
+
                     Clear(L_Amount);
                     L_CustomertrendLine2.Reset();
                     L_CustomertrendLine2.SetRange("Entry Number", Rec."Entry Number");

@@ -20,14 +20,15 @@ codeunit 90021 "DC Sales TOS Lines"
         L_WebBuffer.SetRange("Trade Partner Code", 'DC');
         L_WebBuffer.SetRange("TOS Checked", false);
         L_WebBuffer.SetFilter("Created At", '%1..', StartDate);
-        //L_WebBuffer.SetFilter("Created At", '%1..', GeneralSetupChannel."DC TOS Start Date");
         if L_WebBuffer.FindSet() then begin
             repeat
                 L_SalesHeader.Reset();
-                L_SalesHeader.CalcFields(Shipped);
+                L_SalesHeader.CalcFields(Shipped, "Approval Exist");
                 L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
                 L_SalesHeader.SetRange("No.", L_WebBuffer."Sales Document No.");
                 L_SalesHeader.SetRange(Shipped, true);
+                L_SalesHeader.SetRange("Approval Exist", false);
+                L_SalesHeader.SetRange("SO Min Order Approval Required", false);
                 if L_SalesHeader.FindFirst() then begin
                     if L_SalesHeader."Knapp Order" = true then begin
                         L_SalesLine.Reset();
@@ -37,7 +38,7 @@ codeunit 90021 "DC Sales TOS Lines"
                         if L_SalesLine.FindSet() then begin
                             repeat
                                 if L_SalesLine.Quantity <> L_SalesLine."Quantity Shipped" then
-                                    InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                    InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.", 'TOS');
                             until L_SalesLine.Next() = 0;
                         end;
                     end
@@ -55,18 +56,20 @@ codeunit 90021 "DC Sales TOS Lines"
                                 L_WhseActivityLine.SetRange("Item No.", L_SalesLine."No.");
                                 if not L_WhseActivityLine.FindFirst() then
                                     if L_SalesLine.Quantity <> L_SalesLine."Quantity Shipped" then
-                                        InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                        InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.", 'TOS');
                             until L_SalesLine.Next() = 0;
                         end;
                     end;
                 end;
 
 
-                //Check Rejected Orders++
+                //Check MOV Rejected Orders++
                 L_SalesHeader.Reset();
+                L_SalesHeader.CalcFields(Shipped, "Approval Exist");
                 L_SalesHeader.SetRange("Document Type", L_SalesHeader."Document Type"::Order);
                 L_SalesHeader.SetRange("No.", L_WebBuffer."Sales Document No.");
                 L_SalesHeader.SetRange("Approval Exist", true);
+                L_SalesHeader.SetRange("SO Min Order Approval Required", true);
                 if L_SalesHeader.FindFirst() then begin
                     L_ApprovalEntry.Reset();
                     L_ApprovalEntry.SetRange("Document Type", L_SalesHeader."Document Type");
@@ -81,7 +84,7 @@ codeunit 90021 "DC Sales TOS Lines"
                                 if L_SalesLine.FindSet() then begin
                                     repeat
                                         if L_SalesLine."Quantity Shipped" = 0 then
-                                            InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                            InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.", 'MOV');
                                     until L_SalesLine.Next() = 0;
                                 end;
                             end else begin
@@ -91,6 +94,7 @@ codeunit 90021 "DC Sales TOS Lines"
                                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
                                 if L_SalesLine.FindSet() then begin
                                     repeat
+                                        //Check if Warehouse Activity Line exist++
                                         L_WhseActivityLine.Reset();
                                         L_WhseActivityLine.SetRange("Source Document", L_WhseActivityLine."Source Document"::"Sales Order");
                                         L_WhseActivityLine.SetRange("Source No.", L_WebBuffer."Sales Document No.");
@@ -98,7 +102,7 @@ codeunit 90021 "DC Sales TOS Lines"
                                         L_WhseActivityLine.SetRange("Item No.", L_SalesLine."No.");
                                         if not L_WhseActivityLine.FindFirst() then
                                             if L_SalesLine."Quantity Shipped" = 0 then
-                                                InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.");
+                                                InsertTempSalesLine(L_SalesLine, L_WebBuffer."Web Document No.", 'MOV');
                                     until L_SalesLine.Next() = 0;
                                 end;
                             end;
@@ -109,7 +113,7 @@ codeunit 90021 "DC Sales TOS Lines"
         end;
     end;
 
-    local procedure InsertTempSalesLine(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[250])
+    local procedure InsertTempSalesLine(P_SalesLine: Record "Sales Line"; P_WebOrderNo: Code[250]; _Status: Code[20])
     var
         SalesLineTOS: Record "Sales Line TOS";
         Rec_SalesLineTOS: Record "Sales Line TOS";
@@ -130,11 +134,20 @@ codeunit 90021 "DC Sales TOS Lines"
                 SalesLineTOS.Description := P_SalesLine.Description;
                 SalesLineTOS.Quantity := P_SalesLine.Quantity;
                 SalesLineTOS."Quantity Shipped" := P_SalesLine."Quantity Shipped";
-                If P_SalesLine."Quantity Shipped" = 0 then
-                    SalesLineTOS.Status := 'TOS'
-                else
-                    if P_SalesLine.Quantity > P_SalesLine."Quantity Shipped" then
-                        SalesLineTOS.Status := 'Partial TOS';
+                case _Status of
+                    'TOS':
+                        begin
+                            If P_SalesLine."Quantity Shipped" = 0 then
+                                SalesLineTOS.Status := 'TOS'
+                            else
+                                if P_SalesLine.Quantity > P_SalesLine."Quantity Shipped" then
+                                    SalesLineTOS.Status := 'Partial TOS';
+                        end;
+                    'MOV':
+                        begin
+                            SalesLineTOS.Status := 'MOV'
+                        end;
+                end;
                 SalesLineTOS."Web Order No." := P_WebOrderNo;
                 SalesLineTOS."Sales Order No." := P_SalesLine."Document No.";
                 SalesLineTOS.Insert();

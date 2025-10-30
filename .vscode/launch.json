@@ -13,9 +13,9 @@
             "startupObjectType": "Page",
             "startupObjectId": 22,
             //"environmentName": "Sigma_UAT",
-            "environmentName": "Copy_1010",
+            "environmentName": "Copy_22",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
-            "schemaUpdateMode":"Synchronize"
+            "schemaUpdateMode":"ForceSync"
         }
     ]
 }
