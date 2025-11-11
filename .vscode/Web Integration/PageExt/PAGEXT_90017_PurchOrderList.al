@@ -7,62 +7,113 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
 
     actions
     {
-        addafter("O&rder")
+        addafter(Warehouse)
         {
-            action("Download EDI File")
+            group(EDI)
             {
-                ApplicationArea = All;
-                Image = Download;
-                PromotedCategory = Process;
-                Promoted = true;
-
-                trigger OnAction()
-                var
-                    EDIInvoiceCOD: Codeunit "EDI File Integration";
-                    JobQueueEntry: Record "Job Queue Entry" temporary;
-                    purchHeader: Record "Purchase Header";
-                    vendor: Record Vendor;
-                    Windows: Dialog;
-                    ProgressCount: Integer;
-                    NoOfRecs: Integer;
-                    Count: Integer;
-                begin
-                    Clear(purchHeader);
-                    purchHeader := Rec;
-                    CurrPage.SetSelectionFilter(purchHeader);
-                    if purchHeader.FindSet() then begin
-                        Windows.OPEN('Syncing Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
-                        NoOfRecs := purchHeader.Count;
-                        repeat
-                            ProgressCount += 1;
-                            if NoOfRecs > 0 then begin
-                                if NoOfRecs <= 100 then begin
-                                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                end else begin
-                                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                Caption = 'EDI';
+                Image = Export;
+                action("Export EDI File To PC")
+                {
+                    ApplicationArea = All;
+                    Image = Download;
+                    trigger OnAction()
+                    var
+                        EDIInvoiceCOD: Codeunit "EDI File Integration";
+                        purchHeader: Record "Purchase Header";
+                        vendor: Record Vendor;
+                        Windows: Dialog;
+                        ProgressCount: Integer;
+                        NoOfRecs: Integer;
+                        Count: Integer;
+                    begin
+                        Count := 0;
+                        Clear(purchHeader);
+                        purchHeader := Rec;
+                        CurrPage.SetSelectionFilter(purchHeader);
+                        if purchHeader.FindSet() then begin
+                            Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+                            NoOfRecs := purchHeader.Count;
+                            repeat
+                                ProgressCount += 1;
+                                if NoOfRecs > 0 then begin
+                                    if NoOfRecs <= 100 then begin
                                         Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                    END;
-                                end;
-                            end;
-
-                            //Run Process++
-                            Clear(vendor);
-                            vendor.Reset();
-                            if vendor.get(purchHeader."Buy-from Vendor No.") then begin
-                                if vendor."EDI Invoice/Credit" = true then begin
-                                    EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor, true);
-                                end else begin
-                                    if purchHeader.Count = 1 then
-                                        Error('The Vendor %1 is not EDI Vendor. Document No. %2', vendor."No.", purchHeader."No.");
+                                    end else begin
+                                        IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                                            Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                        END;
+                                    end;
                                 end;
 
-                            end;
-                        until purchHeader.Next() = 0;
+                                //Run Process++
+                                Clear(vendor);
+                                vendor.Reset();
+                                if vendor.get(purchHeader."Buy-from Vendor No.") then begin
+                                    if vendor."EDI Invoice/Credit" = true then begin
+                                        EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor, true);
+                                    end else begin
+                                        if purchHeader.Count = 1 then
+                                            Error('The Vendor %1 is not EDI Vendor. Document No. %2', vendor."No.", purchHeader."No.");
+                                    end;
+
+                                end;
+                            until purchHeader.Next() = 0;
+                        end;
                     end;
-                end;
+                }
+
+                action("Export EDI File To Container")
+                {
+                    ApplicationArea = All;
+                    Image = Download;
+                    trigger OnAction()
+                    var
+                        EDIInvoiceCOD: Codeunit "EDI File Integration";
+                        JobQueueEntry: Record "Job Queue Entry" temporary;
+                        purchHeader: Record "Purchase Header";
+                        vendor: Record Vendor;
+                        Windows: Dialog;
+                        ProgressCount: Integer;
+                        NoOfRecs: Integer;
+                        Count: Integer;
+                    begin
+                        Clear(purchHeader);
+                        purchHeader := Rec;
+                        CurrPage.SetSelectionFilter(purchHeader);
+                        purchHeader.SetRange("EDI Synced", false);
+                        if purchHeader.FindSet() then begin
+                            Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+                            NoOfRecs := purchHeader.Count;
+                            repeat
+                                ProgressCount += 1;
+                                if NoOfRecs > 0 then begin
+                                    if NoOfRecs <= 100 then begin
+                                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                    end else begin
+                                        IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                                            Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                                        END;
+                                    end;
+                                end;
+
+                                //Run Process++
+                                Clear(vendor);
+                                vendor.Reset();
+                                if vendor.get(purchHeader."Buy-from Vendor No.") then begin
+                                    if vendor."EDI Invoice/Credit" = true then begin
+                                        EDIInvoiceCOD.ProcessEDIFile1(purchHeader, vendor, false);
+                                    end else begin
+                                        if purchHeader.Count = 1 then
+                                            Error('The Vendor %1 is not EDI Vendor. Document No. %2', vendor."No.", purchHeader."No.");
+                                    end;
+
+                                end;
+                            until purchHeader.Next() = 0;
+                        end;
+                    end;
+                }
             }
-
-
         }
         addafter("Co&mments")
         {
@@ -467,6 +518,4 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
         }
     }
 
-    var
-        myInt: Integer;
 }

@@ -199,6 +199,11 @@ codeunit 90082 "EDI File Integration"
         HeaderInfo11 := '**@' + InvNo + '1     1     ' + Format(count);
         HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo12 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
+        //Manage button (Posted sales Invoice Page)code to upload file into container
+        if (P_ManualProcess = false) AND (GuiAllowed = true) then begin
+            Clear(EDIMessage);
+            StartParameter := 'EDI';
+        end;
 
         EDIMessage := HeaderInfoAll + EDIMessage;
         if EDIMessage <> '' then begin
@@ -376,6 +381,13 @@ codeunit 90082 "EDI File Integration"
             HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
         end;
+
+        //Manage button (PO Page)code to upload file into container
+        if (P_ManualProcess = false) AND (GuiAllowed = true) then begin
+            Clear(EDIMessage);
+            StartParameter := 'EDI';
+        end;
+
         EDIMessage := HeaderInfoAll + EDIMessage;
         if EDIMessage <> '' then begin
             FileName := '$' + purchHeader."No." + '.ord';
@@ -606,6 +618,12 @@ codeunit 90082 "EDI File Integration"
             HeaderInfo11 := '**@0000' + InvNo + '1     1     ' + Format(count);
             HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
+
+            //Manage button (Posted sales Credit Memo Page)code to upload file into container
+            if (P_ManualProcess = false) AND (GuiAllowed = true) then begin
+                Clear(EDIMessage);
+                StartParameter := 'EDI';
+            end;
 
             EDIMessage := HeaderInfoAll + EDIMessage;
             if EDIMessage <> '' then begin
