@@ -76,10 +76,47 @@ codeunit 90082 "EDI File Integration"
         CRLF[1] := 13;
         CRLF[2] := 10;
         Clear(InvNo);
-        Clear(DMYPostingFormat);
-        Clear(YearText);
-        Clear(MonthText);
+
         Clear(Dateformat);
+        Clear(Monthformat);
+        Clear(Yearformat);
+        Clear(DateText);
+        Clear(MonthText);
+        Clear(YearText);
+        Clear(DMYPostingFormat);
+
+        Clear(DueDateformat);
+        Clear(DueMonthformat);
+        Clear(DueYearformat);
+        Clear(DueDateText);
+        Clear(DueMonthText);
+        Clear(DueYearText);
+        Clear(DMYDueDateFormat);
+
+        Clear(OrderDateFormat);
+        Clear(OrderMonthFormat);
+        Clear(OrderYearFormat);
+        Clear(OrderDateText);
+        Clear(OrderMonthText);
+        Clear(OrderYearText);
+        Clear(DMYOrderDateFormat);
+
+        Clear(VATDateFormat);
+        Clear(VATMonthFormat);
+        Clear(VATYearFormat);
+        Clear(VATDateText);
+        Clear(VATMonthText);
+        Clear(VATYearText);
+        Clear(DMYVATDateFormat);
+
+        Clear(ShipmentDateFormat);
+        Clear(ShipmentMonthFormat);
+        Clear(ShipmentYearFormat);
+        Clear(ShipmentDateText);
+        Clear(ShipmentMonthText);
+        Clear(ShipmentYearText);
+        Clear(DMYShipmentDateFormat);
+
         Clear(TimeFormat);
         Clear(TimeStr);
         Clear(TimeText);
@@ -98,21 +135,24 @@ codeunit 90082 "EDI File Integration"
         Clear(CompGLN);
         Clear(PartnerGLN);
         Clear(PaymentTermDays);
+
         CompanyInfo.get();
+
         //posting date
-        Dateformat := Date2DMY(Salesinvoicehead."Order Date", 1);
+        Dateformat := Date2DMY(Salesinvoicehead."Posting Date", 1);
         if Dateformat < 10 then
             DateText := '0' + Format(Dateformat)
         else
             DateText := format(Dateformat);
-        Monthformat := Date2DMY(Salesinvoicehead."Order Date", 2);
+        Monthformat := Date2DMY(Salesinvoicehead."Posting Date", 2);
         if Monthformat < 10 then
             MonthText := '0' + Format(Monthformat)
         else
             MonthText := format(Monthformat);
-        Yearformat := Date2DMY(Salesinvoicehead."Order Date", 3);
+        Yearformat := Date2DMY(Salesinvoicehead."Posting Date", 3);
         YearText := Format(Yearformat);
         DMYPostingFormat := YearText + MonthText + DateText;
+
         //Due Date
         DueDateformat := Date2DMY(Salesinvoicehead."Due Date", 1);
         if DueDateformat < 10 then
@@ -127,6 +167,57 @@ codeunit 90082 "EDI File Integration"
         DueYearformat := Date2DMY(Salesinvoicehead."Due Date", 3);
         DueYearText := Format(DueYearformat);
         DMYDueDateFormat := DueYearText + DueMonthText + DueDateText;
+
+        //Order Date
+        OrderDateFormat := Date2DMY(Salesinvoicehead."Order Date", 1);
+        if OrderDateFormat < 10 then
+            OrderDateText := '0' + Format(OrderDateFormat)
+        else
+            OrderDateText := format(OrderDateFormat);
+        OrderMonthFormat := Date2DMY(Salesinvoicehead."Order Date", 2);
+        if OrderMonthFormat < 10 then
+            OrderMonthText := '0' + Format(OrderMonthFormat)
+        else
+            OrderMonthText := format(OrderMonthFormat);
+        OrderYearFormat := Date2DMY(Salesinvoicehead."Order Date", 3);
+        OrderYearText := Format(OrderYearFormat);
+        DMYOrderDateFormat := OrderYearText + OrderMonthText + OrderDateText;
+
+        // VAT Date Formatting
+        VATDateFormat := Date2DMY(Salesinvoicehead."VAT Reporting Date", 1);
+        if VATDateFormat < 10 then
+            VATDateText := '0' + Format(VATDateFormat)
+        else
+            VATDateText := Format(VATDateFormat);
+
+        VATMonthFormat := Date2DMY(Salesinvoicehead."VAT Reporting Date", 2);
+        if VATMonthFormat < 10 then
+            VATMonthText := '0' + Format(VATMonthFormat)
+        else
+            VATMonthText := Format(VATMonthFormat);
+
+        VATYearFormat := Date2DMY(Salesinvoicehead."VAT Reporting Date", 3);
+        VATYearText := Format(VATYearFormat);
+
+        DMYVATDateFormat := VATYearText + VATMonthText + VATDateText;
+
+        // Shipment Date Formatting
+        ShipmentDateFormat := Date2DMY(Salesinvoicehead."Shipment Date", 1);
+        if ShipmentDateFormat < 10 then
+            ShipmentDateText := '0' + Format(ShipmentDateFormat)
+        else
+            ShipmentDateText := Format(ShipmentDateFormat);
+
+        ShipmentMonthFormat := Date2DMY(Salesinvoicehead."Shipment Date", 2);
+        if ShipmentMonthFormat < 10 then
+            ShipmentMonthText := '0' + Format(ShipmentMonthFormat)
+        else
+            ShipmentMonthText := Format(ShipmentMonthFormat);
+
+        ShipmentYearFormat := Date2DMY(Salesinvoicehead."Shipment Date", 3);
+        ShipmentYearText := Format(ShipmentYearFormat);
+
+        DMYShipmentDateFormat := ShipmentYearText + ShipmentMonthText + ShipmentDateText;
 
         Time1 := DT2Time(Salesinvoicehead.SystemCreatedAt);
         TimeText := Format(Time1, 0, '<Hours24,2><Minutes,2><Seconds,2>');
@@ -187,9 +278,9 @@ codeunit 90082 "EDI File Integration"
         HeaderInfoAll := '';
         HeaderInfo1 := '**!' + '1.02.30' + 'G' + 'INV' + InvNo + DMYPostingFormat + TimeText + 'D' + '^' + CRLF[1];
         HeaderInfo2 := '**D' + '^' + CompanyInfo."Registration No." + '^' + '^' + '^' + 'INV' + '^' + '^' + 'N' + '^' + InvNo + '^' + DMYPostingFormat + '^' + '1' + '^' + '^' + '^' + RefCurr + '^' + RefCurr + '^^^^' + CRLF[1];
-        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYPostingFormat + '^' + '^' + '^' + DMYDueDateFormat + '^' + Format(PaymentTermDays) + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + Format(Salesinvoicehead."Payment Discount %") + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
-        HeaderInfo12 := '*DH' + '^' + Salesinvoicehead."Order No." + '^' + DMYPostingFormat + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
-        HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYPostingFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
+        HeaderInfo3 := '*IH' + '^' + InvNo + '^' + DMYPostingFormat + '^' + DMYVATDateFormat + '^' + '^' + '^' + DMYDueDateFormat + '^' + Format(PaymentTermDays) + '^' + format(TotalAmtIncVat) + '^' + format(TaxAmount) + '^' + Format(Salesinvoicehead."Payment Discount %") + '^' + '^' + '^' + '^' + '^' + '^' + '^^' + CRLF[1];
+        HeaderInfo12 := '*DH' + '^' + Salesinvoicehead."Order No." + '^' + DMYShipmentDateFormat + '^^^^^^^^^^^^^^^^^^^^^^^^^^^^' + CRLF[1];
+        HeaderInfo4 := '*OH' + '^' + BuyerRef + '^' + DMYOrderDateFormat + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^' + '^^^^^^^^^' + CRLF[1];
         HeaderInfo5 := '**A' + '^' + '0' + '^' + '0' + '^' + 'COMPANY' + '^' + CompanyInfo.GLN + '^^^^^' + CompanyInfo.GLN + '^' + CompanyInfo.Name + '^' + CompanyInfo.Address + '^' + CompanyInfo."Address 2" + '^' + CompanyInfo.City + '^' + CompanyInfo.County + '^' + CompanyInfo."Post Code" + '^' + CompanyInfo."Country/Region Code" + '^' + CRLF[1];
         HeaderInfo6 := '**A' + '^' + '0' + '^' + '0' + '^' + 'PARTNER' + '^' + PartnerGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
         HeaderInfo7 := '**A' + '^' + '0' + '^' + '0' + '^' + 'INVOICE TO' + '^' + PartnerGLN + '^^^^^^' + Salesinvoicehead."Bill-to Name" + '^' + Salesinvoicehead."Bill-to Address" + '^' + Salesinvoicehead."Bill-to Address 2" + '^' + Salesinvoicehead."Bill-to City" + '^' + Salesinvoicehead."Bill-to County" + '^' + Salesinvoicehead."Bill-to Post Code" + '^' + Salesinvoicehead."Bill-to Country/Region Code" + '^' + CRLF[1];
@@ -935,19 +1026,40 @@ codeunit 90082 "EDI File Integration"
         FileName: Text;
         Dateformat: Integer;
         DueDateformat: Integer;
+        OrderDateFormat: Integer;
         Monthformat: Integer;
         DueMonthformat: Integer;
+        OrderMonthFormat: Integer;
         Yearformat: Integer;
         DueYearformat: Integer;
+        OrderYearFormat: Integer;
         DMYPostingFormat: Text;
         DMYDueDateFormat: Text;
         DMYShipmentFormat: Text;
+        DMYOrderDateFormat: Text;
         YearText: Text;
         DueYearText: Text;
+        OrderYearText: Text;
         MonthText: Text;
+        OrderMonthText: Text;
         DueMonthText: Text;
         DateText: Text;
         DueDateText: Text;
+        OrderDateText: Text;
+        VATDateFormat: Integer;
+        VATMonthFormat: Integer;
+        VATYearFormat: Integer;
+        VATDateText: Text;
+        VATMonthText: Text;
+        VATYearText: Text;
+        DMYVATDateFormat: Text;
+        ShipmentDateFormat: Integer;
+        ShipmentMonthFormat: Integer;
+        ShipmentYearFormat: Integer;
+        ShipmentDateText: Text;
+        ShipmentMonthText: Text;
+        ShipmentYearText: Text;
+        DMYShipmentDateFormat: Text;
         TimeFormat: Text;
         TimeText: Text;
         TimeStr: Text;
