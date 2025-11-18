@@ -664,8 +664,14 @@ codeunit 90030 "Datawarehouse-WebDezign"
                     CSVBuffer.InsertEntry(LineNo, 28, L_SalesInvoiceHeader."Ship-to Code");  // Del Code
                     CSVBuffer.InsertEntry(LineNo, 29, '');  // Lost Pick
                     CSVBuffer.InsertEntry(LineNo, 30, '');  // Lost Desp
-                    CSVBuffer.InsertEntry(LineNo, 31, '');  // Pick Conf Code
-                    CSVBuffer.InsertEntry(LineNo, 32, Format(L_SalesInvoiceHeader."Order Time"));  // Order Time
+                    CSVBuffer.InsertEntry(LineNo, 31, '');  // Pick Conf Code  
+
+                    if L_SalesInvoiceHeader."Order Time" = 0T then begin
+                        CSVBuffer.InsertEntry(LineNo, 32, '')
+                    end else begin
+                        CSVBuffer.InsertEntry(LineNo, 32, Format(L_SalesInvoiceHeader."Order Time", 0, '<Hour,2><Minute,2>'));// Order Time - formatted as HHMM without seconds
+                    end;
+
                     CompInfo.Get();
                     CSVBuffer.InsertEntry(LineNo, 33, CompInfo.Name);  // Company
                     CSVBuffer.InsertEntry(LineNo, 34, '');  // Picker Code
