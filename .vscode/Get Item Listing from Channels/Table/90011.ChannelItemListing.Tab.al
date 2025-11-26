@@ -122,6 +122,10 @@ table 90011 "Channel Item Listing"
             begin
                 if Rec.Status = Rec.Status::Inactive then
                     Rec."Item Sync" := false;
+
+                //SBB-592
+                if Rec.Status <> xRec.Status then
+                    Rec."Channel Inventory" := 0;
             end;
         }
         field(19; FeedType; Option)
