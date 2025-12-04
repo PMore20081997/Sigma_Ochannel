@@ -81,7 +81,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                         Clear(purchHeader);
                         purchHeader := Rec;
                         CurrPage.SetSelectionFilter(purchHeader);
-                        purchHeader.SetRange("EDI Synced", false);
+                        //purchHeader.SetRange("EDI Synced", false);
                         if purchHeader.FindSet() then begin
                             Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
                             NoOfRecs := purchHeader.Count;

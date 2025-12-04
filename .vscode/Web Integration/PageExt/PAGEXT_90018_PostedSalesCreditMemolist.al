@@ -78,7 +78,7 @@ pageextension 90018 SalesCreditMemolist extends "Posted Sales Credit Memos"
                     begin
                         Clear(SalesCrHeader);
                         CurrPage.SetSelectionFilter(SalesCrHeader);
-                        SalesCrHeader.SetRange("EDI Synced", false);
+                        //SalesCrHeader.SetRange("EDI Synced", false);
                         if SalesCrHeader.FindSet() then begin
                             Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
                             NoOfRecs := SalesCrHeader.Count;

@@ -198,7 +198,7 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                     begin
                         Clear(SalesinvoiceHeader);
                         CurrPage.SetSelectionFilter(SalesinvoiceHeader);
-                        SalesinvoiceHeader.SetRange("EDI Synced", false);
+                        //SalesinvoiceHeader.SetRange("EDI Synced", false);
                         if SalesinvoiceHeader.FindSet() then begin
                             Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
                             NoOfRecs := SalesinvoiceHeader.Count;
