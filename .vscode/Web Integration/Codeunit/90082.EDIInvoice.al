@@ -320,14 +320,18 @@ codeunit 90082 "EDI File Integration"
             end else begin
                 if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
                     //Insert record in EDI File Details Table
-                    Clear(EDIFILEDetails);
-                    EDIFILEDetails.Init();
-                    EDIFILEDetails."Document No" := Salesinvoicehead."No.";
-                    EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Invoice;
-                    EDIFILEDetails."File Name" := FileName;
-                    EDIFILEDetails.Sync := true;
-                    EDIFILEDetails."Synced Date" := WorkDate();
-                    EDIFILEDetails.Insert();
+                    EDIFILEDetails.Reset();
+                    EDIFILEDetails.SetRange("Document No", Salesinvoicehead."No.");
+                    EDIFILEDetails.SetRange("Document Type", EDIFILEDetails."Document Type"::Invoice);
+                    if not EDIFILEDetails.FindFirst() then begin
+                        EDIFILEDetails.Init();
+                        EDIFILEDetails."Document No" := Salesinvoicehead."No.";
+                        EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Invoice;
+                        EDIFILEDetails."File Name" := FileName;
+                        EDIFILEDetails.Sync := true;
+                        EDIFILEDetails."Synced Date" := WorkDate();
+                        EDIFILEDetails.Insert();
+                    end;
                 end;
             end;
         end;
@@ -503,14 +507,18 @@ codeunit 90082 "EDI File Integration"
             end else begin
                 if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
                     //Insert record in EDI File Details Table
-                    Clear(EDIFILEDetails);
-                    EDIFILEDetails.Init();
-                    EDIFILEDetails."Document No" := purchHeader."No.";
-                    EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Order;
-                    EDIFILEDetails."File Name" := FileName;
-                    EDIFILEDetails.Sync := true;
-                    EDIFILEDetails."Synced Date" := WorkDate();
-                    EDIFILEDetails.Insert();
+                    EDIFILEDetails.Reset();
+                    EDIFILEDetails.SetRange("Document No", purchHeader."No.");
+                    EDIFILEDetails.SetRange("Document Type", EDIFILEDetails."Document Type"::Order);
+                    if not EDIFILEDetails.FindFirst() then begin
+                        EDIFILEDetails.Init();
+                        EDIFILEDetails."Document No" := purchHeader."No.";
+                        EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::Order;
+                        EDIFILEDetails."File Name" := FileName;
+                        EDIFILEDetails.Sync := true;
+                        EDIFILEDetails."Synced Date" := WorkDate();
+                        EDIFILEDetails.Insert();
+                    end;
                 end;
             end;
         end;
@@ -740,14 +748,18 @@ codeunit 90082 "EDI File Integration"
                 end else begin
                     if UploadFileToEDIAzureContainer(TextInstream, FileName, StartParameter) = true then begin
                         //Insert record in EDI File Details Table
-                        Clear(EDIFILEDetails);
-                        EDIFILEDetails.Init();
-                        EDIFILEDetails."Document No" := SalesCrHeader."No.";
-                        EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::"Credit Memo";
-                        EDIFILEDetails."File Name" := FileName;
-                        EDIFILEDetails.Sync := true;
-                        EDIFILEDetails."Synced Date" := WorkDate();
-                        EDIFILEDetails.Insert();
+                        EDIFILEDetails.Reset();
+                        EDIFILEDetails.SetRange("Document No", SalesCrHeader."No.");
+                        EDIFILEDetails.SetRange("Document Type", EDIFILEDetails."Document Type"::"Credit Memo");
+                        if not EDIFILEDetails.FindFirst() then begin
+                            EDIFILEDetails.Init();
+                            EDIFILEDetails."Document No" := SalesCrHeader."No.";
+                            EDIFILEDetails."Document Type" := EDIFILEDetails."Document Type"::"Credit Memo";
+                            EDIFILEDetails."File Name" := FileName;
+                            EDIFILEDetails.Sync := true;
+                            EDIFILEDetails."Synced Date" := WorkDate();
+                            EDIFILEDetails.Insert();
+                        end;
                     end;
                 end;
             end;
