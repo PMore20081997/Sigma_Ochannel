@@ -250,5 +250,6 @@ permissionset 90000 OChannel
         page "Avicenna Order Header API Card" = X,
         page "Avicenna Order Line Subpage" = X,
         page "Cambrian New Order Line" = X,
-        page "Cambrian Order Header API" = X;
+        page "Cambrian Order Header API" = X,
+        codeunit "Update Channel Customer" = X;
 }
