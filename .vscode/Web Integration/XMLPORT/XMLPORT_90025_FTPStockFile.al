@@ -51,6 +51,8 @@ xmlport 90025 "Stock File FTP"
                     G_WebOrderQty: Decimal;
                     L_ExcludeQty: Decimal;
                     L_BinContent: Record "Bin Content";
+                    L_warehouseActivityLine: Record "Warehouse Activity Line";
+                    _QtyonPick: Decimal;
                 begin
                     ProductCode := Item."No.";
 
@@ -90,6 +92,20 @@ xmlport 90025 "Stock File FTP"
                     if L_QtyOnSO < 0 then
                         L_QtyOnSO := 0;
 
+                    //Qty on Pick ++ SBB-579
+                    Clear(_QtyonPick);
+                    L_warehouseActivityLine.Reset();
+                    L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+                    L_warehouseActivityLine.SetRange("Item No.", Item."No.");
+                    L_warehouseActivityLine.SetRange("Saleable Location", true);
+                    L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+                    if L_warehouseActivityLine.FindSet() then begin
+                        L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+                        _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+                    end;
+                    if _QtyonPick < 0 then
+                        _QtyonPick := 0;
+
 
                     //Get the Web Order Qty++
                     Clear(G_WebOrderQty);
@@ -100,7 +116,7 @@ xmlport 90025 "Stock File FTP"
 
                     //Calculate Free Qty+++
                     Clear(L_FreeStock);
-                    L_FreeStock := L_Physical - (L_QtyOnSO + G_WebOrderQty);
+                    L_FreeStock := L_Physical - (L_QtyOnSO + G_WebOrderQty + _QtyonPick);
 
                     // //New+++SBB-291
                     if L_FreeStock > 0 then begin

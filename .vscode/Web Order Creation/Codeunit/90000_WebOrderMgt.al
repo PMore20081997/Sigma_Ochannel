@@ -1354,6 +1354,8 @@ codeunit 90000 "Web Order Mgt"
         L_InterimSalesLine: Record "Interim Sales Line";
         L_BinContent: Record "Bin Content"; //Prathamesh++
         L_ExcludeQty: Decimal; //Prathamesh++
+        _QtyonPick: Decimal; //SBB-579
+        L_warehouseActivityLine: Record "Warehouse Activity Line"; //SBB-579
     begin
         #Region Physical Inventory from Item Ledger Entry
         Clear(PhysicalInventory);
@@ -1361,7 +1363,6 @@ codeunit 90000 "Web Order Mgt"
         L_ItemLedgerEntry.CalcFields("Daily Priority Exist");
         L_ItemLedgerEntry.SETRANGE("Item No.", P_InterimSalesLine."No.");
         L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-        //L_ItemLedgerEntry.SETRANGE("Unit of Measure code", P_InterimSalesLine."Unit of Measure Code");
         L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(P_InterimSalesLine."No."));
         L_ItemLedgerEntry.SetRange(Open, true);
         if L_ItemLedgerEntry.FindSet() then begin
@@ -1379,7 +1380,6 @@ codeunit 90000 "Web Order Mgt"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SETRANGE("No.", P_InterimSalesLine."No.");
         L_SalesLine.SETRANGE("Saleable Location", true);
-        //L_SalesLine.SETRANGE("Unit of Measure Code", P_InterimSalesLine."Unit of Measure Code");
         L_SalesLine.SetFilter("Outstanding Qty. (Base)", '>0');
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
@@ -1408,6 +1408,20 @@ codeunit 90000 "Web Order Mgt"
         if QtyonWebOrder < 0 then
             QtyonWebOrder := 0;
         #endregion
+
+        //Qty on Pick ++ SBB-579
+        Clear(_QtyonPick);
+        L_warehouseActivityLine.Reset();
+        L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+        L_warehouseActivityLine.SetRange("Item No.", P_InterimSalesLine."No.");
+        L_warehouseActivityLine.SetRange("Saleable Location", true);
+        L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+        if L_warehouseActivityLine.FindSet() then begin
+            L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+            _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+        end;
+        if _QtyonPick < 0 then
+            _QtyonPick := 0;
 
         Clear(AvailableInventory);
         //AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);

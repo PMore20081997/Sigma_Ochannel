@@ -103,6 +103,11 @@ page 90003 "Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Departure Time"; Rec."Departure Time")
+                {
+                    ApplicationArea = All;
+
+                }
                 field("Sales Order Created"; Rec."Sales Order Created")
                 {
                     ApplicationArea = all;

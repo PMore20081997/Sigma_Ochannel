@@ -12,11 +12,17 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
         modify("Qty. to be added to SO")
         {
             trigger OnAfterValidate()
+            var
+                L_FreeQty: Decimal;
             begin
+                Clear(L_FreeQty);
                 if "Qty. to be added to SO" <> 0 then begin
                     //Check Free Quantity (For Both Promotion and Normal Item)++
-                    if "Qty. to be added to SO" > G_CT_Function.CT_Onvalidate_Free(Rec) then
-                        Error('Quantity to be added to SO should be less than Free Inventory: %1. Item Number: %2.', G_CT_Function.CT_Onvalidate_Free(Rec), Rec."Item No.");
+                    L_FreeQty := G_CT_Function.CT_Onvalidate_Free(Rec);
+                    if L_FreeQty < 0 then
+                        L_FreeQty := 0;
+                    if "Qty. to be added to SO" > L_FreeQty then
+                        Error('Quantity to be added to SO should be less than Free Inventory: %1. Item Number: %2.', L_FreeQty, Rec."Item No.");
                 end;
             end;
         }

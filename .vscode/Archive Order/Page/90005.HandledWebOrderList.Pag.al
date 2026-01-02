@@ -97,6 +97,11 @@ page 90005 "Handled Web Order List"
                 {
                     ApplicationArea = all;
                 }
+                field("Departure Time"; Rec."Departure Time")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Sales Order Created"; Rec."Sales Order Created")
                 {
                     ApplicationArea = All;

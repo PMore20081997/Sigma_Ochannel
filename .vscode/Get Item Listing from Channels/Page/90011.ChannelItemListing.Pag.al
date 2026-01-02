@@ -180,6 +180,8 @@ page 90011 "Channel Item Listing"
                     L_ItemLedgerEntry: Record "Item Ledger Entry";
                     L_BinContent: Record "Bin Content";
                     L_ExcludeQty: Decimal;
+                    L_warehouseActivityLine: Record "Warehouse Activity Line";
+                    _QtyonPick: Decimal;
                 begin
                     Clear(QtyOnSO);
                     Clear(QtyonWebOrder);
@@ -214,10 +216,6 @@ page 90011 "Channel Item Listing"
                                 L_ItemLedgerEntry.Reset();
                                 L_ItemLedgerEntry.SetRange("Item No.", ChannelItemListing."Item No.");
                                 L_ItemLedgerEntry.SetRange("Saleable Location", true);
-                                // if ChannelItemListing."Variant Code Mandatory" = true then
-                                //     L_ItemLedgerEntry.SetRange("Daily Priority Exist", true)
-                                // else
-                                //     L_ItemLedgerEntry.SetRange("Daily Priority Exist", false);
                                 L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(ChannelItemListing."Item No."));
                                 L_ItemLedgerEntry.CalcSums(Quantity);
                                 PhysicalInventory := L_ItemLedgerEntry.Quantity;
@@ -227,7 +225,6 @@ page 90011 "Channel Item Listing"
 
                                 //Calculate "Qty On SO"++++
                                 Clear(QtyOnSO);
-                                //QtyOnSO := ChannelItemListing."Allcoated on SO";
                                 L_SalesLine.Reset();
                                 L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
                                 L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
@@ -239,15 +236,26 @@ page 90011 "Channel Item Listing"
                                 if QtyOnSO < 0 then
                                     QtyOnSO := 0;
 
+                                //Qty on Pick ++ SBB-579
+                                Clear(_QtyonPick);
+                                L_warehouseActivityLine.Reset();
+                                L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+                                L_warehouseActivityLine.SetRange("Item No.", ChannelItemListing."Item No.");
+                                L_warehouseActivityLine.SetRange("Saleable Location", true);
+                                L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+                                if L_warehouseActivityLine.FindSet() then begin
+                                    L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+                                    _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+                                end;
+                                if _QtyonPick < 0 then
+                                    _QtyonPick := 0;
+
+
                                 //Get Web Order Qty+++
                                 Clear(QtyonWebOrder);
                                 QtyonWebOrder := ChannelItemListing."Web Orders Qty";
                                 if QtyonWebOrder < 0 then
                                     QtyonWebOrder := 0;
-
-                                //Calculate Available Qty +++
-                                Clear(AvailableInventory);
-                                AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder);
 
                                 //Prathamesh++ SBB-291
                                 Clear(L_ExcludeQty);
@@ -263,9 +271,12 @@ page 90011 "Channel Item Listing"
                                         L_ExcludeQty += L_BinContent."Quantity (Base)";
                                     until L_BinContent.Next() = 0;
                                 end;
-                                if L_ExcludeQty > 0 then
-                                    AvailableInventory := AvailableInventory - L_ExcludeQty;
+                                if L_ExcludeQty < 0 then
+                                    L_ExcludeQty := 0;
 
+                                //Calculate Available Qty +++
+                                Clear(AvailableInventory);
+                                AvailableInventory := PhysicalInventory - (QtyOnSO + QtyonWebOrder + L_ExcludeQty + _QtyonPick);
                                 if AvailableInventory < 0 then
                                     AvailableInventory := 0;
 

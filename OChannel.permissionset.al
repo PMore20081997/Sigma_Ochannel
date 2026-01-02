@@ -251,5 +251,8 @@ permissionset 90000 OChannel
         page "Avicenna Order Line Subpage" = X,
         page "Cambrian New Order Line" = X,
         page "Cambrian Order Header API" = X,
-        codeunit "Update Channel Customer" = X;
+        codeunit "Update Channel Customer" = X,
+        query "ILE Quantity Query" = X,
+        query "Pick Quantity Query" = X,
+        query "SalesLine Quantity Query" = X;
 }

@@ -41,31 +41,30 @@ codeunit 90023 "Inventory Calculation"
         _Physical: Decimal;
         L_SalesLine: Record "Sales Line";
         _AllocatedOnSO: Decimal;
+        L_HasVariantSetup: Boolean;
+        _QtyonPick: Decimal;
+        L_warehouseActivityLine: Record "Warehouse Activity Line";
     begin
+        // Cache current line qty
         Clear(_CurrentLineQty);
         L_CstomerTrend.Reset();
         L_CstomerTrend.SetRange("Entry Number", _Rec."Entry Number");
         L_CstomerTrend.SetRange("Line No.", _Rec."Line No.");
         if L_CstomerTrend.FindFirst() then
             _CurrentLineQty := L_CstomerTrend."Qty. to be added to SO";
+        if _CurrentLineQty < 0 then
+            _CurrentLineQty := 0;
 
-        // _Rec.SetFilter("Date Filter", '>=%1', WorkDate());
-        // _Rec.CalcFields(Physical, "Allocated on SO", "Web Orders Qty", "Qty On Customer Trends");
-        // _Free := (_Rec.Physical + _CurrentLineQty) - (_Rec."Allocated on SO" + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
-        // if _Free > 0 then
-        //     Exit(_Free)
-        // else
-        //     exit(0);
+        // Cache variant setup result
+        Clear(L_HasVariantSetup);
+        L_HasVariantSetup := GetVariantSetup(_Rec."Item No.");
 
-
-        //New Code+++
-        //Pysical+++
+        //Physical+++
         Clear(_Physical);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."Item No.");
-        //L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Units of Measure");
         L_ItemLedgerEntry.SetRange("Saleable Location", true);
-        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."Item No."));
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
@@ -81,7 +80,6 @@ codeunit 90023 "Inventory Calculation"
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _Rec."Item No.");
         L_SalesLine.SetRange("Saleable Location", true);
-        //L_SalesLine.SetRange("Unit of Measure Code", _Rec."Units of Measure");
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
@@ -90,13 +88,22 @@ codeunit 90023 "Inventory Calculation"
         if _AllocatedOnSO < 0 then
             _AllocatedOnSO := 0;
 
+        //Qty on Pick++ SBB-579
+        Clear(_QtyonPick);
+        L_warehouseActivityLine.Reset();
+        L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+        L_warehouseActivityLine.SetRange("Saleable Location", true);
+        L_warehouseActivityLine.SetRange("Item No.", _Rec."Item No.");
+        L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+        if L_warehouseActivityLine.FindSet() then begin
+            L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+            _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+        end;
+        if _QtyonPick < 0 then
+            _QtyonPick := 0;
+
         //Web Order Qty++
         _Rec.CalcFields("Web Orders Qty", "Qty On Customer Trends");
-
-        //Free++
-        Clear(_Free);
-        _Free := (_Physical + _CurrentLineQty) - (_AllocatedOnSO + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends");
-
 
         //Prathamesh++ SBB-291
         Clear(L_ExcludeQty);
@@ -112,15 +119,15 @@ codeunit 90023 "Inventory Calculation"
                 L_ExcludeQty += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;
+        if L_ExcludeQty < 0 then
+            L_ExcludeQty := 0;
 
-        if L_ExcludeQty > 0 then
-            _Free := _Free - L_ExcludeQty;
-        //Prathamesh-- SBB-291
-
-        if _Free > 0 then
-            Exit(_Free)
-        else
-            exit(0);
+        //Free++
+        Clear(_Free);
+        _Free := (_Physical + _CurrentLineQty) - (_AllocatedOnSO + _Rec."Web Orders Qty" + _Rec."Qty On Customer Trends" + L_ExcludeQty + _QtyonPick);
+        if _Free < 0 then
+            _Free := 0;
+        Exit(_Free);
 
     end;
     //--------------------------------------------Customer Trends---------------------------------------------------
@@ -152,222 +159,287 @@ codeunit 90023 "Inventory Calculation"
 
     procedure Sales_CheckFreeQuantity_OnValidate(_Rec: Record "Sales Line") _Free: Decimal
     var
-        L_SalesLine: Record "Sales Line";
+        // L_SalesLine: Record "Sales Line";
         L_ItemLedgerEntry: Record "Item Ledger Entry";
-        _Physical: Decimal;
-        _AllocatedOnSO: Decimal;
-        _AllocatedOnSO_SameOrderDifferentLine: Decimal;
-        L_Location: Record Location;
-        L_ExcludeQty: Decimal;
+        //L_Location: Record Location;
+        //L_ExcludeQty: Decimal;
+        //L_warehouseActivityLine: Record "Warehouse Activity Line";
         L_BinContent: Record "Bin Content";
+        L_HasVariantSetup: Boolean;
+
+
+        //Total Item wise++
+        _TotalPhysical_Item_VariantWise: Decimal;
+        _AllocatedOnSO_Item_VariantWise: Decimal;
+        _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise: Decimal;
+        _TotalFreeQty_Item_VariantWise: Decimal;
+        L_ExcludeQty_Item_VariantWise: Decimal;
+        _QtyonPick_Item_VariantWise: Decimal;
+
+
+        //Total Item wise+++
+        _TotalPhysical_ItemWise: Decimal;
+        _AllocatedOnSO_ItemWise: Decimal;
+        _AllocatedOnSO_SameOrderDifferentLine_ItemWise: Decimal;
+        _TotalFreeQty_ItemWise: Decimal;
+        L_ExcludeQty_ItemWise: Decimal;
+        _QtyonPick_ItemWise: Decimal;
+
+
+        Query_ILEQuantity: Query "ILE Quantity Query";
+        Query_SalesLineQuantity: Query "SalesLine Quantity Query";
+        Query_PickQuantity: Query "Pick Quantity Query";
     begin
         _Rec.CalcFields("Saleable Location");
 
-        //Physical Qty++
-        Clear(_Physical);
+        // Cache variant setup result
+        Clear(L_HasVariantSetup);
+        L_HasVariantSetup := GetVariantSetup(_Rec."No.");
+
+        //Total Physical only Item Wise Qty++
+        Clear(_TotalPhysical_ItemWise);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
-        //L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        if _Rec."Saleable Location" = false then
+        IF _Rec."Saleable Location" = false then
             L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code")
         else begin
-            //L_ItemLedgerEntry.SetRange("Saleable Location", true);
-            L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
-            L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
+            L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
+            L_ItemLedgerEntry.SetRange("Saleable Location", true);
         end;
-        L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            _Physical := L_ItemLedgerEntry.Quantity;
-        end;
-        if _Physical < 0 then
-            _Physical := 0;
+        L_ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', 0);
+        L_ItemLedgerEntry.CalcSums("Remaining Quantity");
+        _TotalPhysical_ItemWise := L_ItemLedgerEntry."Remaining Quantity";
+        if _TotalPhysical_ItemWise < 0 then
+            _TotalPhysical_ItemWise := 0;
+        // Clear(Query_ILEQuantity);
+        // Query_ILEQuantity.SetRange(Item_No_, _Rec."No.");
+        // if _Rec."Saleable Location" = false then begin
+        //     Query_ILEQuantity.SetRange(Location_Code, _Rec."Location Code")
+        // end else begin
+        //     Query_ILEQuantity.SetFilter(Daily_Priority_Exist, '%1', L_HasVariantSetup);
+        //     Query_ILEQuantity.SetRange(Saleable_Location, true);
+        // end;
+        // Query_ILEQuantity.Open();
+        // if Query_ILEQuantity.Read() then
+        //     _TotalPhysical_ItemWise := Query_ILEQuantity.Remaining_Quantity;
+        // if _TotalPhysical_ItemWise < 0 then
+        //     _TotalPhysical_ItemWise := 0;
 
-
-        //Allocated On SO Existing Order+++
-        Clear(_AllocatedOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetFilter("Document No.", '<>%1', _Rec."Document No.");
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SetRange("No.", _Rec."No.");
-        //L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        // if _Rec."Saleable Location" = false then
-        //     L_SalesLine.SetRange("Location Code", _Rec."Location Code")
-        // else
-        //     L_SalesLine.SetRange("Saleable Location", true);
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
-        end;
-        if _AllocatedOnSO < 0 then
-            _AllocatedOnSO := 0;
-
-
-        //Allocated On SO Order+++
-        Clear(_AllocatedOnSO_SameOrderDifferentLine);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange("Document No.", _Rec."Document No.");
-        L_SalesLine.SetFilter("Line No.", '<>%1', _Rec."Line No.");
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SetRange("No.", _Rec."No.");
-        //L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        // if _Rec."Saleable Location" = false then
-        //     L_SalesLine.SetRange("Location Code", _Rec."Location Code")
-        // else
-        //     L_SalesLine.SetRange("Saleable Location", true);
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            _AllocatedOnSO_SameOrderDifferentLine := L_SalesLine."Outstanding Qty. (Base)";
-        end;
-        if _AllocatedOnSO_SameOrderDifferentLine < 0 then
-            _AllocatedOnSO_SameOrderDifferentLine := 0;
-
-        //Web Qty++
-        _Rec.CalcFields("Web Orders Qty");
-
-        //Free Qty++
-        Clear(_Free);
-        if _Rec."Saleable Location" = true then
-            _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine + _Rec."Web Orders Qty")
+        //Allocated On SO existing Orders Item wise+++
+        Clear(_AllocatedOnSO_ItemWise);
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetFilter(Query_SalesLineQuantity.Document_No_, '<>%1', _Rec."Document No.");
+        Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(No_, _Rec."No.");
+        if _Rec."Saleable Location" = false then
+            Query_SalesLineQuantity.SetRange(Location_Code, _Rec."Location Code")
         else
-            _Free := _Physical - (_AllocatedOnSO + _AllocatedOnSO_SameOrderDifferentLine);
+            Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+        Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+        Query_SalesLineQuantity.Open();
+        if Query_SalesLineQuantity.Read() then
+            _AllocatedOnSO_ItemWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        if _AllocatedOnSO_ItemWise < 0 then
+            _AllocatedOnSO_ItemWise := 0;
 
-        //Rec Bin Qty++
-        //Prathamesh++ SBB-291
-        Clear(L_ExcludeQty);
+        //Allocated On Current SO Order but different lines Item wise+++
+        Clear(_AllocatedOnSO_SameOrderDifferentLine_ItemWise);
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.Document_No_, _Rec."Document No.");
+        Query_SalesLineQuantity.SetFilter(Query_SalesLineQuantity.Line_No_, '<>%1', _Rec."Line No.");
+        Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(No_, _Rec."No.");
+        if _Rec."Saleable Location" = false then
+            Query_SalesLineQuantity.SetRange(Location_Code, _Rec."Location Code")
+        else
+            Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+        Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+        Query_SalesLineQuantity.Open();
+        if Query_SalesLineQuantity.Read() then
+            _AllocatedOnSO_SameOrderDifferentLine_ItemWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        if _AllocatedOnSO_SameOrderDifferentLine_ItemWise < 0 then
+            _AllocatedOnSO_SameOrderDifferentLine_ItemWise := 0;
+
+
+        //Qty on Pick item wise++ SBB-579
+        Clear(_QtyonPick_ItemWise);
+        Clear(Query_PickQuantity);
+        Query_PickQuantity.SetRange(Query_PickQuantity.Source_Document, Query_PickQuantity.Source_Document::"Sales Order");
+        Query_PickQuantity.SetRange(Query_PickQuantity.Item_No_, _Rec."No.");
+        if _Rec."Saleable Location" = true then
+            Query_PickQuantity.SetRange(Query_PickQuantity.Saleable_Location, true)
+        else
+            Query_PickQuantity.SetRange(Query_PickQuantity.Location_Code, _Rec."Location Code");
+        Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
+        Query_PickQuantity.Open();
+        if Query_PickQuantity.Read() then
+            _QtyonPick_ItemWise := Query_PickQuantity.Qty__Outstanding__Base_;
+        if _QtyonPick_ItemWise < 0 then
+            _QtyonPick_ItemWise := 0;
+
+        //Calculate excluding Bin Qty item wise++
+        Clear(L_ExcludeQty_ItemWise);
         L_BinContent.Reset();
         L_BinContent.SetRange("Item No.", _Rec."No.");
         if _Rec."Saleable Location" = true then begin
-            //L_BinContent.SetRange("Saleable Location", true);
             L_BinContent.SetRange("Location Code", _Rec."Location Code");
             L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
         end else
             L_BinContent.SetRange("Location Code", _Rec."Location Code");
-        L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
-                L_ExcludeQty += L_BinContent."Quantity (Base)";
+                L_ExcludeQty_ItemWise += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;
+        if L_ExcludeQty_ItemWise < 0 then
+            L_ExcludeQty_ItemWise := 0;
 
-        if L_ExcludeQty > 0 then
-            _Free := _Free - L_ExcludeQty;
-        //Prathamesh-- SBB-291
-
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-    end;
-
-    procedure SalesQuote_CheckFreeQuantity_OnValidate(_Rec: Record "Sales Line") _Free: Decimal
-    var
-        L_SalesLine: Record "Sales Line";
-        L_ItemLedgerEntry: Record "Item Ledger Entry";
-        _Physical: Decimal;
-        _AllocatedOnSO: Decimal;
-        L_ExcludeQty: Decimal;
-        L_BinContent: Record "Bin Content";
-    begin
-        _Rec.CalcFields("Saleable Location");
-
-        //Physical Qty++
-        Clear(_Physical);
-        L_ItemLedgerEntry.Reset();
-        L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
-        //L_ItemLedgerEntry.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        if _Rec."Saleable Location" = false then
-            L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code")
-        else begin
-            //L_ItemLedgerEntry.SetRange("Saleable Location", true);
-            L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code");
-            L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
-        end;
-        L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            _Physical := L_ItemLedgerEntry.Quantity;
-        end;
-        if _Physical < 0 then
-            _Physical := 0;
-
-
-
-        Clear(_AllocatedOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SetRange("No.", _Rec."No.");
-        //L_SalesLine.SetRange("Unit of Measure Code", _Rec."Unit of Measure Code");
-        // if _Rec."Saleable Location" = false then
-        //     L_SalesLine.SetRange("Location Code", _Rec."Location Code")
-        // else
-        //     L_SalesLine.SetRange("Saleable Location", true);
-        L_SalesLine.SetRange("Location Code", _Rec."Location Code");
-        L_SalesLine.SetRange("Variant Code", _Rec."Variant Code");
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
-        end;
-        if _AllocatedOnSO < 0 then
-            _AllocatedOnSO := 0;
-
-
-        //Web Order Qty++
+        //Web Qty Item wise++
         _Rec.CalcFields("Web Orders Qty");
 
-
-        //Free Qty++
-        Clear(_Free);
-        if _Rec."Saleable Location" = true then
-            _Free := _Physical - (_AllocatedOnSO + _Rec."Web Orders Qty")
-        else
-            _Free := _Physical - _AllocatedOnSO;
-
-
-
-        //Prathamesh++ SBB-291
-        Clear(L_ExcludeQty);
-        L_BinContent.Reset();
-        L_BinContent.SetRange("Item No.", _Rec."No.");
+        //Calculate Final Free Qty++
         if _Rec."Saleable Location" = true then begin
-            //L_BinContent.SetRange("Saleable Location", true);
-            L_BinContent.SetRange("Location Code", _Rec."Location Code");
-            L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
-        end else
-            L_BinContent.SetRange("Location Code", _Rec."Location Code");
-        L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
-        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
-        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
-        if L_BinContent.FindSet() then begin
-            repeat
-                L_BinContent.CalcFields("Quantity (Base)");
-                L_ExcludeQty += L_BinContent."Quantity (Base)";
-            until L_BinContent.Next() = 0;
-        end;
-        if L_ExcludeQty > 0 then
-            _Free := _Free - L_ExcludeQty;
-        //Prathamesh-- SBB-291
+            //Total Free qty item wise++
+            Clear(_TotalFreeQty_ItemWise);
+            _TotalFreeQty_ItemWise := _TotalPhysical_ItemWise - (_AllocatedOnSO_ItemWise + _AllocatedOnSO_SameOrderDifferentLine_ItemWise + _Rec."Web Orders Qty" + L_ExcludeQty_ItemWise + _QtyonPick_ItemWise);
+            if _Rec.Quantity > _TotalFreeQty_ItemWise then begin
+                _Free := _TotalFreeQty_ItemWise;
+                exit(_Free);
+            end;
 
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
+            //Total Physical Qty Item & Variant Wise
+            Clear(_TotalPhysical_Item_VariantWise);
+            L_ItemLedgerEntry.Reset();
+            L_ItemLedgerEntry.SetRange("Item No.", _Rec."No.");
+            IF _Rec."Saleable Location" = false then
+                L_ItemLedgerEntry.SetRange("Location Code", _Rec."Location Code")
+            else begin
+                L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
+                L_ItemLedgerEntry.SetRange("Saleable Location", true);
+            end;
+            L_ItemLedgerEntry.SetRange("Variant Code", _Rec."Variant Code");
+            L_ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', 0);
+            L_ItemLedgerEntry.CalcSums("Remaining Quantity");
+            _TotalPhysical_Item_VariantWise := L_ItemLedgerEntry."Remaining Quantity";
+            if _TotalPhysical_Item_VariantWise < 0 then
+                _TotalPhysical_Item_VariantWise := 0;
+            // Clear(Query_ILEQuantity);
+            // Query_ILEQuantity.SetRange(Item_No_, _Rec."No.");
+            // if _Rec."Saleable Location" = false then begin
+            //     Query_ILEQuantity.SetRange(Location_Code, _Rec."Location Code")
+            // end else begin
+            //     Query_ILEQuantity.SetRange(Saleable_Location, true);
+            //     Query_ILEQuantity.SetRange(Daily_Priority_Exist, L_HasVariantSetup);
+            // end;
+            // Query_ILEQuantity.SetRange(Variant_Code, _Rec."Variant Code");
+            // Query_ILEQuantity.Open();
+            // if Query_ILEQuantity.Read() then
+            //     _TotalPhysical_Item_VariantWise := Query_ILEQuantity.Remaining_Quantity;
+            // if _TotalPhysical_Item_VariantWise < 0 then
+            //     _TotalPhysical_Item_VariantWise := 0;
+
+
+            //Allocated On SO Existing Order item & Variant Wise
+            Clear(_AllocatedOnSO_Item_VariantWise);
+            Clear(Query_SalesLineQuantity);
+            Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+            Query_SalesLineQuantity.SetFilter(Query_SalesLineQuantity.Document_No_, '<>%1', _Rec."Document No.");
+            Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+            Query_SalesLineQuantity.SetRange(No_, _Rec."No.");
+            if _Rec."Saleable Location" = false then
+                Query_SalesLineQuantity.SetRange(Location_Code, _Rec."Location Code")
+            else
+                Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+            Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+            Query_SalesLineQuantity.SetRange(Variant_Code, _Rec."Variant Code");
+            Query_SalesLineQuantity.Open();
+            if Query_SalesLineQuantity.Read() then
+                _AllocatedOnSO_Item_VariantWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            if _AllocatedOnSO_Item_VariantWise < 0 then
+                _AllocatedOnSO_Item_VariantWise := 0;
+
+            //Allocated On SO Order Item & Variant Wise
+            Clear(_AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise);
+            Clear(Query_SalesLineQuantity);
+            Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+            Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.Document_No_, _Rec."Document No.");
+            Query_SalesLineQuantity.SetFilter(Query_SalesLineQuantity.Line_No_, '<>%1', _Rec."Line No.");
+            Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+            Query_SalesLineQuantity.SetRange(No_, _Rec."No.");
+            if _Rec."Saleable Location" = false then
+                Query_SalesLineQuantity.SetRange(Location_Code, _Rec."Location Code")
+            else
+                Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+            Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+            Query_SalesLineQuantity.SetRange(Variant_Code, _Rec."Variant Code");
+            Query_SalesLineQuantity.Open();
+            if Query_SalesLineQuantity.Read() then
+                _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            if _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise < 0 then
+                _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise := 0;
+
+            //Qty on Pick item wise & Variant Wise++ SBB-579
+            Clear(_QtyonPick_Item_VariantWise);
+            Clear(Query_PickQuantity);
+            Query_PickQuantity.SetRange(Query_PickQuantity.Source_Document, Query_PickQuantity.Source_Document::"Sales Order");
+            Query_PickQuantity.SetRange(Query_PickQuantity.Item_No_, _Rec."No.");
+            if _Rec."Saleable Location" = true then
+                Query_PickQuantity.SetRange(Query_PickQuantity.Saleable_Location, true)
+            else
+                Query_PickQuantity.SetRange(Query_PickQuantity.Location_Code, _Rec."Location Code");
+            Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
+            Query_PickQuantity.SetRange(Variant_Code, _Rec."Variant Code");
+            Query_PickQuantity.Open();
+            if Query_PickQuantity.Read() then
+                _QtyonPick_Item_VariantWise := Query_PickQuantity.Qty__Outstanding__Base_;
+            if _QtyonPick_Item_VariantWise < 0 then
+                _QtyonPick_Item_VariantWise := 0;
+
+            //Calculate excluding Bin Qty item  & variant wise++
+            Clear(L_ExcludeQty_Item_VariantWise);
+            L_BinContent.Reset();
+            L_BinContent.SetRange("Item No.", _Rec."No.");
+            if _Rec."Saleable Location" = true then begin
+                L_BinContent.SetRange("Location Code", _Rec."Location Code");
+                L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_Rec."No."));
+            end else
+                L_BinContent.SetRange("Location Code", _Rec."Location Code");
+            L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+            L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+            L_BinContent.SetRange("Variant Code", _Rec."Variant Code");
+            if L_BinContent.FindSet() then begin
+                repeat
+                    L_BinContent.CalcFields("Quantity (Base)");
+                    L_ExcludeQty_Item_VariantWise += L_BinContent."Quantity (Base)";
+                until L_BinContent.Next() = 0;
+            end;
+            if L_ExcludeQty_Item_VariantWise < 0 then
+                L_ExcludeQty_Item_VariantWise := 0;
+
+            Clear(_TotalFreeQty_Item_VariantWise);
+            _TotalFreeQty_Item_VariantWise := _TotalPhysical_Item_VariantWise - (_AllocatedOnSO_Item_VariantWise + _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise + L_ExcludeQty_Item_VariantWise + _QtyonPick_Item_VariantWise);
+            if _TotalFreeQty_Item_VariantWise < 0 then
+                _TotalFreeQty_Item_VariantWise := 0;
+
+            //Final Free Qty++
+            Clear(_Free);
+            _Free := _TotalFreeQty_Item_VariantWise;
+            exit(_Free);
+        end else begin
+            //Total Free qty item wise++
+            Clear(_TotalFreeQty_ItemWise);
+            _TotalFreeQty_ItemWise := _TotalPhysical_ItemWise - (_AllocatedOnSO_ItemWise + _AllocatedOnSO_SameOrderDifferentLine_ItemWise + L_ExcludeQty_ItemWise + _QtyonPick_ItemWise);
+            _Free := _TotalFreeQty_ItemWise;
+            exit(_Free);
+        end;
     end;
 
-    procedure Upload_CheckFreeQuantity_OnValidate(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]) _Free: Decimal
+    procedure Upload_CheckFreeQuantity_OnValidate(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _RequestedQuantity: Decimal) _Free: Decimal
     var
         L_SalesLine: Record "Sales Line";
         L_ItemLedgerEntry: Record "Item Ledger Entry";
@@ -379,7 +451,25 @@ codeunit 90023 "Inventory Calculation"
         L_Item: Record Item;
         L_ExcludeQty: Decimal;
         L_BinContent: Record "Bin Content";
+        L_HasVariantSetup: Boolean;
+        L_warehouseActivityLine: Record "Warehouse Activity Line";
+
+
+        //Total Item wise++
+        _TotalPhysical_Item_VariantWise: Decimal;
+        _AllocatedOnSO_Item_VariantWise: Decimal;
+        _TotalFreeQty_Item_VariantWise: Decimal;
+        L_ExcludeQty_Item_VariantWise: Decimal;
+        _QtyonPick_Item_VariantWise: Decimal;
+
+        //Total Item wise+++
+        _TotalPhysical_ItemWise: Decimal;
+        _AllocatedOnSO_ItemWise: Decimal;
+        _TotalFreeQty_ItemWise: Decimal;
+        L_ExcludeQty_ItemWise: Decimal;
+        _QtyonPick_ItemWise: Decimal;
     begin
+        //Check if Location is Saleable Location or not++
         Clear(L_SaleableLocation);
         L_Location.Reset();
         L_Location.SetRange(Code, _LocationCode);
@@ -389,46 +479,81 @@ codeunit 90023 "Inventory Calculation"
             else
                 L_SaleableLocation := false;
 
+        // Cache variant setup result
+        Clear(L_HasVariantSetup);
+        L_HasVariantSetup := GetVariantSetup(_ItemNo);
 
-        //Physical ++
-        Clear(_Physical);
+        //Total Physical only Item Wise Qty++
+        Clear(_TotalPhysical_ItemWise);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _ItemNo);
         if L_SaleableLocation = false then
             L_ItemLedgerEntry.SetRange("Location Code", _LocationCode)
         else begin
-            //L_ItemLedgerEntry.SetRange("Saleable Location", true);
-            L_ItemLedgerEntry.SetRange("Location Code", _LocationCode);
-            L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+            L_ItemLedgerEntry.SetRange("Saleable Location", true);
+            L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
         end;
-        L_ItemLedgerEntry.SetRange("Variant Code", _VariantCode);
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
-            _Physical := L_ItemLedgerEntry.Quantity;
+            _TotalPhysical_ItemWise := L_ItemLedgerEntry.Quantity;
         end;
-        if _Physical < 0 then
-            _Physical := 0;
+        if _TotalPhysical_ItemWise < 0 then
+            _TotalPhysical_ItemWise := 0;
 
-
-        //Allocated On SO++
-        Clear(_AllocatedOnSO);
+        //Allocated On SO existing Orders Item wise+++
+        Clear(_AllocatedOnSO_ItemWise);
         L_SalesLine.Reset();
         L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
         L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
         L_SalesLine.SetRange("No.", _ItemNo);
-        // if L_SaleableLocation = false then
-        //     L_SalesLine.SetRange("Location Code", _LocationCode)
-        // else
-        //     L_SalesLine.SetRange("Saleable Location", true);
-        L_SalesLine.SetRange("Location Code", _LocationCode);
-        L_SalesLine.SetRange("Variant Code", _VariantCode);
+        if L_SaleableLocation = false then
+            L_SalesLine.SetRange("Location Code", _LocationCode)
+        else
+            L_SalesLine.SetRange("Saleable Location", true);
         L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Quantity");
-            _AllocatedOnSO := L_SalesLine."Outstanding Quantity";
+            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+            _AllocatedOnSO_ItemWise := L_SalesLine."Outstanding Qty. (Base)";
         end;
-        if _AllocatedOnSO < 0 then
-            _AllocatedOnSO := 0;
+        if _AllocatedOnSO_ItemWise < 0 then
+            _AllocatedOnSO_ItemWise := 0;
+
+        //Qty on Pick item wise++ SBB-579
+        Clear(_QtyonPick_ItemWise);
+        L_warehouseActivityLine.Reset();
+        L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+        L_warehouseActivityLine.SetRange("Item No.", _ItemNo);
+        if L_SaleableLocation = false then
+            L_warehouseActivityLine.SetRange("Location Code", _LocationCode)
+        else
+            L_warehouseActivityLine.SetRange("Saleable Location", true);
+        L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+        if L_warehouseActivityLine.FindSet() then begin
+            L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+            _QtyonPick_ItemWise := L_warehouseActivityLine."Qty. Outstanding (Base)";
+        end;
+        if _QtyonPick_ItemWise < 0 then
+            _QtyonPick_ItemWise := 0;
+
+        //Calculate excluding Bin Qty item wise++
+        Clear(L_ExcludeQty_ItemWise);
+        L_BinContent.Reset();
+        L_BinContent.SetRange("Item No.", _ItemNo);
+        if L_SaleableLocation = true then begin
+            L_BinContent.SetRange("Location Code", _LocationCode);
+            L_BinContent.SetRange("Daily Priority Exist", L_HasVariantSetup);
+        end else
+            L_BinContent.SetRange("Location Code", _LocationCode);
+        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+        if L_BinContent.FindSet() then begin
+            repeat
+                L_BinContent.CalcFields("Quantity (Base)");
+                L_ExcludeQty_ItemWise += L_BinContent."Quantity (Base)";
+            until L_BinContent.Next() = 0;
+        end;
+        if L_ExcludeQty_ItemWise < 0 then
+            L_ExcludeQty_ItemWise := 0;
 
         //Web Order Qty++
         Clear(L_WebOrderQty);
@@ -439,42 +564,110 @@ codeunit 90023 "Inventory Calculation"
             L_WebOrderQty := L_Item."Qty. on Web Order";
         end;
 
-        //Free Qty++
-        Clear(_Free);
-        if L_SaleableLocation = true then
-            _Free := _Physical - (_AllocatedOnSO + L_WebOrderQty)
-        else
-            _Free := _Physical - _AllocatedOnSO;
 
-        //Prathamesh++ SBB-291
-        Clear(L_ExcludeQty);
-        L_BinContent.Reset();
-        L_BinContent.SetRange("Item No.", _ItemNo);
+        //Calculate Final Free Qty++
         if L_SaleableLocation = true then begin
-            //L_BinContent.SetRange("Saleable Location", true);
-            L_BinContent.SetRange("Location Code", _LocationCode);
-            L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
-        end else
-            L_BinContent.SetRange("Location Code", _LocationCode);
-        L_BinContent.SetRange("Variant Code", _VariantCode);
-        L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
-        L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
-        if L_BinContent.FindSet() then begin
-            repeat
-                L_BinContent.CalcFields("Quantity (Base)");
-                L_ExcludeQty += L_BinContent."Quantity (Base)";
-            until L_BinContent.Next() = 0;
+            //Total Free qty item wise++
+            Clear(_TotalFreeQty_ItemWise);
+            _TotalFreeQty_ItemWise := _TotalPhysical_ItemWise - (_AllocatedOnSO_ItemWise + L_WebOrderQty + L_ExcludeQty_ItemWise + _QtyonPick_ItemWise);
+            if _RequestedQuantity > _TotalFreeQty_ItemWise then begin
+                _Free := _TotalFreeQty_ItemWise;
+                exit(_Free);
+            end;
+
+            //Total Physical Qty Item & Variant Wise
+            Clear(_TotalPhysical_Item_VariantWise);
+            L_ItemLedgerEntry.Reset();
+            L_ItemLedgerEntry.SetRange("Item No.", _ItemNo);
+            if L_SaleableLocation = false then
+                L_ItemLedgerEntry.SetRange("Location Code", _LocationCode)
+            else begin
+                L_ItemLedgerEntry.SetRange("Saleable Location", true);
+                L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
+            end;
+            L_ItemLedgerEntry.SetRange("Variant Code", _VariantCode);
+            if L_ItemLedgerEntry.FindSet() then begin
+                L_ItemLedgerEntry.CalcSums(Quantity);
+                _TotalPhysical_Item_VariantWise := L_ItemLedgerEntry.Quantity;
+            end;
+            if _TotalPhysical_Item_VariantWise < 0 then
+                _TotalPhysical_Item_VariantWise := 0;
+
+            //Allocated On SO Existing Order item & Variant Wise
+            Clear(_AllocatedOnSO_Item_VariantWise);
+            L_SalesLine.Reset();
+            L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
+            L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
+            L_SalesLine.SetRange("No.", _ItemNo);
+            if L_SaleableLocation = false then
+                L_SalesLine.SetRange("Location Code", _LocationCode)
+            else
+                L_SalesLine.SetRange("Saleable Location", true);
+            L_SalesLine.SetRange("Variant Code", _VariantCode);
+            L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
+            if L_SalesLine.FindSet() then begin
+                L_SalesLine.CalcSums("Outstanding Qty. (Base)");
+                _AllocatedOnSO_Item_VariantWise := L_SalesLine."Outstanding Qty. (Base)";
+            end;
+            if _AllocatedOnSO_Item_VariantWise < 0 then
+                _AllocatedOnSO_Item_VariantWise := 0;
+
+            //Qty on Pick item wise & Variant Wise++ SBB-579
+            Clear(_QtyonPick_Item_VariantWise);
+            L_warehouseActivityLine.Reset();
+            L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+            L_warehouseActivityLine.SetRange("Item No.", _ItemNo);
+            if L_SaleableLocation = false then
+                L_warehouseActivityLine.SetRange("Location Code", _LocationCode)
+            else
+                L_warehouseActivityLine.SetRange("Saleable Location", true);
+            L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+            L_warehouseActivityLine.SetRange("Variant Code", _VariantCode);
+            if L_warehouseActivityLine.FindSet() then begin
+                L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+                _QtyonPick_Item_VariantWise := L_warehouseActivityLine."Qty. Outstanding (Base)";
+            end;
+            if _QtyonPick_Item_VariantWise < 0 then
+                _QtyonPick_Item_VariantWise := 0;
+
+
+            //Calculate excluding Bin Qty item  & variant wise++
+            Clear(L_ExcludeQty_Item_VariantWise);
+            L_BinContent.Reset();
+            L_BinContent.SetRange("Item No.", _ItemNo);
+            if L_SaleableLocation = true then begin
+                L_BinContent.SetRange("Location Code", _LocationCode);
+                L_BinContent.SetRange("Daily Priority Exist", L_HasVariantSetup);
+            end else
+                L_BinContent.SetRange("Location Code", _LocationCode);
+            L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
+            L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
+            L_BinContent.SetRange("Variant Code", _VariantCode);
+            if L_BinContent.FindSet() then begin
+                repeat
+                    L_BinContent.CalcFields("Quantity (Base)");
+                    L_ExcludeQty_Item_VariantWise += L_BinContent."Quantity (Base)";
+                until L_BinContent.Next() = 0;
+            end;
+            if L_ExcludeQty_Item_VariantWise < 0 then
+                L_ExcludeQty_Item_VariantWise := 0;
+
+            Clear(_TotalFreeQty_Item_VariantWise);
+            _TotalFreeQty_Item_VariantWise := _TotalPhysical_Item_VariantWise - (_AllocatedOnSO_Item_VariantWise + L_ExcludeQty_Item_VariantWise + _QtyonPick_Item_VariantWise);
+            if _TotalFreeQty_Item_VariantWise < 0 then
+                _TotalFreeQty_Item_VariantWise := 0;
+
+            //Final Free Qty++
+            Clear(_Free);
+            _Free := _TotalFreeQty_Item_VariantWise;
+            exit(_Free);
+        end else begin
+            //Total Free qty item wise++
+            Clear(_TotalFreeQty_ItemWise);
+            _TotalFreeQty_ItemWise := _TotalPhysical_ItemWise - (_AllocatedOnSO_ItemWise + L_ExcludeQty_ItemWise + _QtyonPick_ItemWise);
+            _Free := _TotalFreeQty_ItemWise;
+            exit(_Free);
         end;
-
-        if L_ExcludeQty > 0 then
-            _Free := _Free - L_ExcludeQty;
-        //Prathamesh-- SBB-291
-
-        if _Free > 0 then
-            exit(_Free)
-        else
-            exit(0);
-
     end;
 
 
@@ -490,13 +683,20 @@ codeunit 90023 "Inventory Calculation"
         L_Item: Record Item;
         L_ExcludeQty: Decimal;
         L_BinContent: Record "Bin Content";
+        L_HasVariantSetup: Boolean;
+        _QtyonPick: Decimal;
+        L_warehouseActivityLine: Record "Warehouse Activity Line";
     begin
+        // Cache variant setup result
+        Clear(L_HasVariantSetup);
+        L_HasVariantSetup := GetVariantSetup(_ItemNo);
+
         //Pysical+++
         Clear(_Physical);
         L_ItemLedgerEntry.Reset();
         L_ItemLedgerEntry.SetRange("Item No.", _ItemNo);
         L_ItemLedgerEntry.SetRange("Saleable Location", true);
-        L_ItemLedgerEntry.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+        L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
         if L_ItemLedgerEntry.FindSet() then begin
             L_ItemLedgerEntry.CalcSums(Quantity);
             _Physical := L_ItemLedgerEntry.Quantity;
@@ -520,6 +720,20 @@ codeunit 90023 "Inventory Calculation"
         if _AllocatedOnSO < 0 then
             _AllocatedOnSO := 0;
 
+        //Qty on Pick ++ SBB-579
+        Clear(_QtyonPick);
+        L_warehouseActivityLine.Reset();
+        L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
+        L_warehouseActivityLine.SetRange("Item No.", _ItemNo);
+        L_warehouseActivityLine.SetRange("Saleable Location", true);
+        L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+        if L_warehouseActivityLine.FindSet() then begin
+            L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+            _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+        end;
+        if _QtyonPick < 0 then
+            _QtyonPick := 0;
+
         //Web Order Qty++
         Clear(L_WebOrderQty);
         L_Item.Reset();
@@ -528,39 +742,35 @@ codeunit 90023 "Inventory Calculation"
             L_Item.CalcFields("Qty. on Web Order");
             L_WebOrderQty := L_Item."Qty. on Web Order";
         end;
-
-        //Free Qty++
-        Clear(_Free);
-        if L_SaleableLocation = true then
-            _Free := _Physical - (_AllocatedOnSO + L_WebOrderQty)
-        else
-            _Free := _Physical - _AllocatedOnSO;
-
+        if L_WebOrderQty < 0 then
+            L_WebOrderQty := 0;
 
         //Prathamesh++ SBB-291
         Clear(L_ExcludeQty);
         L_BinContent.Reset();
         L_BinContent.SetRange("Item No.", _ItemNo);
-        L_BinContent.SetRange("Saleable Location", true);
+        L_BinContent.SetRange("Location Code", _LocationCode);
         L_BinContent.SetFilter("Quantity (Base)", '>%1', 0);
         L_BinContent.SetFilter("Exclude from free Qty.", '%1', true);
-        L_BinContent.SetRange("Daily Priority Exist", GetVariantSetup(_ItemNo));
+        L_BinContent.SetRange("Daily Priority Exist", L_HasVariantSetup);
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
                 L_ExcludeQty += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;
+        if L_ExcludeQty < 0 then
+            L_ExcludeQty := 0;
 
-        if L_ExcludeQty > 0 then
-            _Free := _Free - L_ExcludeQty;
-        //Prathamesh-- SBB-291
-
-        if _Free > 0 then
-            Exit(_Free)
+        //Free Qty++
+        Clear(_Free);
+        if L_SaleableLocation = true then
+            _Free := _Physical - (_AllocatedOnSO + L_WebOrderQty + _QtyonPick + L_ExcludeQty)
         else
-            exit(0);
-
+            _Free := _Physical - _AllocatedOnSO - _QtyonPick + L_WebOrderQty;
+        if _Free < 0 then
+            _Free := 0;
+        Exit(_Free);
     end;
     //----------------------------------------Sales Order----------------------------------------
 

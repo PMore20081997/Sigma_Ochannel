@@ -217,6 +217,10 @@ page 90017 "Web Order Header"
                     {
                         ApplicationArea = All;
                     }
+                    field("Departure Time"; Rec."Departure Time")
+                    {
+                        ApplicationArea = All;
+                    }
                 }
             }
 

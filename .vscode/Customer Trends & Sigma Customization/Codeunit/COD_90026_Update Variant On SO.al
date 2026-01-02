@@ -170,6 +170,8 @@ codeunit 90026 "Udate Variant on SO"
         QtyOnSO: Decimal;
         PhysicalInventory: Decimal;
         L_Item: Record Item;
+        _qtyonPick: Decimal;
+        L_WarehouseActivityLine: Record "Warehouse Activity Line";
     begin
         //GetSaleable Location++
         Clear(LocationFilter);
@@ -214,7 +216,22 @@ codeunit 90026 "Udate Variant on SO"
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
-        exit(PhysicalInventory - QtyOnSO);
+        //Get Qty on Pick++
+        Clear(_qtyonPick);
+        L_WarehouseActivityLine.Reset();
+        L_WarehouseActivityLine.SetRange("Source Document", L_WarehouseActivityLine."Source Document"::"Sales Order");
+        L_WarehouseActivityLine.SetRange("Item No.", _SalesLine."No.");
+        L_WarehouseActivityLine.SetRange("Location Code", _SalesLine."Location Code");
+        L_WarehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+        L_WarehouseActivityLine.SetRange("Variant Code", _ItemVariant.Code);
+        if L_WarehouseActivityLine.FindSet() then begin
+            L_WarehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
+            _qtyonPick := L_WarehouseActivityLine."Qty. Outstanding (Base)";
+        end;
+        if _qtyonPick < 0 then
+            _qtyonPick := 0;
+
+        exit(PhysicalInventory - QtyOnSO - _qtyonPick);
     end;
 
 

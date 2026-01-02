@@ -519,6 +519,11 @@ table 90003 "Interim Sales Header"
             CalcFormula = sum("Interim Sales Line"."Amount Including VAT" where("Document Type" = const(Order), "Document No" = field("No."), Type = const(Item)));
             DecimalPlaces = 0 : 5;
         }
+        field(126; "Departure Time"; Time)
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Shipping Agent Services"."Departure Time" where("Shipping Agent Code" = field("Shipping Agent Code"), Code = field("Shipping Agent Service Code")));
+        }
     }
 
 

@@ -142,6 +142,7 @@ report 90003 "Check & Split Order"
     local procedure IsSplitRquired(_SalesHeader: Record "Sales Header"): Boolean
     var
         L_SalesLine: Record "Sales Line";
+        L_LocationCode: Record Location;
     begin
         //If Any Line Marked as TOS++
         L_SalesLine.Reset();
@@ -151,6 +152,14 @@ report 90003 "Check & Split Order"
         L_SalesLine.SetFilter("Unable to Pick", '<>%1', '');
         if L_SalesLine.FindFirst() then
             exit(false);
+
+        //Check if location code is saleable++
+        L_LocationCode.Reset();
+        L_LocationCode.SetRange(Code, _SalesHeader."Location Code");
+        if L_LocationCode.FindFirst() then begin
+            if L_LocationCode."Saleable Location" = false then
+                exit(false);
+        end;
 
 
         L_SalesLine.Reset();

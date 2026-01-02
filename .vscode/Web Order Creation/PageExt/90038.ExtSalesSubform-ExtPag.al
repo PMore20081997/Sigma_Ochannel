@@ -5,13 +5,17 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         modify(Quantity)
         {
             trigger OnAfterValidate()
+            var
+                L_RemainingQty: Decimal;
             begin
                 //Ignore Validation From Web Order and Upload From Tempalte+++ 
+                Clear(L_RemainingQty);
                 CurrPage.Update();
                 if Rec."Back Order" = false then begin
                     if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
-                        if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
-                            Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                        L_RemainingQty := G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec);
+                        if Rec.Quantity > L_RemainingQty then
+                            Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', L_RemainingQty, Rec."Document No.", Rec."Line No.", Rec."No.");
                     end;
                 end;
             end;
@@ -19,13 +23,16 @@ pageextension 90038 "Ext Sales Subform" extends "Sales Order Subform"
         modify("Variant Code")
         {
             trigger OnAfterValidate()
+            var
+                L_RemainingQty: Decimal;
             begin
                 //Ignore Validation From Web Order and Upload From Tempalte+++
                 CurrPage.Update();
                 if Rec."Back Order" = false then begin
                     if (Rec.Quantity > 0) AND (Rec.Type = Rec.Type::Item) AND (Rec."Purchasing Code" = '') AND ((Rec."Document Type" = Rec."Document Type"::Order) OR (Rec."Document Type" = Rec."Document Type"::Quote)) then begin
-                        if Rec.Quantity > G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec) then
-                            Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec), Rec."Document No.", Rec."Line No.", Rec."No.");
+                        L_RemainingQty := G_CT_Function.Sales_CheckFreeQuantity_OnValidate(Rec);
+                        if Rec.Quantity > L_RemainingQty then
+                            Error('Quantity should be less than equal to Free Inventory: %1. Order No: %2, Line No: %3, Item No: %4', L_RemainingQty, Rec."Document No.", Rec."Line No.", Rec."No.");
                     end;
                 end;
             end;

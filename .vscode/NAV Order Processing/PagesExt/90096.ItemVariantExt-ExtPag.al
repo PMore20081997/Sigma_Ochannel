@@ -51,7 +51,7 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
-                ToolTip = 'Total Physical - Total SO Allocated';
+                ToolTip = 'Total Physical - Total Allocated on SO (Shipment date ≥ today) - Tota; Allocated on Picks (Shipment date < today)';
             }
             field(Physical; Physical(Rec))
             {
@@ -74,7 +74,7 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 ApplicationArea = All;
                 Editable = false;
                 DecimalPlaces = 0 : 5;
-                ToolTip = 'Physical - Allocated on SO';
+                ToolTip = 'Physical - Allocated on SO (Shipment date ≥ today) - Allocated on Picks (Shipment date < today)';
                 Caption = 'Free';
             }
         }
@@ -84,46 +84,43 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
     var
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         PhysicalInventory: Decimal;
+
+        Query_ILEQuantity: Query "ILE Quantity Query";
     begin
         Clear(PhysicalInventory);
-        L_ItemLedgerEntry.Reset();
-        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
-        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
-        L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            PhysicalInventory := L_ItemLedgerEntry.Quantity;
-        end;
-
-        if PhysicalInventory > 0 then
-            exit(PhysicalInventory)
-        else
-            exit(0);
+        Clear(Query_ILEQuantity);
+        Query_ILEQuantity.SetRange(Item_No_, _Rec."Item No.");
+        Query_ILEQuantity.SetRange(Saleable_Location, true);
+        Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_ILEQuantity.Open();
+        if Query_ILEQuantity.Read() then
+            PhysicalInventory := Query_ILEQuantity.Remaining_Quantity;
+        if PhysicalInventory < 0 then
+            PhysicalInventory := 0;
+        exit(PhysicalInventory);
     end;
 
     local procedure QtyOnSOForSaleableLocation(_Rec: Record "Item Variant"): Decimal
     var
         L_SalesLine: Record "Sales Line";
         QtyOnSO: Decimal;
+
+        Query_SalesLineQuantity: Query "SalesLine Quantity Query";
     begin
         Clear(QtyOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
-        L_SalesLine.SetRange("Variant Code", _Rec.Code);
-        L_SalesLine.SETRANGE("Saleable Location", true);
-        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
-        end;
-
-        if QtyOnSO > 0 then
-            exit(QtyOnSO)
-        else
-            exit(0);
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(No_, _Rec."Item No.");
+        Query_SalesLineQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+        Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+        Query_SalesLineQuantity.Open();
+        if Query_SalesLineQuantity.Read() then
+            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        if QtyOnSO < 0 then
+            QtyOnSO := 0;
+        exit(QtyOnSO);
     end;
 
     local procedure TotalAvailableQty(_Rec: Record "Item Variant"): Decimal
@@ -135,37 +132,37 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         L_BinContent: Record "Bin Content"; //Prathamesh++
         L_ExcludeQty: Decimal; //Prathamesh++
         G_FreeQuantity: Decimal; //Prathamesh++
+        _QtyonPick: Decimal;
+
+        Query_ILEQuantity: Query "ILE Quantity Query";
+        Query_SalesLineQuantity: Query "SalesLine Quantity Query";
     begin
+        //Total Quanity++
         Clear(TotalInventory);
-        L_ItemLedgerEntry.Reset();
-        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
-        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            TotalInventory := L_ItemLedgerEntry.Quantity;
-        end;
+        Clear(Query_ILEQuantity);
+        Query_ILEQuantity.SetRange(Item_No_, _Rec."Item No.");
+        Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_ILEQuantity.Open();
+        if Query_ILEQuantity.Read() then
+            TotalInventory := Query_ILEQuantity.Remaining_Quantity;
         if TotalInventory < 0 then
             TotalInventory := 0;
 
 
+        //Total Allocated on SO++
         Clear(QtyOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
-        L_SalesLine.SetRange("Variant Code", _Rec.Code);
-        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
-        end;
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(No_, _Rec."Item No.");
+        Query_SalesLineQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_SalesLineQuantity.Open();
+        if Query_SalesLineQuantity.Read() then
+            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
-        Clear(G_FreeQuantity);
-        G_FreeQuantity := TotalInventory - QtyOnSO;
-
-        //Prathamesh++ SBB-291
+        //Exclude Qty Prathamesh++ SBB-291
         Clear(L_ExcludeQty);
         L_BinContent.Reset();
         L_BinContent.SetRange("Item No.", _Rec."Item No.");
@@ -175,26 +172,19 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         if L_BinContent.FindSet() then begin
             repeat
                 L_BinContent.CalcFields("Quantity (Base)");
-                //L_ExcludeQty += L_BinContent.CalcQtyAvailToTakeUOM();
                 L_ExcludeQty += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;
-
-        if L_ExcludeQty > 0 then
-            G_FreeQuantity := G_FreeQuantity - L_ExcludeQty;
-
-        if G_FreeQuantity > 0 then
-            exit(G_FreeQuantity)
-        else
-            exit(0);
+        if L_ExcludeQty < 0 then
+            L_ExcludeQty := 0;
 
 
-        // //Old Code+++
-        // _Rec.CalcFields(Inventory, Allocated, "Web Orders Qty");
-        // if (_Rec.Inventory - _Rec.Allocated) > 0 then
-        //     exit(_Rec.Inventory - _Rec.Allocated)
-        // else
-        //     exit(0);
+        //Calculate Total free Qty
+        Clear(G_FreeQuantity);
+        G_FreeQuantity := TotalInventory - QtyOnSO - L_ExcludeQty;
+        if G_FreeQuantity < 0 then
+            G_FreeQuantity := 0;
+        exit(G_FreeQuantity);
     end;
 
     local procedure TotalAvailableQtyForSaleable(_Rec: Record "Item Variant"): Decimal
@@ -206,39 +196,57 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         L_BinContent: Record "Bin Content"; //Prathamesh++
         L_ExcludeQty: Decimal; //Prathamesh++
         G_FreeQuantity: Decimal; //Prathamesh++
+        _QtyonPick: Decimal;
+        L_warehouseActivityLine: Record "Warehouse Activity Line";
+
+
+        Query_ILEQuantity: Query "ILE Quantity Query";
+        Query_SalesLineQuantity: Query "SalesLine Quantity Query";
+        Query_PickQuantity: Query "Pick Quantity Query";
     begin
+        //Total Physical quantity++
         Clear(PhysicalInventory);
-        L_ItemLedgerEntry.Reset();
-        L_ItemLedgerEntry.SETRANGE("Item No.", _Rec."Item No.");
-        L_ItemLedgerEntry.SetRange("Variant Code", _Rec.Code);
-        L_ItemLedgerEntry.SETRANGE("Saleable Location", true);
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            PhysicalInventory := L_ItemLedgerEntry.Quantity;
-        end;
+        Clear(Query_ILEQuantity);
+        Query_ILEQuantity.SetRange(Item_No_, _Rec."Item No.");
+        Query_ILEQuantity.SetRange(Saleable_Location, true);
+        Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_ILEQuantity.Open();
+        if Query_ILEQuantity.Read() then
+            PhysicalInventory := Query_ILEQuantity.Remaining_Quantity;
         if PhysicalInventory < 0 then
             PhysicalInventory := 0;
 
+        //Allocated on SO++
         Clear(QtyOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SETRANGE("No.", _Rec."Item No.");
-        L_SalesLine.SetRange("Variant Code", _Rec.Code);
-        L_SalesLine.SETRANGE("Saleable Location", true);
-        L_SalesLine.SetFilter("Outstanding Quantity", '>%1', 0);
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            QtyOnSO := L_SalesLine."Outstanding Qty. (Base)";
-        end;
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetRange(Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(No_, _Rec."Item No.");
+        Query_SalesLineQuantity.SetRange(Variant_Code, _Rec.code);
+        Query_SalesLineQuantity.SetRange(Saleable_Location, true);
+        Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
+        Query_SalesLineQuantity.Open();
+        if Query_SalesLineQuantity.Read() then
+            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
-        Clear(G_FreeQuantity);
-        G_FreeQuantity := PhysicalInventory - QtyOnSO;
 
-        //Prathamesh++ SBB-291
+        //Qty on Pick item wise++ SBB-579
+        Clear(_QtyonPick);
+        Clear(Query_PickQuantity);
+        Query_PickQuantity.SetRange(Query_PickQuantity.Source_Document, Query_PickQuantity.Source_Document::"Sales Order");
+        Query_PickQuantity.SetRange(Query_PickQuantity.Item_No_, _Rec."Item No.");
+        Query_PickQuantity.SetRange(Variant_Code, _Rec.Code);
+        Query_PickQuantity.SetRange(Query_PickQuantity.Saleable_Location, true);
+        Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
+        Query_PickQuantity.Open();
+        if Query_PickQuantity.Read() then
+            _QtyonPick := Query_PickQuantity.Qty__Outstanding__Base_;
+        if _QtyonPick < 0 then
+            _QtyonPick := 0;
+
+        //Exclude Qty Prathamesh++ SBB-291
         Clear(L_ExcludeQty);
         L_BinContent.Reset();
         L_BinContent.SetRange("Item No.", _Rec."Item No.");
@@ -252,24 +260,14 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
                 L_ExcludeQty += L_BinContent."Quantity (Base)";
             until L_BinContent.Next() = 0;
         end;
+        if L_ExcludeQty < 0 then
+            L_ExcludeQty := 0;
 
-        if L_ExcludeQty > 0 then
-            G_FreeQuantity := G_FreeQuantity - L_ExcludeQty;
-
-        if G_FreeQuantity > 0 then
-            exit(G_FreeQuantity)
-        else
-            exit(0);
-
-
-        // //Old Code+++
-        // _Rec.CalcFields("Qty on SO(Saleable)", "Saleable Inventory", "Web Orders Qty");
-        // if _Rec."Saleable Inventory" > 0 then
-        //     if (_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)") > 0 then
-        //         exit(_Rec."Saleable Inventory" - _Rec."Qty on SO(Saleable)")
-        //     else
-        //         exit(0)
-        // else
-        //     exit(0);
+        //Calculate Free Qty++
+        Clear(G_FreeQuantity);
+        G_FreeQuantity := PhysicalInventory - QtyOnSO - _QtyonPick - L_ExcludeQty;
+        if G_FreeQuantity < 0 then
+            G_FreeQuantity := 0;
+        exit(G_FreeQuantity)
     end;
 }
