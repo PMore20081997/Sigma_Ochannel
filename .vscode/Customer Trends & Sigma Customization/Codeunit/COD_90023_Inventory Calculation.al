@@ -44,6 +44,11 @@ codeunit 90023 "Inventory Calculation"
         L_HasVariantSetup: Boolean;
         _QtyonPick: Decimal;
         L_warehouseActivityLine: Record "Warehouse Activity Line";
+
+
+        Query_ILEQuantity: Query "ILE Quantity Query";
+        Query_SalesLineQuantity: Query "SalesLine Quantity Query";
+        Query_PickQuantity: Query "Pick Quantity Query";
     begin
         // Cache current line qty
         Clear(_CurrentLineQty);
@@ -61,13 +66,13 @@ codeunit 90023 "Inventory Calculation"
 
         //Physical+++
         Clear(_Physical);
-        L_ItemLedgerEntry.Reset();
-        L_ItemLedgerEntry.SetRange("Item No.", _Rec."Item No.");
-        L_ItemLedgerEntry.SetRange("Saleable Location", true);
-        L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
-        if L_ItemLedgerEntry.FindSet() then begin
-            L_ItemLedgerEntry.CalcSums(Quantity);
-            _Physical := L_ItemLedgerEntry.Quantity;
+        Clear(Query_ILEQuantity);
+        Query_ILEQuantity.SetRange(Query_ILEQuantity.Item_No_, _Rec."Item No.");
+        Query_ILEQuantity.SetRange(Query_ILEQuantity.Saleable_Location, true);
+        Query_ILEQuantity.SetRange(Query_ILEQuantity.Daily_Priority_Exist, L_HasVariantSetup);
+        Query_ILEQuantity.Open();
+        while Query_ILEQuantity.Read() do begin
+            _Physical += Query_ILEQuantity.Remaining_Quantity;
         end;
         if _Physical < 0 then
             _Physical := 0;
@@ -75,29 +80,29 @@ codeunit 90023 "Inventory Calculation"
 
         //ALlocated On SO++
         Clear(_AllocatedOnSO);
-        L_SalesLine.Reset();
-        L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-        L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-        L_SalesLine.SetRange("No.", _Rec."Item No.");
-        L_SalesLine.SetRange("Saleable Location", true);
-        L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
-        if L_SalesLine.FindSet() then begin
-            L_SalesLine.CalcSums("Outstanding Qty. (Base)");
-            _AllocatedOnSO := L_SalesLine."Outstanding Qty. (Base)";
+        Clear(Query_SalesLineQuantity);
+        Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.Document_Type, Query_SalesLineQuantity.Document_Type::Order);
+        Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.Type, Query_SalesLineQuantity.Type::Item);
+        Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.No_, _Rec."Item No.");
+        Query_SalesLineQuantity.SetRange(Query_SalesLineQuantity.Saleable_Location, true);
+        Query_SalesLineQuantity.SetFilter(Query_SalesLineQuantity.Shipment_Date, '>=%1', WorkDate());
+        Query_SalesLineQuantity.Open();
+        while Query_SalesLineQuantity.Read() do begin
+            _AllocatedOnSO += Query_SalesLineQuantity.Outstanding_Qty___Base_;
         end;
         if _AllocatedOnSO < 0 then
             _AllocatedOnSO := 0;
 
         //Qty on Pick++ SBB-579
         Clear(_QtyonPick);
-        L_warehouseActivityLine.Reset();
-        L_warehouseActivityLine.SetRange("Source Document", L_warehouseActivityLine."Source Document"::"Sales Order");
-        L_warehouseActivityLine.SetRange("Saleable Location", true);
-        L_warehouseActivityLine.SetRange("Item No.", _Rec."Item No.");
-        L_warehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
-        if L_warehouseActivityLine.FindSet() then begin
-            L_warehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
-            _QtyonPick := L_warehouseActivityLine."Qty. Outstanding (Base)";
+        Clear(Query_PickQuantity);
+        Query_PickQuantity.SetRange(Query_PickQuantity.Source_Document, Query_PickQuantity.Source_Document::"Sales Order");
+        Query_PickQuantity.SetRange(Query_PickQuantity.Saleable_Location, true);
+        Query_PickQuantity.SetRange(Query_PickQuantity.Item_No_, _Rec."Item No.");
+        Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
+        Query_PickQuantity.Open();
+        while Query_PickQuantity.Read() do begin
+            _QtyonPick += Query_PickQuantity.Qty__Outstanding__Base_;
         end;
         if _QtyonPick < 0 then
             _QtyonPick := 0;
@@ -238,8 +243,9 @@ codeunit 90023 "Inventory Calculation"
             Query_SalesLineQuantity.SetRange(Saleable_Location, true);
         Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
         Query_SalesLineQuantity.Open();
-        if Query_SalesLineQuantity.Read() then
-            _AllocatedOnSO_ItemWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        while Query_SalesLineQuantity.Read() do begin
+            _AllocatedOnSO_ItemWise += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        end;
         if _AllocatedOnSO_ItemWise < 0 then
             _AllocatedOnSO_ItemWise := 0;
 
@@ -257,8 +263,9 @@ codeunit 90023 "Inventory Calculation"
             Query_SalesLineQuantity.SetRange(Saleable_Location, true);
         Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
         Query_SalesLineQuantity.Open();
-        if Query_SalesLineQuantity.Read() then
-            _AllocatedOnSO_SameOrderDifferentLine_ItemWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        while Query_SalesLineQuantity.Read() do begin
+            _AllocatedOnSO_SameOrderDifferentLine_ItemWise += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        end;
         if _AllocatedOnSO_SameOrderDifferentLine_ItemWise < 0 then
             _AllocatedOnSO_SameOrderDifferentLine_ItemWise := 0;
 
@@ -274,8 +281,9 @@ codeunit 90023 "Inventory Calculation"
             Query_PickQuantity.SetRange(Query_PickQuantity.Location_Code, _Rec."Location Code");
         Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
         Query_PickQuantity.Open();
-        if Query_PickQuantity.Read() then
-            _QtyonPick_ItemWise := Query_PickQuantity.Qty__Outstanding__Base_;
+        while Query_PickQuantity.Read() do begin
+            _QtyonPick_ItemWise += Query_PickQuantity.Qty__Outstanding__Base_;
+        end;
         if _QtyonPick_ItemWise < 0 then
             _QtyonPick_ItemWise := 0;
 
@@ -358,8 +366,9 @@ codeunit 90023 "Inventory Calculation"
             Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
             Query_SalesLineQuantity.SetRange(Variant_Code, _Rec."Variant Code");
             Query_SalesLineQuantity.Open();
-            if Query_SalesLineQuantity.Read() then
-                _AllocatedOnSO_Item_VariantWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            while Query_SalesLineQuantity.Read() do begin
+                _AllocatedOnSO_Item_VariantWise += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            end;
             if _AllocatedOnSO_Item_VariantWise < 0 then
                 _AllocatedOnSO_Item_VariantWise := 0;
 
@@ -378,8 +387,9 @@ codeunit 90023 "Inventory Calculation"
             Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
             Query_SalesLineQuantity.SetRange(Variant_Code, _Rec."Variant Code");
             Query_SalesLineQuantity.Open();
-            if Query_SalesLineQuantity.Read() then
-                _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            while Query_SalesLineQuantity.Read() do begin
+                _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+            end;
             if _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise < 0 then
                 _AllocatedOnSO_SameOrderDifferentLine_Item_VariantWise := 0;
 
@@ -395,8 +405,9 @@ codeunit 90023 "Inventory Calculation"
             Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
             Query_PickQuantity.SetRange(Variant_Code, _Rec."Variant Code");
             Query_PickQuantity.Open();
-            if Query_PickQuantity.Read() then
-                _QtyonPick_Item_VariantWise := Query_PickQuantity.Qty__Outstanding__Base_;
+            while Query_PickQuantity.Read() do begin
+                _QtyonPick_Item_VariantWise += Query_PickQuantity.Qty__Outstanding__Base_;
+            end;
             if _QtyonPick_Item_VariantWise < 0 then
                 _QtyonPick_Item_VariantWise := 0;
 

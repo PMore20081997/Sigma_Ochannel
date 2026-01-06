@@ -93,8 +93,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_ILEQuantity.SetRange(Saleable_Location, true);
         Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
         Query_ILEQuantity.Open();
-        if Query_ILEQuantity.Read() then
-            PhysicalInventory := Query_ILEQuantity.Remaining_Quantity;
+        while Query_ILEQuantity.Read() do begin
+            PhysicalInventory += Query_ILEQuantity.Remaining_Quantity;
+        end;
         if PhysicalInventory < 0 then
             PhysicalInventory := 0;
         exit(PhysicalInventory);
@@ -116,8 +117,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_SalesLineQuantity.SetRange(Saleable_Location, true);
         Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
         Query_SalesLineQuantity.Open();
-        if Query_SalesLineQuantity.Read() then
-            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        while Query_SalesLineQuantity.Read() do begin
+            QtyOnSO += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        end;
         if QtyOnSO < 0 then
             QtyOnSO := 0;
         exit(QtyOnSO);
@@ -143,8 +145,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_ILEQuantity.SetRange(Item_No_, _Rec."Item No.");
         Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
         Query_ILEQuantity.Open();
-        if Query_ILEQuantity.Read() then
-            TotalInventory := Query_ILEQuantity.Remaining_Quantity;
+        while Query_ILEQuantity.Read() do begin
+            TotalInventory += Query_ILEQuantity.Remaining_Quantity;
+        end;
         if TotalInventory < 0 then
             TotalInventory := 0;
 
@@ -157,8 +160,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_SalesLineQuantity.SetRange(No_, _Rec."Item No.");
         Query_SalesLineQuantity.SetRange(Variant_Code, _Rec.code);
         Query_SalesLineQuantity.Open();
-        if Query_SalesLineQuantity.Read() then
-            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        while Query_SalesLineQuantity.Read() do begin
+            QtyOnSO += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        end;
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
@@ -211,8 +215,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_ILEQuantity.SetRange(Saleable_Location, true);
         Query_ILEQuantity.SetRange(Variant_Code, _Rec.code);
         Query_ILEQuantity.Open();
-        if Query_ILEQuantity.Read() then
-            PhysicalInventory := Query_ILEQuantity.Remaining_Quantity;
+        while Query_ILEQuantity.Read() do begin
+            PhysicalInventory += Query_ILEQuantity.Remaining_Quantity;
+        end;
         if PhysicalInventory < 0 then
             PhysicalInventory := 0;
 
@@ -226,8 +231,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_SalesLineQuantity.SetRange(Saleable_Location, true);
         Query_SalesLineQuantity.SetFilter(Shipment_Date, '>=%1', WorkDate());
         Query_SalesLineQuantity.Open();
-        if Query_SalesLineQuantity.Read() then
-            QtyOnSO := Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        while Query_SalesLineQuantity.Read() do begin
+            QtyOnSO += Query_SalesLineQuantity.Outstanding_Qty___Base_;
+        end;
         if QtyOnSO < 0 then
             QtyOnSO := 0;
 
@@ -241,8 +247,9 @@ pageextension 90096 "Item Variant Ext" extends "Item Variants"
         Query_PickQuantity.SetRange(Query_PickQuantity.Saleable_Location, true);
         Query_PickQuantity.SetFilter(Query_PickQuantity.Shipment_Date, '<%1', WorkDate());
         Query_PickQuantity.Open();
-        if Query_PickQuantity.Read() then
-            _QtyonPick := Query_PickQuantity.Qty__Outstanding__Base_;
+        while Query_PickQuantity.Read() do begin
+            _QtyonPick += Query_PickQuantity.Qty__Outstanding__Base_;
+        end;
         if _QtyonPick < 0 then
             _QtyonPick := 0;
 
