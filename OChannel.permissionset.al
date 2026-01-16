@@ -254,5 +254,9 @@ permissionset 90000 OChannel
         codeunit "Update Channel Customer" = X,
         query "ILE Quantity Query" = X,
         query "Pick Quantity Query" = X,
-        query "SalesLine Quantity Query" = X;
+        query "SalesLine Quantity Query" = X,
+        tabledata "PODFather Error Management" = RIMD,
+        table "PODFather Error Management" = X,
+        report "Sync POD Job" = X,
+        page "PODFather Error List" = X;
 }

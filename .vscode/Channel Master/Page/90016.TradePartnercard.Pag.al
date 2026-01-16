@@ -98,6 +98,10 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                 }
+                field(PodFather; PodFather)
+                {
+                    ApplicationArea = All;
+                }
                 group("Customer trends")
                 {
                     field("Customer Trend Code"; Rec."Customer Trend Code")

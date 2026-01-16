@@ -2,6 +2,7 @@ codeunit 90038 "POD Father Integration"
 {
     TableNo = "Job Queue Entry";
     Permissions = tabledata 112 = m;
+
     trigger OnRun()
     var
         _Error: Text;
@@ -22,14 +23,14 @@ codeunit 90038 "POD Father Integration"
                 begin
                     UpdateCustomerAndSites_OnPODFatherPortal('', StartParameter);
                 end;
-            'NormalJob':
-                begin
-                    Job_OnPODFatherPortal('', StartParameter);
-                end;
-            'UpdateSalesInvoiceStatus':
-                begin
-                    GetJobAndUpdateSalesInvoice('', StartParameter, _Error);
-                end;
+        // 'NormalJob':
+        //     begin
+        //         Job_OnPODFatherPortal('', StartParameter);
+        //     end;
+        // 'UpdateSalesInvoiceStatus':
+        //     begin
+        //         GetJobAndUpdateSalesInvoice('', StartParameter, _Error);
+        //     end;
 
         end;
 
@@ -875,12 +876,14 @@ codeunit 90038 "POD Father Integration"
     #EndRegion Customer & Site++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     #Region Job++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    procedure Job_OnPODFatherPortal(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10])
+    procedure Job_OnPODFatherPortalNew(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10])
     var
         L_SalesInvoiceHeader: Record "Sales Invoice Header";
         L_Customer: Record Customer;
         L_ShippingAgent: Record "Shipping Agent";
         L_SalesInvoiceLine: Record "Sales Invoice Line";
+
+        L_ePODJobHeader: Record "ePOD Job Header";
     begin
         //Clear All Variable +++
         ClearAll();
@@ -888,10 +891,10 @@ codeunit 90038 "POD Father Integration"
         //Check Mandatory fields+++
         CheckMandatoryfieldForJob(ChannelCode);
 
+        #Region Start Process to sync Run and Normal Job++
         L_SalesInvoiceHeader.Reset();
         if _SalesInvoiceNumber <> '' then
             L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
         L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
         L_SalesInvoiceHeader.Ascending(true);
         if L_SalesInvoiceHeader.FindSet() then begin
@@ -905,80 +908,204 @@ codeunit 90038 "POD Father Integration"
                     L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
                     if L_Customer.FindFirst() then begin
                         if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
-                            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                                L_ShippingAgent.Reset();
-                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                                if L_ShippingAgent.FindFirst() then begin
-                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                        //Create Run If not Available + + +
-                                        if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                                            //Create Job+++
-                                            PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
-                                        end else begin
-                                            if GuiAllowed = true then
-                                                Error(GetLastErrorText);
-                                        end;
-                                    end else begin
-                                        if GuiAllowed = true then
-                                            Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                            L_ShippingAgent.Reset();
+                            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code")
+                            else
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+                            if L_ShippingAgent.FindFirst() then begin
+                                if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+                                    //Create Run details and Loding job HeaderIf not Available + + +
+                                    if PostRunToePODNew(L_SalesInvoiceHeader, ChannelCode) = true then begin
+                                        //Create Job and Loading job line+++
+                                        PostJobToePODNew(L_SalesInvoiceHeader, ChannelCode);
                                     end;
                                 end else begin
-                                    if GuiAllowed = true then
+                                    //Manage Error++
+                                    if GuiAllowed = true then begin
                                         Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                                    end else begin
+                                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Depot %1 is not linked with ePOD', L_ShippingAgent.Code));
+                                    end;
                                 end;
                             end else begin
-                                L_ShippingAgent.Reset();
-                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                                if L_ShippingAgent.FindFirst() then begin
-                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                        //Create Run If not Available + + +
-                                        if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                                            //Create Job+++
-                                            PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
-                                        end else begin
-                                            Error(GetLastErrorText);
-                                        end;
-                                    end else begin
-                                        if GuiAllowed = true then
-                                            Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
-                                    end;
+                                //Manage Error++
+                                if GuiAllowed = true then begin
+                                    Error('Depot %1 is not found in BC', L_ShippingAgent.Code);
                                 end else begin
-                                    if GuiAllowed = true then
-                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                                    InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Depot %1 is not found in BC', L_ShippingAgent.Code))
                                 end;
                             end;
-                            // L_Location.Reset();
-                            // L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
-                            // if L_Location.FindFirst() then begin
-                            //     if (L_Location."Podfather Depot" = true) AND (L_Location."ePOD ID" <> 0) then begin
-                            //         //Create Run If not Available+++
-                            //         if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
-                            //             //Create Job+++
-                            //             PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
-                            //         end else begin
-                            //             Error(GetLastErrorText);
-                            //         end;
-                            //     end;
-                            // end;
                         end else begin
-                            if GuiAllowed = true then
+                            //Manage Error++
+                            if GuiAllowed = true then begin
                                 Error('Customer %1 is not linked with ePOD', L_Customer."No.");
+                            end else begin
+                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Customer %1 is not linked with ePOD', L_Customer."No."))
+                            end;
                         end;
                     end else begin
-                        if GuiAllowed = true then
-                            Error('Customer %1 is not linked with ePOD', L_Customer."No.");
+                        //Manage Error++
+                        if GuiAllowed = true then begin
+                            Error('Customer %1 is not found in BC', L_Customer."No.");
+                        end else begin
+                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Customer %1 is not found in BC', L_Customer."No."))
+                        end;
+                    end;
+                end else begin
+                    //Manage Error++
+                    if GuiAllowed = true then begin
+                        Error('No lines exist for the document no.: %1.', L_SalesInvoiceHeader."No.");
+                    end else begin
+                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('No lines exist for the document no.: %1.', L_SalesInvoiceHeader."No."))
                     end;
                 end;
             until L_SalesInvoiceHeader.Next() = 0;
         end else begin
+            //Manage Error++
             if GuiAllowed = true then
-                Error('No job available for sync');
+                Error('No job available for sync')
+            else
+                InsertErrorLog(Database::"Sales Invoice Header", '', 'No job available for sync')
         end;
+        #EndRegion Start Process to sync Run and Normal Job++
     end;
 
-    local procedure PostRunToePOD(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10]): Boolean
+    local procedure InsertErrorLog(_Type: Integer; _DocumentNo: Code[20]; _Error: Text[2048])
     var
-        L_SalesInvoiceHeader: Record "Sales Invoice Header";
+        L_PODFatherErrorLog: Record "PODFather Error Management";
+        Last_PODFatherErrorLog: Record "PODFather Error Management";
+        LastVersion: Integer;
+    begin
+        Clear(LastVersion);
+        L_PODFatherErrorLog.Reset();
+        L_PODFatherErrorLog.SetRange("Document Type", _Type);
+        L_PODFatherErrorLog.SetRange("Document No.", _DocumentNo);
+        if L_PODFatherErrorLog.FindLast() then
+            LastVersion := L_PODFatherErrorLog."Version No." + 1
+        else
+            LastVersion := 1;
+
+
+        L_PODFatherErrorLog.Init();
+        Last_PODFatherErrorLog.Reset();
+        IF Last_PODFatherErrorLog.FindLast() then
+            L_PODFatherErrorLog."Entry No." := Last_PODFatherErrorLog."Entry No." + 1
+        else
+            L_PODFatherErrorLog."Entry No." := 1;
+        if _Type = 112 then
+            L_PODFatherErrorLog."Document Type" := L_PODFatherErrorLog."Document Type"::"Sales Invoice";
+        L_PODFatherErrorLog."Document No." := _DocumentNo;
+        L_PODFatherErrorLog."Version No." := LastVersion;
+        L_PODFatherErrorLog.Error := _Error;
+        L_PODFatherErrorLog.Insert();
+    end;
+
+
+    // procedure Job_OnPODFatherPortal(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10])
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_Customer: Record Customer;
+    //     L_ShippingAgent: Record "Shipping Agent";
+    //     L_SalesInvoiceLine: Record "Sales Invoice Line";
+    // begin
+    //     //Clear All Variable +++
+    //     ClearAll();
+
+    //     //Check Mandatory fields+++
+    //     CheckMandatoryfieldForJob(ChannelCode);
+
+    //     L_SalesInvoiceHeader.Reset();
+    //     if _SalesInvoiceNumber <> '' then
+    //         L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+    //     L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+    //     L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+    //     L_SalesInvoiceHeader.Ascending(true);
+    //     if L_SalesInvoiceHeader.FindSet() then begin
+    //         repeat
+    //             L_SalesInvoiceLine.Reset();
+    //             L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+    //             L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+    //             L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+    //             if L_SalesInvoiceLine.FindFirst() then begin
+    //                 L_Customer.Reset();
+    //                 L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
+    //                 if L_Customer.FindFirst() then begin
+    //                     if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
+    //                         if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+    //                             L_ShippingAgent.Reset();
+    //                             L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+    //                             if L_ShippingAgent.FindFirst() then begin
+    //                                 if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+    //                                     //Create Run If not Available + + +
+    //                                     if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+    //                                         //Create Job+++
+    //                                         PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+    //                                     end else begin
+    //                                         if GuiAllowed = true then
+    //                                             Error(GetLastErrorText);
+    //                                     end;
+    //                                 end else begin
+    //                                     if GuiAllowed = true then
+    //                                         Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+    //                                 end;
+    //                             end else begin
+    //                                 if GuiAllowed = true then
+    //                                     Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+    //                             end;
+    //                         end else begin
+    //                             L_ShippingAgent.Reset();
+    //                             L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+    //                             if L_ShippingAgent.FindFirst() then begin
+    //                                 if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+    //                                     //Create Run If not Available + + +
+    //                                     if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+    //                                         //Create Job+++
+    //                                         PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+    //                                     end else begin
+    //                                         Error(GetLastErrorText);
+    //                                     end;
+    //                                 end else begin
+    //                                     if GuiAllowed = true then
+    //                                         Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+    //                                 end;
+    //                             end else begin
+    //                                 if GuiAllowed = true then
+    //                                     Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+    //                             end;
+    //                         end;
+    //                         // L_Location.Reset();
+    //                         // L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
+    //                         // if L_Location.FindFirst() then begin
+    //                         //     if (L_Location."Podfather Depot" = true) AND (L_Location."ePOD ID" <> 0) then begin
+    //                         //         //Create Run If not Available+++
+    //                         //         if PostRunToePOD(L_SalesInvoiceHeader."No.", ChannelCode) = true then begin
+    //                         //             //Create Job+++
+    //                         //             PostJobToePOD(L_SalesInvoiceHeader."No.", ChannelCode);
+    //                         //         end else begin
+    //                         //             Error(GetLastErrorText);
+    //                         //         end;
+    //                         //     end;
+    //                         // end;
+    //                     end else begin
+    //                         if GuiAllowed = true then
+    //                             Error('Customer %1 is not linked with ePOD', L_Customer."No.");
+    //                     end;
+    //                 end else begin
+    //                     if GuiAllowed = true then
+    //                         Error('Customer %1 is not linked with ePOD', L_Customer."No.");
+    //                 end;
+    //             end;
+    //         until L_SalesInvoiceHeader.Next() = 0;
+    //     end else begin
+    //         if GuiAllowed = true then
+    //             Error('No job available for sync');
+    //     end;
+    // end;
+
+
+    local procedure PostRunToePODNew(_SalesInvoiceHeader: Record "Sales Invoice Header"; ChannelCode: Code[10]): Boolean
+    var
         L_httpheaders: HttpHeaders;
         L_httpclient: HttpClient;
         L_URL: Text;
@@ -989,102 +1116,215 @@ codeunit 90038 "POD Father Integration"
         JObject1: JsonObject;
         Response: Text;
         InsertRequired: Boolean;
-        L_ePODRun: Record "ePOD Runs";
+        L_ePODJobHeader: Record "ePOD Job Header";
         L_RunID: Integer;
         L_ShippingAgent: Record "Shipping Agent";
+        L_SalesAndReceivablesSetup: Record "Sales & Receivables Setup";
+        NoSeriesManagement: Codeunit "No. Series";
+        L_ShippingAgentCode: Code[20];
+        L_ShippingAgentServiceCode: Code[20];
     begin
-        L_SalesInvoiceHeader.Reset();
-        L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        if L_SalesInvoiceHeader.FindFirst() then begin
-            //Check Run +++
-            if IsRunAvailable(L_SalesInvoiceHeader."No.") = false then begin
-                //Get Credential & URL Detail +++ 
-                GetCredentials(ChannelCode);
+        //Get No Seies Setup++
+        L_SalesAndReceivablesSetup.Get();
+        L_SalesAndReceivablesSetup.TestField("ePOD Job Nos");
 
-                L_httpheaders := L_httpclient.DefaultRequestHeaders;
-                L_URL := ServiceURL + 'runs';
-                L_httpheaders.Add('Accept', 'application/json');
-                L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+        //Check & create Run details +++
+        if IsRunAvailableNew(_SalesInvoiceHeader) = false then begin
+            //Get Credential & URL Detail +++ 
+            GetCredentials(ChannelCode);
 
-                //Create Body+++
-                Clear(body);
-                body := Run_Body(L_SalesInvoiceHeader."No.", ChannelCode);
-                if StrLen(body) = 0 then
-                    exit(false);
+            L_httpheaders := L_httpclient.DefaultRequestHeaders;
+            L_URL := ServiceURL + 'runs';
+            L_httpheaders.Add('Accept', 'application/json');
+            L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-                //Post Order to POD portal++
-                L_httpcontent.WriteFrom(body);
-                L_httpcontent.GetHeaders(L_httpheaders);
-                L_httpheaders.Clear();
-                L_httpheaders.Add('Content-Type', 'application/json');
-                if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
-                    L_httpResponseMessage.Content.ReadAs(Response);
+            //Create Body+++
+            Clear(body);
+            body := Run_Body(_SalesInvoiceHeader."No.", ChannelCode);
+            if StrLen(body) = 0 then
+                exit(false);
 
-                    //Response 200 means Successful+++ 
-                    if L_httpResponseMessage.HttpStatusCode = 200 then begin
-                        //Read the response in JObject+++
-                        JObject.ReadFrom(Response);
-                        JObject1 := GetJsonToken(jObject, 'data').AsObject();
+            //Post Order to POD portal++
+            L_httpcontent.WriteFrom(body);
+            L_httpcontent.GetHeaders(L_httpheaders);
+            L_httpheaders.Clear();
+            L_httpheaders.Add('Content-Type', 'application/json');
+            if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
+                L_httpResponseMessage.Content.ReadAs(Response);
 
-                        //Get ePOD ID+++
-                        Clear(L_RunID);
-                        if JObject1.Contains('id') then begin
-                            L_RunID := GetJsonvalue(JObject1, 'id').AsInteger();
-                            InsertRequired := true;
-                        end else
-                            InsertRequired := false;
+                //Response 200 means Successful+++ 
+                if L_httpResponseMessage.HttpStatusCode = 200 then begin
+                    //Read the response in JObject+++
+                    JObject.ReadFrom(Response);
+                    JObject1 := GetJsonToken(jObject, 'data').AsObject();
 
-                        //++
-                        if InsertRequired = true then begin
-                            L_ePODRun.Reset();
-                            L_ePODRun.SetRange("Run ID", L_RunID);
-                            L_ePODRun.SetRange(Date, L_SalesInvoiceHeader."Shipment Date");
-                            if not L_ePODRun.FindFirst() then begin
-                                L_ePODRun.Init();
-                                L_ePODRun."Run ID" := L_RunID;
-                                L_ePODRun.Date := L_SalesInvoiceHeader."Shipment Date";
-                                //L_ePODRun."Location Code" := L_SalesInvoiceHeader."Location Code";
-                                if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                                    L_ePODRun."Agent Code" := L_SalesInvoiceHeader."Weekend Shipping Agent Code";
-                                    L_ePODRun."Agent Service Code" := L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code";
+                    //Get ePOD ID+++
+                    Clear(L_RunID);
+                    if JObject1.Contains('id') then begin
+                        L_RunID := GetJsonvalue(JObject1, 'id').AsInteger();
+                        InsertRequired := true;
+                    end else
+                        InsertRequired := false;
 
-                                    L_ShippingAgent.Reset();
-                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                                    if L_ShippingAgent.FindFirst() then begin
-                                        L_ePODRun."Depot ID" := L_ShippingAgent."ePOD ID";
-                                    end;
-                                end else begin
-                                    L_ePODRun."Agent Code" := L_SalesInvoiceHeader."Shipping Agent Code";
-                                    L_ePODRun."Agent Service Code" := L_SalesInvoiceHeader."Shipping Agent Service Code";
+                    //Insert Run Details and Loading Header details+++
+                    if InsertRequired = true then begin
+                        Clear(L_ShippingAgentCode);
+                        Clear(L_ShippingAgentServiceCode);
+                        if _SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                            L_ShippingAgentCode := _SalesInvoiceHeader."Weekend Shipping Agent Code";
+                            L_ShippingAgentServiceCode := _SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code";
+                        end else begin
+                            L_ShippingAgentCode := _SalesInvoiceHeader."Shipping Agent Code";
+                            L_ShippingAgentServiceCode := _SalesInvoiceHeader."Shipping Agent Service Code";
+                        end;
 
-                                    L_ShippingAgent.Reset();
-                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                                    if L_ShippingAgent.FindFirst() then begin
-                                        L_ePODRun."Depot ID" := L_ShippingAgent."ePOD ID";
-                                    end;
-                                end;
+                        L_ePODJobHeader.Reset();
+                        L_ePODJobHeader.SetRange("ePOD RunID", L_RunID);
+                        L_ePODJobHeader.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+                        L_ePODJobHeader.SetRange("Shipping Agent Code", L_ShippingAgentCode);
+                        L_ePODJobHeader.SetRange("Shipping Agent Service Code", L_ShippingAgentServiceCode);
+                        if not L_ePODJobHeader.FindFirst() then begin
+                            L_ePODJobHeader.Init();
+                            L_ePODJobHeader."No." := NoSeriesManagement.GetNextNo(L_SalesAndReceivablesSetup."ePOD Job Nos", TODAY, TRUE);
+                            L_ePODJobHeader."ePOD RunID" := L_RunID;
+                            L_ePODJobHeader."Shipment Date" := _SalesInvoiceHeader."Shipment Date";
+                            L_ePODJobHeader."Shipping Agent Code" := L_ShippingAgentCode;
+                            L_ePODJobHeader."Shipping Agent Service Code" := L_ShippingAgentServiceCode;
 
-                                if L_ePODRun.Insert() = true then begin
-                                    L_SalesInvoiceHeader."ePOD RunID" := L_RunID;
-                                    L_SalesInvoiceHeader.Modify();
-                                end else
-                                    Error(GetLastErrorText);
-
-                                //Used Commit method to ignore duplicate record in POD father system++
-                                Commit();
-
-                                exit(true);
+                            L_ShippingAgent.Reset();
+                            L_ShippingAgent.SetRange(Code, L_ShippingAgentCode);
+                            if L_ShippingAgent.FindFirst() then begin
+                                L_ePODJobHeader."Depot ID" := L_ShippingAgent."ePOD ID";
                             end;
+                            L_ePODJobHeader."Customer PO" := 'SIGMA';
+                            L_ePODJobHeader."Synced to ePOD" := false;
+                            L_ePODJobHeader."Consolidated Date & Time" := CurrentDateTime;
+                            L_ePODJobHeader.Insert();
+
+                            //Used Commit method to ignore duplicate record in POD father system++
+                            Commit();
+                            exit(true);
                         end;
                     end;
-                end;
-            end else
-                exit(true);
-        end;
+                end else
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
+            end;
+        end else
+            exit(true);
 
-        //Run is not Synced++
+        //if Run is not Synced++
         exit(false);
     end;
+
+    // local procedure PostRunToePOD(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10]): Boolean
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_httpheaders: HttpHeaders;
+    //     L_httpclient: HttpClient;
+    //     L_URL: Text;
+    //     body: Text;
+    //     L_httpcontent: HttpContent;
+    //     L_httpResponseMessage: HttpResponseMessage;
+    //     jObject: JsonObject;
+    //     JObject1: JsonObject;
+    //     Response: Text;
+    //     InsertRequired: Boolean;
+    //     L_ePODRun: Record "ePOD Runs";
+    //     L_RunID: Integer;
+    //     L_ShippingAgent: Record "Shipping Agent";
+    // begin
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+    //     if L_SalesInvoiceHeader.FindFirst() then begin
+    //         //Check Run +++
+    //         if IsRunAvailable(L_SalesInvoiceHeader."No.") = false then begin
+    //             //Get Credential & URL Detail +++ 
+    //             GetCredentials(ChannelCode);
+
+    //             L_httpheaders := L_httpclient.DefaultRequestHeaders;
+    //             L_URL := ServiceURL + 'runs';
+    //             L_httpheaders.Add('Accept', 'application/json');
+    //             L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+
+    //             //Create Body+++
+    //             Clear(body);
+    //             body := Run_Body(L_SalesInvoiceHeader."No.", ChannelCode);
+    //             if StrLen(body) = 0 then
+    //                 exit(false);
+
+    //             //Post Order to POD portal++
+    //             L_httpcontent.WriteFrom(body);
+    //             L_httpcontent.GetHeaders(L_httpheaders);
+    //             L_httpheaders.Clear();
+    //             L_httpheaders.Add('Content-Type', 'application/json');
+    //             if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
+    //                 L_httpResponseMessage.Content.ReadAs(Response);
+
+    //                 //Response 200 means Successful+++ 
+    //                 if L_httpResponseMessage.HttpStatusCode = 200 then begin
+    //                     //Read the response in JObject+++
+    //                     JObject.ReadFrom(Response);
+    //                     JObject1 := GetJsonToken(jObject, 'data').AsObject();
+
+    //                     //Get ePOD ID+++
+    //                     Clear(L_RunID);
+    //                     if JObject1.Contains('id') then begin
+    //                         L_RunID := GetJsonvalue(JObject1, 'id').AsInteger();
+    //                         InsertRequired := true;
+    //                     end else
+    //                         InsertRequired := false;
+
+    //                     //++
+    //                     if InsertRequired = true then begin
+    //                         L_ePODRun.Reset();
+    //                         L_ePODRun.SetRange("Run ID", L_RunID);
+    //                         L_ePODRun.SetRange(Date, L_SalesInvoiceHeader."Shipment Date");
+    //                         if not L_ePODRun.FindFirst() then begin
+    //                             L_ePODRun.Init();
+    //                             L_ePODRun."Run ID" := L_RunID;
+    //                             L_ePODRun.Date := L_SalesInvoiceHeader."Shipment Date";
+    //                             //L_ePODRun."Location Code" := L_SalesInvoiceHeader."Location Code";
+    //                             if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+    //                                 L_ePODRun."Agent Code" := L_SalesInvoiceHeader."Weekend Shipping Agent Code";
+    //                                 L_ePODRun."Agent Service Code" := L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code";
+
+    //                                 L_ShippingAgent.Reset();
+    //                                 L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+    //                                 if L_ShippingAgent.FindFirst() then begin
+    //                                     L_ePODRun."Depot ID" := L_ShippingAgent."ePOD ID";
+    //                                 end;
+    //                             end else begin
+    //                                 L_ePODRun."Agent Code" := L_SalesInvoiceHeader."Shipping Agent Code";
+    //                                 L_ePODRun."Agent Service Code" := L_SalesInvoiceHeader."Shipping Agent Service Code";
+
+    //                                 L_ShippingAgent.Reset();
+    //                                 L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+    //                                 if L_ShippingAgent.FindFirst() then begin
+    //                                     L_ePODRun."Depot ID" := L_ShippingAgent."ePOD ID";
+    //                                 end;
+    //                             end;
+
+    //                             if L_ePODRun.Insert() = true then begin
+    //                                 L_SalesInvoiceHeader."ePOD RunID" := L_RunID;
+    //                                 L_SalesInvoiceHeader.Modify();
+    //                             end else
+    //                                 Error(GetLastErrorText);
+
+    //                             //Used Commit method to ignore duplicate record in POD father system++
+    //                             Commit();
+
+    //                             exit(true);
+    //                         end;
+    //                     end;
+    //                 end;
+    //             end;
+    //         end else
+    //             exit(true);
+    //     end;
+
+    //     //Run is not Synced++
+    //     exit(false);
+    // end;
 
     local procedure Run_Body(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]): Text
     var
@@ -1102,6 +1342,8 @@ codeunit 90038 "POD Father Integration"
         L_finalDate: Text;
         L_Date: Text;
         L_Time: Text;
+        L_DriverID: Integer;
+        L_ShippingAgentServiceCode: Record "Shipping Agent Services";
     begin
         L_SalesInvoiceHeader.Reset();
         L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
@@ -1121,6 +1363,15 @@ codeunit 90038 "POD Father Integration"
                         exit('');
                     L_DepotID := L_ShippingAgent."ePOD ID";
                 end;
+
+                //Driver ID+++
+                Clear(L_DriverID);
+                L_ShippingAgentServiceCode.Reset();
+                L_ShippingAgentServiceCode.SetRange("Shipping Agent Code", L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+                L_ShippingAgentServiceCode.SetRange(Code, L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
+                if L_ShippingAgentServiceCode.FindFirst() then
+                    L_DriverID := L_ShippingAgentServiceCode."Driver ePOD ID";
+
             end else begin
                 //Name++
                 L_Name := L_SalesInvoiceHeader."Shipping Agent Service Code";
@@ -1134,6 +1385,14 @@ codeunit 90038 "POD Father Integration"
                         exit('');
                     L_DepotID := L_ShippingAgent."ePOD ID";
                 end;
+
+                //Driver ID+++
+                Clear(L_DriverID);
+                L_ShippingAgentServiceCode.Reset();
+                L_ShippingAgentServiceCode.SetRange("Shipping Agent Code", L_SalesInvoiceHeader."Shipping Agent Code");
+                L_ShippingAgentServiceCode.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Service Code");
+                if L_ShippingAgentServiceCode.FindFirst() then
+                    L_DriverID := L_ShippingAgentServiceCode."Driver ePOD ID";
             end;
 
 
@@ -1163,43 +1422,64 @@ codeunit 90038 "POD Father Integration"
             //L_finalDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
             L_finalDate := Format(L_Date) + 'T' + '07' + ':' + '00' + ':' + '00' + 'Z';
 
+            if L_DriverID <> 0 then
+                HeaderRequest := StrSubstNo('{"name":"%1","depot":%2,"date":"%3","driver":%4}', L_Name, L_DepotID, L_finalDate, L_DriverID)
+            else
+                HeaderRequest := StrSubstNo('{"name":"%1","depot":%2,"date":"%3","driver":%4}', L_Name, L_DepotID, L_finalDate, 'null');
 
-            HeaderRequest := StrSubstNo('{"name":"%1","depot":%2,"date":"%3","driver":%4}', L_Name, L_DepotID, L_finalDate, 'null');
             exit(HeaderRequest);
         end;
     end;
 
-    local procedure IsRunAvailable(_SalesInvoiceNumber: Code[20]): Boolean
+    local procedure IsRunAvailableNew(_SalesInvoiceHeader: Record "Sales Invoice Header"): Boolean
     var
-        L_SalesInvoiceHeader: Record "Sales Invoice Header";
-        L_ePODRun: Record "ePOD Runs";
+        L_eJobHeader: Record "ePOD Job Header";
     begin
-        L_SalesInvoiceHeader.Reset();
-        L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        if L_SalesInvoiceHeader.FindFirst() then begin
-            L_ePODRun.Reset();
-            L_ePODRun.SetRange(Date, L_SalesInvoiceHeader."Shipment Date");
-            //L_ePODRun.SetRange("Location Code", L_SalesInvoiceHeader."Location Code");
-            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                L_ePODRun.SetRange("Agent Code", L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                L_ePODRun.SetRange("Agent Service Code", L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
-            end else begin
-                L_ePODRun.SetRange("Agent Code", L_SalesInvoiceHeader."Shipping Agent Code");
-                L_ePODRun.SetRange("Agent Service Code", L_SalesInvoiceHeader."Shipping Agent Service Code");
-            end;
-            L_ePODRun.SetFilter("Run ID", '<>%1', 0);
-            L_ePODRun.SetFilter("Depot ID", '<>%1', 0);
-            if L_ePODRun.FindFirst() then
-                exit(true)
-            else
-                exit(false);
+        L_eJobHeader.Reset();
+        L_eJobHeader.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+        if _SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+            L_eJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Weekend Shipping Agent Code");
+            L_eJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
+        end else begin
+            L_eJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Shipping Agent Code");
+            L_eJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Shipping Agent Service Code");
         end;
+        L_eJobHeader.SetFilter("ePOD RunID", '<>%1', 0);
+        if L_eJobHeader.FindFirst() then
+            exit(true)
+        else
+            exit(false);
     end;
 
+    // local procedure IsRunAvailable(_SalesInvoiceNumber: Code[20]): Boolean
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_ePODRun: Record "ePOD Runs";
+    // begin
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+    //     if L_SalesInvoiceHeader.FindFirst() then begin
+    //         L_ePODRun.Reset();
+    //         L_ePODRun.SetRange(Date, L_SalesInvoiceHeader."Shipment Date");
+    //         //L_ePODRun.SetRange("Location Code", L_SalesInvoiceHeader."Location Code");
+    //         if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+    //             L_ePODRun.SetRange("Agent Code", L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+    //             L_ePODRun.SetRange("Agent Service Code", L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
+    //         end else begin
+    //             L_ePODRun.SetRange("Agent Code", L_SalesInvoiceHeader."Shipping Agent Code");
+    //             L_ePODRun.SetRange("Agent Service Code", L_SalesInvoiceHeader."Shipping Agent Service Code");
+    //         end;
+    //         L_ePODRun.SetFilter("Run ID", '<>%1', 0);
+    //         L_ePODRun.SetFilter("Depot ID", '<>%1', 0);
+    //         if L_ePODRun.FindFirst() then
+    //             exit(true)
+    //         else
+    //             exit(false);
+    //     end;
+    // end;
 
-    local procedure PostJobToePOD(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10])
+    local procedure PostJobToePODNew(_SalesInvoiceHeader: Record "Sales Invoice Header"; ChannelCode: Code[10])
     var
-        L_SalesInvoiceHeader: Record "Sales Invoice Header";
         L_httpheaders: HttpHeaders;
         L_httpclient: HttpClient;
         L_URL: Text;
@@ -1212,80 +1492,164 @@ codeunit 90038 "POD Father Integration"
         Response: Text;
         ModificationRequired: Boolean;
         L_Status: Text;
+        L_ePODJobHeader: Record "ePOD Job Header";
     begin
-        L_SalesInvoiceHeader.Reset();
-        L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        if L_SalesInvoiceHeader.FindFirst() then begin
-            //Get Credential & URL Detail +++ 
-            GetCredentials(ChannelCode);
+        //Get Credential & URL Detail +++ 
+        GetCredentials(ChannelCode);
 
-            L_httpheaders := L_httpclient.DefaultRequestHeaders;
-            L_URL := ServiceURL + 'jobs';
-            L_httpheaders.Add('Accept', 'application/json');
-            L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+        L_httpheaders := L_httpclient.DefaultRequestHeaders;
+        L_URL := ServiceURL + 'jobs';
+        L_httpheaders.Add('Accept', 'application/json');
+        L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-            //Create Body+++
-            Clear(body);
-            body := Job_Body(L_SalesInvoiceHeader."No.", ChannelCode);
-            if StrLen(body) = 0 then begin
-                if GuiAllowed = true then
-                    Error('Job is not synced');
-                exit;
-            end;
+        //Create Body+++
+        Clear(body);
+        body := Job_Body(_SalesInvoiceHeader."No.", ChannelCode);
+        if StrLen(body) = 0 then begin
+            if GuiAllowed = true then
+                Error('Job is not synced');
+            exit;
+        end;
 
-            //Post Order to POD portal++
-            L_httpcontent.WriteFrom(body);
-            L_httpcontent.GetHeaders(L_httpheaders);
-            L_httpheaders.Clear();
-            L_httpheaders.Add('Content-Type', 'application/json');
-            if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
-                L_httpResponseMessage.Content.ReadAs(Response);
+        //Post Order to POD portal++
+        L_httpcontent.WriteFrom(body);
+        L_httpcontent.GetHeaders(L_httpheaders);
+        L_httpheaders.Clear();
+        L_httpheaders.Add('Content-Type', 'application/json');
+        if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
+            L_httpResponseMessage.Content.ReadAs(Response);
 
-                //Response 201 means Successful+++ 
-                if L_httpResponseMessage.HttpStatusCode = 201 then begin
-                    //Read the response in JObject+++
-                    JObject.ReadFrom(Response);
-                    JObject1 := GetJsonToken(jObject, 'job').AsObject();
-                    JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+            //Response 201 means Successful+++ 
+            if L_httpResponseMessage.HttpStatusCode = 201 then begin
+                //Read the response in JObject+++
+                JObject.ReadFrom(Response);
+                JObject1 := GetJsonToken(jObject, 'job').AsObject();
+                JObject2 := GetJsonToken(jObject1, 'data').AsObject();
 
-                    //Get ePOD ID+++
-                    if JObject2.Contains('id') then begin
-                        L_SalesInvoiceHeader."ePOD ID" := GetJsonvalue(JObject2, 'id').AsInteger();
-                        ModificationRequired := true;
-                    end else
-                        ModificationRequired := false;
-
-                    //Get ePOD ID+++
-                    if JObject2.Contains('run') then begin
-                        L_SalesInvoiceHeader."ePOD RunID" := GetJsonvalue(JObject2, 'run').AsInteger();
-                        ModificationRequired := true;
-                    end else
-                        ModificationRequired := false;
-
-                    //Get ePOD Status+++
-                    Clear(L_Status);
-                    L_Status := GetJsonvalue(JObject2, 'status').AsText();
-                    if JObject2.Contains('status') then begin
-                        if GetJsonvalue(JObject2, 'status').AsText() = 'allocated' then
-                            L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Allocated
-                        else
-                            if GetJsonvalue(JObject2, 'status').AsText() = 'unallocated' then
-                                L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unallocated;
-                        ModificationRequired := true;
-                    end else
-                        ModificationRequired := false;
-
-
-                    //++
-                    if ModificationRequired = true then begin
-                        L_SalesInvoiceHeader.Modify();
-                        //Remove duplicate Invoice in POD father System++
-                        Commit();
-                    end;
+                //Insert into epodJob list+++
+                L_ePODJobHeader.Reset();
+                L_ePODJobHeader.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+                L_ePODJobHeader.SetRange("ePOD RunID", GetJsonvalue(JObject2, 'run').AsInteger());
+                if _SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                    L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Weekend Shipping Agent Code");
+                    L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
+                end else begin
+                    L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Shipping Agent Code");
+                    L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Shipping Agent Service Code");
                 end;
-            end
+                if L_ePODJobHeader.FindFirst() then begin
+                    //Create epod Loading job Details in BC++
+                    CreateLineNew(_SalesInvoiceHeader, L_ePODJobHeader, GetJsonvalue(JObject2, 'id').AsInteger());
+
+                    //Start syncing to podfather++
+                    if L_ePODJobHeader."Synced to ePOD" = false then begin
+                        //create new Loading Job in podfather 
+                        PostConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+                    end else begin
+                        //Update Normal Job in to existing loading job in podfather
+                        UpdateConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+                    end;
+
+                end;
+                // else begin
+                //     InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Run list is miising for %1', GetJsonvalue(JObject2, 'run').AsInteger()))
+                // end;
+            end else begin
+                InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
+            end;
         end;
     end;
+
+
+    // local procedure PostJobToePOD(_SalesInvoiceNumber: Code[20]; ChannelCode: Code[10])
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_httpheaders: HttpHeaders;
+    //     L_httpclient: HttpClient;
+    //     L_URL: Text;
+    //     body: Text;
+    //     L_httpcontent: HttpContent;
+    //     L_httpResponseMessage: HttpResponseMessage;
+    //     jObject: JsonObject;
+    //     JObject1: JsonObject;
+    //     JObject2: JsonObject;
+    //     Response: Text;
+    //     ModificationRequired: Boolean;
+    //     L_Status: Text;
+    // begin
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+    //     if L_SalesInvoiceHeader.FindFirst() then begin
+    //         //Get Credential & URL Detail +++ 
+    //         GetCredentials(ChannelCode);
+
+    //         L_httpheaders := L_httpclient.DefaultRequestHeaders;
+    //         L_URL := ServiceURL + 'jobs';
+    //         L_httpheaders.Add('Accept', 'application/json');
+    //         L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+
+    //         //Create Body+++
+    //         Clear(body);
+    //         body := Job_Body(L_SalesInvoiceHeader."No.", ChannelCode);
+    //         if StrLen(body) = 0 then begin
+    //             if GuiAllowed = true then
+    //                 Error('Job is not synced');
+    //             exit;
+    //         end;
+
+    //         //Post Order to POD portal++
+    //         L_httpcontent.WriteFrom(body);
+    //         L_httpcontent.GetHeaders(L_httpheaders);
+    //         L_httpheaders.Clear();
+    //         L_httpheaders.Add('Content-Type', 'application/json');
+    //         if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
+    //             L_httpResponseMessage.Content.ReadAs(Response);
+
+    //             //Response 201 means Successful+++ 
+    //             if L_httpResponseMessage.HttpStatusCode = 201 then begin
+    //                 //Read the response in JObject+++
+    //                 JObject.ReadFrom(Response);
+    //                 JObject1 := GetJsonToken(jObject, 'job').AsObject();
+    //                 JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+
+    //                 //Get ePOD ID+++
+    //                 if JObject2.Contains('id') then begin
+    //                     L_SalesInvoiceHeader."ePOD ID" := GetJsonvalue(JObject2, 'id').AsInteger();
+    //                     ModificationRequired := true;
+    //                 end else
+    //                     ModificationRequired := false;
+
+    //                 //Get ePOD ID+++
+    //                 if JObject2.Contains('run') then begin
+    //                     L_SalesInvoiceHeader."ePOD RunID" := GetJsonvalue(JObject2, 'run').AsInteger();
+    //                     ModificationRequired := true;
+    //                 end else
+    //                     ModificationRequired := false;
+
+    //                 //Get ePOD Status+++
+    //                 Clear(L_Status);
+    //                 L_Status := GetJsonvalue(JObject2, 'status').AsText();
+    //                 if JObject2.Contains('status') then begin
+    //                     if GetJsonvalue(JObject2, 'status').AsText() = 'allocated' then
+    //                         L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Allocated
+    //                     else
+    //                         if GetJsonvalue(JObject2, 'status').AsText() = 'unallocated' then
+    //                             L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unallocated;
+    //                     ModificationRequired := true;
+    //                 end else
+    //                     ModificationRequired := false;
+
+
+    //                 //++
+    //                 if ModificationRequired = true then begin
+    //                     L_SalesInvoiceHeader.Modify();
+    //                     //Remove duplicate Invoice in POD father System++
+    //                     Commit();
+    //                 end;
+    //             end;
+    //         end
+    //     end;
+    // end;
 
     // local procedure Job_Body(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]): Text
     // var
@@ -1391,7 +1755,6 @@ codeunit 90038 "POD Father Integration"
         L_finalEndDate: Text;
         L_Date: Text;
         L_Time: Text;
-        L_Runs: Record "ePOD Runs";
         L_ePODRunID: Integer;
         L_DropNumber: Integer;
         L_KnappOrderResponse: Record "Knapp Order Response";
@@ -1405,6 +1768,9 @@ codeunit 90038 "POD Father Integration"
         L_Group: Text;
         L_Item: Record Item;
         L_WarhouseClass: Record "Warehouse Class";
+        ShippingAgentCodeFilter: Code[20];
+        ShippingAgentServiceCodeFilter: Code[20];
+        L_ePODJobHeader: Record "ePOD Job Header";
     begin
         L_SalesInvoiceHeader.Reset();
         L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
@@ -1496,24 +1862,21 @@ codeunit 90038 "POD Father Integration"
 
             //Get RunID+++
             Clear(L_ePODRunID);
-            if L_SalesInvoiceHeader."ePOD RunID" <> 0 then begin
-                L_ePODRunID := L_SalesInvoiceHeader."ePOD RunID";
-            end else begin
-                L_Runs.Reset();
-                //L_Runs.SetRange("Location Code", L_SalesInvoiceHeader."Location Code");
-                IF L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                    L_Runs.SetRange("Agent Code", L_SalesInvoiceHeader."Weekend Shipping Agent Code");
-                    L_Runs.SetRange("Agent Service Code", L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
-                end ELSE begin
-                    L_Runs.SetRange("Agent Code", L_SalesInvoiceHeader."Shipping Agent Code");
-                    L_Runs.SetRange("Agent Service Code", L_SalesInvoiceHeader."Shipping Agent Service Code");
-                end;
-                L_Runs.SetRange(Date, L_SalesInvoiceHeader."Shipment Date");
-                L_Runs.SetFilter("Run ID", '<>%1', 0);
-                if L_Runs.FindFirst() then begin
-                    L_ePODRunID := L_Runs."Run ID";
-                end;
+            Clear(ShippingAgentCodeFilter);
+            Clear(ShippingAgentServiceCodeFilter);
+            IF L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                ShippingAgentCodeFilter := L_SalesInvoiceHeader."Weekend Shipping Agent Code";
+                ShippingAgentServiceCodeFilter := L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code";
+            end ELSE begin
+                ShippingAgentCodeFilter := L_SalesInvoiceHeader."Shipping Agent Code";
+                ShippingAgentServiceCodeFilter := L_SalesInvoiceHeader."Shipping Agent Service Code";
             end;
+            L_ePODJobHeader.Reset();
+            L_ePODJobHeader.SetRange("Shipment Date", L_SalesInvoiceHeader."Shipment Date");
+            L_ePODJobHeader.SetRange("Shipping Agent Code", ShippingAgentCodeFilter);
+            L_ePODJobHeader.SetRange("Shipping Agent Service Code", ShippingAgentServiceCodeFilter);
+            if L_ePODJobHeader.FindFirst() then
+                L_ePODRunID := L_ePODJobHeader."ePOD RunID";
 
             //Get Drop Number+++
             Clear(L_DropNumber);
@@ -1534,8 +1897,6 @@ codeunit 90038 "POD Father Integration"
             //Check Mandatory fields++
             if (L_CustomerSiteID = 0) AND (L_CustomerePODID = 0) AND (L_LocationePODID = 0) AND (L_TemplateID = 0) AND (L_SalesInvoiceHeader."Shipment Date" = 0D) AND (L_ePODRunID = 0) AND (L_DropNumber = 0) then
                 exit('');
-
-
 
 
             //Create Header++
@@ -1781,109 +2142,109 @@ codeunit 90038 "POD Father Integration"
     End;
 
 
-    procedure GetJobAndUpdateSalesInvoice(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]; var _ErrorMessage: Text)
-    var
-        L_salesInvoiceHeader: Record "Sales Invoice Header";
-        L_httpheaders: HttpHeaders;
-        L_httpclient: HttpClient;
-        L_URL: Text;
-        body: Text;
-        L_httpcontent: HttpContent;
-        L_httpResponseMessage: HttpResponseMessage;
-        jObject: JsonObject;
-        JObject1: JsonObject;
-        //JObject2: JsonObject;
-        Response: Text;
-        ModificationRequired: Boolean;
-        L_Status: Text;
-    begin
-        //Clear All Variable +++
-        ClearAll();
+    // procedure GetJobAndUpdateSalesInvoice(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]; var _ErrorMessage: Text)
+    // var
+    //     L_salesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_httpheaders: HttpHeaders;
+    //     L_httpclient: HttpClient;
+    //     L_URL: Text;
+    //     body: Text;
+    //     L_httpcontent: HttpContent;
+    //     L_httpResponseMessage: HttpResponseMessage;
+    //     jObject: JsonObject;
+    //     JObject1: JsonObject;
+    //     //JObject2: JsonObject;
+    //     Response: Text;
+    //     ModificationRequired: Boolean;
+    //     L_Status: Text;
+    // begin
+    //     //Clear All Variable +++
+    //     ClearAll();
 
-        //Check Mandatory fields+++
-        CheckMandatoryfieldForJob(_ChannelCode);
+    //     //Check Mandatory fields+++
+    //     CheckMandatoryfieldForJob(_ChannelCode);
 
-        L_salesInvoiceHeader.Reset();
-        if _SalesInvoiceNumber <> '' then
-            L_salesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
-        L_salesInvoiceHeader.SetFilter("ePOD ID", '<>%1', 0);
-        L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
-        L_SalesInvoiceHeader.Ascending(true);
-        if L_salesInvoiceHeader.FindSet() then begin
-            repeat
-                //Get Credential & URL Detail +++ 
-                GetCredentials(_ChannelCode);
+    //     L_salesInvoiceHeader.Reset();
+    //     if _SalesInvoiceNumber <> '' then
+    //         L_salesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+    //     L_salesInvoiceHeader.SetFilter("ePOD ID", '<>%1', 0);
+    //     L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+    //     L_SalesInvoiceHeader.Ascending(true);
+    //     if L_salesInvoiceHeader.FindSet() then begin
+    //         repeat
+    //             //Get Credential & URL Detail +++ 
+    //             GetCredentials(_ChannelCode);
 
-                L_httpheaders := L_httpclient.DefaultRequestHeaders;
-                L_URL := ServiceURL + 'jobs/' + Format(L_salesInvoiceHeader."ePOD ID");
-                L_httpheaders.Add('Accept', 'application/json');
-                L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+    //             L_httpheaders := L_httpclient.DefaultRequestHeaders;
+    //             L_URL := ServiceURL + 'jobs/' + Format(L_salesInvoiceHeader."ePOD ID");
+    //             L_httpheaders.Add('Accept', 'application/json');
+    //             L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-                if L_httpclient.Get(L_URL, L_httpResponseMessage) then begin
-                    L_httpResponseMessage.Content.ReadAs(Response);
+    //             if L_httpclient.Get(L_URL, L_httpResponseMessage) then begin
+    //                 L_httpResponseMessage.Content.ReadAs(Response);
 
-                    //Response 200 means Successful+++ 
-                    if L_httpResponseMessage.HttpStatusCode = 200 then begin
-                        //Read the response in JObject+++
-                        JObject.ReadFrom(Response);
-                        JObject1 := GetJsonToken(jObject, 'data').AsObject();
-                        //JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+    //                 //Response 200 means Successful+++ 
+    //                 if L_httpResponseMessage.HttpStatusCode = 200 then begin
+    //                     //Read the response in JObject+++
+    //                     JObject.ReadFrom(Response);
+    //                     JObject1 := GetJsonToken(jObject, 'data').AsObject();
+    //                     //JObject2 := GetJsonToken(jObject1, 'data').AsObject();
 
-                        //Get ePOD Status+++
-                        Clear(L_Status);
-                        L_Status := GetJsonvalue(JObject1, 'status').AsText();
-                        if JObject1.Contains('status') then begin
-                            if GetJsonvalue(JObject1, 'status').AsText() = 'allocated' then
-                                L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Allocated
-                            else
-                                if GetJsonvalue(JObject1, 'status').AsText() = 'unallocated' then
-                                    L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unallocated
-                                else
-                                    if GetJsonvalue(JObject1, 'status').AsText() = 'pending' then
-                                        L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Pending
-                                    else
-                                        if GetJsonvalue(JObject1, 'status').AsText() = 'deleted' then
-                                            L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Deleted
-                                        else
-                                            if GetJsonvalue(JObject1, 'status').AsText() = 'cancelled' then
-                                                L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Cancelled
-                                            else
-                                                if GetJsonvalue(JObject1, 'status').AsText() = 'on_run' then
-                                                    L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::On_Run
-                                                else
-                                                    if GetJsonvalue(JObject1, 'status').AsText() = 'on_handheld' then
-                                                        L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::On_Handheld
-                                                    else
-                                                        if GetJsonvalue(JObject1, 'status').AsText() = 'completed' then
-                                                            L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Completed
-                                                        else
-                                                            if GetJsonvalue(JObject1, 'status').AsText() = 'unknown' then
-                                                                L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unknown;
+    //                     //Get ePOD Status+++
+    //                     Clear(L_Status);
+    //                     L_Status := GetJsonvalue(JObject1, 'status').AsText();
+    //                     if JObject1.Contains('status') then begin
+    //                         if GetJsonvalue(JObject1, 'status').AsText() = 'allocated' then
+    //                             L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Allocated
+    //                         else
+    //                             if GetJsonvalue(JObject1, 'status').AsText() = 'unallocated' then
+    //                                 L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unallocated
+    //                             else
+    //                                 if GetJsonvalue(JObject1, 'status').AsText() = 'pending' then
+    //                                     L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Pending
+    //                                 else
+    //                                     if GetJsonvalue(JObject1, 'status').AsText() = 'deleted' then
+    //                                         L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Deleted
+    //                                     else
+    //                                         if GetJsonvalue(JObject1, 'status').AsText() = 'cancelled' then
+    //                                             L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Cancelled
+    //                                         else
+    //                                             if GetJsonvalue(JObject1, 'status').AsText() = 'on_run' then
+    //                                                 L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::On_Run
+    //                                             else
+    //                                                 if GetJsonvalue(JObject1, 'status').AsText() = 'on_handheld' then
+    //                                                     L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::On_Handheld
+    //                                                 else
+    //                                                     if GetJsonvalue(JObject1, 'status').AsText() = 'completed' then
+    //                                                         L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Completed
+    //                                                     else
+    //                                                         if GetJsonvalue(JObject1, 'status').AsText() = 'unknown' then
+    //                                                             L_SalesInvoiceHeader."ePOD Status" := L_SalesInvoiceHeader."ePOD Status"::Unknown;
 
-                            ModificationRequired := true;
-                        end else
-                            ModificationRequired := false;
+    //                         ModificationRequired := true;
+    //                     end else
+    //                         ModificationRequired := false;
 
 
-                        //++
-                        if ModificationRequired = true then begin
-                            if L_SalesInvoiceHeader."ePOD Status" = L_SalesInvoiceHeader."ePOD Status"::Deleted then begin
-                                if L_SalesInvoiceHeader."ePOD Job Consolidated" = false then begin
-                                    L_SalesInvoiceHeader."ePOD ID" := 0;
-                                    L_SalesInvoiceHeader."ePOD RunID" := 0;
-                                end else begin
-                                    //Message('Job is deleted in ePOD Father but you cannot resend the Invoice %1 to POD Father because this invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.', L_SalesInvoiceHeader."No.")
-                                    _ErrorMessage := 'Job is deleted in ePOD Father but you cannot resend the Invoice to POD Father because the invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.';
-                                end;
-                            end;
-                            L_SalesInvoiceHeader.Modify();
-                        end;
-                    end;
-                end;
+    //                     //++
+    //                     if ModificationRequired = true then begin
+    //                         if L_SalesInvoiceHeader."ePOD Status" = L_SalesInvoiceHeader."ePOD Status"::Deleted then begin
+    //                             if L_SalesInvoiceHeader."ePOD Job Consolidated" = false then begin
+    //                                 L_SalesInvoiceHeader."ePOD ID" := 0;
+    //                                 L_SalesInvoiceHeader."ePOD RunID" := 0;
+    //                             end else begin
+    //                                 //Message('Job is deleted in ePOD Father but you cannot resend the Invoice %1 to POD Father because this invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.', L_SalesInvoiceHeader."No.")
+    //                                 _ErrorMessage := 'Job is deleted in ePOD Father but you cannot resend the Invoice to POD Father because the invoice has already been consolidated and sent. To proceed, delete the Loading Job and try again.';
+    //                             end;
+    //                         end;
+    //                         L_SalesInvoiceHeader.Modify();
+    //                     end;
+    //                 end;
+    //             end;
 
-            until L_salesInvoiceHeader.Next() = 0;
-        end;
-    end;
+    //         until L_salesInvoiceHeader.Next() = 0;
+    //     end;
+    // end;
 
 
     procedure CheckDeleteJobinPODFather(_ePODID: Integer; _ChannelCode: Code[50]): Boolean
@@ -1940,14 +2301,14 @@ codeunit 90038 "POD Father Integration"
         end;
     end;
 
-    procedure UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(_InvoiceNumber: Code[20])
+    procedure UpdateStatus_PostedsalesInvoiceHeader(_InvoiceNumber: Code[20])
     var
         L_PostedSalesInvoiceHeader: Record "Sales Invoice Header";
     begin
         L_PostedSalesInvoiceHeader.Reset();
         L_PostedSalesInvoiceHeader.SetRange("No.", _InvoiceNumber);
         if L_PostedSalesInvoiceHeader.FindFirst() then begin
-            L_PostedSalesInvoiceHeader."ePOD Job Consolidated" := false;
+            L_PostedSalesInvoiceHeader."ePOD Status" := L_PostedSalesInvoiceHeader."ePOD Status"::" ";
             L_PostedSalesInvoiceHeader.Modify();
         end;
     end;
@@ -2019,7 +2380,7 @@ codeunit 90038 "POD Father Integration"
                 L_SalesInvoiceHeader.SetRange("Shipment Date", OrderFilter."Shipment Date");
                 L_SalesInvoiceHeader.SetRange("Customer Synced", OrderFilter."Customer Sync");
                 L_SalesInvoiceHeader.SetRange("Route Synced", OrderFilter."Route Sync");
-                L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+                L_SalesInvoiceHeader.SetRange("ePOD Sync", false);
                 if OrderFilter."Weekend Shipping Agent Code" <> '' then begin
                     L_SalesInvoiceHeader.SetRange("Weekend Shipping Agent Code", OrderFilter."Weekend Shipping Agent Code");
                     L_SalesInvoiceHeader.SetFilter("Weekend Ship. Agnt. Serv. Code", OrderFilter."Weekend Shipping Service Code");
@@ -2042,7 +2403,7 @@ codeunit 90038 "POD Father Integration"
                         end;
 
                         //Process to sync job
-                        Job_OnPODFatherPortal(L_SalesInvoiceHeader."No.", 'EPOD')
+                        Job_OnPODFatherPortalnew(L_SalesInvoiceHeader."No.", 'EPOD')
                     until L_SalesInvoiceHeader.Next() = 0;
 
                     //Final Message++
@@ -2054,26 +2415,7 @@ codeunit 90038 "POD Father Integration"
     #EndRegion Job+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     #Region Consolidated Job++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    procedure ConsolidatedJob_OnPODFatherPortal(ChannelCode: Code[20]; _ePODJobHeader: Record "ePOD Job Header");
-    var
-        L_ePODJobHeader: Record "ePOD Job Header";
-    begin
-        //Clear All Variable +++
-        ClearAll();
-
-        //Check Mandatory fields+++
-        CheckMandatoryfieldForJob(ChannelCode);
-
-        //Create Job+++
-        L_ePODJobHeader.SetRange("No.", _ePODJobHeader."No.");
-        if L_ePODJobHeader.FindFirst() then begin
-            PostConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode);
-        end;
-    end;
-
-
-
-    local procedure PostConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10])
+    local procedure PostConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header")
     var
         L_ePODJobHeader: Record "ePOD Job Header";
         L_httpheaders: HttpHeaders;
@@ -2087,7 +2429,15 @@ codeunit 90038 "POD Father Integration"
         JObject2: JsonObject;
         Response: Text;
         ModificationRequired: Boolean;
+        L_ePODJobLine: Record "ePOD Job Line";
     begin
+        //Clear All Variable +++
+        ClearAll();
+
+        //Check Mandatory fields+++
+        CheckMandatoryfieldForJob(ChannelCode);
+
+
         L_ePODJobHeader.Reset();
         L_ePODJobHeader.SetRange("No.", _JobNo);
         if L_ePODJobHeader.FindFirst() then begin
@@ -2136,7 +2486,15 @@ codeunit 90038 "POD Father Integration"
                         L_ePODJobHeader."Synced to ePOD" := true;
                         L_ePODJobHeader.Modify();
                     end;
-                end;
+
+                    L_ePODJobLine.Reset();
+                    L_ePODJobLine.SetRange("Document No.", L_ePODJobHeader."No.");
+                    L_ePODJobLine.SetRange("Consolidated to Loading Job", false);
+                    if L_ePODJobLine.FindSet() then begin
+                        L_ePODJobLine.ModifyAll("Consolidated to Loading Job", true);
+                    end;
+                end else
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
             end
         end;
     end;
@@ -2166,7 +2524,7 @@ codeunit 90038 "POD Father Integration"
         L_finalEndDate: Text;
         L_Date: Text;
         L_Time: Text;
-        L_Runs: Record "ePOD Runs";
+
         L_ePODRunID: Integer;
         L_DropNumber: Integer;
         L_KnappOrderResponse: Record "Knapp Order Response";
@@ -2330,6 +2688,7 @@ codeunit 90038 "POD Father Integration"
             Clear(LineObj);
             L_ePODJobLine.Reset();
             L_ePODJobLine.SetRange("Document No.", L_ePODJobHeader."No.");
+            L_ePODJobLine.SetRange("Consolidated to Loading Job", false);
             L_ePODJobLine.SetCurrentKey(Group);
             L_ePODJobLine.Ascending(true);
             if L_ePODJobLine.FindSet() then begin
@@ -2375,39 +2734,319 @@ codeunit 90038 "POD Father Integration"
             exit(FinalTextRequest)
         end;
     End;
+
+
+
+    local procedure UpdateConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header")
+    var
+        L_ePODJobHeader: Record "ePOD Job Header";
+        L_httpheaders: HttpHeaders;
+        L_httpclient: HttpClient;
+        L_URL: Text;
+        body: Text;
+        L_httpcontent: HttpContent;
+        L_httpResponseMessage: HttpResponseMessage;
+        jObject: JsonObject;
+        JObject1: JsonObject;
+        JObject2: JsonObject;
+        Response: Text;
+        ModificationRequired: Boolean;
+        L_ePODJobLine: Record "ePOD Job Line";
+    begin
+        //Clear All Variable +++
+        ClearAll();
+
+        //Check Mandatory fields+++
+        CheckMandatoryfieldForJob(ChannelCode);
+
+
+        L_ePODJobHeader.Reset();
+        L_ePODJobHeader.SetRange("No.", _JobNo);
+        if L_ePODJobHeader.FindFirst() then begin
+            //Get Credential & URL Detail +++ 
+            GetCredentials(ChannelCode);
+
+            L_httpheaders := L_httpclient.DefaultRequestHeaders;
+            L_URL := ServiceURL + 'jobs' + '/' + Format(L_ePODJobHeader."ePOD ID");
+            L_httpheaders.Add('Accept', 'application/json');
+            L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+
+            //Create Body+++
+            Clear(body);
+            body := UpdateConsolidatedJob_Body(L_ePODJobHeader."No.", ChannelCode);
+            if StrLen(body) = 0 then begin
+                if GuiAllowed = true then
+                    Error('LoadingJob is not synced');
+                exit;
+            end;
+
+            //Post Order to POD portal++
+            L_httpcontent.WriteFrom(body);
+            L_httpcontent.GetHeaders(L_httpheaders);
+            L_httpheaders.Clear();
+            L_httpheaders.Add('Content-Type', 'application/json');
+            if L_httpclient.Put(L_URL, L_httpcontent, L_httpResponseMessage) then begin
+                L_httpResponseMessage.Content.ReadAs(Response);
+
+                //Response 200 means Successful+++ 
+                if L_httpResponseMessage.HttpStatusCode = 200 then begin
+                    L_ePODJobLine.Reset();
+                    L_ePODJobLine.SetRange("Document No.", L_ePODJobHeader."No.");
+                    L_ePODJobLine.SetRange("Consolidated to Loading Job", false);
+                    if L_ePODJobLine.FindSet() then begin
+                        L_ePODJobLine.ModifyAll("Consolidated to Loading Job", true);
+                    end;
+                end else
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
+            end
+        end;
+    end;
+
+
+    local procedure UpdateConsolidatedJob_Body(_JobNo: Code[20]; _ChannelCode: Code[50]): Text
+    var
+        L_ePODJobHeader: Record "ePOD Job Header";
+        L_ePODJobLine: Record "ePOD Job Line";
+        L_Customer: Record Customer;
+        L_CustomerSiteID: Integer;
+        L_CustomerePODID: Integer;
+        L_Location: Record Location;
+        L_LocationePODID: Integer;
+        L_TemplateID: Integer;
+        TradePartner: Record "Trade Partner";
+        L_SalesInvoiceLine: Record "Sales Invoice Line";
+        JsonObj: JsonObject;
+        JsonValue: JsonValue;
+        LinesArray: JsonArray;
+        LineObj: JsonObject;
+        FieldObj: JsonObject;
+        FinalTextRequest: Text;
+        L_Hour: Code[20];
+        L_Minut: Code[20];
+        L_Second: Code[20];
+        L_finalStartDate: Text;
+        L_finalEndDate: Text;
+        L_Date: Text;
+        L_Time: Text;
+
+        L_ePODRunID: Integer;
+        L_DropNumber: Integer;
+        L_KnappOrderResponse: Record "Knapp Order Response";
+        L_ItemReference: Record "Item Reference";
+        L_SalesShipmentHeader: Record "Sales Shipment Header";
+        L_ShippingAgent: Record "Shipping Agent";
+        L_ShippingAgentServiceCode: Record "Shipping Agent Services";
+        L_DepartureTime: Time;
+        L_StartHour: Integer;
+        L_EndHour: Integer;
+    begin
+        L_ePODJobHeader.Reset();
+        L_ePODJobHeader.SetRange("No.", _JobNo);
+        if L_ePODJobHeader.FindFirst() then begin
+
+            //Get Site++
+            Clear(L_CustomerSiteID);
+            Clear(L_CustomerePODID);
+            L_Customer.Reset();
+            L_Customer.SetRange("Loading ePOD Customer", true);
+            L_Customer.SetRange("Shipping Agent Code", L_ePODJobHeader."Shipping Agent Code");
+            if L_Customer.FindFirst() then begin
+                L_CustomerePODID := L_Customer."ePOD ID";
+                L_CustomerSiteID := L_Customer."Customer Site ID";
+            end;
+
+            //Get Depot ID+++
+            Clear(L_LocationePODID);
+            L_ShippingAgent.Reset();
+            L_ShippingAgent.SetRange(Code, L_ePODJobHeader."Shipping Agent Code");
+            if L_ShippingAgent.FindFirst() then begin
+                L_LocationePODID := L_ShippingAgent."ePOD ID";
+            end;
+
+
+            //Get Teplate ID
+            Clear(L_TemplateID);
+            TradePartner.RESET;
+            if TradePartner.Get(_ChannelCode) then begin
+                L_TemplateID := TradePartner."ePOD Template ID";
+            end;
+
+
+            //Get Start Date+++
+            //Get Date+++
+            Clear(L_Date);
+            L_Date := Format(L_ePODJobHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>');
+
+            //Get Departure Time++
+            Clear(L_DepartureTime);
+            L_ShippingAgentServiceCode.Reset();
+            L_ShippingAgentServiceCode.SetRange("Shipping Agent Code", L_ePODJobHeader."Shipping Agent Code");
+            L_ShippingAgentServiceCode.SetRange(Code, L_ePODJobHeader."Shipping Agent Service Code");
+            if L_ShippingAgentServiceCode.FindFirst() then begin
+                L_DepartureTime := L_ShippingAgentServiceCode."Departure Time";
+            end else
+                L_DepartureTime := Time;
+
+            Clear(L_Hour);
+            Clear(L_StartHour);
+            //L_StartHour := L_DepartureTime.Hour - 1;
+            L_StartHour := L_DepartureTime.Hour;
+            L_Hour := Format(L_StartHour);
+            if StrLen(Format(L_Hour)) = 1 then
+                L_Hour := '0' + L_Hour;
+
+            Clear(L_Minut);
+            L_Minut := Format(L_DepartureTime.Minute);
+            if StrLen(Format(L_Minut)) = 1 then
+                L_Minut := '0' + L_Minut;
+
+            Clear(L_Second);
+            L_Second := Format(L_DepartureTime.Second);
+            if StrLen(Format(L_Second)) = 1 then
+                L_Second := '0' + L_Second;
+
+            Clear(L_finalStartDate);
+            //L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
+
+
+            //Get End Date
+            //Get Date+++
+            Clear(L_Date);
+            L_Date := Format(L_ePODJobHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>');
+
+            //Get Departure Time++
+            Clear(L_DepartureTime);
+            L_ShippingAgentServiceCode.Reset();
+            L_ShippingAgentServiceCode.SetRange("Shipping Agent Code", L_ePODJobHeader."Shipping Agent Code");
+            L_ShippingAgentServiceCode.SetRange(Code, L_ePODJobHeader."Shipping Agent Service Code");
+            if L_ShippingAgentServiceCode.FindFirst() then begin
+                L_DepartureTime := L_ShippingAgentServiceCode."Departure Time";
+            end else
+                L_DepartureTime := Time;
+
+            Clear(L_Hour);
+            Clear(L_EndHour);
+            L_EndHour := L_DepartureTime.Hour + 1;
+            L_Hour := Format(L_EndHour);
+            if StrLen(Format(L_Hour)) = 1 then
+                L_Hour := '0' + L_Hour;
+
+            Clear(L_Minut);
+            L_Minut := Format(L_DepartureTime.Minute);
+            if StrLen(Format(L_Minut)) = 1 then
+                L_Minut := '0' + L_Minut;
+
+            Clear(L_Second);
+            L_Second := Format(L_DepartureTime.Second);
+            if StrLen(Format(L_Second)) = 1 then
+                L_Second := '0' + L_Second;
+
+            Clear(L_finalEndDate);
+            //L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
+
+
+            //Get RunID+++
+            Clear(L_ePODRunID);
+            L_ePODRunID := L_ePODJobHeader."ePOD RunID";
+
+            //Get Drop Number+++
+            Clear(L_DropNumber);
+            // if L_DropNumber = 0 then
+            //     L_DropNumber := 12;
+            L_DropNumber := 0;
+
+            //Check Mandatory fields++
+            if (L_CustomerSiteID = 0) AND (L_CustomerePODID = 0) AND (L_LocationePODID = 0) AND (L_TemplateID = 0) AND (L_ePODJobHeader."Shipment Date" = 0D) AND (L_ePODRunID = 0) AND (L_DropNumber = 0) then
+                exit('');
+
+
+
+            //Create Header++
+            Clear(JsonObj);
+            Clear(JsonValue);
+            JsonObj.Add('site', L_CustomerSiteID);
+            JsonObj.Add('customer', L_CustomerePODID);
+            JsonObj.Add('depot', L_LocationePODID);
+            JsonObj.Add('template', L_TemplateID);
+            JsonObj.Add('run', L_ePODRunID);
+            JsonObj.Add('dueByStart', L_finalStartDate);
+            JsonObj.Add('dueBy', L_finalEndDate);
+            JsonObj.Add('instructions1', '');
+            JsonObj.Add('instructions2', '');
+            JsonObj.Add('provisional', true);
+            JsonObj.Add('dropTime', 60);
+            JsonObj.Add('dropSequence', L_DropNumber);
+            JsonObj.Add('price', 0);
+
+            //Create Fields Object++
+            Clear(FieldObj);
+            JsonObj.Add('fields', FieldObj);
+            FieldObj.Add('Customer PO', L_ePODJobHeader."Customer PO");
+            FieldObj.Add('Internal Job Ref', L_ePODJobHeader."Customer PO");
+
+
+            //Create Line++++
+            Clear(LinesArray);
+            Clear(LineObj);
+            L_ePODJobLine.Reset();
+            L_ePODJobLine.SetRange("Document No.", L_ePODJobHeader."No.");
+            //L_ePODJobLine.SetRange("Consolidated to Loading Job", false);
+            L_ePODJobLine.SetCurrentKey(Group);
+            L_ePODJobLine.Ascending(true);
+            if L_ePODJobLine.FindSet() then begin
+                JsonObj.Add('items', LinesArray);
+                repeat
+                    Clear(LineObj);
+                    LineObj.Add('name', L_ePODJobLine.Group);
+                    LineObj.Add('merchGroup', L_ePODJobLine.Group);
+                    LineObj.Add('productCode', L_ePODJobLine."Product Code");
+                    LineObj.Add('price', 0);
+                    LineObj.Add('weight', 0);
+                    LineObj.Add('quantity', L_ePODJobLine.Quantity);
+                    LineObj.Add('qtyDecimalPlaces', 1);
+                    LineObj.Add('productBarcode', L_ePODJobLine."Product Code");
+                    LinesArray.Add(LineObj);
+                until L_ePODJobLine.Next() = 0;
+            end;
+            Clear(FinalTextRequest);
+            JsonObj.WriteTo(FinalTextRequest);
+            exit(FinalTextRequest)
+        end;
+    End;
     #EndRegion Consolidated Job++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 
     #Region Common function++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    procedure CreateConsolidatedJob(_ePODRunID: Integer; _ShipmentDate: Date; _ShippingAgentCode: Code[20]; _ShippingAgentServiceCode: Code[20]; _HeaderRequired: Boolean)
-    var
-        L_SalesInvoiceHeader: Record "Sales Invoice Header";
-    begin
-        Clear(G_OrderNo);
-        L_SalesInvoiceHeader.Reset();
-        L_SalesInvoiceHeader.SetRange("ePOD Job Consolidated", false);
-        L_SalesInvoiceHeader.SetRange("ePOD RunID", _ePODRunID);
-        L_SalesInvoiceHeader.SetRange("Shipment Date", _ShipmentDate);
-        L_SalesInvoiceHeader.SetFilter("ePOD ID", '>%1', 0);
-        if L_SalesInvoiceHeader.FindSet() then begin
-            repeat
-                if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                    if L_SalesInvoiceHeader."Weekend Shipping Agent Code" = _ShippingAgentCode then
-                        CreateHeaderAndLine(L_SalesInvoiceHeader."No.", _ShippingAgentCode, _ShippingAgentServiceCode, _ShipmentDate, _ePODRunID, _HeaderRequired);
-                end else begin
-                    if L_SalesInvoiceHeader."Shipping Agent Code" = _ShippingAgentCode then
-                        CreateHeaderAndLine(L_SalesInvoiceHeader."No.", _ShippingAgentCode, _ShippingAgentServiceCode, _ShipmentDate, _ePODRunID, _HeaderRequired);
-                end;
-                _HeaderRequired := false;
-            until L_SalesInvoiceHeader.Next() = 0;
-        end;
-    end;
+    // procedure CreateConsolidatedJob(_ePODRunID: Integer; _ShipmentDate: Date; _ShippingAgentCode: Code[20]; _ShippingAgentServiceCode: Code[20]; _HeaderRequired: Boolean)
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    // begin
+    //     Clear(G_OrderNo);
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("ePOD Job Consolidated", false);
+    //     L_SalesInvoiceHeader.SetRange("ePOD RunID", _ePODRunID);
+    //     L_SalesInvoiceHeader.SetRange("Shipment Date", _ShipmentDate);
+    //     L_SalesInvoiceHeader.SetFilter("ePOD ID", '>%1', 0);
+    //     if L_SalesInvoiceHeader.FindSet() then begin
+    //         repeat
+    //             if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+    //                 if L_SalesInvoiceHeader."Weekend Shipping Agent Code" = _ShippingAgentCode then
+    //                     CreateHeaderAndLine(L_SalesInvoiceHeader."No.", _ShippingAgentCode, _ShippingAgentServiceCode, _ShipmentDate, _ePODRunID, _HeaderRequired);
+    //             end else begin
+    //                 if L_SalesInvoiceHeader."Shipping Agent Code" = _ShippingAgentCode then
+    //                     CreateHeaderAndLine(L_SalesInvoiceHeader."No.", _ShippingAgentCode, _ShippingAgentServiceCode, _ShipmentDate, _ePODRunID, _HeaderRequired);
+    //             end;
+    //             _HeaderRequired := false;
+    //         until L_SalesInvoiceHeader.Next() = 0;
+    //     end;
+    // end;
 
 
-    local procedure CreateHeaderAndLine(_InvoiceNo: Code[20]; _ShippingAgentCode: Code[20]; _ShippingAgentServiceCode: Code[20]; _ShipmentDate: Date; _ePODRunID: Integer; _HeaderRequired: Boolean)
+    local procedure CreateLineNew(_InvoiceHeader: Record "Sales Invoice Header"; _ePODJobHeader: Record "ePOD Job Header"; _ePODID: Integer)
     var
-        L_SalesInvoiceHeader: Record "Sales Invoice Header";
         L_ePODRunHeader: Record "ePOD Job Header";
         L_ePODRunLine: Record "ePOD Job Line";
         L_Location: Record Location;
@@ -2420,166 +3059,318 @@ codeunit 90038 "POD Father Integration"
         L_KnappOrderResponse: Record "Knapp Order Response";
         L_ItemReference: Record "Item Reference";
         L_ToteNo: Code[20];
-        L_SalesAndReceivablesSetup: Record "Sales & Receivables Setup";
-        NoSeriesManagement: Codeunit "No. Series";
         L_Group: Text;
         L_Item: Record Item;
         L_WarhouseClass: Record "Warehouse Class";
     begin
-        //Get No Seies Setup++
-        L_SalesAndReceivablesSetup.Get();
-        L_SalesAndReceivablesSetup.TestField("ePOD Job Nos");
+        //Create Line++
+        Clear(L_Group);
+        L_ePODRunHeader.Reset();
+        L_ePODRunHeader.SetRange("No.", _ePODJobHeader."No.");
+        if L_ePODRunHeader.FindFirst() then begin
+            L_Location.Reset();
+            L_Location.SetRange(Code, _InvoiceHeader."Location Code");
+            if L_Location.FindFirst() then begin
+                //For Non KNAPP Lines+++
+                if L_Location."Knapp Location" = false then begin
+                    L_SalesInvoiceLine.Reset();
+                    L_SalesInvoiceLine.SetRange("Document No.", _InvoiceHeader."No.");
+                    L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+                    L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                    if L_SalesInvoiceLine.FindFirst() then begin
+                        //Get Group++
+                        Clear(L_Group);
+                        L_Item.Reset();
+                        L_Item.SetRange("No.", L_SalesInvoiceLine."No.");
+                        if L_Item.FindFirst() then begin
+                            L_WarhouseClass.Reset();
+                            L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                            if L_WarhouseClass.FindFirst() then begin
+                                if L_WarhouseClass.Fridge = true then
+                                    L_Group := '3CC';
 
-        L_SalesInvoiceHeader.Reset();
-        L_SalesInvoiceHeader.SetRange("No.", _InvoiceNo);
-        if L_SalesInvoiceHeader.FindFirst() then begin
-            //Create Header++
-            if _HeaderRequired = true then begin
-                L_ePODRunHeader.Init();
-                L_ePODRunHeader."No." := NoSeriesManagement.GetNextNo(L_SalesAndReceivablesSetup."ePOD Job Nos", TODAY, TRUE);
-                L_ePODRunHeader."ePOD RunID" := _ePODRunID;
-                L_ePODRunHeader."Shipment Date" := _ShipmentDate;
-                L_ePODRunHeader."Shipping Agent Code" := _ShippingAgentCode;
-                L_ePODRunHeader."Shipping Agent Service Code" := _ShippingAgentServiceCode;
-                L_ePODRunHeader."Customer PO" := 'SIGMA';
-                L_ePODRunHeader."Consolidated Date & Time" := CurrentDateTime;
-                L_ePODRunHeader."Synced to ePOD" := false;
-                L_ePODRunHeader.Insert();
-                G_OrderNo := L_ePODRunHeader."No.";
-            end;
-            L_SalesInvoiceHeader."ePOD Job Consolidated" := true;
-            L_SalesInvoiceHeader.Modify();
+                                if L_WarhouseClass.CD = true then
+                                    L_Group := '4SFCD';
 
+                                if L_WarhouseClass.Specials = true then
+                                    L_Group := '5Specials';
 
-            //Create Line++
-            Clear(L_Group);
-            L_ePODRunHeader.Reset();
-            L_ePODRunHeader.SetRange("No.", G_OrderNo);
-            if L_ePODRunHeader.FindFirst() then begin
-                L_Location.Reset();
-                L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
-                if L_Location.FindFirst() then begin
-                    //For Non KNAPP Lines+++
-                    if L_Location."Knapp Location" = false then begin
-                        L_SalesInvoiceLine.Reset();
-                        L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
-                        L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
-                        L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
-                        if L_SalesInvoiceLine.FindFirst() then begin
-                            //Get Group++
-                            Clear(L_Group);
-                            L_Item.Reset();
-                            L_Item.SetRange("No.", L_SalesInvoiceLine."No.");
-                            if L_Item.FindFirst() then begin
-                                L_WarhouseClass.Reset();
-                                L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                if L_WarhouseClass.FindFirst() then begin
-                                    if L_WarhouseClass.Fridge = true then
-                                        L_Group := '3CC';
-
-                                    if L_WarhouseClass.CD = true then
-                                        L_Group := '4SFCD';
-
-                                    if L_WarhouseClass.Specials = true then
-                                        L_Group := '5Specials';
-
-                                    if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) AND (L_WarhouseClass.Specials = false) then
-                                        L_Group := '2Box';
-                                end else
-                                    L_Group := '2Box'
-                            end;
-
-
-                            //Get No of Box++
-                            Clear(L_NoOfBox);
-                            L_ValueEntry.Reset();
-                            L_ValueEntry.SetCurrentKey("Document No.");
-                            L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
-                            L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
-                            L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
-                            if L_ValueEntry.FindFirst() then begin
-                                repeat
-                                    if L_NoOfBox <> 0 then
-                                        break;
-                                    L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
-                                    if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
-                                        if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
-                                            L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
-                                        end;
-                                until L_ValueEntry.Next() = 0;
-                            end;
-
-                            //++
-                            L_ePODRunLine.Init();
-                            L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
-                            L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
-                            Last_ePODRunLine.Reset();
-                            Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
-                            Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
-                            if Last_ePODRunLine.FindLast() then
-                                L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
-                            else
-                                L_ePODRunLine."Line Number" := 10000;
-
-                            L_ePODRunLine."Customer PO" := 'SIGMA';
-                            L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
-                            L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
-                            L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
-                            L_ePODRunLine."BC Invoice Number" := L_SalesInvoiceHeader."No.";
-                            L_ePODRunLine.Group := L_Group;
-                            L_ePODRunLine."Product Code" := L_SalesInvoiceHeader."Order No.";
-                            L_ePODRunLine.Description := L_Group;
-                            L_ePODRunLine.Quantity := L_NoOfBox;
-                            L_ePODRunLine.Insert();
+                                if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) AND (L_WarhouseClass.Specials = false) then
+                                    L_Group := '2Box';
+                            end else
+                                L_Group := '2Box'
                         end;
-                    end else begin
-                        //For KNAPP lines+++
-                        L_SalesInvoiceLine.Reset();
-                        L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
-                        L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
-                        L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
-                        if L_SalesInvoiceLine.FindFirst() then begin
-                            Clear(L_ToteNo);
-                            L_KnappOrderResponse.Reset();
-                            L_KnappOrderResponse.SetRange("Document Type", L_KnappOrderResponse."Document Type"::Order);
-                            L_KnappOrderResponse.SetRange("Document No.", L_SalesInvoiceLine."Order No.");
-                            L_KnappOrderResponse.SetFilter(Quantity, '<>%1', 0);
-                            L_KnappOrderResponse.SetCurrentKey("Load Unit");
-                            L_KnappOrderResponse.Ascending(true);
-                            if L_KnappOrderResponse.FindSet() then begin
-                                repeat
-                                    if L_ToteNo <> L_KnappOrderResponse."Load Unit" then begin
-                                        L_ePODRunLine.Init();
-                                        L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
-                                        L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
-                                        Last_ePODRunLine.Reset();
-                                        Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
-                                        Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
-                                        if Last_ePODRunLine.FindLast() then
-                                            L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
-                                        else
-                                            L_ePODRunLine."Line Number" := 10000;
 
-                                        L_ePODRunLine."Customer PO" := 'SIGMA';
-                                        L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
-                                        L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
-                                        L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
-                                        L_ePODRunLine."BC Invoice Number" := L_SalesInvoiceHeader."No.";
-                                        L_ePODRunLine.Group := '1TOTE';
-                                        L_ePODRunLine."Product Code" := L_KnappOrderResponse."Load Unit";
-                                        L_ePODRunLine.Description := '1TOTE';
-                                        L_ePODRunLine.Quantity := 1;
-                                        L_ePODRunLine.Insert();
+
+                        //Get No of Box++
+                        Clear(L_NoOfBox);
+                        L_ValueEntry.Reset();
+                        L_ValueEntry.SetCurrentKey("Document No.");
+                        L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
+                        L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
+                        L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
+                        if L_ValueEntry.FindFirst() then begin
+                            repeat
+                                if L_NoOfBox <> 0 then
+                                    break;
+                                L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
+                                if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
+                                    if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
+                                        L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
                                     end;
-                                    L_ToteNo := L_KnappOrderResponse."Load Unit";
-                                until L_KnappOrderResponse.Next() = 0;
-                            end;
+                            until L_ValueEntry.Next() = 0;
+                        end;
+
+                        //++
+                        L_ePODRunLine.Init();
+                        L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
+                        L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
+                        Last_ePODRunLine.Reset();
+                        Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
+                        Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
+                        if Last_ePODRunLine.FindLast() then
+                            L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
+                        else
+                            L_ePODRunLine."Line Number" := 10000;
+
+                        L_ePODRunLine."Customer PO" := 'SIGMA';
+                        L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
+                        L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
+                        L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
+                        L_ePODRunLine."BC Invoice Number" := _InvoiceHeader."No.";
+                        L_ePODRunLine.Group := L_Group;
+                        L_ePODRunLine."Product Code" := _InvoiceHeader."Order No.";
+                        L_ePODRunLine.Description := L_Group;
+                        L_ePODRunLine.Quantity := L_NoOfBox;
+                        L_ePODRunLine."ePOD ID" := _ePODID;
+                        L_ePODRunLine."Synced to ePOD" := true;
+                        L_ePODRunLine.Insert();
+                    end;
+                end else begin
+                    //For KNAPP lines+++
+                    L_SalesInvoiceLine.Reset();
+                    L_SalesInvoiceLine.SetRange("Document No.", _InvoiceHeader."No.");
+                    L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+                    L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                    if L_SalesInvoiceLine.FindFirst() then begin
+                        Clear(L_ToteNo);
+                        L_KnappOrderResponse.Reset();
+                        L_KnappOrderResponse.SetRange("Document Type", L_KnappOrderResponse."Document Type"::Order);
+                        L_KnappOrderResponse.SetRange("Document No.", L_SalesInvoiceLine."Order No.");
+                        L_KnappOrderResponse.SetFilter(Quantity, '<>%1', 0);
+                        L_KnappOrderResponse.SetCurrentKey("Load Unit");
+                        L_KnappOrderResponse.Ascending(true);
+                        if L_KnappOrderResponse.FindSet() then begin
+                            repeat
+                                if L_ToteNo <> L_KnappOrderResponse."Load Unit" then begin
+                                    L_ePODRunLine.Init();
+                                    L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
+                                    L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
+                                    Last_ePODRunLine.Reset();
+                                    Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
+                                    Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
+                                    if Last_ePODRunLine.FindLast() then
+                                        L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
+                                    else
+                                        L_ePODRunLine."Line Number" := 10000;
+
+                                    L_ePODRunLine."Customer PO" := 'SIGMA';
+                                    L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
+                                    L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
+                                    L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
+                                    L_ePODRunLine."BC Invoice Number" := _InvoiceHeader."No.";
+                                    L_ePODRunLine.Group := '1TOTE';
+                                    L_ePODRunLine."Product Code" := L_KnappOrderResponse."Load Unit";
+                                    L_ePODRunLine.Description := '1TOTE';
+                                    L_ePODRunLine.Quantity := 1;
+                                    L_ePODRunLine."ePOD ID" := _ePODID;
+                                    L_ePODRunLine."Synced to ePOD" := true;
+                                    L_ePODRunLine.Insert();
+                                end;
+                                L_ToteNo := L_KnappOrderResponse."Load Unit";
+                            until L_KnappOrderResponse.Next() = 0;
                         end;
                     end;
                 end;
             end;
         end;
     end;
+
+    // local procedure CreateHeaderAndLine(_InvoiceNo: Code[20]; _ShippingAgentCode: Code[20]; _ShippingAgentServiceCode: Code[20]; _ShipmentDate: Date; _ePODRunID: Integer; _HeaderRequired: Boolean)
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    //     L_ePODRunHeader: Record "ePOD Job Header";
+    //     L_ePODRunLine: Record "ePOD Job Line";
+    //     L_Location: Record Location;
+    //     L_SalesInvoiceLine: Record "Sales Invoice Line";
+    //     L_NoOfBox: Integer;
+    //     L_ValueEntry: Record "Value Entry";
+    //     L_ItemLedgEntry: Record "Item Ledger Entry";
+    //     L_SalesShipmentHeader: Record "Sales Shipment Header";
+    //     Last_ePODRunLine: Record "ePOD Job Line";
+    //     L_KnappOrderResponse: Record "Knapp Order Response";
+    //     L_ItemReference: Record "Item Reference";
+    //     L_ToteNo: Code[20];
+    //     L_SalesAndReceivablesSetup: Record "Sales & Receivables Setup";
+    //     NoSeriesManagement: Codeunit "No. Series";
+    //     L_Group: Text;
+    //     L_Item: Record Item;
+    //     L_WarhouseClass: Record "Warehouse Class";
+    // begin
+    //     //Get No Seies Setup++
+    //     L_SalesAndReceivablesSetup.Get();
+    //     L_SalesAndReceivablesSetup.TestField("ePOD Job Nos");
+
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("No.", _InvoiceNo);
+    //     if L_SalesInvoiceHeader.FindFirst() then begin
+    //         //Create Header++
+    //         if _HeaderRequired = true then begin
+    //             L_ePODRunHeader.Init();
+    //             L_ePODRunHeader."No." := NoSeriesManagement.GetNextNo(L_SalesAndReceivablesSetup."ePOD Job Nos", TODAY, TRUE);
+    //             L_ePODRunHeader."ePOD RunID" := _ePODRunID;
+    //             L_ePODRunHeader."Shipment Date" := _ShipmentDate;
+    //             L_ePODRunHeader."Shipping Agent Code" := _ShippingAgentCode;
+    //             L_ePODRunHeader."Shipping Agent Service Code" := _ShippingAgentServiceCode;
+    //             L_ePODRunHeader."Customer PO" := 'SIGMA';
+    //             L_ePODRunHeader."Consolidated Date & Time" := CurrentDateTime;
+    //             L_ePODRunHeader."Synced to ePOD" := false;
+    //             L_ePODRunHeader.Insert();
+    //             G_OrderNo := L_ePODRunHeader."No.";
+    //         end;
+    //         L_SalesInvoiceHeader."ePOD Job Consolidated" := true;
+    //         L_SalesInvoiceHeader.Modify();
+
+
+    //         //Create Line++
+    //         Clear(L_Group);
+    //         L_ePODRunHeader.Reset();
+    //         L_ePODRunHeader.SetRange("No.", G_OrderNo);
+    //         if L_ePODRunHeader.FindFirst() then begin
+    //             L_Location.Reset();
+    //             L_Location.SetRange(Code, L_SalesInvoiceHeader."Location Code");
+    //             if L_Location.FindFirst() then begin
+    //                 //For Non KNAPP Lines+++
+    //                 if L_Location."Knapp Location" = false then begin
+    //                     L_SalesInvoiceLine.Reset();
+    //                     L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+    //                     L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+    //                     L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+    //                     if L_SalesInvoiceLine.FindFirst() then begin
+    //                         //Get Group++
+    //                         Clear(L_Group);
+    //                         L_Item.Reset();
+    //                         L_Item.SetRange("No.", L_SalesInvoiceLine."No.");
+    //                         if L_Item.FindFirst() then begin
+    //                             L_WarhouseClass.Reset();
+    //                             L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+    //                             if L_WarhouseClass.FindFirst() then begin
+    //                                 if L_WarhouseClass.Fridge = true then
+    //                                     L_Group := '3CC';
+
+    //                                 if L_WarhouseClass.CD = true then
+    //                                     L_Group := '4SFCD';
+
+    //                                 if L_WarhouseClass.Specials = true then
+    //                                     L_Group := '5Specials';
+
+    //                                 if (L_WarhouseClass.Fridge = false) AND (L_WarhouseClass.CD = false) AND (L_WarhouseClass.Specials = false) then
+    //                                     L_Group := '2Box';
+    //                             end else
+    //                                 L_Group := '2Box'
+    //                         end;
+
+
+    //                         //Get No of Box++
+    //                         Clear(L_NoOfBox);
+    //                         L_ValueEntry.Reset();
+    //                         L_ValueEntry.SetCurrentKey("Document No.");
+    //                         L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
+    //                         L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
+    //                         L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
+    //                         if L_ValueEntry.FindFirst() then begin
+    //                             repeat
+    //                                 if L_NoOfBox <> 0 then
+    //                                     break;
+    //                                 L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
+    //                                 if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
+    //                                     if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
+    //                                         L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
+    //                                     end;
+    //                             until L_ValueEntry.Next() = 0;
+    //                         end;
+
+    //                         //++
+    //                         L_ePODRunLine.Init();
+    //                         L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
+    //                         L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
+    //                         Last_ePODRunLine.Reset();
+    //                         Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
+    //                         Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
+    //                         if Last_ePODRunLine.FindLast() then
+    //                             L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
+    //                         else
+    //                             L_ePODRunLine."Line Number" := 10000;
+
+    //                         L_ePODRunLine."Customer PO" := 'SIGMA';
+    //                         L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
+    //                         L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
+    //                         L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
+    //                         L_ePODRunLine."BC Invoice Number" := L_SalesInvoiceHeader."No.";
+    //                         L_ePODRunLine.Group := L_Group;
+    //                         L_ePODRunLine."Product Code" := L_SalesInvoiceHeader."Order No.";
+    //                         L_ePODRunLine.Description := L_Group;
+    //                         L_ePODRunLine.Quantity := L_NoOfBox;
+    //                         L_ePODRunLine.Insert();
+    //                     end;
+    //                 end else begin
+    //                     //For KNAPP lines+++
+    //                     L_SalesInvoiceLine.Reset();
+    //                     L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+    //                     L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+    //                     L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+    //                     if L_SalesInvoiceLine.FindFirst() then begin
+    //                         Clear(L_ToteNo);
+    //                         L_KnappOrderResponse.Reset();
+    //                         L_KnappOrderResponse.SetRange("Document Type", L_KnappOrderResponse."Document Type"::Order);
+    //                         L_KnappOrderResponse.SetRange("Document No.", L_SalesInvoiceLine."Order No.");
+    //                         L_KnappOrderResponse.SetFilter(Quantity, '<>%1', 0);
+    //                         L_KnappOrderResponse.SetCurrentKey("Load Unit");
+    //                         L_KnappOrderResponse.Ascending(true);
+    //                         if L_KnappOrderResponse.FindSet() then begin
+    //                             repeat
+    //                                 if L_ToteNo <> L_KnappOrderResponse."Load Unit" then begin
+    //                                     L_ePODRunLine.Init();
+    //                                     L_ePODRunLine."Document No." := L_ePODRunHeader."No.";
+    //                                     L_ePODRunLine."ePOD RunID" := L_ePODRunHeader."ePOD RunID";
+    //                                     Last_ePODRunLine.Reset();
+    //                                     Last_ePODRunLine.SetRange("ePOD RunID", L_ePODRunHeader."ePOD RunID");
+    //                                     Last_ePODRunLine.SetRange("Shipment Date", L_ePODRunHeader."Shipment Date");
+    //                                     if Last_ePODRunLine.FindLast() then
+    //                                         L_ePODRunLine."Line Number" := Last_ePODRunLine."Line Number" + 10000
+    //                                     else
+    //                                         L_ePODRunLine."Line Number" := 10000;
+
+    //                                     L_ePODRunLine."Customer PO" := 'SIGMA';
+    //                                     L_ePODRunLine."Shipping Agent Code" := L_ePODRunHeader."Shipping Agent Code";
+    //                                     L_ePODRunLine."Shipping Agent Service Code" := L_ePODRunHeader."Shipping Agent Service Code";
+    //                                     L_ePODRunLine."Shipment Date" := L_ePODRunHeader."Shipment Date";
+    //                                     L_ePODRunLine."BC Invoice Number" := L_SalesInvoiceHeader."No.";
+    //                                     L_ePODRunLine.Group := '1TOTE';
+    //                                     L_ePODRunLine."Product Code" := L_KnappOrderResponse."Load Unit";
+    //                                     L_ePODRunLine.Description := '1TOTE';
+    //                                     L_ePODRunLine.Quantity := 1;
+    //                                     L_ePODRunLine.Insert();
+    //                                 end;
+    //                                 L_ToteNo := L_KnappOrderResponse."Load Unit";
+    //                             until L_KnappOrderResponse.Next() = 0;
+    //                         end;
+    //                     end;
+    //                 end;
+    //             end;
+    //         end;
+    //     end;
+    // end;
 
     procedure GetJsonToken(var JsonObject: JsonObject; TokenKey: text) JsonToken: JsonToken;
     begin
@@ -2620,7 +3411,7 @@ codeunit 90038 "POD Father Integration"
             Error('Channel Partner Missing');
     end;
 
-    local procedure CheckMandatoryfieldForJob(ChannelCode: Code[10])
+    procedure CheckMandatoryfieldForJob(ChannelCode: Code[10])
     var
         TradePartner: Record "Trade Partner";
     begin

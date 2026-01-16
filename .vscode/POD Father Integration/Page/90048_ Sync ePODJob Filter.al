@@ -197,7 +197,7 @@ page 90048 "Sync ePODJob Filter"
         L_SalesInvoiceHeader.SetRange("Shipment Date", P_OrderFilterTable."Shipment Date");
         L_SalesInvoiceHeader.SetRange("Customer Synced", P_OrderFilterTable."Customer Sync");
         L_SalesInvoiceHeader.SetRange("Route Synced", P_OrderFilterTable."Route Sync");
-        L_SalesInvoiceHeader.SetFilter("ePOD ID", '%1', 0);
+        L_SalesInvoiceHeader.SetRange("ePOD Sync", false);
         if P_OrderFilterTable."Weekend Shipping Agent Code" <> '' then begin
             L_SalesInvoiceHeader.SetRange("Weekend Shipping Agent Code", P_OrderFilterTable."Weekend Shipping Agent Code");
             L_SalesInvoiceHeader.SetFilter("Weekend Ship. Agnt. Serv. Code", P_OrderFilterTable."Weekend Shipping Service Code");

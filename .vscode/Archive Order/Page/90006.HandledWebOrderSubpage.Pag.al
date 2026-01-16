@@ -60,6 +60,11 @@ page 90006 "Handled Web Order Subpage"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("Order Date"; Rec."Order Date")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
             }
         }
     }

@@ -33,7 +33,7 @@ tableextension 90002 "OC ePOD Job Header" extends "ePOD Job Header"
                     L_SalesInvoiceHeader.Reset();
                     L_SalesInvoiceHeader.SetRange("No.", L_ePODJobLine."BC Invoice Number");
                     if L_SalesInvoiceHeader.FindFirst() then begin
-                        PODFatherIntegration.UpdateePODJobConsolidatedFeild_PostedsalesInvoiceHeader(L_SalesInvoiceHeader."No.");
+                        PODFatherIntegration.UpdateStatus_PostedsalesInvoiceHeader(L_SalesInvoiceHeader."No.");
                     end;
                 until L_ePODJobLine.Next() = 0;
             end;

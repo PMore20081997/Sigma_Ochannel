@@ -317,6 +317,10 @@ table 90001 "Trade Partner"
         {
 
         }
+        field(75; "PodFather"; Boolean)
+        {
+
+        }
 
     }
     keys

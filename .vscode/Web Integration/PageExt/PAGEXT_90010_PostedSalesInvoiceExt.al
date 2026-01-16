@@ -9,14 +9,14 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                 ApplicationArea = All;
                 Editable = false;
             }
-            field("Customer Synced"; Rec."Customer Synced")
-            {
-                ApplicationArea = All;
-            }
-            field("Route Synced"; Rec."Route Synced")
-            {
-                ApplicationArea = All;
-            }
+            // field("Customer Synced"; Rec."Customer Synced")
+            // {
+            //     ApplicationArea = All;
+            // }
+            // field("Route Synced"; Rec."Route Synced")
+            // {
+            //     ApplicationArea = All;
+            // }
         }
     }
 
@@ -78,56 +78,56 @@ pageextension 90010 PostedSalesInvoiceListExt extends "Posted Sales Invoices"
                     ePODIntegration.OpenRequestPageForePODjobSync();
                 end;
             }
-            action("Update Job")
-            {
-                ApplicationArea = All;
-                Image = Change;
+            // action("Update Job")
+            // {
+            //     ApplicationArea = All;
+            //     Image = Change;
 
-                trigger OnAction()
-                var
-                    L_SalesInvoiceHeader: Record "Sales Invoice Header";
-                    ePODIntegration: Codeunit "POD Father Integration";
-                    L_Error: Text;
-                    Windows: Dialog;
-                    ProgressCount: Integer;
-                    NoOfRecs: Integer;
-                    Count: Integer;
-                begin
-                    Clear(L_Error);
-                    Clear(ProgressCount);
-                    Clear(NoOfRecs);
-                    CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
-                    L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
-                    L_SalesInvoiceHeader.SetFilter("ePOD ID", '>%1', 0);
-                    L_SalesInvoiceHeader.Ascending(true);
-                    if L_SalesInvoiceHeader.FindSet() then begin
-                        Windows.OPEN('Updating Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
-                        NoOfRecs := L_SalesInvoiceHeader.Count;
-                        repeat
-                            ProgressCount += 1;
-                            if NoOfRecs > 0 then begin
-                                if NoOfRecs <= 100 then begin
-                                    Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                end else begin
-                                    IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
-                                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                    END;
-                                end;
-                            end;
+            //     trigger OnAction()
+            //     var
+            //         L_SalesInvoiceHeader: Record "Sales Invoice Header";
+            //         ePODIntegration: Codeunit "POD Father Integration";
+            //         L_Error: Text;
+            //         Windows: Dialog;
+            //         ProgressCount: Integer;
+            //         NoOfRecs: Integer;
+            //         Count: Integer;
+            //     begin
+            //         Clear(L_Error);
+            //         Clear(ProgressCount);
+            //         Clear(NoOfRecs);
+            //         CurrPage.SetSelectionFilter(L_SalesInvoiceHeader);
+            //         L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
+            //         L_SalesInvoiceHeader.SetFilter("ePOD ID", '>%1', 0);
+            //         L_SalesInvoiceHeader.Ascending(true);
+            //         if L_SalesInvoiceHeader.FindSet() then begin
+            //             Windows.OPEN('Updating Orders..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+            //             NoOfRecs := L_SalesInvoiceHeader.Count;
+            //             repeat
+            //                 ProgressCount += 1;
+            //                 if NoOfRecs > 0 then begin
+            //                     if NoOfRecs <= 100 then begin
+            //                         Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+            //                     end else begin
+            //                         IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+            //                             Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+            //                         END;
+            //                     end;
+            //                 end;
 
-                            //Run Process++
-                            ePODIntegration.GetJobAndUpdateSalesInvoice(L_SalesInvoiceHeader."No.", 'EPOD', L_Error);
-                        until L_SalesInvoiceHeader.Next() = 0;
+            //                 //Run Process++
+            //                 ePODIntegration.GetJobAndUpdateSalesInvoice(L_SalesInvoiceHeader."No.", 'EPOD', L_Error);
+            //             until L_SalesInvoiceHeader.Next() = 0;
 
-                        if L_Error <> '' then
-                            Message('%1', L_Error)
-                        else
-                            Message('Process Completed');
+            //             if L_Error <> '' then
+            //                 Message('%1', L_Error)
+            //             else
+            //                 Message('Process Completed');
 
-                    end;
+            //         end;
 
-                end;
-            }
+            //     end;
+            // }
 
             group(EDI)
             {
