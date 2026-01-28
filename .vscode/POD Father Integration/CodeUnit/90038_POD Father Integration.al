@@ -39,6 +39,19 @@ codeunit 90038 "POD Father Integration"
         //UpdateDepot_OnPODFatherPortal('EPOD');
     end;
 
+
+    // procedure UpdateShipmentDate(_InvoiceNumber: Code[20])
+    // var
+    //     L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    // begin
+    //     L_SalesInvoiceHeader.Reset();
+    //     L_SalesInvoiceHeader.SetRange("No.", _InvoiceNumber);
+    //     if L_SalesInvoiceHeader.FindFirst() then begin
+    //         L_SalesInvoiceHeader."Shipment Date" := 20241205D;
+    //         L_SalesInvoiceHeader.Modify();
+    //     end;
+    // end;
+
     #Region Depots +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // procedure Depot_OnPODFatherPortal(_LocationCode: Code[20]; ChannelCode: Code[10])
     // var
@@ -1970,22 +1983,30 @@ codeunit 90038 "POD Father Integration"
                     if L_SalesInvoiceLine.FindFirst() then begin
                         //Get No of Box++
                         Clear(L_NoOfBox);
-                        L_ValueEntry.Reset();
-                        L_ValueEntry.SetCurrentKey("Document No.");
-                        L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
-                        L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
-                        L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
-                        if L_ValueEntry.FindFirst() then begin
-                            repeat
-                                if L_NoOfBox <> 0 then
-                                    break;
-                                L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
-                                if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
-                                    if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
-                                        L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
-                                    end;
-                            until L_ValueEntry.Next() = 0;
+                        L_SalesShipmentHeader.Reset();
+                        L_SalesShipmentHeader.SetRange("Inv. Pick No.", L_SalesInvoiceHeader."Inv. Pick No.");
+                        if L_SalesShipmentHeader.FindFirst() then begin
+                            L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
                         end;
+
+                        //  Clear(L_NoOfBox);
+                        // L_ValueEntry.Reset();
+                        // L_ValueEntry.SetCurrentKey("Document No.");
+                        // L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
+                        // L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
+                        // L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
+                        // if L_ValueEntry.FindFirst() then begin
+                        //     repeat
+                        //         if L_NoOfBox <> 0 then
+                        //             break;
+                        //         L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
+                        //         if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
+                        //             if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
+                        //                 L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
+                        //             end;
+                        //     until L_ValueEntry.Next() = 0;
+                        // end;
+
 
                         //Get Group++
                         Clear(L_Group);
@@ -3104,22 +3125,28 @@ codeunit 90038 "POD Father Integration"
 
                         //Get No of Box++
                         Clear(L_NoOfBox);
-                        L_ValueEntry.Reset();
-                        L_ValueEntry.SetCurrentKey("Document No.");
-                        L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
-                        L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
-                        L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
-                        if L_ValueEntry.FindFirst() then begin
-                            repeat
-                                if L_NoOfBox <> 0 then
-                                    break;
-                                L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
-                                if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
-                                    if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
-                                        L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
-                                    end;
-                            until L_ValueEntry.Next() = 0;
+                        L_SalesShipmentHeader.Reset();
+                        L_SalesShipmentHeader.SetRange("Inv. Pick No.", _InvoiceHeader."Inv. Pick No.");
+                        if L_SalesShipmentHeader.FindFirst() then begin
+                            L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
                         end;
+                        // Clear(L_NoOfBox);
+                        // L_ValueEntry.Reset();
+                        // L_ValueEntry.SetCurrentKey("Document No.");
+                        // L_ValueEntry.SetRange("Document No.", L_SalesInvoiceLine."Document No.");
+                        // L_ValueEntry.SetRange("Document Type", L_ValueEntry."Document Type"::"Sales Invoice");
+                        // L_ValueEntry.SetRange("Document Line No.", L_SalesInvoiceLine."Line No.");
+                        // if L_ValueEntry.FindFirst() then begin
+                        //     repeat
+                        //         if L_NoOfBox <> 0 then
+                        //             break;
+                        //         L_ItemLedgEntry.Get(L_ValueEntry."Item Ledger Entry No.");
+                        //         if L_ItemLedgEntry."Document Type" = L_ItemLedgEntry."Document Type"::"Sales Shipment" then
+                        //             if L_SalesShipmentHeader.Get(L_ItemLedgEntry."Document No.") then begin
+                        //                 L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
+                        //             end;
+                        //     until L_ValueEntry.Next() = 0;
+                        // end;
 
                         //++
                         L_ePODRunLine.Init();

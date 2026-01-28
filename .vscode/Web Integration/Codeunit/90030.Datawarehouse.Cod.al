@@ -58,6 +58,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
         XMLInStream: InStream;
         FileName: Text;
         TempILE1: Record TempILE1;
+        xmlmioclgd: XmlPort mio06CLGD;
+
     begin
 
         #region "mio03" 02
@@ -411,19 +413,6 @@ codeunit 90030 "Datawarehouse-WebDezign"
         CreateGRN();
         #endregion
 
-        #region "mio24" 01
-        Clear(TempBlob);
-        Clear(XMLInStream);
-        Clear(XMLOutStream);
-        FileName := 'mio24.csv';
-        TempBlob.CreateOutStream(XMLOutStream);
-        xmlmio24.SetDestination(XMLOutStream);
-        xmlmio24.Export();
-        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
-        // DownloadFromStream(XMLInStream, '', '', '', FileName);
-        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
-        //TempILE.DeleteAll();
-        #endregion
 
         #region "mio06rc" 29
         Clear(TempBlob);
@@ -436,6 +425,33 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        #endregion
+
+        #region "mio06CLGD" 30
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio06clgd.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmioclgd.SetDestination(XMLOutStream);
+        xmlmioclgd.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        //DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        #endregion
+
+        #region "mio24" 01
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio24.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmio24.SetDestination(XMLOutStream);
+        xmlmio24.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        //TempILE.DeleteAll();
         #endregion
 
     end;

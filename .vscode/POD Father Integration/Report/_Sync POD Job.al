@@ -1,7 +1,7 @@
 report 90004 "Sync POD Job"
 {
-    UsageCategory = ReportsAndAnalysis;
-    ApplicationArea = All;
+    // UsageCategory = ReportsAndAnalysis;
+    // ApplicationArea = All;
     ProcessingOnly = true;
 
     dataset

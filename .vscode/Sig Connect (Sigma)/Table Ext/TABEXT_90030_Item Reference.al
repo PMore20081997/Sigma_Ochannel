@@ -24,5 +24,24 @@ tableextension 90030 "OC Item Reference" extends "Item Reference"
         {
 
         }
+        modify("Reference No.")
+        {
+            trigger OnAfterValidate()
+            var
+                i: Integer;
+                Char: Text[1];
+            begin
+                if Rec."Reference Type" = Rec."Reference Type"::"PIP Code" then begin
+                    for i := 1 to StrLen(Rec."Reference No.") do begin
+                        Char := CopyStr(Rec."Reference No.", i, 1);
+                        if (Char < '0') or (Char > '9') then
+                            Error('Invalid PIP Code. Reference No. must contain only numbers. Dashes and special characters are not allowed.');
+                    end;
+
+                    if StrLen(Rec."Reference No.") <> 7 then
+                        Error('Invalid PIP Code. Reference No. must be of 7 digits.');
+                end;
+            end;
+        }
     }
 }

@@ -305,6 +305,10 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement("QAU_Header")
+                {
+
+                }
 
 
                 textelement(XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
@@ -375,6 +379,7 @@ xmlport 90002 "mio01"
                     LTD_Name_Header := 'LTD Name';
                     "Customer_Group_Header" := 'Customer Group';
                     Block_Reason_Code_Header := 'Block Reason Code';
+                    QAU_Header := 'QAU Approved';
                     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX := XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
                 end;
@@ -670,6 +675,10 @@ xmlport 90002 "mio01"
                 {
 
                 }
+                textelement(QAU)
+                {
+
+                }
 
 
 
@@ -760,6 +769,7 @@ xmlport 90002 "mio01"
                     LTD_Name := Customer."Name 2";
                     Customer_Group := Customer."Bill-to Customer No.";
                     Block_Reason_Code := Customer."Block Reason";
+                    QAU := Format(Customer."QAU Approved");
                 end;
             }
 
