@@ -912,6 +912,14 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader.Ascending(true);
         if L_SalesInvoiceHeader.FindSet() then begin
             repeat
+                //Check No of Box Exist for Non Knapp order++
+                L_SalesInvoiceHeader.CalcFields("No of Boxes");
+                if L_SalesInvoiceHeader."Knapp Order" = false then
+                    if L_SalesInvoiceHeader."No of Boxes" = 0 then
+                        break;
+
+
+
                 L_SalesInvoiceLine.Reset();
                 L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
                 L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
@@ -1788,7 +1796,7 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceHeader.Reset();
         L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
         if L_SalesInvoiceHeader.FindFirst() then begin
-            L_SalesInvoiceHeader.CalcFields(Amount, "Weekend Drop Number", "Drop Number");
+            L_SalesInvoiceHeader.CalcFields(Amount, "Weekend Drop Number", "Drop Number", "No of Boxes");
 
             //Get Site++
             Clear(L_CustomerSiteID);
@@ -1981,13 +1989,13 @@ codeunit 90038 "POD Father Integration"
                     L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
                     L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
                     if L_SalesInvoiceLine.FindFirst() then begin
-                        //Get No of Box++
-                        Clear(L_NoOfBox);
-                        L_SalesShipmentHeader.Reset();
-                        L_SalesShipmentHeader.SetRange("Inv. Pick No.", L_SalesInvoiceHeader."Inv. Pick No.");
-                        if L_SalesShipmentHeader.FindFirst() then begin
-                            L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
-                        end;
+                        // //Get No of Box++
+                        // Clear(L_NoOfBox);
+                        // L_SalesShipmentHeader.Reset();
+                        // L_SalesShipmentHeader.SetRange("Inv. Pick No.", L_SalesInvoiceHeader."Inv. Pick No.");
+                        // if L_SalesShipmentHeader.FindFirst() then begin
+                        //     L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
+                        // end;
 
                         //  Clear(L_NoOfBox);
                         // L_ValueEntry.Reset();
@@ -2038,7 +2046,7 @@ codeunit 90038 "POD Father Integration"
                         LineObj.Add('productCode', L_SalesInvoiceHeader."Order No.");
                         LineObj.Add('price', 0);
                         LineObj.Add('weight', 0);
-                        LineObj.Add('quantity', L_NoOfBox);
+                        LineObj.Add('quantity', L_SalesInvoiceHeader."No of Boxes");
                         LineObj.Add('qtyDecimalPlaces', 1);
                         LineObj.Add('productBarcode', L_SalesInvoiceHeader."Order No.");
                         LinesArray.Add(LineObj);
@@ -3124,12 +3132,12 @@ codeunit 90038 "POD Father Integration"
 
 
                         //Get No of Box++
-                        Clear(L_NoOfBox);
-                        L_SalesShipmentHeader.Reset();
-                        L_SalesShipmentHeader.SetRange("Inv. Pick No.", _InvoiceHeader."Inv. Pick No.");
-                        if L_SalesShipmentHeader.FindFirst() then begin
-                            L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
-                        end;
+                        // Clear(L_NoOfBox);
+                        // L_SalesShipmentHeader.Reset();
+                        // L_SalesShipmentHeader.SetRange("Inv. Pick No.", _InvoiceHeader."Inv. Pick No.");
+                        // if L_SalesShipmentHeader.FindFirst() then begin
+                        //     L_NoOfBox := L_SalesShipmentHeader."No of Boxes";
+                        // end;
                         // Clear(L_NoOfBox);
                         // L_ValueEntry.Reset();
                         // L_ValueEntry.SetCurrentKey("Document No.");
@@ -3168,7 +3176,8 @@ codeunit 90038 "POD Father Integration"
                         L_ePODRunLine.Group := L_Group;
                         L_ePODRunLine."Product Code" := _InvoiceHeader."Order No.";
                         L_ePODRunLine.Description := L_Group;
-                        L_ePODRunLine.Quantity := L_NoOfBox;
+                        _InvoiceHeader.CalcFields("No of Boxes");
+                        L_ePODRunLine.Quantity := _InvoiceHeader."No of Boxes";
                         L_ePODRunLine."ePOD ID" := _ePODID;
                         L_ePODRunLine."Synced to ePOD" := true;
                         L_ePODRunLine.Insert();
