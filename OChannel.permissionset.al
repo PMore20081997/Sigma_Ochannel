@@ -258,5 +258,19 @@ permissionset 90000 OChannel
         tabledata "PODFather Error Management" = RIMD,
         table "PODFather Error Management" = X,
         report "Sync POD Job" = X,
-        page "PODFather Error List" = X;
+        page "PODFather Error List" = X,
+        tabledata "Polar Speed Barcode" = RIMD,
+        tabledata "PS Route Setup" = RIMD,
+        table "Polar Speed Barcode" = X,
+        table "PS Route Setup" = X,
+        report "Polar Item Label" = X,
+        codeunit "PS Manifest File Job" = X,
+        xmlport Manifest = X,
+        xmlport "MIO(HandledOrders)" = X,
+        xmlport mio06CLGD = X,
+        page "Apotech Order Header API" = X,
+        page "Apotech Order Line" = X,
+        page "PS Label Details" = X,
+        page "PS Postal Route Setup List" = X,
+        query "ILE Oty" = X;
 }

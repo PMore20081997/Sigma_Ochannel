@@ -209,6 +209,8 @@ page 90011 "Channel Item Listing"
                             Clear(L_Item);
                             if L_Item.Get(ChannelItemListing."Item No.") then begin
                                 ChannelItemListing.CalcFields("Web Orders Qty", "Variant Code Mandatory");
+                                if ChannelItemListing."Item Category Code" <> L_Item."Item Category Code" then
+                                    ChannelItemListing."Item Category Code" := L_Item."Item Category Code";
 
                                 //Calculate Physical+++
                                 Clear(PhysicalInventory);

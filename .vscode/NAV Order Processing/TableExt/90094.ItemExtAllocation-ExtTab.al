@@ -108,5 +108,25 @@ tableextension 90094 "Item Ext Allocation" extends Item
                 end;
             end;
         }
+
+        modify("Item Category Code")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                if xRec."Item Category Code" <> Rec."Item Category Code" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing."Item Category Code" := Rec."Item Category Code";
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+            end;
+        }
     }
 }

@@ -10,7 +10,7 @@ xmlport 90015 "mio82"
     Format = VariableText;
     TextEncoding = UTF8;
     UseRequestPage = false;
-    FileName = 'mio82.csv';
+    //  FileName = 'mio82.csv';
 
     schema
     {
@@ -467,8 +467,20 @@ xmlport 90015 "mio82"
                     L_PurchReceiptheader: Record "Purch. Rcpt. Header";
                     compInfo: Record "Company Information";
                     item: Record Item;
+                    StartDate: Date;
+                    EndDate: Date;
                 begin
-                    if L_PurchReceiptheader.Get(Purch_Rcpt_Line."Document No.") then;
+                    GetStartAndEndDates(StartDate, EndDate);
+                    // L_PurchReceiptheader.Reset();
+                    // L_PurchReceiptheader.SetRange("No.", Purch_Rcpt_Line."Document No.");
+                    // L_PurchReceiptheader.SetRange("Posting Date", StartDate, EndDate);
+                    // if L_PurchReceiptheader.FindFirst() then begin
+                    if not L_PurchReceiptheader.Get(Purch_Rcpt_Line."Document No.") then
+                        CurrXMLport.Skip();
+
+                    if not (L_PurchReceiptheader."Posting Date" in [StartDate .. EndDate]) then
+                        CurrXMLport.Skip();
+
                     Supp_Code := L_PurchReceiptheader."Buy-from Vendor No.";
 
                     if Purch_Rcpt_Line."Variant Code" = '' then begin
@@ -543,7 +555,7 @@ xmlport 90015 "mio82"
                     end;
                     Narr_Date_1 := FormatDateForCSV(L_PurchReceiptheader."Document Date");
                 end;
-
+                // end;
             }
 
 
@@ -567,4 +579,16 @@ xmlport 90015 "mio82"
             MonthStr := '0' + MonthStr;
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
     end;
+
+    procedure GetStartAndEndDates(var StartDate: Date; var EndDate: Date)
+    begin
+
+        EndDate := CalcDate('+CM', WorkDate());
+        if Date2DMY(WorkDate(), 1) <= 7 then begin
+            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
+        end else begin
+            StartDate := CalcDate('<-CM>', WorkDate());
+        end;
+    end;
 }
+

@@ -38,6 +38,9 @@ codeunit 90017 "Update Channel Item Inventory"
                 Clear(L_Item);
                 if L_Item.Get(L_ChannelItemListing."Item No.") then begin
                     L_ChannelItemListing.CalcFields("Web Orders Qty", "Variant Code Mandatory");
+                    if L_ChannelItemListing."Item Category Code" <> L_Item."Item Category Code" then
+                        L_ChannelItemListing."Item Category Code" := L_Item."Item Category Code";
+
 
                     //Calculate Physical+++
                     Clear(PhysicalInventory);

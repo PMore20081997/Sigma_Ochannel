@@ -10,15 +10,10 @@ codeunit 90030 "Datawarehouse-WebDezign"
         end;
 
         CASE RunType OF
-
             Datawarehouse:
                 begin
-
                     UploadFileToContainer();
-
                 end;
-
-
         end;
     end;
 
@@ -59,7 +54,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         FileName: Text;
         TempILE1: Record TempILE1;
         xmlmioclgd: XmlPort mio06CLGD;
-
+        MIOHandledOrders: xmlport "MIO(HandledOrders)";
     begin
 
         #region "mio03" 02
@@ -105,7 +100,21 @@ codeunit 90030 "Datawarehouse-WebDezign"
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
-        FileName := 'mio10.csv';
+        //Clear(TempBLOB);
+        Clear(Filename);
+        //Clear(GRNInstream);
+        Clear(StartDate);
+        Clear(MM);
+        Clear(YYYY);
+        if Date2DMY(WorkDate(), 1) <= 7 then begin
+            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
+        end else begin
+            StartDate := CalcDate('<-CM>', WorkDate());
+        end;
+        MM := Format(Date2DMY(StartDate, 2));
+        YYYY := Format(Date2DMY(StartDate, 3));
+        Filename := 'mio10' + YYYY + MM + '.csv';
+        // FileName := 'mio10.csv';
         TempBlob.CreateOutStream(XMLOutStream);
         xmlmio10.SetDestination(XMLOutStream);
         xmlmio10.Export();
@@ -113,6 +122,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
+
 
         #region "mio0617" 06
         Clear(TempBlob);
@@ -349,10 +359,34 @@ codeunit 90030 "Datawarehouse-WebDezign"
         #endregion
 
         #region "mio82" 24
+        // Clear(TempBlob);
+        // Clear(XMLInStream);
+        // Clear(XMLOutStream);
+        // FileName := 'mio82.csv';
+        // TempBlob.CreateOutStream(XMLOutStream);
+        // xmlmio82.SetDestination(XMLOutStream);
+        // xmlmio82.Export();
+        // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        // UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
-        FileName := 'mio82.csv';
+        //Clear(TempBLOB);
+        Clear(Filename);
+        //Clear(GRNInstream);
+        Clear(MM);
+        Clear(YYYY);
+        Clear(StartDate);
+        if Date2DMY(WorkDate(), 1) <= 7 then begin
+            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
+        end else begin
+            StartDate := CalcDate('<-CM>', WorkDate());
+        end;
+        MM := Format(Date2DMY(StartDate, 2));
+        YYYY := Format(Date2DMY(StartDate, 3));
+        Filename := 'mio82' + YYYY + MM + '.csv';
+        // FileName := 'mio10.csv';
         TempBlob.CreateOutStream(XMLOutStream);
         xmlmio82.SetDestination(XMLOutStream);
         xmlmio82.Export();
@@ -360,6 +394,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
+
 
         #region "contractprices" 25
         Clear(TempBlob);
@@ -454,6 +489,19 @@ codeunit 90030 "Datawarehouse-WebDezign"
         //TempILE.DeleteAll();
         #endregion
 
+        #region "MIO(Handled Orders)"
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio32.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        MIOHandledOrders.SetDestination(XMLOutStream);
+        MIOHandledOrders.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        #endregion "MIO(Handled Orders)"
+
     end;
 
     local procedure UploadFileToEDIAzureContainer(var P_FileInstream: InStream; P_FileName: Text; P_ChannelCode: Code[20])
@@ -507,11 +555,6 @@ codeunit 90030 "Datawarehouse-WebDezign"
         L_SalesCreditMemoLine: Record "Sales Cr.Memo Line";
         L_SalesCreditMemoHeader: Record "Sales Cr.Memo Header";
         ItemVendor: Record "Item Vendor";
-        StartDate: Date;
-        EndDate: Date;
-        MM: Text[10];
-        YYYY: Text[10];
-
     begin
         Clear(CSVBuffer);
         CSVBuffer.Reset();
@@ -909,7 +952,8 @@ codeunit 90030 "Datawarehouse-WebDezign"
 
     procedure GetStartAndEndDates(var StartDate: Date; var EndDate: Date)
     begin
-
+        Clear(StartDate);
+        Clear(EndDate);
         EndDate := CalcDate('+CM', WorkDate());
         if Date2DMY(WorkDate(), 1) <= 7 then begin
             StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
@@ -932,6 +976,10 @@ codeunit 90030 "Datawarehouse-WebDezign"
         ProgressCount: Integer;
         NoOfRecs: Integer;
         Count: Integer;
+        StartDate: Date;
+        EndDate: Date;
+        MM: Text[10];
+        YYYY: Text[10];
 
 
 }
