@@ -10,7 +10,7 @@ xmlport 90000 "mio10"
     Format = VariableText;
     TextEncoding = UTF8;
     UseRequestPage = false;
-    // FileName = 'mio10.csv';
+    FileName = 'mio10.csv';
 
     schema
     {
@@ -437,24 +437,10 @@ xmlport 90000 "mio10"
                     L_Item: record Item;
                     companyInfo: Record "Company Information";
                     L_PurchRectHeader: Record "Purch. Rcpt. Header";
-                    StartDate: Date;
-                    EndDate: Date;
 
                 begin
-                    GetStartAndEndDates(StartDate, EndDate);
 
-                    // Get header
-                    if not L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.") then
-                        CurrXMLport.Skip();
-
-                    if not (DT2Date(L_PurchHeader.SystemCreatedAt) in [StartDate .. EndDate]) then
-                        CurrXMLport.Skip();
-                    // GetStartAndEndDates(StartDate, EndDate);
-                    // Purchase_Line.SetRange("Order Date", StartDate, EndDate);
-                    // if Purchase_Line.FindSet() then begin
-                    //     repeat
-                    //         if L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.") then;
-                    // if (L_PurchHeader."Posting Date" >= StartDate) and (L_PurchHeader."Posting Date" <= EndDate) then begin
+                    if L_PurchHeader.Get(Purchase_Line."Document Type", Purchase_Line."Document No.") then;
                     Supp_Code := L_PurchHeader."Buy-from Vendor No.";
                     if Purchase_Line."Variant Code" = '' then begin
                         Prod_Code := Purchase_Line."No.";
@@ -506,9 +492,11 @@ xmlport 90000 "mio10"
                     Exch_Rate := format(L_PurchHeader."Currency Factor");
                     Foreign_Curr_Code := format(L_PurchHeader."Currency Code");
                     PO_Operator_Code := format(L_PurchHeader."Purchaser Code");
-                    //         until Purchase_Line.Next() = 0;
-                    // end;
+
                 end;
+
+
+
             }
 
 
@@ -534,16 +522,5 @@ xmlport 90000 "mio10"
         if STRLEN(MonthStr) = 1 then
             MonthStr := '0' + MonthStr;
         exit(DayStr + '/' + MonthStr + '/' + YearStr);
-    end;
-
-    procedure GetStartAndEndDates(var StartDate: Date; var EndDate: Date)
-    begin
-
-        EndDate := CalcDate('+CM', WorkDate());
-        if Date2DMY(WorkDate(), 1) <= 7 then begin
-            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
-        end else begin
-            StartDate := CalcDate('<-CM>', WorkDate());
-        end;
     end;
 }

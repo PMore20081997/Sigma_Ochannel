@@ -96,25 +96,39 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
+        // // #region "mio10" 05
+        // Clear(TempBlob);
+        // Clear(XMLInStream);
+        // Clear(XMLOutStream);
+        // //Clear(TempBLOB);
+        // Clear(Filename);
+        // //Clear(GRNInstream);
+        // Clear(StartDate);
+        // Clear(MM);
+        // Clear(YYYY);
+        // if Date2DMY(WorkDate(), 1) <= 7 then begin
+        //     StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
+        // end else begin
+        //     StartDate := CalcDate('<-CM>', WorkDate());
+        // end;
+        // MM := Format(Date2DMY(StartDate, 2));
+        // YYYY := Format(Date2DMY(StartDate, 3));
+        // Filename := 'mio10' + YYYY + MM + '.csv';
+        // // FileName := 'mio10.csv';
+        // TempBlob.CreateOutStream(XMLOutStream);
+        // xmlmio10.SetDestination(XMLOutStream);
+        // xmlmio10.Export();
+        // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        // UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        // // #endregion
+
+
         #region "mio10" 05
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
-        //Clear(TempBLOB);
-        Clear(Filename);
-        //Clear(GRNInstream);
-        Clear(StartDate);
-        Clear(MM);
-        Clear(YYYY);
-        if Date2DMY(WorkDate(), 1) <= 7 then begin
-            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
-        end else begin
-            StartDate := CalcDate('<-CM>', WorkDate());
-        end;
-        MM := Format(Date2DMY(StartDate, 2));
-        YYYY := Format(Date2DMY(StartDate, 3));
-        Filename := 'mio10' + YYYY + MM + '.csv';
-        // FileName := 'mio10.csv';
+        FileName := 'mio10.csv';
         TempBlob.CreateOutStream(XMLOutStream);
         xmlmio10.SetDestination(XMLOutStream);
         xmlmio10.Export();
@@ -358,35 +372,48 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "mio82" 24
+        // // #region "mio82" 24
+        // // Clear(TempBlob);
+        // // Clear(XMLInStream);
+        // // Clear(XMLOutStream);
+        // // FileName := 'mio82.csv';
+        // // TempBlob.CreateOutStream(XMLOutStream);
+        // // xmlmio82.SetDestination(XMLOutStream);
+        // // xmlmio82.Export();
+        // // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // // // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        // // UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         // Clear(TempBlob);
         // Clear(XMLInStream);
         // Clear(XMLOutStream);
-        // FileName := 'mio82.csv';
+        // //Clear(TempBLOB);
+        // Clear(Filename);
+        // //Clear(GRNInstream);
+        // Clear(MM);
+        // Clear(YYYY);
+        // Clear(StartDate);
+        // if Date2DMY(WorkDate(), 1) <= 7 then begin
+        //     StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
+        // end else begin
+        //     StartDate := CalcDate('<-CM>', WorkDate());
+        // end;
+        // MM := Format(Date2DMY(StartDate, 2));
+        // YYYY := Format(Date2DMY(StartDate, 3));
+        // Filename := 'mio82' + YYYY + MM + '.csv';
+        // // FileName := 'mio10.csv';
         // TempBlob.CreateOutStream(XMLOutStream);
         // xmlmio82.SetDestination(XMLOutStream);
         // xmlmio82.Export();
         // TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
         // // DownloadFromStream(XMLInStream, '', '', '', FileName);
         // UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        // // #endregion
+
+        #region "mio82" 24
         Clear(TempBlob);
         Clear(XMLInStream);
         Clear(XMLOutStream);
-        //Clear(TempBLOB);
-        Clear(Filename);
-        //Clear(GRNInstream);
-        Clear(MM);
-        Clear(YYYY);
-        Clear(StartDate);
-        if Date2DMY(WorkDate(), 1) <= 7 then begin
-            StartDate := CalcDate('-CM', CalcDate('-1M', WorkDate()));
-        end else begin
-            StartDate := CalcDate('<-CM>', WorkDate());
-        end;
-        MM := Format(Date2DMY(StartDate, 2));
-        YYYY := Format(Date2DMY(StartDate, 3));
-        Filename := 'mio82' + YYYY + MM + '.csv';
-        // FileName := 'mio10.csv';
+        FileName := 'mio82.csv';
         TempBlob.CreateOutStream(XMLOutStream);
         xmlmio82.SetDestination(XMLOutStream);
         xmlmio82.Export();
