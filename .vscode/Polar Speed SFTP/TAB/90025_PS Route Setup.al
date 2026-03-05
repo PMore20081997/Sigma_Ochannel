@@ -30,10 +30,10 @@ table 90025 "PS Route Setup"
         {
             Caption = 'Lead Time';
         }
-        field(7; "Allowance Type"; Option)
+        field(7; "Allowance Type"; Text[100])
         {
             Caption = 'Allowance Type';
-            OptionMembers = None,Fixed,Flexible;
+            //OptionMembers = None,Fixed,Flexible;
         }
         field(8; "Carrier Zone"; Code[20])
         {

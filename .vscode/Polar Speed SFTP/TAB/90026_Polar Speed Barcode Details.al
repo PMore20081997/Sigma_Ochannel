@@ -1,4 +1,4 @@
-table 90026 "Polar Speed Barcode"
+table 90026 "Polar Speed Barcode Details"
 {
     DataClassification = ToBeClassified;
 
@@ -9,7 +9,7 @@ table 90026 "Polar Speed Barcode"
             DataClassification = ToBeClassified;
             // AutoIncrement = true;
         }
-        field(2; "Tote No."; Code[20])
+        field(2; "Tote/Order No."; Code[20])
         {
             Caption = 'Tote/Order No.';
             DataClassification = ToBeClassified;
@@ -17,16 +17,15 @@ table 90026 "Polar Speed Barcode"
         field(3; "Sales Invoice No."; Code[20])
         {
             DataClassification = ToBeClassified;
-
         }
-        field(4; "Box No."; Integer)
+        field(4; "No. of Box / Tote Sequence"; Integer)
         {
             DataClassification = ToBeClassified;
         }
-        field(5; Barcode; Text[50])
-        {
-            DataClassification = ToBeClassified;
-        }
+        // field(5; Barcode; Text[50])
+        // {
+        //     DataClassification = ToBeClassified;
+        // }
         field(6; "Barcode No."; Text[50])
         {
             DataClassification = ToBeClassified;
@@ -39,10 +38,6 @@ table 90026 "Polar Speed Barcode"
         {
             DataClassification = ToBeClassified;
         }
-        field(9; "Document No."; Code[50])
-        {
-            DataClassification = ToBeClassified;
-        }
         field(10; "Print Date"; Date)
         {
             DataClassification = ToBeClassified;
@@ -50,6 +45,9 @@ table 90026 "Polar Speed Barcode"
         field(11; "Order Category"; Option)
         {
             OptionMembers = " ",Manual,Knapp;
+        }
+        field(12; "Shipment Date"; Date)
+        {
 
         }
     }

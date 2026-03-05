@@ -3,7 +3,7 @@ page 90062 "PS Label Details"
     PageType = List;
     ApplicationArea = All;
     UsageCategory = Administration;
-    SourceTable = "Polar Speed Barcode";
+    SourceTable = "Polar Speed Barcode Details";
     Editable = false;
     ModifyAllowed = false;
     DeleteAllowed = false;
@@ -14,31 +14,52 @@ page 90062 "PS Label Details"
         {
             repeater(List)
             {
-                field("Order Category"; rec."Order Category")
+                field("Order Category"; Rec."Order Category")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
                 }
-                field("Sales Invoice No"; rec."Sales Invoice No.")
+                field("Print Date"; Rec."Print Date")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
                 }
-                field("Customer No."; rec."Customer No.")
+                field("Order No."; Rec."Order No.")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
                 }
-                field("Tote No"; rec."Tote No.")
+                field("Sales Invoice No"; Rec."Sales Invoice No.")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
+                    Visible = false;
                 }
-                field("Box No"; rec."Box No.")
+                field("Customer No."; Rec."Customer No.")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
+                    Caption = 'Sell to Customer No.';
                 }
-                field("Barcode No."; rec."Barcode No.")
+                field("Tote No"; Rec."Tote/Order No.")
                 {
-                    ApplicationArea = all;
+                    ApplicationArea = All;
+                    Caption = 'Tote/Order No.';
                 }
-
+                field("Barcode No."; Rec."Barcode No.")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Barcode';
+                }
+                field("Box No"; Rec."No. of Box / Tote Sequence")
+                {
+                    ApplicationArea = All;
+                    Caption = 'No. of Box / Tote Sequence';
+                }
+                field("Shipment Date"; Rec."Shipment Date")
+                {
+                    ApplicationArea = All;
+                }
+                field(SystemCreatedBy; GetUserName(Rec.SystemCreatedBy))
+                {
+                    ApplicationArea = All;
+                    Caption = 'Created By';
+                }
             }
         }
     }
@@ -57,7 +78,7 @@ page 90062 "PS Label Details"
 
                 trigger OnAction()
                 var
-                    L_Barcode: Record "Polar Speed Barcode";
+                    L_Barcode: Record "Polar Speed Barcode Details";
                     Report_PolarItemLabel: Report "Polar Item Label";
                 begin
                     Clear(Report_PolarItemLabel);
@@ -68,9 +89,56 @@ page 90062 "PS Label Details"
                     Report_PolarItemLabel.RunModal();
                 end;
             }
+
+            action("Download Manifest File")
+            {
+                Caption = 'Download manifest file to PC';
+                Image = Download;
+                ApplicationArea = All;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                var
+                    L_Barcode: Record "Polar Speed Barcode Details";
+                    PSManifestFile: XmlPort "PS Manifest File";
+                begin
+                    Clear(PSManifestFile);
+                    L_Barcode.Reset();
+                    CurrPage.SetSelectionFilter(L_Barcode);
+                    PSManifestFile.SetTableView(L_Barcode);
+                    PSManifestFile.GetFilters(WorkDate(), 0);
+                    PSManifestFile.Filename('ManifestFile.CSV');
+                    PSManifestFile.Run();
+                end;
+            }
+            action("Upload Manifest File")
+            {
+                Caption = 'Upload manifest file to container';
+                Image = Download;
+                ApplicationArea = All;
+                Promoted = true;
+                PromotedCategory = Process;
+
+                trigger OnAction()
+                var
+                    PSManifestFileJob: Codeunit "PS Manifest File Job";
+                begin
+                    PSManifestFileJob.UploadManifestFileToContainer('POLARSPEED');
+                end;
+            }
         }
     }
 
     var
         myInt: Integer;
+
+    procedure GetUserName(UserSecurityId: Code[50]): Text[100]
+    var
+        Users: Record User;
+    begin
+        Users.Reset();
+        Users.SetRange("User Security ID", UserSecurityId);
+        if Users.FindFirst() then
+            exit(Users."User Name");
+    end;
 }

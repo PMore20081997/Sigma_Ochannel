@@ -7,7 +7,7 @@ report 90008 "Polar Item Label"
 
     dataset
     {
-        dataitem(Barcodes; "Polar Speed Barcode")
+        dataitem(Barcodes; "Polar Speed Barcode Details")
         {
             column(Barcode; EncodedText)
             {
@@ -54,6 +54,10 @@ report 90008 "Polar Item Label"
             {
 
             }
+            column(ShipptoPostCode; ShipptoPostCode)
+            {
+
+            }
 
             column(Service; Service)
             {
@@ -63,19 +67,22 @@ report 90008 "Polar Item Label"
             {
 
             }
-            column(Sales_Invoice_No_; "Sales Invoice No.")
+            column(Sales_Invoice_No_; "Order No.")
+            {
+                //Order No+++
+            }
+            column(Requested_Delivery_Date; "Shipment Date")
             {
 
             }
-            column(Requested_Delivery_Date; Requested_Delivery_Date)
+            column(Tote_No_; "Tote/Order No.")
             {
 
             }
-            column(Tote_No_; "Tote No.")
+            column(ToteSequence; ToteSequence)
             {
 
             }
-
 
             trigger OnAfterGetRecord()
             var
@@ -86,7 +93,6 @@ report 90008 "Polar Item Label"
                 L_ValueEntry: Record "Value Entry";
                 L_ItemLedgEntry: Record "Item Ledger Entry";
                 L_SalesShipmentHeader: Record "Sales Shipment Header";
-                L_Barcode: Record "Polar Speed Barcode";
                 KnappResponse: Record "Knapp Order Response";
                 L_SalesHeader: Record "Sales Header";
                 L_SalesLine: Record "Sales Line";
@@ -102,11 +108,12 @@ report 90008 "Polar Item Label"
                 QRFontProvider: Interface "Barcode Font Provider 2D";
                 knappResp: Record "Knapp Order Response";
             begin
+                Clear(ToteSequence);
                 Clear(Temprature);
                 if Barcodes."Order Category" = Barcodes."Order Category"::Manual then begin
                     //Sigma- One invoice for one warehouse class code+++
                     salesinvHeader.Reset();
-                    salesinvHeader.SetRange("Inv. Pick No.", Barcodes."Tote No."); //Toteno is inv pick no for manual label
+                    salesinvHeader.SetRange("Inv. Pick No.", Barcodes."Tote/Order No.");
                     if salesinvHeader.FindFirst() then begin
                         salesinvLine.Reset();
                         salesinvLine.SetRange("Document No.", salesinvHeader."No.");
@@ -125,7 +132,7 @@ report 90008 "Polar Item Label"
                 end else begin
                     if Barcodes."Order Category" = Barcodes."Order Category"::Knapp then begin
                         knappResp.Reset();
-                        knappResp.SetRange("Load Unit", Barcodes."Tote No.");
+                        knappResp.SetRange("Load Unit", Barcodes."Tote/Order No.");
                         knappResp.SetFilter(SystemCreatedAt, '%1..%2', CreateDateTime(Barcodes."Print Date", 000000T), CreateDateTime(Barcodes."Print Date", 235959T));
                         if knappResp.FindFirst() then begin
                             L_SalesLine.Reset();
@@ -145,9 +152,11 @@ report 90008 "Polar Item Label"
                                 end;
                             end;
                         end;
+                        ToteSequence := '-' + Format(Barcodes."No. of Box / Tote Sequence");
                     end;
                 end;
 
+                //Get Address++
                 L_Customer.Reset();
                 L_Customer.SetRange("No.", Barcodes."Customer No.");
                 if L_Customer.FindFirst() then begin
@@ -158,11 +167,14 @@ report 90008 "Polar Item Label"
                     ShipToAdd[4] := L_Customer."Address 2";
                     ShipToAdd[5] := L_Customer.County;
                     ShipToAdd[6] := L_Customer.City;
-                    ShipToAdd[7] := L_Customer."Post Code";
+                    //ShipToAdd[7] := L_Customer."Post Code";
                     CompressArray(ShipToAdd);
+                    Clear(ShipptoPostCode);
+                    ShipptoPostCode := L_Customer."Post Code";
+
 
                     SearchPostCode := L_Customer."Post Code";
-                    while SearchPostCode <> '' do begin
+                    while (SearchPostCode <> '') do begin
                         routingcode.Reset();
                         routingcode.SetRange(Postcode, SearchPostCode);
                         if routingcode.FindFirst() then begin
@@ -192,6 +204,7 @@ report 90008 "Polar Item Label"
     }
 
     var
+        ShipptoPostCode: Code[20];
         LoadUnitList: List of [Code[500]];
         EncodedText: Text;
         QREncodeText: Text;
@@ -210,5 +223,6 @@ report 90008 "Polar Item Label"
         countt: Integer;
         NoOfPrints: Integer;
         Requested_Delivery_Date: Date;
+        ToteSequence: Text;
 
 }

@@ -10,40 +10,65 @@ codeunit 90040 "PS Manifest File Job"
                 Rec."Parameter String",
                 StrPos(Rec."Parameter String", ';') + 1);
         end;
-
         case RunType of
             'PolarSpeed':
-                UploadManifestFileToContainer();
+                UploadManifestFileToContainer(StartParameter);
         end;
     end;
 
-    local procedure UploadManifestFileToContainer()
+    procedure UploadManifestFileToContainer(_ChannelCode: Code[20])
     var
         OutStr: OutStream;
         InStr: InStream;
         TempBlob: Codeunit "Temp Blob";
-        Manifest: XmlPort Manifest;
+        Manifest: XmlPort "PS Manifest File";
         FileName: Text;
         ShipDate: Date;
         i: Integer;
     begin
+        #Region Check Mandatory fields++
+        if _ChannelCode = '' then
+            Error('Channel Code is missing in request parameter');
+        CheckMadatoryfields(_ChannelCode);
+        #EndRegion Check Mandatory fields++
+
+        #Region Credential Check++
+        GetCredentials(_ChannelCode);
+        #EndRegion Credential Check++
+
+        //Starte Process++
+        Clear(ShipDate);
         ShipDate := WorkDate();
         for i := 0 to 1 do begin
             Clear(TempBlob);
             Clear(Manifest);
 
             TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
-
             Manifest.GetFilters(ShipDate, i);
             Manifest.SetDestination(OutStr);
             Manifest.Export();
 
             FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', ShipDate));
             TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
-
             UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
         end;
     end;
+
+
+    local procedure CheckMadatoryfields(_ChannelCode: Code[20])
+    var
+        L_TradePartner: Record "Trade Partner";
+    begin
+        L_TradePartner.Reset();
+        L_TradePartner.SetRange(Code, _ChannelCode);
+        if L_TradePartner.FindFirst() then begin
+            L_TradePartner.TestField("Storage Account Name");
+            L_TradePartner.TestField("Shared Access Key");
+            L_TradePartner.TestField("Order Acknow. Container Name");
+        end else
+            Error('Trade Partner setup missing for %1', _ChannelCode);
+    end;
+
 
     local procedure UploadFileToEDIAzureContainer(
         var FileInStream: InStream;
@@ -55,8 +80,6 @@ codeunit 90040 "PS Manifest File Job"
         BlobClient: Codeunit "ABS Blob Client";
         Response: Codeunit "ABS Operation Response";
     begin
-        GetCredentials(ChannelCode);
-
         Authorization := StorageAuth.CreateSharedKey(SharedAccessKey);
         BlobClient.Initialize(StorageAccountName, OutgoingContainerName, Authorization);
         Response := BlobClient.PutBlobBlockBlobStream(FileName, FileInStream);
@@ -66,6 +89,9 @@ codeunit 90040 "PS Manifest File Job"
     var
         TradePartner: Record "Trade Partner";
     begin
+        Clear(OutgoingContainerName);
+        Clear(StorageAccountName);
+        Clear(SharedAccessKey);
         if TradePartner.Get(ChannelCode) then begin
             OutgoingContainerName := TradePartner."Order Acknow. Container Name";
             StorageAccountName := TradePartner."Storage Account Name";
