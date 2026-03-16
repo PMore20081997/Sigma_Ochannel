@@ -7,7 +7,6 @@ table 90026 "Polar Speed Barcode Details"
         field(1; "Entry No."; Integer)
         {
             DataClassification = ToBeClassified;
-            // AutoIncrement = true;
         }
         field(2; "Tote/Order No."; Code[20])
         {
@@ -22,10 +21,6 @@ table 90026 "Polar Speed Barcode Details"
         {
             DataClassification = ToBeClassified;
         }
-        // field(5; Barcode; Text[50])
-        // {
-        //     DataClassification = ToBeClassified;
-        // }
         field(6; "Barcode No."; Text[50])
         {
             DataClassification = ToBeClassified;
@@ -47,6 +42,14 @@ table 90026 "Polar Speed Barcode Details"
             OptionMembers = " ",Manual,Knapp;
         }
         field(12; "Shipment Date"; Date)
+        {
+
+        }
+        field(13; "Temprature"; Text[100])
+        {
+            //one lable consist only one temprature item+++
+        }
+        field(14; "No. of Print"; Integer)
         {
 
         }

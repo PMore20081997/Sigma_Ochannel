@@ -51,6 +51,10 @@ table 90025 "PS Route Setup"
         {
             Caption = 'Deleted';
         }
+        field(12; "Service Value"; Code[20])
+        {
+
+        }
     }
 
 

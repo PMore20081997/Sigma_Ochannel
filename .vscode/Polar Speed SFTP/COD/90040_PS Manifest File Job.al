@@ -25,6 +25,7 @@ codeunit 90040 "PS Manifest File Job"
         FileName: Text;
         ShipDate: Date;
         i: Integer;
+        PSLableQuery: Query "PS Lable Query";
     begin
         #Region Check Mandatory fields++
         if _ChannelCode = '' then
@@ -36,22 +37,75 @@ codeunit 90040 "PS Manifest File Job"
         GetCredentials(_ChannelCode);
         #EndRegion Credential Check++
 
-        //Starte Process++
-        Clear(ShipDate);
-        ShipDate := WorkDate();
+        // //Starte Process++
+        // Clear(PSLableQuery);
+        // PSLableQuery.SetRange(PSLableQuery.Shipment_Date, WorkDate());
+        // PSLableQuery.Open();
+        // while PSLableQuery.Read() do begin
+        //     for i := 0 to 1 do begin
+        //         Clear(TempBlob);
+        //         Clear(Manifest);
+
+        //         TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+        //         Manifest.GetFilters(WorkDate(), i, PSLableQuery.Temprature);
+        //         Manifest.SetDestination(OutStr);
+        //         Manifest.Export();
+
+        //         FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
+        //         TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+        //         UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+        //     end;
+        // end;
+
+        //Start  Process++
+        //Chilled
         for i := 0 to 1 do begin
             Clear(TempBlob);
             Clear(Manifest);
 
             TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
-            Manifest.GetFilters(ShipDate, i);
+            Manifest.GetFilters(WorkDate(), i, 'Chilled');
             Manifest.SetDestination(OutStr);
             Manifest.Export();
 
-            FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', ShipDate));
+            FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
             TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
             UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
         end;
+        //Ambient
+        for i := 0 to 1 do begin
+            Clear(TempBlob);
+            Clear(Manifest);
+
+            TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+            Manifest.GetFilters(WorkDate(), i, 'Ambient');
+            Manifest.SetDestination(OutStr);
+            Manifest.Export();
+
+            FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
+            TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+            UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+        end;
+
+
+
+
+
+        // Clear(ShipDate);
+        // ShipDate := WorkDate();
+        // for i := 0 to 1 do begin
+        //     Clear(TempBlob);
+        //     Clear(Manifest);
+
+        //     TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+        //     Manifest.GetFilters(ShipDate, i);
+        //     Manifest.SetDestination(OutStr);
+        //     Manifest.Export();
+
+        //     FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', ShipDate));
+        //     TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+        //     UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+        // end;
     end;
 
 

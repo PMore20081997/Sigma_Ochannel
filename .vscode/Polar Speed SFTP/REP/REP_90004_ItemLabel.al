@@ -174,7 +174,7 @@ report 90008 "Polar Item Label"
 
 
                     SearchPostCode := L_Customer."Post Code";
-                    while (SearchPostCode <> '') do begin
+                    while (SearchPostCode <> '') AND (StrLen(Service) = 0) do begin
                         routingcode.Reset();
                         routingcode.SetRange(Postcode, SearchPostCode);
                         if routingcode.FindFirst() then begin

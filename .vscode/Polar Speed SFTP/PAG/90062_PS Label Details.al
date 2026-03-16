@@ -51,15 +51,26 @@ page 90062 "PS Label Details"
                     ApplicationArea = All;
                     Caption = 'No. of Box / Tote Sequence';
                 }
+                field(Temprature; Rec.Temprature)
+                {
+                    ApplicationArea = All;
+                }
                 field("Shipment Date"; Rec."Shipment Date")
                 {
                     ApplicationArea = All;
+                }
+                field("No. of Print"; Rec."No. of Print")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
+                    Visible = false;
                 }
                 field(SystemCreatedBy; GetUserName(Rec.SystemCreatedBy))
                 {
                     ApplicationArea = All;
                     Caption = 'Created By';
                 }
+
             }
         }
     }
@@ -105,10 +116,12 @@ page 90062 "PS Label Details"
                     Clear(PSManifestFile);
                     L_Barcode.Reset();
                     CurrPage.SetSelectionFilter(L_Barcode);
-                    PSManifestFile.SetTableView(L_Barcode);
-                    PSManifestFile.GetFilters(WorkDate(), 0);
-                    PSManifestFile.Filename('ManifestFile.CSV');
-                    PSManifestFile.Run();
+                    if L_Barcode.FindFirst() then begin
+                        PSManifestFile.SetTableView(L_Barcode);
+                        PSManifestFile.GetFilters(WorkDate(), 0, L_Barcode.Temprature);
+                        PSManifestFile.Filename('ManifestFile.CSV');
+                        PSManifestFile.Run();
+                    end;
                 end;
             }
             action("Upload Manifest File")

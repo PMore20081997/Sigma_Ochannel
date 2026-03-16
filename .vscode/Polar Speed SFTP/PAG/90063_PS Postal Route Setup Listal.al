@@ -36,16 +36,23 @@ page 90063 "PS Postal Route Setup List"
                 field("Lead Time"; rec."Lead Time")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Allowance Type"; rec."Allowance Type")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Carrier Zone"; rec."Carrier Zone")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Service"; rec."Service")
+                {
+                    ApplicationArea = All;
+                }
+                field("Service Value"; Rec."Service Value")
                 {
                     ApplicationArea = All;
                 }
@@ -56,6 +63,7 @@ page 90063 "PS Postal Route Setup List"
                 field("Deleted"; rec."Deleted")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
             }
         }
