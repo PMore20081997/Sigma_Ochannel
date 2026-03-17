@@ -290,6 +290,7 @@ xmlport 90034 "PS Manifest File"
                         _SMS := Format(L_Customer."Phone No.");
                         _EMAIL := Format(L_Customer."E-Mail");
                     end;
+                    _TEMPERATURE := Polar_Speed_Barcode_Details.Temprature;
                     if Polar_Speed_Barcode_Details."Order Category" = Polar_Speed_Barcode_Details."Order Category"::Manual then begin
                         //Sigma- One invoice for one warehouse class code+++
                         L_SalesInvoiceHeader.Reset();
@@ -299,15 +300,15 @@ xmlport 90034 "PS Manifest File"
                             L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
                             if L_SalesInvoiceLine.FindFirst() then begin
                                 if L_Item.Get(L_SalesInvoiceLine."No.") then begin
-                                    L_WarhouseClass.Reset();
-                                    L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                    if L_WarhouseClass.FindFirst() then begin
-                                        if L_WarhouseClass.Fridge = true then
-                                            _TEMPERATURE := 'Chilled'
-                                        else
-                                            _TEMPERATURE := 'Ambient';
-                                    end else
-                                        _TEMPERATURE := 'Ambient';
+                                    // L_WarhouseClass.Reset();
+                                    // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                    // if L_WarhouseClass.FindFirst() then begin
+                                    //     if L_WarhouseClass.Fridge = true then
+                                    //         _TEMPERATURE := 'Chilled'
+                                    //     else
+                                    //         _TEMPERATURE := 'Ambient';
+                                    // end else
+                                    //     _TEMPERATURE := 'Ambient';
 
                                     L_IUM.Reset();
                                     L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
@@ -334,23 +335,47 @@ xmlport 90034 "PS Manifest File"
                                 L_SalesLine.SetRange("Line No.", L_KnappResp."Line No.");
                                 if L_SalesLine.FindFirst() then begin
                                     if L_Item.Get(L_SalesLine."No.") then begin
-                                        L_WarhouseClass.Reset();
-                                        L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                        if L_WarhouseClass.FindFirst() then begin
-                                            if L_WarhouseClass.Fridge = true then
-                                                _TEMPERATURE := 'Chilled'
-                                            else
-                                                _TEMPERATURE := 'Ambient';
-                                        end else
-                                            _TEMPERATURE := 'Ambient';
+                                        // L_WarhouseClass.Reset();
+                                        // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                        // if L_WarhouseClass.FindFirst() then begin
+                                        //     if L_WarhouseClass.Fridge = true then
+                                        //         _TEMPERATURE := 'Chilled'
+                                        //     else
+                                        //         _TEMPERATURE := 'Ambient';
+                                        // end else
+                                        //     _TEMPERATURE := 'Ambient';
 
                                         L_IUM.Reset();
                                         L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
                                         if L_IUM.FindFirst() then begin
                                             _WEIGHT := Format(L_IUM.Weight);
-                                        end
-                                        else begin
+                                        end else begin
                                             _WEIGHT := '';
+                                        end;
+                                    end;
+                                end else begin
+                                    L_SalesInvoiceLine.Reset();
+                                    L_SalesInvoiceLine.SetRange("Order No.", L_KnappResp."Document No.");
+                                    L_SalesInvoiceLine.SetRange("Order Line No.", L_KnappResp."Line No.");
+                                    if L_SalesInvoiceLine.FindFirst() then begin
+                                        if L_Item.Get(L_SalesInvoiceLine."No.") then begin
+                                            // L_WarhouseClass.Reset();
+                                            // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
+                                            // if L_WarhouseClass.FindFirst() then begin
+                                            //     if L_WarhouseClass.Fridge = true then
+                                            //         _TEMPERATURE := 'Chilled'
+                                            //     else
+                                            //         _TEMPERATURE := 'Ambient';
+                                            // end else
+                                            //     _TEMPERATURE := 'Ambient';
+
+                                            L_IUM.Reset();
+                                            L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
+                                            if L_IUM.FindFirst() then begin
+                                                _WEIGHT := Format(L_IUM.Weight);
+                                            end else begin
+                                                _WEIGHT := '';
+                                            end;
                                         end;
                                     end;
                                 end;
@@ -362,6 +387,7 @@ xmlport 90034 "PS Manifest File"
                 trigger OnPreXmlItem()
                 begin
                     Polar_Speed_Barcode_Details.SetRange("Shipment Date", G_ShipmentDate);
+                    Polar_Speed_Barcode_Details.SetRange(Temprature, G_Temprature);
                 end;
             }
 
@@ -371,14 +397,17 @@ xmlport 90034 "PS Manifest File"
     var
         G_ShipmentDate: Date;
         G_ShipmentNextDate: Date;
+        G_Temprature: Text[100];
 
 
 
-    procedure GetFilters(_ShipmentDate: Date; i: Integer)
+    procedure GetFilters(_ShipmentDate: Date; i: Integer; _Temprature: Text[100])
     begin
         Clear(G_ShipmentDate);
         Clear(G_ShipmentNextDate);
+        Clear(G_Temprature);
         G_ShipmentDate := _ShipmentDate;
+        G_Temprature := _Temprature;
         if i = 0 then begin
             G_ShipmentNextDate := G_ShipmentDate;
         end else
@@ -392,10 +421,10 @@ xmlport 90034 "PS Manifest File"
     begin
         Clear(ShippingService);
         Tbl_RoutingCode.Reset();
-        while _SearchPostCode <> '' do begin
+        while (_SearchPostCode <> '') AND (StrLen(ShippingService) = 0) do begin
             Tbl_RoutingCode.SetRange(Postcode, _SearchPostCode);
             if Tbl_RoutingCode.FindFirst() then begin
-                ShippingService := Tbl_RoutingCode.Service;
+                ShippingService := Tbl_RoutingCode."Service Value";
                 exit(ShippingService);
             end;
             _SearchPostCode := CopyStr(_SearchPostCode, 1, StrLen(_SearchPostCode) - 1);

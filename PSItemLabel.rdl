@@ -186,6 +186,30 @@
                                     <PaddingBottom>2pt</PaddingBottom>
                                   </Style>
                                 </Textbox>
+                                <Line Name="Line1">
+                                  <Top>0in</Top>
+                                  <Left>0in</Left>
+                                  <Height>1.80695in</Height>
+                                  <Width>0in</Width>
+                                  <ZIndex>5</ZIndex>
+                                  <Style>
+                                    <Border>
+                                      <Style>None</Style>
+                                    </Border>
+                                    <TopBorder>
+                                      <Style>None</Style>
+                                    </TopBorder>
+                                    <BottomBorder>
+                                      <Style>None</Style>
+                                    </BottomBorder>
+                                    <LeftBorder>
+                                      <Style>None</Style>
+                                    </LeftBorder>
+                                    <RightBorder>
+                                      <Style>None</Style>
+                                    </RightBorder>
+                                  </Style>
+                                </Line>
                               </ReportItems>
                               <KeepTogether>true</KeepTogether>
                               <Top>0in</Top>

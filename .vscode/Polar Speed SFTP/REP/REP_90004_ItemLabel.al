@@ -111,7 +111,7 @@ report 90008 "Polar Item Label"
                 Clear(ToteSequence);
                 Clear(Temprature);
                 if Barcodes."Order Category" = Barcodes."Order Category"::Manual then begin
-                    //Sigma- One invoice for one warehouse class code+++
+                    //Note - In sigma in one invoice have only one type of items for Non-Knapp order++++
                     salesinvHeader.Reset();
                     salesinvHeader.SetRange("Inv. Pick No.", Barcodes."Tote/Order No.");
                     if salesinvHeader.FindFirst() then begin
@@ -119,14 +119,12 @@ report 90008 "Polar Item Label"
                         salesinvLine.SetRange("Document No.", salesinvHeader."No.");
                         if salesinvLine.FindFirst() then begin
                             if ItemRec.Get(salesinvLine."No.") then begin
-                                //Temprature1 := ItemRec.Storage;
                                 if ItemRec.Storage = '2-8' then begin
                                     Temprature := '2-8';
                                 end else begin
                                     Temprature := '2-25';
                                 end;
                             end;
-                            Requested_Delivery_Date := salesinvHeader."Shipment Date";
                         end;
                     end;
                 end else begin
@@ -134,6 +132,7 @@ report 90008 "Polar Item Label"
                         knappResp.Reset();
                         knappResp.SetRange("Load Unit", Barcodes."Tote/Order No.");
                         knappResp.SetFilter(SystemCreatedAt, '%1..%2', CreateDateTime(Barcodes."Print Date", 000000T), CreateDateTime(Barcodes."Print Date", 235959T));
+                        knappResp.SetFilter(Quantity, '>%1', 0);
                         if knappResp.FindFirst() then begin
                             L_SalesLine.Reset();
                             L_SalesLine.SetRange("No.", knappResp."Item No.");
@@ -142,13 +141,25 @@ report 90008 "Polar Item Label"
                             L_SalesLine.SetRange("Line No.", knappResp."Line No.");
                             if L_SalesLine.FindFirst() then begin
                                 if ItemRec.Get(L_SalesLine."No.") then begin
-                                    //Temprature1 := ItemRec.Storage;
                                     if ItemRec.Storage = '2-8' then begin
                                         Temprature := '2-8';
                                     end else begin
                                         Temprature := '2-25';
                                     end;
-                                    Requested_Delivery_Date := L_SalesLine."Shipment Date";
+                                end;
+                            end else begin
+                                L_SalesInvoiceLine.Reset();
+                                L_SalesInvoiceLine.SetRange("Document No.", knappResp."Document No.");
+                                L_SalesInvoiceLine.SetRange("Line No.", knappResp."Line No.");
+                                L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                                if L_SalesInvoiceLine.FindFirst() then begin
+                                    if ItemRec.Get(L_SalesInvoiceLine."No.") then begin
+                                        if ItemRec.Storage = '2-8' then begin
+                                            Temprature := '2-8';
+                                        end else begin
+                                            Temprature := '2-25';
+                                        end;
+                                    end;
                                 end;
                             end;
                         end;
