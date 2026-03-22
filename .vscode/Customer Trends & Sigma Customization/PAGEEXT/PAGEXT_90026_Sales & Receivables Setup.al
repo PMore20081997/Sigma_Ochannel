@@ -9,6 +9,11 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
             {
                 ApplicationArea = All;
             }
+            field("Send Collection File"; rec."Send Collection File")
+            {
+                ApplicationArea = all;
+                ToolTip = 'Enable this to start sending Collection File to SFTP';
+            }
         }
     }
 

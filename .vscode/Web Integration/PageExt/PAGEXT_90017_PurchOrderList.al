@@ -305,7 +305,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                 Promoted = true;
                 PromotedCategory = Process;
                 Image = Export;
-                //Visible = false;
+                Visible = false;
                 ApplicationArea = All;
                 trigger OnAction()
                 begin

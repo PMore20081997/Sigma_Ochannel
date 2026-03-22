@@ -26,7 +26,10 @@ codeunit 90040 "PS Manifest File Job"
         ShipDate: Date;
         i: Integer;
         PSLableQuery: Query "PS Lable Query";
+        PsLabelDetails: Record "Polar Speed Barcode Details";
+        sales_receivable: Record "Sales & Receivables Setup";
     begin
+        sales_receivable.Get();
         #Region Check Mandatory fields++
         if _ChannelCode = '' then
             Error('Channel Code is missing in request parameter');
@@ -59,21 +62,57 @@ codeunit 90040 "PS Manifest File Job"
 
         //Start  Process++
         //Chilled
-        for i := 0 to 1 do begin
-            Clear(TempBlob);
-            Clear(Manifest);
 
-            TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
-            Manifest.GetFilters(WorkDate(), i, 'Chilled');
-            Manifest.SetDestination(OutStr);
-            Manifest.Export();
+        PsLabelDetails.Reset();
+        PsLabelDetails.SetRange(Temprature, 'Chilled');
+        PsLabelDetails.SetRange("Shipment Date", WorkDate());
+        if PsLabelDetails.FindFirst() then begin
+            if sales_receivable."Send Collection File" = true then begin
+                for i := 0 to 1 do begin
+                    Clear(TempBlob);
+                    Clear(Manifest);
 
-            FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
-            TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
-            UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+                    TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+                    Manifest.GetFilters(WorkDate(), i, 'Chilled');
+                    Manifest.SetDestination(OutStr);
+                    Manifest.Export();
+
+                    FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
+                    TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+                    UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+                end;
+            end else begin
+                Clear(TempBlob);
+                Clear(Manifest);
+                i := 0;
+                TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+                Manifest.GetFilters(WorkDate(), i, 'Chilled');
+                Manifest.SetDestination(OutStr);
+                Manifest.Export();
+
+                FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
+                TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+                UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+            end;
         end;
+
         //Ambient
-        for i := 0 to 1 do begin
+        if sales_receivable."Send Collection File" = true then begin
+            for i := 0 to 1 do begin
+                Clear(TempBlob);
+                Clear(Manifest);
+
+                TempBlob.CreateOutStream(OutStr, TextEncoding::UTF8);
+                Manifest.GetFilters(WorkDate(), i, 'Ambient');
+                Manifest.SetDestination(OutStr);
+                Manifest.Export();
+
+                FileName := GetFileName(CalcDate('<' + Format(i) + 'D>', WorkDate()));
+                TempBlob.CreateInStream(InStr, TextEncoding::UTF8);
+                UploadFileToEDIAzureContainer(InStr, FileName, StartParameter);
+            end;
+        end else begin
+            i := 0;
             Clear(TempBlob);
             Clear(Manifest);
 
@@ -161,8 +200,12 @@ codeunit 90040 "PS Manifest File Job"
         T: Text[6];
     begin
         Y := Format(Date2DMY(FileDate, 3));
-        M := PadStr(Format(Date2DMY(FileDate, 2)), 2, '0');
-        D := PadStr(Format(Date2DMY(FileDate, 1)), 2, '0');
+        M := Format(Date2DMY(FileDate, 2));
+        if STRLEN(M) = 1 then
+            M := '0' + M;
+        D := Format(Date2DMY(FileDate, 1));
+        if STRLEN(D) = 1 then
+            D := '0' + D;
         T := Format(Time(), 0, '<Hours,2><Minutes,2><Seconds,2>');
         exit('Sigma-' + Y + M + D + T + '.csv');
     end;

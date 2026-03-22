@@ -259,12 +259,16 @@ xmlport 90034 "PS Manifest File"
                 begin
                     //Create Body of Excel++
                     _REFERENCE := Format(Polar_Speed_Barcode_Details."Order No.");
-                    _BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
+                    //_BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
                     _TRANSITUNIT := 'Box';
-                    if G_ShipmentDate <> G_ShipmentNextDate then
-                        _TASK := 'Collection'
-                    else
+                    if G_ShipmentDate <> G_ShipmentNextDate then begin
+                        _TASK := 'Collection';
+                        _BARCODE := '';
+                    end
+                    else begin
                         _TASK := '';
+                        _BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
+                    end;
                     _DATE := Format(Polar_Speed_Barcode_Details."Shipment Date");
                     _ARRIVALDATE := Format(CalcDate('-1D', Polar_Speed_Barcode_Details."Shipment Date"));
                     _NOTES := '';

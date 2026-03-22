@@ -4,9 +4,9 @@ page 90062 "PS Label Details"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = "Polar Speed Barcode Details";
-    Editable = false;
-    ModifyAllowed = false;
-    DeleteAllowed = false;
+    // Editable = false;
+    // ModifyAllowed = false;
+    // DeleteAllowed = false;
 
     layout
     {

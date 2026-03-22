@@ -7,6 +7,10 @@ tableextension 90021 "OC Sales & Receivables Setup" extends "Sales & Receivables
         {
 
         }
+        field(90022; "Send Collection File"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys
