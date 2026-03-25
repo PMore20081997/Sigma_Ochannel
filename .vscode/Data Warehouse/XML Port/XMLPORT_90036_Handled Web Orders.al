@@ -58,6 +58,10 @@ xmlport 90036 "MIO(HandledOrders)"
                 textelement(ReasonMessage_HeaderCaption)
                 {
                 }
+                textelement(SalesDocument_HeaderCaption)
+                {
+
+                }
 
                 trigger OnAfterGetRecord()
                 begin
@@ -74,6 +78,7 @@ xmlport 90036 "MIO(HandledOrders)"
                     OrderDate_HeaderCaption := 'Order Date';
                     ReasonCode_HeaderCaption := 'Reason Code';
                     ReasonMessage_HeaderCaption := 'Reason Message';
+                    SalesDocument_HeaderCaption := 'Sales Document Number';
                 end;
 
             }
@@ -123,9 +128,14 @@ xmlport 90036 "MIO(HandledOrders)"
                 textelement(ReasonMessage)
                 {
                 }
+                textelement(salesDocumentNo)
+                {
+
+                }
                 trigger OnAfterGetRecord()
                 var
                     L_InterimHandledSalesHeader: Record "Handled Interim Sales Header";
+                    L_WebBuffer: Record "Web Buffer";
                 begin
                     TradePartnerCode := HandledInterimSalesLine."Trade Partner Code";
                     DocumentType := Format(HandledInterimSalesLine."Document Type");
@@ -145,6 +155,12 @@ xmlport 90036 "MIO(HandledOrders)"
                     OrderDate := FormatDateForCSV(HandledInterimSalesLine."Order Date");
                     ReasonCode := Format(HandledInterimSalesLine."Reason Code");
                     ReasonMessage := Format(HandledInterimSalesLine."Reason Message");
+
+                    L_WebBuffer.Reset();
+                    L_WebBuffer.SetRange("Web Document No.", HandledInterimSalesLine."Document No");
+                    if L_WebBuffer.FindFirst() then begin
+                        salesDocumentNo := L_WebBuffer."Sales Document No.";
+                    end;
                 end;
 
                 trigger OnPreXmlItem()
