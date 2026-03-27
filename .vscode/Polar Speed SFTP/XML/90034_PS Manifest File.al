@@ -269,8 +269,8 @@ xmlport 90034 "PS Manifest File"
                         _TASK := '';
                         _BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
                     end;
-                    _DATE := Format(Polar_Speed_Barcode_Details."Shipment Date");
-                    _ARRIVALDATE := Format(CalcDate('-1D', Polar_Speed_Barcode_Details."Shipment Date"));
+                    _DATE := '';
+                    _ARRIVALDATE := Format(Polar_Speed_Barcode_Details."Print Date");
                     _NOTES := '';
                     _DESCRIPTION := '';
                     _CLIENTINFO1 := Polar_Speed_Barcode_Details."Tote/Order No.";
@@ -390,7 +390,7 @@ xmlport 90034 "PS Manifest File"
 
                 trigger OnPreXmlItem()
                 begin
-                    Polar_Speed_Barcode_Details.SetRange("Shipment Date", G_ShipmentDate);
+                    Polar_Speed_Barcode_Details.SetRange("Print Date", G_ShipmentDate);
                     Polar_Speed_Barcode_Details.SetRange(Temprature, G_Temprature);
                 end;
             }

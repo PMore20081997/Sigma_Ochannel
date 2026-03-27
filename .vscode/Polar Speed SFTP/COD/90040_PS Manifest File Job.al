@@ -65,7 +65,7 @@ codeunit 90040 "PS Manifest File Job"
 
         PsLabelDetails.Reset();
         PsLabelDetails.SetRange(Temprature, 'Chilled');
-        PsLabelDetails.SetRange("Shipment Date", WorkDate());
+        PsLabelDetails.SetRange("Print Date", WorkDate());
         if PsLabelDetails.FindFirst() then begin
             if sales_receivable."Send Collection File" = true then begin
                 for i := 0 to 1 do begin
