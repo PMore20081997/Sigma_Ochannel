@@ -49,7 +49,15 @@ table 90026 "Polar Speed Barcode Details"
         {
             //one lable consist only one temprature item+++
         }
-        field(14; "No. of Print"; Integer)
+        field(14; "No. Printed"; Integer)
+        {
+
+        }
+        field(15; Storage; Code[20])
+        {
+
+        }
+        field(16; Weight; Decimal)
         {
 
         }

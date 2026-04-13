@@ -259,16 +259,15 @@ xmlport 90034 "PS Manifest File"
                 begin
                     //Create Body of Excel++
                     _REFERENCE := Format(Polar_Speed_Barcode_Details."Order No.");
-                    //_BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
                     _TRANSITUNIT := 'Box';
                     if G_ShipmentDate <> G_ShipmentNextDate then begin
                         _TASK := 'Collection';
                         _BARCODE := '';
-                    end
-                    else begin
+                    end else begin
                         _TASK := '';
                         _BARCODE := Format(Polar_Speed_Barcode_Details."Barcode No.");
                     end;
+
                     _DATE := '';
                     _ARRIVALDATE := Format(Polar_Speed_Barcode_Details."Print Date");
                     _NOTES := '';
@@ -278,6 +277,7 @@ xmlport 90034 "PS Manifest File"
                     _CLIENTINFO3 := '';
                     _CLIENTINFO4 := '';
                     _CLIENTINFO5 := '';
+
                     L_Customer.Reset();
                     L_Customer.SetRange("No.", Polar_Speed_Barcode_Details."Customer No.");
                     if L_Customer.FindFirst() then begin
@@ -295,97 +295,7 @@ xmlport 90034 "PS Manifest File"
                         _EMAIL := Format(L_Customer."E-Mail");
                     end;
                     _TEMPERATURE := Polar_Speed_Barcode_Details.Temprature;
-                    if Polar_Speed_Barcode_Details."Order Category" = Polar_Speed_Barcode_Details."Order Category"::Manual then begin
-                        //Sigma- One invoice for one warehouse class code+++
-                        L_SalesInvoiceHeader.Reset();
-                        L_SalesInvoiceHeader.SetRange("Inv. Pick No.", Polar_Speed_Barcode_Details."Tote/Order No."); // "Tote/Order No." = Inv Pick No for Manuall Order++
-                        if L_SalesInvoiceHeader.FindFirst() then begin
-                            L_SalesInvoiceLine.Reset();
-                            L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
-                            if L_SalesInvoiceLine.FindFirst() then begin
-                                if L_Item.Get(L_SalesInvoiceLine."No.") then begin
-                                    // L_WarhouseClass.Reset();
-                                    // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                    // if L_WarhouseClass.FindFirst() then begin
-                                    //     if L_WarhouseClass.Fridge = true then
-                                    //         _TEMPERATURE := 'Chilled'
-                                    //     else
-                                    //         _TEMPERATURE := 'Ambient';
-                                    // end else
-                                    //     _TEMPERATURE := 'Ambient';
-
-                                    L_IUM.Reset();
-                                    L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
-                                    if L_IUM.FindFirst() then begin
-                                        _WEIGHT := Format(L_IUM.Weight);
-                                    end
-                                    else begin
-                                        _WEIGHT := '';
-                                    end;
-
-                                end;
-                            end;
-                        end;
-                    end else begin
-                        if Polar_Speed_Barcode_Details."Order Category" = Polar_Speed_Barcode_Details."Order Category"::Knapp then begin
-                            L_KnappResp.Reset();
-                            L_KnappResp.SetRange("Load Unit", Polar_Speed_Barcode_Details."Tote/Order No.");
-                            L_KnappResp.SetFilter(SystemCreatedAt, '%1..%2', CreateDateTime(Polar_Speed_Barcode_Details."Print Date", 000000T), CreateDateTime(Polar_Speed_Barcode_Details."Print Date", 235959T));
-                            if L_KnappResp.FindFirst() then begin
-                                L_SalesLine.Reset();
-                                L_SalesLine.SetRange("No.", L_KnappResp."Item No.");
-                                L_SalesLine.SetRange(Type, L_SalesLine.Type::Item);
-                                L_SalesLine.SetRange("Document No.", L_KnappResp."Document No.");
-                                L_SalesLine.SetRange("Line No.", L_KnappResp."Line No.");
-                                if L_SalesLine.FindFirst() then begin
-                                    if L_Item.Get(L_SalesLine."No.") then begin
-                                        // L_WarhouseClass.Reset();
-                                        // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                        // if L_WarhouseClass.FindFirst() then begin
-                                        //     if L_WarhouseClass.Fridge = true then
-                                        //         _TEMPERATURE := 'Chilled'
-                                        //     else
-                                        //         _TEMPERATURE := 'Ambient';
-                                        // end else
-                                        //     _TEMPERATURE := 'Ambient';
-
-                                        L_IUM.Reset();
-                                        L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
-                                        if L_IUM.FindFirst() then begin
-                                            _WEIGHT := Format(L_IUM.Weight);
-                                        end else begin
-                                            _WEIGHT := '';
-                                        end;
-                                    end;
-                                end else begin
-                                    L_SalesInvoiceLine.Reset();
-                                    L_SalesInvoiceLine.SetRange("Order No.", L_KnappResp."Document No.");
-                                    L_SalesInvoiceLine.SetRange("Order Line No.", L_KnappResp."Line No.");
-                                    if L_SalesInvoiceLine.FindFirst() then begin
-                                        if L_Item.Get(L_SalesInvoiceLine."No.") then begin
-                                            // L_WarhouseClass.Reset();
-                                            // L_WarhouseClass.SetRange(Code, L_Item."Warehouse Class Code");
-                                            // if L_WarhouseClass.FindFirst() then begin
-                                            //     if L_WarhouseClass.Fridge = true then
-                                            //         _TEMPERATURE := 'Chilled'
-                                            //     else
-                                            //         _TEMPERATURE := 'Ambient';
-                                            // end else
-                                            //     _TEMPERATURE := 'Ambient';
-
-                                            L_IUM.Reset();
-                                            L_IUM.SetFilter(Code, L_Item."Base Unit of Measure");
-                                            if L_IUM.FindFirst() then begin
-                                                _WEIGHT := Format(L_IUM.Weight);
-                                            end else begin
-                                                _WEIGHT := '';
-                                            end;
-                                        end;
-                                    end;
-                                end;
-                            end;
-                        end;
-                    end;
+                    _WEIGHT := Format(Polar_Speed_Barcode_Details.Weight);
                 end;
 
                 trigger OnPreXmlItem()

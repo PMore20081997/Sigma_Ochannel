@@ -4,16 +4,17 @@ page 90062 "PS Label Details"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = "Polar Speed Barcode Details";
-    // Editable = false;
-    // ModifyAllowed = false;
-    // DeleteAllowed = false;
+    Editable = false;
+    ModifyAllowed = false;
+    DeleteAllowed = false;
 
     layout
     {
         area(Content)
         {
-            repeater(List)
+            repeater("List Details")
             {
+                Editable = false;
                 field("Order Category"; Rec."Order Category")
                 {
                     ApplicationArea = All;
@@ -55,20 +56,27 @@ page 90062 "PS Label Details"
                 {
                     ApplicationArea = All;
                 }
-                field("Shipment Date"; Rec."Shipment Date")
+                field(Storage; Rec.Storage)
                 {
                     ApplicationArea = All;
                 }
-                field("No. of Print"; Rec."No. of Print")
+                field(Weight; Rec.Weight)
                 {
-                    ApplicationArea = all;
-                    Editable = false;
-                    Visible = false;
+                    ApplicationArea = All;
+                }
+                field("Shipment Date"; Rec."Shipment Date")
+                {
+                    ApplicationArea = All;
                 }
                 field(SystemCreatedBy; GetUserName(Rec.SystemCreatedBy))
                 {
                     ApplicationArea = All;
                     Caption = 'Created By';
+                }
+                field("No. Printed"; Rec."No. Printed")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
                 }
 
             }
@@ -86,6 +94,7 @@ page 90062 "PS Label Details"
                 ApplicationArea = All;
                 Promoted = true;
                 PromotedCategory = Process;
+                Enabled = G_AllowtoPrintPSLabel;
 
                 trigger OnAction()
                 var
@@ -108,6 +117,7 @@ page 90062 "PS Label Details"
                 ApplicationArea = All;
                 Promoted = true;
                 PromotedCategory = Process;
+                Enabled = G_AllowtoPrintPSLabel;
                 trigger OnAction()
                 var
                     L_Barcode: Record "Polar Speed Barcode Details";
@@ -131,7 +141,7 @@ page 90062 "PS Label Details"
                 ApplicationArea = All;
                 Promoted = true;
                 PromotedCategory = Process;
-
+                Enabled = G_AllowtoPrintPSLabel;
                 trigger OnAction()
                 var
                     PSManifestFileJob: Codeunit "PS Manifest File Job";
@@ -144,6 +154,35 @@ page 90062 "PS Label Details"
 
     var
         myInt: Integer;
+        G_AllowtoPrintPSLabel: Boolean;
+
+    trigger OnAfterGetRecord()
+    var
+        L_UserSetup: Record "User Setup";
+    begin
+        Clear(G_AllowtoPrintPSLabel);
+        L_UserSetup.Reset();
+        L_UserSetup.SetRange("User ID", UserId);
+        L_UserSetup.SetRange("Allow to Print PS Label", true);
+        if L_UserSetup.FindFirst() then
+            G_AllowtoPrintPSLabel := true
+        else
+            G_AllowtoPrintPSLabel := false;
+    end;
+
+    trigger OnOpenPage()
+    var
+        L_UserSetup: Record "User Setup";
+    begin
+        Clear(G_AllowtoPrintPSLabel);
+        L_UserSetup.Reset();
+        L_UserSetup.SetRange("User ID", UserId);
+        L_UserSetup.SetRange("Allow to Print PS Label", true);
+        if L_UserSetup.FindFirst() then
+            G_AllowtoPrintPSLabel := true
+        else
+            G_AllowtoPrintPSLabel := false;
+    end;
 
     procedure GetUserName(UserSecurityId: Code[50]): Text[100]
     var
@@ -154,4 +193,6 @@ page 90062 "PS Label Details"
         if Users.FindFirst() then
             exit(Users."User Name");
     end;
+
+
 }

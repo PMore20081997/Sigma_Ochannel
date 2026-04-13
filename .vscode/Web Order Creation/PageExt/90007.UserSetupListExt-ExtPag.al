@@ -36,6 +36,10 @@ pageextension 90007 "UserSetupListExt" extends "User Setup"
                 Caption = 'Allow to Delete Bulk Credit Memos';
                 ToolTip = 'Specifies if user has permission to delete bulk selected sales credit memos';
             }
+            field("Allow to Print PS Label"; Rec."Allow to Print PS Label")
+            {
+                ApplicationArea = All;
+            }
 
         }
         addafter("Allowed Quota Manag. for CD")

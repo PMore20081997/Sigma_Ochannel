@@ -31,5 +31,9 @@ tableextension 90007 "OC UserSetupExt" extends "User Setup"
         {
             DataClassification = ToBeClassified;
         }
+        field(90007; "Allow to Print PS Label"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 }
