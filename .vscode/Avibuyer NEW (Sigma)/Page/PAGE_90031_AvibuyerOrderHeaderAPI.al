@@ -84,6 +84,7 @@ page 90046 "Avibuyer New Order Header API"
         // NextNo: Code[20];
         // NoSeriesSingle: Interface "No. Series - Single";
         NoSeries: Codeunit "No. Series";
+        L_Shift: Text[20];
     begin
         //Clear(NextNo);
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
@@ -154,67 +155,56 @@ page 90046 "Avibuyer New Order Header API"
                 Rec.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
                 Rec.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
                 Rec.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
-                Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
 
-                // //Update Shipment Date++
-                // L_Date.Reset();
-                // L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
-                // L_Date.SetRange(L_Date."Period Start", Today);
-                // if L_Date.FindFirst() then begin
-                //     if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                //         if Rec."Weekend Ship Agent Serv Code" <> '' then begin
-                //             L_ShippingAgentService.Reset();
-                //             L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Weekend Shipping Agent Code");
-                //             L_ShippingAgentService.SetRange(Code, Rec."Weekend Ship Agent Serv Code");
-                //             if L_ShippingAgentService.FindFirst() then begin
-                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                //                     if DT2Time(CurrentDateTime) < 190000T then
-                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                //                     else
-                //                         Rec.Validate("Shipment Date", CalcDate('<+3D>', Today));
-                //                 end;
-                //             end;
-                //         end
-                //         else begin
-                //             L_ShippingAgentService.Reset();
-                //             L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                //             L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                //             if L_ShippingAgentService.FindFirst() then begin
-                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                //                     if DT2Time(CurrentDateTime) < 170000T then
-                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                //                     else
-                //                         Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                //                 end;
-                //                 if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                //                     if DT2Time(CurrentDateTime) < 190000T then
-                //                         Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                //                     else
-                //                         Rec.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                //                 end;
-                //             end;
-                //         end;
-                //     end
-                //     else begin
-                //         L_ShippingAgentService.Reset();
-                //         L_ShippingAgentService.SetRange("Shipping Agent Code", Rec."Shipping Agent Code");
-                //         L_ShippingAgentService.SetRange(Code, Rec."Shipping Agent Service Code");
-                //         if L_ShippingAgentService.FindFirst() then begin
-                //             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                //                 if DT2Time(CurrentDateTime) < 170000T then
-                //                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                //                 else
-                //                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
-                //             end;
-                //             if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                //                 if DT2Time(CurrentDateTime) < 190000T then
-                //                     Rec.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                //                 else
-                //                     Rec.Validate("Shipment Date", CalcDate('<+2D>', Today))
-                //             end;
-                //         end;
-                //     end;
-                // end;
+                //Update Shipment Date++
+                // Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
+                Clear(L_Shift);
+                L_Date.Reset();
+                L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                L_Date.SetRange(L_Date."Period Start", WorkDate());
+                if L_Date.FindFirst() then begin
+                    if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+
+                        //Get Shift
+                        L_ShippingAgentService.Reset();
+                        if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Weekend Ship. Agnt. Serv. Code");
+                        end else begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Shipping Agent Service Code");
+                        end;
+                        if L_ShippingAgentService.FindFirst() then
+                            L_Shift := Format(L_ShippingAgentService.Shift);
+
+
+                        //E - Shift
+                        if UpperCase(L_Shift) = UpperCase('E') then begin
+                            if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then
+                                //Update Saturday++
+                                Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                            else begin
+                                //Update Monday
+                                Rec.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                            end;
+                        end;
+
+                        //A - Shift
+                        if UpperCase(L_Shift) = UpperCase('A') then begin
+                            //Update Monday
+                            Rec.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                        end;
+
+                        //M - Shift
+                        //Phase2+++
+
+                        //X - Shift
+                        //Phase2+++
+                    end else begin
+                        //As discussed shipment date shoud be next day all condistion++
+                        Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                    end;
+                end;
 
                 L_ShiptoAddress.Reset();
                 L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");

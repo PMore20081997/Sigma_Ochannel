@@ -290,9 +290,12 @@ xmlport 90034 "PS Manifest File"
                         _ADDRESS5 := '';
                         _POSTALCODE := Format(L_Customer."Post Code");
                         _COUNTRY := Format(L_Customer."Country/Region Code");
-                        _TELEPHONE := Format(L_Customer."Phone No.");
-                        _SMS := Format(L_Customer."Phone No.");
-                        _EMAIL := Format(L_Customer."E-Mail");
+                        if StrLen(L_Customer."Phone No.") <= 20 then
+                            _TELEPHONE := Format(L_Customer."Phone No.");
+                        if StrLen(L_Customer."Phone No.") <= 50 then
+                            _SMS := Format(L_Customer."Phone No.");
+                        if StrLen(L_Customer."E-Mail") <= 50 then
+                            _EMAIL := Format(L_Customer."E-Mail");
                     end;
                     _TEMPERATURE := Polar_Speed_Barcode_Details.Temprature;
                     _WEIGHT := Format(Polar_Speed_Barcode_Details.Weight);

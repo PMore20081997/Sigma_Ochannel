@@ -273,5 +273,6 @@ permissionset 90000 OChannel
         tabledata "Polar Speed Barcode Details" = RIMD,
         table "Polar Speed Barcode Details" = X,
         xmlport "PS Manifest File" = X,
-        query "PS Lable Query" = X;
+        query "PS Lable Query" = X,
+        xmlport mio06wb = X;
 }

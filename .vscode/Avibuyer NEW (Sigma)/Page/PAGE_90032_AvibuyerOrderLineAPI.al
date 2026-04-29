@@ -315,9 +315,27 @@ page 90047 "Avibuyer New Order Line"
             //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
             if L_ErrorRecorded = false then begin
                 if L_Item.Get(_InterimSalesLine."No.") then begin
-                    if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
-                        CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
-                        L_ErrorRecorded := TRUE;
+                    if Format(P_InterimSalesHeader."Shipment Date", 0, '<Weekday Text>') <> 'Saturday' then begin
+                        if P_InterimSalesHeader."Shipping Agent Service Code" <> '' then begin
+                            if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end;
+                    end else begin
+                        if P_InterimSalesHeader."Weekend Shipping Agent Code" <> '' then begin
+                            if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Weekend Shipping Agent Code", P_InterimSalesHeader."Weekend Ship Agent Serv Code") then begin
+                                CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
+                                L_ErrorRecorded := TRUE;
+                            end;
+                        end else begin
+                            if P_InterimSalesHeader."Shipping Agent Service Code" <> '' then begin
+                                if CU_WebOrderManagement.CheckShippingAgentServiceRestriction(_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                    CU_WebOrderManagement.Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, _InterimSalesLine, 'SEQ10', false, '');
+                                    L_ErrorRecorded := TRUE;
+                                end;
+                            end;
+                        end;
                     end;
                 end;
             end;

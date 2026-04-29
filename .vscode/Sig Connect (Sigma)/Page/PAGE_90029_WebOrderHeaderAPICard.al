@@ -75,6 +75,7 @@ page 90029 "Web Order Header API Card"
         L_Date: Record Date;
         L_ShippingAgentService: Record "Shipping Agent Services";
         NoSeries: Codeunit "No. Series";
+        L_Shift: Text[20];
     begin
         if ((Rec."Trade Partner Code" <> '') and (Rec."Channel Order ID" <> '')) then begin
             //Duplicate Detection Code
@@ -127,7 +128,60 @@ page 90029 "Web Order Header API Card"
                 Rec.Validate("Shipping Agent Service Code", SellToCustomer."Shipping Agent Service Code");
                 Rec.Validate("Weekend Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
                 Rec.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
-                Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
+
+
+                //Update Shipment Date++
+                // Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
+                Clear(L_Shift);
+                L_Date.Reset();
+                L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
+                L_Date.SetRange(L_Date."Period Start", WorkDate());
+                if L_Date.FindFirst() then begin
+                    if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
+
+                        //Get Shift
+                        L_ShippingAgentService.Reset();
+                        if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Weekend Ship. Agnt. Serv. Code");
+                        end else begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Shipping Agent Service Code");
+                        end;
+                        if L_ShippingAgentService.FindFirst() then
+                            L_Shift := Format(L_ShippingAgentService.Shift);
+
+
+                        //E - Shift
+                        if UpperCase(L_Shift) = UpperCase('E') then begin
+                            if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then
+                                //Update Saturday++
+                                Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                            else begin
+                                //Update Monday
+                                Rec.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                            end;
+                        end;
+
+                        //A - Shift
+                        if UpperCase(L_Shift) = UpperCase('A') then begin
+                            //Update Monday
+                            Rec.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                        end;
+
+                        //M - Shift
+                        //Phase2+++
+
+                        //X - Shift
+                        //Phase2+++
+                    end else begin
+                        //As discussed shipment date shoud be next day all condistion++
+                        Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                    end;
+                end;
+
+
+
 
                 L_ShiptoAddress.Reset();
                 L_ShiptoAddress.SetRange(Code, SellToCustomer."Ship-to Code");

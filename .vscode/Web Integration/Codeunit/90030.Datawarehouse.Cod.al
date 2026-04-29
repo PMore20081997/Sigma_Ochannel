@@ -55,6 +55,7 @@ codeunit 90030 "Datawarehouse-WebDezign"
         TempILE1: Record TempILE1;
         xmlmioclgd: XmlPort mio06CLGD;
         MIOHandledOrders: xmlport "MIO(HandledOrders)";
+        xmlmio06wb: XmlPort mio06wb;
     begin
 
         #region "mio03" 02
@@ -528,6 +529,20 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion "MIO(Handled Orders)"
+
+        #region "mio06wb"
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio06wb.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmio06wb.SetDestination(XMLOutStream);
+        xmlmio06wb.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        //TempILE.DeleteAll();
+        #endregion
 
     end;
 

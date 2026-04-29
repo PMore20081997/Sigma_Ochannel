@@ -895,8 +895,9 @@ codeunit 90038 "POD Father Integration"
         L_Customer: Record Customer;
         L_ShippingAgent: Record "Shipping Agent";
         L_SalesInvoiceLine: Record "Sales Invoice Line";
-
         L_ePODJobHeader: Record "ePOD Job Header";
+        L_Count: Integer;
+        L_SkipLine: Boolean;
     begin
         //Clear All Variable +++
         ClearAll();
@@ -904,92 +905,106 @@ codeunit 90038 "POD Father Integration"
         //Check Mandatory fields+++
         CheckMandatoryfieldForJob(ChannelCode);
 
-        #Region Start Process to sync Run and Normal Job++
+        #Region Start Process to sync +++
         L_SalesInvoiceHeader.Reset();
         if _SalesInvoiceNumber <> '' then
             L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
         L_SalesInvoiceHeader.SetCurrentKey("Shipment Date");
         L_SalesInvoiceHeader.Ascending(true);
         if L_SalesInvoiceHeader.FindSet() then begin
+            L_Count := L_SalesInvoiceHeader.Count;
             repeat
                 //Check No of Box Exist for Non Knapp order++
+                Clear(L_SkipLine);
                 L_SalesInvoiceHeader.CalcFields("No of Boxes");
-                if L_SalesInvoiceHeader."Knapp Order" = false then
-                    if L_SalesInvoiceHeader."No of Boxes" = 0 then
-                        break;
-
-
-
-                L_SalesInvoiceLine.Reset();
-                L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
-                L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
-                L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
-                if L_SalesInvoiceLine.FindFirst() then begin
-                    L_Customer.Reset();
-                    L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
-                    if L_Customer.FindFirst() then begin
-                        if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
-                            L_ShippingAgent.Reset();
-                            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then
-                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code")
+                if L_SalesInvoiceHeader."Knapp Order" = false then begin
+                    if L_SalesInvoiceHeader."No of Boxes" = 0 then begin
+                        if L_Count = 1 then begin
+                            //Manage Error++
+                            if GuiAllowed = true then
+                                Error('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No.")
                             else
-                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                            if L_ShippingAgent.FindFirst() then begin
-                                if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                    //Create Run details and Loding job HeaderIf not Available + + +
-                                    if PostRunToePODNew(L_SalesInvoiceHeader, ChannelCode) = true then begin
-                                        //Create Job and Loading job line+++
-                                        PostJobToePODNew(L_SalesInvoiceHeader, ChannelCode);
+                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No."))
+                        end else begin
+                            //break; //Use Break for Next Invoice
+                            L_SkipLine := true;
+                        end;
+                    end;
+                end;
+
+                if L_SkipLine = false then begin
+                    //++
+                    L_SalesInvoiceLine.Reset();
+                    L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+                    L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+                    L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                    if L_SalesInvoiceLine.FindFirst() then begin
+                        L_Customer.Reset();
+                        L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
+                        if L_Customer.FindFirst() then begin
+                            if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
+                                L_ShippingAgent.Reset();
+                                if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then
+                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code")
+                                else
+                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+                                if L_ShippingAgent.FindFirst() then begin
+                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+                                        //Create Run details and Loding job HeaderIf not Available + + +
+                                        if PostRunToePODNew(L_SalesInvoiceHeader, ChannelCode) = true then begin
+                                            //Create Job and Loading job line+++
+                                            PostJobToePODNew(L_SalesInvoiceHeader, ChannelCode);
+                                        end;
+                                    end else begin
+                                        //Manage Error++
+                                        if GuiAllowed = true then begin
+                                            Error('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code);
+                                        end else begin
+                                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code));
+                                        end;
                                     end;
                                 end else begin
                                     //Manage Error++
                                     if GuiAllowed = true then begin
-                                        Error('Depot %1 is not linked with ePOD', L_ShippingAgent.Code);
+                                        Error('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code);
                                     end else begin
-                                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Depot %1 is not linked with ePOD', L_ShippingAgent.Code));
+                                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code))
                                     end;
                                 end;
                             end else begin
                                 //Manage Error++
                                 if GuiAllowed = true then begin
-                                    Error('Depot %1 is not found in BC', L_ShippingAgent.Code);
+                                    Error('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No.");
                                 end else begin
-                                    InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Depot %1 is not found in BC', L_ShippingAgent.Code))
+                                    InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No."))
                                 end;
                             end;
                         end else begin
                             //Manage Error++
                             if GuiAllowed = true then begin
-                                Error('Customer %1 is not linked with ePOD', L_Customer."No.");
+                                Error('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No.");
                             end else begin
-                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Customer %1 is not linked with ePOD', L_Customer."No."))
+                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No."))
                             end;
                         end;
                     end else begin
                         //Manage Error++
                         if GuiAllowed = true then begin
-                            Error('Customer %1 is not found in BC', L_Customer."No.");
+                            Error('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No.");
                         end else begin
-                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Customer %1 is not found in BC', L_Customer."No."))
+                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No."))
                         end;
-                    end;
-                end else begin
-                    //Manage Error++
-                    if GuiAllowed = true then begin
-                        Error('No lines exist for the document no.: %1.', L_SalesInvoiceHeader."No.");
-                    end else begin
-                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('No lines exist for the document no.: %1.', L_SalesInvoiceHeader."No."))
                     end;
                 end;
             until L_SalesInvoiceHeader.Next() = 0;
         end else begin
             //Manage Error++
             if GuiAllowed = true then
-                Error('No job available for sync')
+                Error('Job sync failed. Error: Invoice not exist')
             else
-                InsertErrorLog(Database::"Sales Invoice Header", '', 'No job available for sync')
+                InsertErrorLog(Database::"Sales Invoice Header", '', 'Job sync failed. Error: Invoice not exist')
         end;
-        #EndRegion Start Process to sync Run and Normal Job++
+        #EndRegion Start Process to sync +++
     end;
 
     local procedure InsertErrorLog(_Type: Integer; _DocumentNo: Code[20]; _Error: Text[2048])
@@ -1154,6 +1169,7 @@ codeunit 90038 "POD Father Integration"
             //Get Credential & URL Detail +++ 
             GetCredentials(ChannelCode);
 
+            //++
             L_httpheaders := L_httpclient.DefaultRequestHeaders;
             L_URL := ServiceURL + 'runs';
             L_httpheaders.Add('Accept', 'application/json');
@@ -1165,7 +1181,7 @@ codeunit 90038 "POD Father Integration"
             if StrLen(body) = 0 then
                 exit(false);
 
-            //Post Order to POD portal++
+            //Sync Run to ePOD
             L_httpcontent.WriteFrom(body);
             L_httpcontent.GetHeaders(L_httpheaders);
             L_httpheaders.Clear();
@@ -1173,7 +1189,7 @@ codeunit 90038 "POD Father Integration"
             if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
                 L_httpResponseMessage.Content.ReadAs(Response);
 
-                //Response 200 means Successful+++ 
+                //Response 200 Successful+++ 
                 if L_httpResponseMessage.HttpStatusCode = 200 then begin
                     //Read the response in JObject+++
                     JObject.ReadFrom(Response);
@@ -1227,13 +1243,26 @@ codeunit 90038 "POD Father Integration"
                             exit(true);
                         end;
                     end;
-                end else
-                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
+                end else begin
+                    //Manage Error++
+                    if GuiAllowed = true then begin
+                        Error('Run sync failed. Error: %1', Response);
+                    end else begin
+                        InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Run sync failed. Error: %1', Response));
+                    end;
+                end;
+            end else begin
+                //Manage Error++
+                if GuiAllowed = true then begin
+                    Error('Run sync failed. Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Run sync failed. Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
+                end;
             end;
         end else
             exit(true);
 
-        //if Run is not Synced++
+        //If Run Syncing is failed
         exit(false);
     end;
 
@@ -1514,25 +1543,49 @@ codeunit 90038 "POD Father Integration"
         ModificationRequired: Boolean;
         L_Status: Text;
         L_ePODJobHeader: Record "ePOD Job Header";
+        SyncFailed: Boolean;
+
+        //Collection
+        Collection_httpheaders: HttpHeaders;
+        Collection_httpclient: HttpClient;
+        Collection_URL: Text;
+        Collection_body: Text;
+        Collection_httpcontent: HttpContent;
+        collection_httpResponseMessage: HttpResponseMessage;
+        Collection_Response: Text;
+        Collection_jObject: JsonObject;
+        Collection_JObject1: JsonObject;
+        Collection_JObject2: JsonObject;
+
+        //Deletion
+        Deletion_httpheaders: HttpHeaders;
+        Deletion_httpclient: HttpClient;
+        Deletion_URL: Text;
+        Deletion_httpcontent: HttpContent;
+        Deletion_httpResponseMessage: HttpResponseMessage;
+        Deletion_Response: Text;
+        L_epodJobLine: Record "ePOD Job Line";
     begin
         //Get Credential & URL Detail +++ 
+        Clear(SyncFailed);
         GetCredentials(ChannelCode);
 
+        //++
         L_httpheaders := L_httpclient.DefaultRequestHeaders;
         L_URL := ServiceURL + 'jobs';
         L_httpheaders.Add('Accept', 'application/json');
         L_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-        //Create Body+++
+        //Create Body for normal job+++
         Clear(body);
         body := Job_Body(_SalesInvoiceHeader."No.", ChannelCode);
         if StrLen(body) = 0 then begin
             if GuiAllowed = true then
-                Error('Job is not synced');
+                Error('Job sync failed Error: Job body is empty');
             exit;
         end;
 
-        //Post Order to POD portal++
+        //Sync to POD +++
         L_httpcontent.WriteFrom(body);
         L_httpcontent.GetHeaders(L_httpheaders);
         L_httpheaders.Clear();
@@ -1540,43 +1593,164 @@ codeunit 90038 "POD Father Integration"
         if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
             L_httpResponseMessage.Content.ReadAs(Response);
 
-            //Response 201 means Successful+++ 
+            //Response 201 Successful for only Normal Job+++ 
             if L_httpResponseMessage.HttpStatusCode = 201 then begin
-                //Read the response in JObject+++
-                JObject.ReadFrom(Response);
-                JObject1 := GetJsonToken(jObject, 'job').AsObject();
-                JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+                #Region Create Deletion Job+++
+                Clear(collection_httpheaders);
+                Clear(collection_URL);
+                Clear(collection_httpcontent);
+                Clear(collection_httpclient);
+                Clear(collection_httpResponseMessage);
 
-                //Insert into epodJob list+++
-                L_ePODJobHeader.Reset();
-                L_ePODJobHeader.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
-                L_ePODJobHeader.SetRange("ePOD RunID", GetJsonvalue(JObject2, 'run').AsInteger());
-                if _SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
-                    L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Weekend Shipping Agent Code");
-                    L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
-                end else begin
-                    L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Shipping Agent Code");
-                    L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Shipping Agent Service Code");
-                end;
-                if L_ePODJobHeader.FindFirst() then begin
-                    //Create epod Loading job Details in BC++
-                    CreateLineNew(_SalesInvoiceHeader, L_ePODJobHeader, GetJsonvalue(JObject2, 'id').AsInteger());
+                collection_httpheaders := collection_httpclient.DefaultRequestHeaders;
+                collection_URL := ServiceURL + 'jobs';
+                collection_httpheaders.Add('Accept', 'application/json');
+                collection_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
 
-                    //Start syncing to podfather++
-                    if L_ePODJobHeader."Synced to ePOD" = false then begin
-                        //create new Loading Job in podfather 
-                        PostConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+
+                //Create Body for collection job+++
+                Clear(Collection_body);
+                Collection_body := CollectionJob_Body(_SalesInvoiceHeader."No.", ChannelCode);
+                if StrLen(Collection_body) = 0 then begin
+                    if GuiAllowed = true then begin
+                        Message('Collection Job sync failed Error: Collection job body is empty');
+                        SyncFailed := true;
                     end else begin
-                        //Update Normal Job in to existing loading job in podfather
-                        UpdateConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+                        InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", 'Collection Job sync failed Error: Collection job body is empty');
+                        SyncFailed := true;
                     end;
+                end else begin
+                    collection_httpcontent.WriteFrom(Collection_body);
+                    collection_httpcontent.GetHeaders(collection_httpheaders);
+                    collection_httpheaders.Clear();
+                    collection_httpheaders.Add('Content-Type', 'application/json');
+                    if collection_httpclient.Post(collection_URL, collection_httpcontent, collection_httpResponseMessage) then begin
+                        collection_httpResponseMessage.Content.ReadAs(Collection_Response);
 
+                        //Response 201 Successful for only Collection Job+++ 
+                        if collection_httpResponseMessage.HttpStatusCode = 201 then begin
+                            //Read the response in JObject+++
+                            Collection_JObject.ReadFrom(Collection_Response);
+                            Collection_JObject1 := GetJsonToken(Collection_JObject, 'job').AsObject();
+                            Collection_JObject2 := GetJsonToken(Collection_JObject1, 'data').AsObject();
+
+
+                            //If the collection job sync Successful then checking for Consolidation Job and Creating Data in BC ++++
+
+                            //Read the response in JObject+++
+                            JObject.ReadFrom(Response);
+                            JObject1 := GetJsonToken(jObject, 'job').AsObject();
+                            JObject2 := GetJsonToken(jObject1, 'data').AsObject();
+
+                            //Insert into epodJob list+++
+                            L_ePODJobHeader.Reset();
+                            L_ePODJobHeader.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+                            L_ePODJobHeader.SetRange("ePOD RunID", GetJsonvalue(JObject2, 'run').AsInteger());
+                            if _SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                                L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Weekend Shipping Agent Code");
+                                L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code");
+                            end else begin
+                                L_ePODJobHeader.SetRange("Shipping Agent Code", _SalesInvoiceHeader."Shipping Agent Code");
+                                L_ePODJobHeader.SetRange("Shipping Agent Service Code", _SalesInvoiceHeader."Shipping Agent Service Code");
+                            end;
+                            if L_ePODJobHeader.FindFirst() then begin
+                                //Create epod Loading job Details in BC++
+                                CreateLineNew(_SalesInvoiceHeader, L_ePODJobHeader, GetJsonvalue(JObject2, 'id').AsInteger(), GetJsonvalue(Collection_JObject2, 'id').AsInteger());
+
+                                //Start syncing to podfather++
+                                if L_ePODJobHeader."Synced to ePOD" = false then begin
+                                    //create new Loading Job in podfather 
+                                    SyncFailed := PostConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+                                end else begin
+                                    //Update Normal Job in to existing loading job in podfather
+                                    SyncFailed := UpdateConsolidatedJobToePOD(L_ePODJobHeader."No.", ChannelCode, _SalesInvoiceHeader);
+                                end;
+
+                            end;
+                        end else begin
+                            if GuiAllowed = true then begin
+                                Message('Collection Job sync failed Error: %1', Collection_Response);
+                            end else begin
+                                InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Collection Job sync failed Error: %1', Collection_Response))
+                            end;
+                            SyncFailed := true;
+                        end;
+                    end else begin
+                        if GuiAllowed = true then begin
+                            Message('Collection Job sync failed Error: %1', collection_httpResponseMessage.Content.ReadAs(Collection_Response));
+                        end else begin
+                            InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Collection Job sync failed Error: %1', collection_httpResponseMessage.Content.ReadAs(Collection_Response)))
+                        end;
+                        SyncFailed := true;
+                    end;
                 end;
-                // else begin
-                //     InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Run list is miising for %1', GetJsonvalue(JObject2, 'run').AsInteger()))
-                // end;
+                #EndRegion Create Collection Job+++
+
+
+
+                #Region Delete the normal job if collection job & Consolidation Job sync failed created in POD Father System+++
+                if SyncFailed = true then begin
+                    //Delete the normal job in POD Father System+++
+                    L_epodJobLine.Reset();
+                    L_epodJobLine.SetRange("BC Invoice Number", _SalesInvoiceHeader."No.");
+                    L_epodJobLine.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+                    L_epodJobLine.SetFilter("ePOD ID", '<>%1', 0);
+                    if L_epodJobLine.FindFirst() then begin
+                        // Delete Normal Job
+                        Deletion_httpheaders := Deletion_httpclient.DefaultRequestHeaders;
+                        Deletion_URL := ServiceURL + 'jobs/' + Format(L_epodJobLine."ePOD ID");
+                        Deletion_httpheaders.Add('Accept', 'application/json');
+                        Deletion_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+                        //Deletion_httpheaders.Add('Content-Type', 'application/json');
+
+                        if Deletion_httpclient.Delete(Deletion_URL, Deletion_httpResponseMessage) then begin
+                            Deletion_httpResponseMessage.Content.ReadAs(Deletion_Response);
+
+                            //++
+                            if Deletion_httpResponseMessage.HttpStatusCode = 204 then begin
+                                //Now, Deleting Collection JOB++
+                                Clear(Deletion_httpheaders);
+                                Clear(Deletion_URL);
+                                Clear(Deletion_httpclient);
+                                Clear(Deletion_httpResponseMessage);
+
+                                Deletion_httpheaders := Deletion_httpclient.DefaultRequestHeaders;
+                                Deletion_URL := ServiceURL + 'jobs/' + Format(L_epodJobLine."Collection ePOD ID");
+                                Deletion_httpheaders.Add('Accept', 'application/json');
+                                Deletion_httpheaders.Add('Authorization', 'Bearer ' + SecretAccessKey);
+                                //Deletion_httpheaders.Add('Content-Type', 'application/json');
+
+                                if Deletion_httpclient.Delete(Deletion_URL, Deletion_httpResponseMessage) then begin
+                                    Deletion_httpResponseMessage.Content.ReadAs(Deletion_Response);
+
+                                    if Deletion_httpResponseMessage.HttpStatusCode = 204 then begin
+                                        //Once the jobs are deleted from ePOD system. Now deleting the epod Job Line in BC++
+                                        L_epodJobLine.Reset();
+                                        L_epodJobLine.SetRange("BC Invoice Number", _SalesInvoiceHeader."No.");
+                                        L_epodJobLine.SetRange("Shipment Date", _SalesInvoiceHeader."Shipment Date");
+                                        if L_epodJobLine.FindSet() then
+                                            L_epodJobLine.DeleteAll();
+                                    end;
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+                #EndRegion Delete the normal job if collection job sync failed created in POD Father System+++
             end else begin
-                InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
+                //Manage Error
+                if GuiAllowed = true then begin
+                    Error('Job sync failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Job sync failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
+                end;
+            end;
+        end else begin
+            //Manage Error
+            if GuiAllowed = true then begin
+                Error('Job sync failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+            end else begin
+                InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Job sync failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
             end;
         end;
     end;
@@ -2170,6 +2344,197 @@ codeunit 90038 "POD Father Integration"
         end;
     End;
 
+    local procedure CollectionJob_Body(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]): Text
+    var
+        L_SalesInvoiceHeader: Record "Sales Invoice Header";
+        L_Customer: Record Customer;
+        L_CustomerSiteID: Integer;
+        L_CustomerePODID: Integer;
+        L_Location: Record Location;
+        L_LocationePODID: Integer;
+        L_CollectionTemplateID: Integer;
+        TradePartner: Record "Trade Partner";
+        L_SalesInvoiceLine: Record "Sales Invoice Line";
+        JsonObj: JsonObject;
+        JsonValue: JsonValue;
+        LinesArray: JsonArray;
+        LineObj: JsonObject;
+        FieldObj: JsonObject;
+        FinalTextRequest: Text;
+        L_Hour: Code[20];
+        L_Minut: Code[20];
+        L_Second: Code[20];
+        L_finalStartDate: Text;
+        L_finalEndDate: Text;
+        L_Date: Text;
+        L_Time: Text;
+        L_ePODRunID: Integer;
+        L_DropNumber: Integer;
+        L_ShippingAgent: Record "Shipping Agent";
+        ShippingAgentCodeFilter: Code[20];
+        ShippingAgentServiceCodeFilter: Code[20];
+        L_ePODJobHeader: Record "ePOD Job Header";
+    begin
+        L_SalesInvoiceHeader.Reset();
+        L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceNumber);
+        if L_SalesInvoiceHeader.FindFirst() then begin
+            L_SalesInvoiceHeader.CalcFields(Amount, "Weekend Drop Number", "Drop Number", "No of Boxes");
+
+            //Get Site++
+            Clear(L_CustomerSiteID);
+            Clear(L_CustomerePODID);
+            L_Customer.Reset();
+            L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
+            if L_Customer.FindFirst() then begin
+                L_CustomerePODID := L_Customer."ePOD ID";
+                L_CustomerSiteID := L_Customer."Customer Site ID";
+            end;
+
+            //Get Depot ID+++
+            Clear(L_LocationePODID);
+            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                L_ShippingAgent.Reset();
+                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code");
+                if L_ShippingAgent.FindFirst() then begin
+                    L_LocationePODID := L_ShippingAgent."ePOD ID";
+                end;
+            end else begin
+                L_ShippingAgent.Reset();
+                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+                if L_ShippingAgent.FindFirst() then begin
+                    L_LocationePODID := L_ShippingAgent."ePOD ID";
+                end;
+            end;
+
+
+            //Get Teplate ID
+            Clear(L_CollectionTemplateID);
+            TradePartner.RESET;
+            if TradePartner.Get(_ChannelCode) then begin
+                L_CollectionTemplateID := TradePartner."ePOD Collection Template ID";
+            end;
+
+            //Get the start Date+++
+            //Get Date+++
+            Clear(L_Date);
+            L_Date := Format(L_SalesInvoiceHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>');
+
+            Clear(L_Hour);
+            L_Hour := Format(9);
+            if StrLen(Format(L_Hour)) = 1 then
+                L_Hour := '0' + L_Hour;
+
+            Clear(L_Minut);
+            L_Minut := Format(00);
+            if StrLen(Format(L_Minut)) = 1 then
+                L_Minut := '0' + L_Minut;
+
+            Clear(L_Second);
+            L_Second := Format(0);
+            if StrLen(Format(L_Second)) = 1 then
+                L_Second := '0' + L_Second;
+
+            Clear(L_finalStartDate);
+            //L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalStartDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
+
+
+            //Get the End Date+++
+            //Get Date+++
+            Clear(L_Date);
+            L_Date := Format(L_SalesInvoiceHeader."Shipment Date", 0, '<Year4>-<Month,2>-<Day,2>');
+
+            Clear(L_Hour);
+            L_Hour := Format(17);
+            if StrLen(Format(L_Hour)) = 1 then
+                L_Hour := '0' + L_Hour;
+
+            Clear(L_Minut);
+            L_Minut := Format(00);
+            if StrLen(Format(L_Minut)) = 1 then
+                L_Minut := '0' + L_Minut;
+
+            Clear(L_Second);
+            L_Second := Format(0);
+            if StrLen(Format(L_Second)) = 1 then
+                L_Second := '0' + L_Second;
+
+            Clear(L_finalEndDate);
+            //L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + 'Z';
+            L_finalEndDate := Format(L_Date) + 'T' + Format(L_Hour) + ':' + Format(L_Minut) + ':' + Format(L_Second) + '+01:00';
+
+            //Get RunID+++
+            Clear(L_ePODRunID);
+            Clear(ShippingAgentCodeFilter);
+            Clear(ShippingAgentServiceCodeFilter);
+            IF L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                ShippingAgentCodeFilter := L_SalesInvoiceHeader."Weekend Shipping Agent Code";
+                ShippingAgentServiceCodeFilter := L_SalesInvoiceHeader."Weekend Ship. Agnt. Serv. Code";
+            end ELSE begin
+                ShippingAgentCodeFilter := L_SalesInvoiceHeader."Shipping Agent Code";
+                ShippingAgentServiceCodeFilter := L_SalesInvoiceHeader."Shipping Agent Service Code";
+            end;
+            L_ePODJobHeader.Reset();
+            L_ePODJobHeader.SetRange("Shipment Date", L_SalesInvoiceHeader."Shipment Date");
+            L_ePODJobHeader.SetRange("Shipping Agent Code", ShippingAgentCodeFilter);
+            L_ePODJobHeader.SetRange("Shipping Agent Service Code", ShippingAgentServiceCodeFilter);
+            if L_ePODJobHeader.FindFirst() then
+                L_ePODRunID := L_ePODJobHeader."ePOD RunID";
+
+            //Get Drop Number+++
+            Clear(L_DropNumber);
+            IF L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then begin
+                if L_SalesInvoiceHeader."Weekend Drop Number" <> '' then
+                    Evaluate(L_DropNumber, L_SalesInvoiceHeader."Weekend Drop Number")
+                else
+                    L_DropNumber := 0;
+            end else begin
+                if L_SalesInvoiceHeader."Drop Number" <> '' then
+                    Evaluate(L_DropNumber, L_SalesInvoiceHeader."Drop Number")
+                else
+                    L_DropNumber := 0;
+            end;
+            if L_DropNumber = 0 then
+                L_DropNumber := 0001;
+
+            //Check Mandatory fields++
+            if (L_CustomerSiteID = 0) AND (L_CustomerePODID = 0) AND (L_LocationePODID = 0) AND (L_CollectionTemplateID = 0) AND (L_SalesInvoiceHeader."Shipment Date" = 0D) AND (L_ePODRunID = 0) AND (L_DropNumber = 0) then
+                exit('');
+
+
+            //Create Header++
+            Clear(JsonObj);
+            Clear(JsonValue);
+            JsonObj.Add('site', L_CustomerSiteID);
+            JsonObj.Add('customer', L_CustomerePODID);
+            JsonObj.Add('depot', L_LocationePODID);
+            JsonObj.Add('template', L_CollectionTemplateID);
+            JsonObj.Add('run', L_ePODRunID);
+            JsonObj.Add('dueByStart', L_finalStartDate);
+            JsonObj.Add('dueBy', L_finalEndDate);
+            JsonObj.Add('instructions1', L_SalesInvoiceHeader.GetWorkDescription());
+            JsonObj.Add('instructions2', L_SalesInvoiceHeader.GetWorkDescription());
+            JsonObj.Add('provisional', true);
+            JsonObj.Add('dropTime', 1);
+            JsonObj.Add('dropSequence', L_DropNumber);
+            JsonObj.Add('price', L_SalesInvoiceHeader.Amount);
+
+            //Create Fields Object++
+            Clear(FieldObj);
+            JsonObj.Add('fields', FieldObj);
+            FieldObj.Add('Customer PO', L_SalesInvoiceHeader."No.");
+            FieldObj.Add('Internal Job Ref', L_SalesInvoiceHeader."Order No.");
+
+            //Line Array++
+            JsonObj.Add('items', LinesArray);
+
+
+            Clear(FinalTextRequest);
+            JsonObj.WriteTo(FinalTextRequest);
+            exit(FinalTextRequest)
+        end;
+    End;
+
 
     // procedure GetJobAndUpdateSalesInvoice(_SalesInvoiceNumber: Code[20]; _ChannelCode: Code[50]; var _ErrorMessage: Text)
     // var
@@ -2444,7 +2809,7 @@ codeunit 90038 "POD Father Integration"
     #EndRegion Job+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     #Region Consolidated Job++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    local procedure PostConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header")
+    local procedure PostConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header"): Boolean
     var
         L_ePODJobHeader: Record "ePOD Job Header";
         L_httpheaders: HttpHeaders;
@@ -2459,6 +2824,7 @@ codeunit 90038 "POD Father Integration"
         Response: Text;
         ModificationRequired: Boolean;
         L_ePODJobLine: Record "ePOD Job Line";
+        L_ConsolidatedJob_SyncFailed: Boolean;
     begin
         //Clear All Variable +++
         ClearAll();
@@ -2466,7 +2832,7 @@ codeunit 90038 "POD Father Integration"
         //Check Mandatory fields+++
         CheckMandatoryfieldForJob(ChannelCode);
 
-
+        //++
         L_ePODJobHeader.Reset();
         L_ePODJobHeader.SetRange("No.", _JobNo);
         if L_ePODJobHeader.FindFirst() then begin
@@ -2482,9 +2848,15 @@ codeunit 90038 "POD Father Integration"
             Clear(body);
             body := ConsolidatedJob_Body(L_ePODJobHeader."No.", ChannelCode);
             if StrLen(body) = 0 then begin
-                if GuiAllowed = true then
-                    Error('LoadingJob is not synced');
-                exit;
+                if GuiAllowed = true then begin
+                    Message('Loading Job sync failed Error: Loading job body is empty');
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", 'Loading Job sync failed Error: Loading job body is empty');
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end;
             end;
 
             //Post Order to POD portal++
@@ -2495,7 +2867,7 @@ codeunit 90038 "POD Father Integration"
             if L_httpclient.Post(L_URL, L_httpcontent, L_httpResponseMessage) then begin
                 L_httpResponseMessage.Content.ReadAs(Response);
 
-                //Response 201 means Successful+++ 
+                //Response 201 Successful+++ 
                 if L_httpResponseMessage.HttpStatusCode = 201 then begin
                     //Read the response in JObject+++
                     JObject.ReadFrom(Response);
@@ -2522,9 +2894,36 @@ codeunit 90038 "POD Father Integration"
                     if L_ePODJobLine.FindSet() then begin
                         L_ePODJobLine.ModifyAll("Consolidated to Loading Job", true);
                     end;
-                end else
-                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
-            end
+
+                    L_ConsolidatedJob_SyncFailed := false;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    //Manage Error
+                    if GuiAllowed = true then begin
+                        Message('Loading Job Sync Failed Error: %1', Response);
+                        L_ConsolidatedJob_SyncFailed := true;
+                        exit(L_ConsolidatedJob_SyncFailed);
+                    end else begin
+                        InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Loading Job Sync Failed Error: %1', Response));
+                        L_ConsolidatedJob_SyncFailed := true;
+                        exit(L_ConsolidatedJob_SyncFailed);
+                    end;
+                end;
+            end else begin
+                //Manage Error
+                if GuiAllowed = true then begin
+                    Message('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end;
+            end;
+        end else begin
+            L_ConsolidatedJob_SyncFailed := true;
+            exit(L_ConsolidatedJob_SyncFailed);
         end;
     end;
 
@@ -2766,7 +3165,7 @@ codeunit 90038 "POD Father Integration"
 
 
 
-    local procedure UpdateConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header")
+    local procedure UpdateConsolidatedJobToePOD(_JobNo: Code[20]; ChannelCode: Code[10]; _SalesInvoiceHeader: Record "Sales Invoice Header"): Boolean
     var
         L_ePODJobHeader: Record "ePOD Job Header";
         L_httpheaders: HttpHeaders;
@@ -2781,6 +3180,7 @@ codeunit 90038 "POD Father Integration"
         Response: Text;
         ModificationRequired: Boolean;
         L_ePODJobLine: Record "ePOD Job Line";
+        L_ConsolidatedJob_SyncFailed: Boolean;
     begin
         //Clear All Variable +++
         ClearAll();
@@ -2788,7 +3188,7 @@ codeunit 90038 "POD Father Integration"
         //Check Mandatory fields+++
         CheckMandatoryfieldForJob(ChannelCode);
 
-
+        //++
         L_ePODJobHeader.Reset();
         L_ePODJobHeader.SetRange("No.", _JobNo);
         if L_ePODJobHeader.FindFirst() then begin
@@ -2804,9 +3204,15 @@ codeunit 90038 "POD Father Integration"
             Clear(body);
             body := UpdateConsolidatedJob_Body(L_ePODJobHeader."No.", ChannelCode);
             if StrLen(body) = 0 then begin
-                if GuiAllowed = true then
-                    Error('LoadingJob is not synced');
-                exit;
+                if GuiAllowed = true then begin
+                    Message('Loading Job sync failed Error: Loading job body is empty');
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", 'Loading Job sync failed Error: Loading job body is empty');
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end;
             end;
 
             //Post Order to POD portal++
@@ -2825,9 +3231,36 @@ codeunit 90038 "POD Father Integration"
                     if L_ePODJobLine.FindSet() then begin
                         L_ePODJobLine.ModifyAll("Consolidated to Loading Job", true);
                     end;
-                end else
-                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", Response)
-            end
+
+                    L_ConsolidatedJob_SyncFailed := false;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    //Manage Error
+                    if GuiAllowed = true then begin
+                        Message('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+                        L_ConsolidatedJob_SyncFailed := true;
+                        exit(L_ConsolidatedJob_SyncFailed);
+                    end else begin
+                        InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
+                        L_ConsolidatedJob_SyncFailed := true;
+                        exit(L_ConsolidatedJob_SyncFailed);
+                    end;
+                end;
+            end else begin
+                //Manage Error
+                if GuiAllowed = true then begin
+                    Message('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response));
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end else begin
+                    InsertErrorLog(Database::"Sales Invoice Header", _SalesInvoiceHeader."No.", StrSubstNo('Loading Job Sync Failed Error: %1', L_httpResponseMessage.Content.ReadAs(Response)));
+                    L_ConsolidatedJob_SyncFailed := true;
+                    exit(L_ConsolidatedJob_SyncFailed);
+                end;
+            end;
+        end else begin
+            L_ConsolidatedJob_SyncFailed := true;
+            exit(L_ConsolidatedJob_SyncFailed);
         end;
     end;
 
@@ -3074,7 +3507,7 @@ codeunit 90038 "POD Father Integration"
     // end;
 
 
-    local procedure CreateLineNew(_InvoiceHeader: Record "Sales Invoice Header"; _ePODJobHeader: Record "ePOD Job Header"; _ePODID: Integer)
+    local procedure CreateLineNew(_InvoiceHeader: Record "Sales Invoice Header"; _ePODJobHeader: Record "ePOD Job Header"; _ePODID: Integer; _ePODIDForCollection: Integer)
     var
         L_ePODRunHeader: Record "ePOD Job Header";
         L_ePODRunLine: Record "ePOD Job Line";
@@ -3179,6 +3612,7 @@ codeunit 90038 "POD Father Integration"
                         _InvoiceHeader.CalcFields("No of Boxes");
                         L_ePODRunLine.Quantity := _InvoiceHeader."No of Boxes";
                         L_ePODRunLine."ePOD ID" := _ePODID;
+                        L_ePODRunLine."Collection ePOD ID" := _ePODIDForCollection;
                         L_ePODRunLine."Synced to ePOD" := true;
                         L_ePODRunLine.Insert();
                     end;
@@ -3220,6 +3654,7 @@ codeunit 90038 "POD Father Integration"
                                     L_ePODRunLine.Description := '1TOTE';
                                     L_ePODRunLine.Quantity := 1;
                                     L_ePODRunLine."ePOD ID" := _ePODID;
+                                    L_ePODRunLine."Collection ePOD ID" := _ePODIDForCollection;
                                     L_ePODRunLine."Synced to ePOD" := true;
                                     L_ePODRunLine.Insert();
                                 end;
@@ -3454,10 +3889,24 @@ codeunit 90038 "POD Father Integration"
         TradePartner.RESET;
         if TradePartner.Get(ChannelCode) then begin
             TradePartner.TestField("ePOD Template ID");
+            TradePartner.TestField("ePOD Collection Template ID");
             TradePartner.TestField(SecretAccessKey);
             TradePartner.TestField("Sevice/API URL");
         End else
             Error('Channel Partner Missing');
+    end;
+
+
+    procedure UpdateShipmentDate(_SalesInvoiceHeader: Code[20])
+    var
+        L_SalesInvoiceHeader: Record "Sales Invoice Header";
+    begin
+        L_SalesInvoiceHeader.Reset();
+        L_SalesInvoiceHeader.SetRange("No.", _SalesInvoiceHeader);
+        if L_SalesInvoiceHeader.FindFirst() then begin
+            L_SalesInvoiceHeader."Shipment Date" := 20241001D;
+            L_SalesInvoiceHeader.Modify();
+        end;
     end;
 
     #EndRegion Common function++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

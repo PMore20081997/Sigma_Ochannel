@@ -102,6 +102,7 @@ codeunit 90000 "Web Order Mgt"
         L_Date: Record Date;
         L_ShippingAgentService: Record "Shipping Agent Services";
         NoSeries: Codeunit "No. Series";
+        L_Shift: Text[20];
     Begin
         ChannelPartner.Get(P_InterimSalesHeader."Trade Partner Code");
         ChannelPartner.TestField("Channel Order No. Series");
@@ -159,62 +160,52 @@ codeunit 90000 "Web Order Mgt"
                 L_InterimSalesHeader.Validate("Weekend Ship Agent Serv Code", SellToCustomer."Weekend Ship. Agnt. Serv. Code");
 
                 //Update Shipment Date++
+                // Rec.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()));
+                Clear(L_Shift);
                 L_Date.Reset();
                 L_Date.SetRange(L_Date."Period Type", L_Date."Period Type"::Date);
-                L_Date.SetRange(L_Date."Period Start", Today);
+                L_Date.SetRange(L_Date."Period Start", WorkDate());
                 if L_Date.FindFirst() then begin
                     if UpperCase(L_Date."Period Name") = UpperCase('FRIDAY') then begin
-                        if L_InterimSalesHeader."Weekend Ship Agent Serv Code" <> '' then begin
-                            L_ShippingAgentService.Reset();
-                            L_ShippingAgentService.SetRange("Shipping Agent Code", L_InterimSalesHeader."Weekend Shipping Agent Code");
-                            L_ShippingAgentService.SetRange(Code, L_InterimSalesHeader."Weekend Ship Agent Serv Code");
-                            if L_ShippingAgentService.FindFirst() then begin
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                    if DT2Time(CurrentDateTime) < 190000T then
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', Today));
-                                end;
-                            end;
-                        end
-                        else begin
-                            L_ShippingAgentService.Reset();
-                            L_ShippingAgentService.SetRange("Shipping Agent Code", L_InterimSalesHeader."Shipping Agent Code");
-                            L_ShippingAgentService.SetRange(Code, L_InterimSalesHeader."Shipping Agent Service Code");
-                            if L_ShippingAgentService.FindFirst() then begin
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                                    if DT2Time(CurrentDateTime) < 170000T then
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                                end;
-                                if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                    if DT2Time(CurrentDateTime) < 190000T then
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                    else
-                                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+4D>', Today))
-                                end;
-                            end;
-                        end;
-                    end
-                    else begin
+
+                        //Get Shift
                         L_ShippingAgentService.Reset();
-                        L_ShippingAgentService.SetRange("Shipping Agent Code", L_InterimSalesHeader."Shipping Agent Code");
-                        L_ShippingAgentService.SetRange(Code, L_InterimSalesHeader."Shipping Agent Service Code");
-                        if L_ShippingAgentService.FindFirst() then begin
-                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::A then begin
-                                if DT2Time(CurrentDateTime) < 170000T then
-                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                else
-                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
-                            end;
-                            if L_ShippingAgentService.Shift = L_ShippingAgentService.Shift::E then begin
-                                if DT2Time(CurrentDateTime) < 190000T then
-                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', Today))
-                                else
-                                    L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+2D>', Today))
+                        if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Weekend Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Weekend Ship. Agnt. Serv. Code");
+                        end else begin
+                            L_ShippingAgentService.SetRange("Shipping Agent Code", SellToCustomer."Shipping Agent Code");
+                            L_ShippingAgentService.SetRange(Code, SellToCustomer."Shipping Agent Service Code");
+                        end;
+                        if L_ShippingAgentService.FindFirst() then
+                            L_Shift := Format(L_ShippingAgentService.Shift);
+
+
+                        //E - Shift
+                        if UpperCase(L_Shift) = UpperCase('E') then begin
+                            if (SellToCustomer."Weekend Shipping Agent Code" <> '') AND (SellToCustomer."Weekend Ship. Agnt. Serv. Code" <> '') then
+                                //Update Saturday++
+                                L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
+                            else begin
+                                //Update Monday
+                                L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
                             end;
                         end;
+
+                        //A - Shift
+                        if UpperCase(L_Shift) = UpperCase('A') then begin
+                            //Update Monday
+                            L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+3D>', WorkDate()));
+                        end;
+
+                        //M - Shift
+                        //Phase2+++
+
+                        //X - Shift
+                        //Phase2+++
+                    end else begin
+                        //As discussed shipment date shoud be next day all condistion++
+                        L_InterimSalesHeader.Validate("Shipment Date", CalcDate('<+1D>', WorkDate()))
                     end;
                 end;
             end;
@@ -1192,9 +1183,27 @@ codeunit 90000 "Web Order Mgt"
                     //"Temperature Blocked" Response (Using it For Shipping Agent Service Item Restriction SEQ10++
                     if L_ErrorRecorded = false then begin
                         if L_Item.Get(L_InterimSalesLine."No.") then begin
-                            if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
-                                Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
-                                L_ErrorRecorded := TRUE;
+                            if Format(P_InterimSalesHeader."Shipment Date", 0, '<Weekday Text>') <> 'Saturday' then begin
+                                if P_InterimSalesHeader."Shipping Agent Service Code" <> '' then begin
+                                    if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                        Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                        L_ErrorRecorded := TRUE;
+                                    end;
+                                end;
+                            end else begin
+                                if P_InterimSalesHeader."Weekend Shipping Agent Code" <> '' then begin
+                                    if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Weekend Shipping Agent Code", P_InterimSalesHeader."Weekend Ship Agent Serv Code") then begin
+                                        Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                        L_ErrorRecorded := TRUE;
+                                    end;
+                                end else begin
+                                    if P_InterimSalesHeader."Shipping Agent Service Code" <> '' then begin
+                                        if CheckShippingAgentServiceRestriction(L_InterimSalesLine."No.", P_InterimSalesHeader."Shipping Agent Code", P_InterimSalesHeader."Shipping Agent Service Code") then begin
+                                            Sigma_InsertErrorLog('Temperature blocked', P_InterimSalesHeader, L_InterimSalesLine, 'SEQ10', false, '');
+                                            L_ErrorRecorded := TRUE;
+                                        end;
+                                    end;
+                                end;
                             end;
                         end;
                     end;
