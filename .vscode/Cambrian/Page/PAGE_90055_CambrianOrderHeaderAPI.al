@@ -54,7 +54,7 @@ page 90057 "Cambrian Order Header API"
             {
                 ApplicationArea = All;
             }
-            part(lines; "DC Web Order Line Subpage")
+            part(lines; "Cambrian New Order Line")
             {
                 EntitySetName = 'lines';
                 EntityName = 'line';

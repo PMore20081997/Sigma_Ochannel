@@ -58,7 +58,7 @@ page 90060 "Apotech Order Header API"
             {
                 ApplicationArea = All;
             }
-            part(lines; "Avibuyer New Order Line")
+            part(lines; "Apotech Order Line")
             {
                 EntitySetName = 'lines';
                 EntityName = 'line';
