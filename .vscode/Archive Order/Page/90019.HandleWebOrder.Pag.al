@@ -102,6 +102,23 @@ page 90019 "Handle Web Order"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("Total Order"; Rec."Total Order")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Total Order Amount';
+                }
+                field("Consolidated Order"; Rec."Consolidated Order")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Special; Rec.Special)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Special Order';
+                }
                 field(Status; Rec.Status)
                 {
                     Editable = false;

@@ -34,15 +34,22 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }
+                    action("Channel Price List")
+                    {
+                        ApplicationArea = All;
+                        RunObject = page "Channel Price List";
+                    }
                     action("Channel Prices")
                     {
                         RunObject = page "Sales Price Lists";
                         ApplicationArea = All;
+                        Caption = 'Channel Prices (Sigconnect)';
                     }
                     action("Channel Item References")
                     {
                         RunObject = page "Channel Item Reference";
                         ApplicationArea = All;
+                        Caption = 'Channel Item References (Sigconnect)';
                     }
                     action("Shipping Agents")
                     {

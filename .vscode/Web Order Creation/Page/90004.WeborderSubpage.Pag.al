@@ -269,6 +269,11 @@ page 90004 "Web order Subpage"
                     ApplicationArea = All;
                     Editable = false;
                 }
+                field("Unit Volume"; Rec."Unit Volume")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Unit Price"; Rec."Unit Price")
                 {
                     Caption = 'Unit Price Ex. VAT';

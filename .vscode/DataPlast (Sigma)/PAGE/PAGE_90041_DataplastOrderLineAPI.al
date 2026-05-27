@@ -87,6 +87,7 @@ page 90041 "Dataplast Order Line API"
         L_Item: Record Item;
         AvailableInventory: Decimal;
         ItemReference: Record "Item Reference";
+        L_TradePartner: Record "Trade Partner";
     begin
         IsDeepInsert := IsNullGuid(Rec."Header Id");
         if not IsDeepInsert then begin
@@ -142,6 +143,17 @@ page 90041 "Dataplast Order Line API"
                 end else begin
                     Rec."Reason Code" := 'Order Line Created';
                     Rec."Reason Message" := 'Successful';
+                end;
+            end else begin
+                L_TradePartner.Reset();
+                L_TradePartner.SetRange(Code, MyHeader."Trade Partner Code");
+                if L_TradePartner.FindFirst() then begin
+                    IF L_TradePartner."New QuotaByQuantity Response" = true then begin
+                        if Rec."Qty. to Deliver" = 0 then begin
+                            Rec."Reason Code" := 'Product out of stock because of Quota';
+                            Rec."Reason Message" := 'Product out of stock because of Quota';
+                        end;
+                    end;
                 end;
             end;
         end;

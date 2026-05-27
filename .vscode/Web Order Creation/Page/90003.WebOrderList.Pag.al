@@ -108,6 +108,20 @@ page 90003 "Web Order List"
                     ApplicationArea = All;
 
                 }
+                field("Total Order"; Rec."Total Order")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Total Order Amount';
+                }
+                field(Special; Rec.Special)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Special Order';
+                }
+                field("Consolidated Order"; Rec."Consolidated Order")
+                {
+                    ApplicationArea = all;
+                }
                 field("Sales Order Created"; Rec."Sales Order Created")
                 {
                     ApplicationArea = all;

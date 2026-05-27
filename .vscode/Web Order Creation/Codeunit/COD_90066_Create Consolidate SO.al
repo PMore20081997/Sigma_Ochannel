@@ -29,6 +29,262 @@ codeunit 90066 "Create Consolidate SO"
         Clear(G_SNo);
     end;
 
+
+    #Region New Code for SingleOrder order++++++++++++++++++++++++++++++++++++++++++
+    procedure SingleOrder_ProcessTemporaryWebOrdertoSalesOrder(_InterimSH: Record "Interim Sales Header")
+    begin
+        //Create Temporary Record++
+        SingleOrder_CreateTemporaryOrder(_InterimSH);
+    end;
+
+    local procedure SingleOrder_CreateTemporaryOrder(_InterimSH: Record "Interim Sales Header")
+    var
+        L_InterimSL: Record "Interim Sales Line";
+        L_Item: Record Item;
+        L_CUstomer: Record Customer;
+    begin
+        L_InterimSL.Reset();
+        L_InterimSL.SetRange("Document Type", _InterimSH."Document Type");
+        L_InterimSL.SetRange("Document No", _InterimSH."No.");
+        L_InterimSL.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+        L_InterimSL.SetFilter("Qty. to Deliver", '>%1', 0);
+        if L_InterimSL.FindSet() then begin
+            repeat
+                L_Item.Reset();
+                if L_Item.Get(L_InterimSL."No.") then begin
+                    if (L_Item."Gen. Prod. Posting Group" <> '') then begin
+                        //Create Lines++
+                        SingleOrder_CreateTemporarySalesLine(L_InterimSL, _InterimSH);
+                    end;
+                end;
+            until L_InterimSL.Next() = 0;
+        end;
+    end;
+
+
+    local procedure SingleOrder_CreateTemporarySalesLine(_InterimSalesLine: Record "Interim Sales Line"; _InterimSH: Record "Interim Sales Header")
+    var
+        L_Item: Record Item;
+    begin
+        G_TemporaryLineNo += 10000;
+        Temporary_SalesLine.Init();
+        Temporary_SalesLine."Document Type" := _InterimSH."Document Type"::Order;
+        Temporary_SalesLine.Type := Temporary_SalesLine.Type::Item;
+        Temporary_SalesLine."No." := _InterimSalesLine."No.";
+        Temporary_SalesLine."Line No." := G_TemporaryLineNo;
+        Temporary_SalesLine.Quantity := _InterimSalesLine."Qty. to Deliver";
+        Temporary_SalesLine."Sell-to Customer No." := _InterimSH."Sell-to Customer No.";
+        Temporary_SalesLine."Ship-to Code" := _InterimSH."Ship-to Code";
+        Temporary_SalesLine."Shipping Agent Code" := _InterimSH."Shipping Agent Code";
+        Temporary_SalesLine."Shipping Agent Service Code" := _InterimSH."Shipping Agent Service Code";
+        Temporary_SalesLine."Shipment Date" := _InterimSH."Shipment Date";
+        Temporary_SalesLine."Location Code" := _InterimSH."Location Code";
+        Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
+        Temporary_SalesLine."Unit Volume" := _InterimSalesLine."Unit Volume";
+        Temporary_SalesLine."Temp Web Order No." := _InterimSH."No."; //this is for Temp to create webbuffer++
+        Temporary_SalesLine."WebOrder No." := _InterimSH."No."; //This is only for Singl Order+++ 20/05/206
+        Temporary_SalesLine."Changed UnitPrice" := true;
+        Temporary_SalesLine."Special Order" := _InterimSH.Special;
+        if Temporary_SalesLine."Changed UnitPrice" = true then
+            Temporary_SalesLine."Unit Price" := _InterimSalesLine."Unit Price";
+
+
+        //Update KNAP Line+++
+        if (CheckKnaapCustomer(Temporary_SalesLine."Sell-to Customer No.") = true) AND (CheckKnaapShippingAgentServiceFromInterimSalesHeader(_InterimSH."Shipping Agent Code", _InterimSH."Shipping Agent Service Code") = true) AND (CheckKnaapItem(Temporary_SalesLine."No.") = true) then begin
+            L_Item.Reset();
+            L_Item.SetRange("No.", Temporary_SalesLine."No.");
+            if L_Item.FindFirst() then begin
+                if Temporary_SalesLine.Quantity <= L_Item."Knapp Threshold Quantity" then
+                    Temporary_SalesLine."Knapp Line" := true;
+            end;
+        end;
+        Temporary_SalesLine.Insert();
+    end;
+
+
+    procedure SingleOrder_ProcessTemporarySalesLinetoSalesOrder()
+    var
+        L_InterimSalesHeader: Record "Interim Sales Header";
+        Counter: Integer;
+        GeneralSetupChannel: Record "General Setup - Channels";
+        BreakCount: Integer;
+        L_LineNo: Integer;
+        L_OrderNoLoop: Code[250];
+        L_TotalKNAPPLoopCount: Integer;
+        L_ChannelCode: Code[20];
+        L_OrderCreatedAt: DateTime;
+        TempSalesHeader: Record "Web Buffer";
+    begin
+        //Insert Data in Temp Table for Loop+++
+        Temporary_SalesLine_ForLoop.Reset();
+        Temporary_SalesLine_ForLoop.DeleteAll();
+        Temporary_SalesLine.Reset();
+        if Temporary_SalesLine.FindSet() then begin
+            repeat
+                Temporary_SalesLine_ForLoop.Init();
+                Temporary_SalesLine_ForLoop.TransferFields(Temporary_SalesLine);
+                Temporary_SalesLine_ForLoop.Insert();
+            until Temporary_SalesLine.Next() = 0;
+        end;
+
+
+        //clear Variable++
+        Clear(L_LineNo);
+        Clear(L_OrderNoLoop);
+        Clear(L_TotalKNAPPLoopCount);
+
+        //For KNAAP Order+++
+        GeneralSetupChannel.Get();
+        Clear(BreakCount);
+        BreakCount := GeneralSetupChannel."Knapp Consolidation Counter";
+
+        //For Manual Order++
+        Temporary_SalesLine.Reset();
+        Temporary_SalesLine.SetCurrentKey("Temp Web Order No.");
+        Temporary_SalesLine.Ascending(true);
+        if Temporary_SalesLine.FindSet() then begin
+            repeat
+                //This line only reduce the extra loop+++
+                if L_OrderNoLoop <> Temporary_SalesLine."Temp Web Order No." then begin
+
+                    // Lock the tables to work on
+                    InsertedSH.Reset();
+                    InsertedSH.LockTable();
+                    // InsertedSL.Reset();
+                    // InsertedSL.LockTable();
+
+                    #Region MANUAL order Processs+++++++++++++++++++++++++++++Start+++++++++++++++++++++++++++++++++++++++++++
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", false);
+                    Temporary_SalesLine_ForLoop.SetRange("Temp Web Order No.", Temporary_SalesLine."Temp Web Order No.");
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
+
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Move Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+
+                    end;
+                    #EndRegion MANUAL order Processs+++++++++++++++++++++++++++++End+++++++++++++++++++++++++++++++++++++++++++
+
+                    //System Rest for 5 milisecond++
+                    Sleep(5);
+
+
+                    #Region KNAPP order Processs+++++++++++++++++++++++++++++Start+++++++++++++++++++++++++++++++++++++++++++
+                    Clear(Counter);
+                    Temporary_SalesLine_ForLoop.Reset();
+                    Temporary_SalesLine_ForLoop.SetRange("Knapp Line", true);
+                    Temporary_SalesLine_ForLoop.SetRange("Temp Web Order No.", Temporary_SalesLine."Temp Web Order No.");
+                    Temporary_SalesLine_ForLoop.SetRange("System-Created Entry", false);
+                    if Temporary_SalesLine_ForLoop.FindSet() then begin
+                        //CLear Variable++
+                        Clear(L_LineNo);
+                        Clear(L_TotalKNAPPLoopCount);
+
+                        //Get Total Count++
+                        L_TotalKNAPPLoopCount := Temporary_SalesLine_ForLoop.Count;
+
+                        //Create Header++
+                        InsertedSH.Reset();
+                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                        repeat
+                            L_TotalKNAPPLoopCount -= 1;
+                            Counter += 1;
+
+                            L_LineNo := L_LineNo + 10000;
+                            //Create Line++
+                            CreateSalesLineFromTemporary(G_SNo, Temporary_SalesLine_ForLoop, L_LineNo);
+
+                            //Move Into Web Buffer Table++
+                            InsertIntoTempHeaderFromTemporary(Temporary_SalesLine_ForLoop, G_SNo);
+
+                            Temporary_SalesLine_ForLoop."System-Created Entry" := true;
+                            Temporary_SalesLine_ForLoop.Modify();
+
+                            if BreakCount > 0 then begin
+                                if Counter = BreakCount then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalKNAPPLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end else begin
+                                if Counter = 30 then begin
+                                    //break;
+
+                                    //Create Header++
+                                    if L_TotalKNAPPLoopCount > 0 then begin
+                                        Clear(Counter);
+                                        InsertedSH.Reset();
+                                        CreateSalesHeaderFromTemporary(Temporary_SalesLine_ForLoop);
+                                    end;
+                                end;
+                            end;
+                        until Temporary_SalesLine_ForLoop.Next() = 0;
+                    end;
+                    #EndRegion KNAPP order Processs+++++++++++++++++++++++++++++End+++++++++++++++++++++++++++++++++++++++++++
+
+                    //Release the locktable++
+                    Commit();
+                    L_OrderNoLoop := Temporary_SalesLine."Temp Web Order No.";
+
+                    #Region Insert Web Buffer for Normal web Order not for consolidated order as for consolidated order we will create buffer at the time of consolidation++
+                    Clear(L_ChannelCode);
+                    Clear(L_OrderCreatedAt);
+                    L_InterimSalesHeader.Reset();
+                    L_InterimSalesHeader.SetRange("No.", Temporary_SalesLine."WebOrder No.");
+                    if L_InterimSalesHeader.FindFirst() then begin
+                        L_ChannelCode := L_InterimSalesHeader."Trade Partner Code";
+                        L_OrderCreatedAt := L_InterimSalesHeader.SystemCreatedAt;
+                    end;
+
+                    //++
+                    L_InterimSalesHeader.Reset();
+                    L_InterimSalesHeader.SetRange("Sell-to Customer No.", Temporary_SalesLine."Sell-to Customer No.");
+                    L_InterimSalesHeader.SetRange("Sales Order Created", false);
+                    L_InterimSalesHeader.SetRange("Consolidated Order", false);
+                    L_InterimSalesHeader.SetRange("Trade Partner Code", L_ChannelCode);
+                    L_InterimSalesHeader.SetFilter(SystemCreatedAt, '<=%1', L_OrderCreatedAt);
+                    if L_InterimSalesHeader.FindSet() then begin
+                        repeat
+                            TempSalesHeader.RESET;
+                            TempSalesHeader.SETRANGE("Web Document No.", L_InterimSalesHeader."No.");
+                            IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
+                                TempSalesHeader.INIT;
+                                TempSalesHeader."Trade Partner Code" := L_InterimSalesHeader."Trade Partner Code";
+                                TempSalesHeader."Web Document No." := L_InterimSalesHeader."No.";
+                                TempSalesHeader."Sales Document No." := 'LifeRayNormalOrder';
+                                TempSalesHeader."Created At" := WorkDate();
+                                TempSalesHeader.INSERT;
+                            END;
+                        until L_InterimSalesHeader.Next() = 0;
+                    end;
+                    #EndRegion Insert Web Buffer for Normal web Order not for consolidated order as for consolidated order we will create buffer at the time of consolidation++
+                end;
+            until Temporary_SalesLine.Next() = 0;
+        end;
+    end;
+    #EndRegion New Code for SingleOrder+++++++++++++++++++++++++++++++++++++++
+
+
     procedure ProcessTemporaryWebOrdertoSalesOrder(_InterimSH: Record "Interim Sales Header")
     begin
         //Create Temporary Record++
@@ -134,7 +390,9 @@ codeunit 90066 "Create Consolidate SO"
                 L_Item.SetRange("No.", Temporary_SalesLine."No.");
                 if L_Item.FindFirst() then begin
                     if Temporary_SalesLine.Quantity <= L_Item."Knapp Threshold Quantity" then
-                        Temporary_SalesLine."Knapp Line" := true;
+                        Temporary_SalesLine."Knapp Line" := true
+                    else
+                        Temporary_SalesLine."Knapp Line" := false;
                 end;
             end;
 
@@ -155,6 +413,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine."Temp Web Order No." := _InterimSH."No.";
+            Temporary_SalesLine."Unit Volume" := _InterimSalesLine."Unit Volume";
+            Temporary_SalesLine."Special Order" := _InterimSH.Special;
             Temporary_SalesLine."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
             if _InterimSalesLine."Changed UnitPrice" = true then
                 Temporary_SalesLine."Unit Price" := _InterimSalesLine."Unit Price";
@@ -166,7 +426,9 @@ codeunit 90066 "Create Consolidate SO"
                 L_Item.SetRange("No.", Temporary_SalesLine."No.");
                 if L_Item.FindFirst() then begin
                     if Temporary_SalesLine.Quantity <= L_Item."Knapp Threshold Quantity" then
-                        Temporary_SalesLine."Knapp Line" := true;
+                        Temporary_SalesLine."Knapp Line" := true
+                    else
+                        Temporary_SalesLine."Knapp Line" := false;
                 end;
             end;
             Temporary_SalesLine.Insert();
@@ -225,6 +487,8 @@ codeunit 90066 "Create Consolidate SO"
             Temporary_SalesLine_ForLoop."Location Code" := _InterimSH."Location Code";
             Temporary_SalesLine_ForLoop."FA Posting Date" := _InterimSH."Order Date";
             Temporary_SalesLine_ForLoop."Temp Web Order No." := _InterimSH."No.";
+            Temporary_SalesLine_ForLoop."Unit Volume" := _InterimSalesLine."Unit Volume";
+            Temporary_SalesLine."Special Order" := _InterimSH.Special;
             Temporary_SalesLine_ForLoop."Changed UnitPrice" := _InterimSalesLine."Changed UnitPrice";
             if _InterimSalesLine."Changed UnitPrice" = true then
                 Temporary_SalesLine_ForLoop."Unit Price" := _InterimSalesLine."Unit Price";
@@ -972,8 +1236,15 @@ codeunit 90066 "Create Consolidate SO"
                 end;
             end;
             //Update Variant as per the priority-----
+            if _Temporary_SalesLine."WebOrder No." <> '' then
+                InsertedSL."WebOrder No." := _Temporary_SalesLine."WebOrder No."; //For single order 20/05/2026
 
             InsertedSL."Changed UnitPrice" := _Temporary_SalesLine."Changed UnitPrice";
+            InsertedSL."Unit Volume" := _Temporary_SalesLine."Unit Volume";
+            if _Temporary_SalesLine."Special Order" = true then begin
+                InsertedSL.Validate("Purchasing Code", 'SPL ORDER');
+                InsertedSL."Special Order" := _Temporary_SalesLine."Special Order";
+            end;
             if _Temporary_SalesLine."Changed UnitPrice" = true then
                 InsertedSL.Validate("Unit Price", _Temporary_SalesLine."Unit Price");
             InsertedSL."Custom Unit Price" := InsertedSL."Unit Price";

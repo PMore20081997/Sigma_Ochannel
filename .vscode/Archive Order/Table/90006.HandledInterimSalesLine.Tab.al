@@ -378,6 +378,15 @@ table 90006 "Handled Interim Sales Line"
         {
             Editable = false;
         }
+        //87 Used
+        field(88; "Unit Volume"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(89; "Special"; Boolean)
+        {
+
+        }
     }
 
     keys

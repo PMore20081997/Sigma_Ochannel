@@ -98,7 +98,11 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                 }
-                field(PodFather; PodFather)
+                field(PodFather; rec.PodFather)
+                {
+                    ApplicationArea = All;
+                }
+                field("New QuotaByQuantity Response"; Rec."New QuotaByQuantity Response")
                 {
                     ApplicationArea = All;
                 }
@@ -205,6 +209,11 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                 }
+                field("ePOD Collection Template ID"; Rec."ePOD Collection Template ID")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
             }
 
             group("Feature Setup")
@@ -223,6 +232,15 @@ page 90016 "Trade Partner card"
                 {
                     Caption = 'Sync Order';
                     ApplicationArea = all;
+                }
+                field("Sync Product"; Rec."Sync Product")
+                {
+                    ApplicationArea = all;
+                }
+                field("SyncCustomer"; Rec."Sync Customer")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Sync Customer';
                 }
                 field("<Order FullFilment>"; rec.OrderFullFilment)
                 {
@@ -273,6 +291,10 @@ page 90016 "Trade Partner card"
                 {
                     ApplicationArea = All;
                 }
+                field("Batch Size"; Rec."Batch Size")
+                {
+                    ApplicationArea = All;
+                }
             }
 
             group("Posting Set up")
@@ -308,6 +330,12 @@ page 90016 "Trade Partner card"
                     ApplicationArea = all;
                 }
                 field("Last Product Sync"; rec."Last Product Sync")
+                {
+                    Editable = true;
+                    Visible = true;
+                    ApplicationArea = all;
+                }
+                field("Last Inventory Sync"; Rec."Last Inventory Sync")
                 {
                     Editable = true;
                     Visible = true;

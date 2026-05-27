@@ -7,7 +7,7 @@ tableextension 90022 "OC CustomerTrends" extends "CustomerTrends"
             FieldClass = FlowField;
             Editable = false;
             DecimalPlaces = 0 : 5;
-            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false), "Consolidated Order" = const(false)));
         }
         modify("Qty. to be added to SO")
         {

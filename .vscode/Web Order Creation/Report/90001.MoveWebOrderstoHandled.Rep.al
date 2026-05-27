@@ -6,9 +6,7 @@ report 90001 "Move Scanned Order to Handled"
     {
         dataitem("Interim Sales Header"; "Interim Sales Header")
         {
-            DataItemTableView = SORTING("Document Type", "No.")
-                                ORDER(Ascending)
-                                WHERE("Moved In Handled" = CONST(false));
+            DataItemTableView = SORTING("Document Type", "No.") ORDER(Ascending) WHERE("Moved In Handled" = CONST(false));
             RequestFilterFields = "Document Date", "No.", "Trade Partner Code";
 
             trigger OnAfterGetRecord()

@@ -32,6 +32,9 @@ table 90011 "Channel Item Listing"
                     VALIDATE(Rec."Unit Price", Item1."Unit Price");
                     Rec.Validate(RRP, Item1.RRP);
                     VALIDATE(Rec."Item Category Code", Item1."Item Category Code");
+                    Rec."Sales Blocked" := Item1."Sales Blocked";
+                    Rec."Ops Sales Blocked" := Item1."Ops Sales Blocked";
+                    Rec."Min Sell Price" := Item1."Min Sell Price";
                 END;
 
                 IF Item1.GET("Item No.") THEN
@@ -67,8 +70,12 @@ table 90011 "Channel Item Listing"
             Editable = false;
             trigger OnValidate()
             begin
-                IF xRec."Channel Inventory" <> Rec."Channel Inventory" THEN
-                    Rec.VALIDATE("Inventory Synced", FALSE);
+                #Region Sigconnect only++
+                if Rec."Channel Code" = 'SIGCONNECT' then begin
+                    IF xRec."Channel Inventory" <> Rec."Channel Inventory" THEN
+                        Rec.VALIDATE("Inventory Synced", FALSE);
+                end;
+                #EndRegion Sigconnect only++
             end;
         }
         field(9; "Channel Description"; Text[250])
@@ -86,9 +93,13 @@ table 90011 "Channel Item Listing"
             CaptionML = ENU = 'Channel Unit Price', ENG = 'Channel Unit Price';
             trigger OnValidate()
             begin
-                IF xRec."Channel Unit Price" <> Rec."Channel Unit Price" THEN BEGIN
-                    VALIDATE("Price Synced", FALSE);
-                END;
+                #Region Sigconnect only++
+                if Rec."Channel Code" = 'SIGCONNECT' then begin
+                    IF xRec."Channel Unit Price" <> Rec."Channel Unit Price" THEN BEGIN
+                        VALIDATE("Price Synced", FALSE);
+                    END;
+                end;
+                #EndRegion Sigconnect only++
             end;
         }
         field(12; "Listing Status"; Option)
@@ -123,9 +134,13 @@ table 90011 "Channel Item Listing"
                 if Rec.Status = Rec.Status::Inactive then
                     Rec."Item Sync" := false;
 
-                //SBB-592
-                if Rec.Status <> xRec.Status then
-                    Rec."Channel Inventory" := 0;
+                #Region Sigconnect only++
+                if Rec."Channel Code" = 'SIGCONNECT' then begin
+                    //SBB-592
+                    if Rec.Status <> xRec.Status then
+                        Rec."Channel Inventory" := 0;
+                end;
+                #EndRegion Sigconnect only++
             end;
         }
         field(19; FeedType; Option)
@@ -248,7 +263,7 @@ table 90011 "Channel Item Listing"
         field(45; "Web Orders Qty"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("Item No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false), "Consolidated Order" = const(false)));
             DecimalPlaces = 0 : 5;
         }
         field(46; "Physical Inventory"; Decimal)
@@ -279,6 +294,38 @@ table 90011 "Channel Item Listing"
         field(51; "Ops Sales Blocked"; Boolean)
         {
             DataClassification = ToBeClassified;
+        }
+        field(52; "Lowstock Threshold"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(53; "Transaction No."; Integer)
+        {
+
+        }
+        field(54; "Min Sell Price"; Decimal)
+        {
+
+        }
+        field(55; "Variant Mandatory if Exists"; Option)
+        {
+            OptionMembers = Default,No,Yes;
+            FieldClass = FlowField;
+            CalcFormula = lookup(Item."Variant Mandatory if Exists" where("No." = field("Item No.")));
+        }
+        field(56; "Item SystemModifiedAt"; DateTime)
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup(Item.SystemModifiedAt where("No." = field("Item No.")));
+        }
+        field(57; "Work Date Filter"; Date)
+        {
+            FieldClass = FlowFilter;
+        }
+        field(58; "Full-Invetory Exist"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = exist("LifeRay Stock" where("Item No." = field("Item No."), "Sync Type" = const(Full), "Created On" = field("Work Date Filter")));
         }
     }
 

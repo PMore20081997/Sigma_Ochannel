@@ -897,7 +897,6 @@ codeunit 90038 "POD Father Integration"
         L_SalesInvoiceLine: Record "Sales Invoice Line";
         L_ePODJobHeader: Record "ePOD Job Header";
         L_Count: Integer;
-        L_SkipLine: Boolean;
     begin
         //Clear All Variable +++
         ClearAll();
@@ -915,86 +914,87 @@ codeunit 90038 "POD Father Integration"
             L_Count := L_SalesInvoiceHeader.Count;
             repeat
                 //Check No of Box Exist for Non Knapp order++
-                Clear(L_SkipLine);
+                // L_SalesInvoiceHeader.CalcFields("No of Boxes");
+                // if L_SalesInvoiceHeader."Knapp Order" = false then begin
+                //     if L_SalesInvoiceHeader."No of Boxes" = 0 then begin
+                //         if L_Count = 1 then begin
+                //             //Manage Error++
+                //             if GuiAllowed = true then
+                //                 Error('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No.")
+                //             else
+                //                 InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No."));
+                //         end else begin
+                //             //break; //Use Break for Next Invoice
+                //             InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No."));
+                //         end;
+                //     end;
+                // end;
                 L_SalesInvoiceHeader.CalcFields("No of Boxes");
-                if L_SalesInvoiceHeader."Knapp Order" = false then begin
-                    if L_SalesInvoiceHeader."No of Boxes" = 0 then begin
-                        if L_Count = 1 then begin
-                            //Manage Error++
-                            if GuiAllowed = true then
-                                Error('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No.")
-                            else
-                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No."));
-                        end else begin
-                            //break; //Use Break for Next Invoice
-                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Sync Failed. Error: No. of Box not exist for Document No.: %1', L_SalesInvoiceHeader."No."));
-                            L_SkipLine := true;
-                        end;
-                    end;
-                end;
+                if L_SalesInvoiceHeader."Knapp Order" = false then
+                    if L_SalesInvoiceHeader."No of Boxes" = 0 then
+                        break;
 
-                if L_SkipLine = false then begin
-                    //++
-                    L_SalesInvoiceLine.Reset();
-                    L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
-                    L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
-                    L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
-                    if L_SalesInvoiceLine.FindFirst() then begin
-                        L_Customer.Reset();
-                        L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
-                        if L_Customer.FindFirst() then begin
-                            if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
-                                L_ShippingAgent.Reset();
-                                if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then
-                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code")
-                                else
-                                    L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
-                                if L_ShippingAgent.FindFirst() then begin
-                                    if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
-                                        //Create Run details and Loding job HeaderIf not Available + + +
-                                        if PostRunToePODNew(L_SalesInvoiceHeader, ChannelCode) = true then begin
-                                            //Create Job and Loading job line+++
-                                            PostJobToePODNew(L_SalesInvoiceHeader, ChannelCode);
-                                        end;
-                                    end else begin
-                                        //Manage Error++
-                                        if GuiAllowed = true then begin
-                                            Error('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code);
-                                        end else begin
-                                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code));
-                                        end;
+
+                //++
+                L_SalesInvoiceLine.Reset();
+                L_SalesInvoiceLine.SetRange("Document No.", L_SalesInvoiceHeader."No.");
+                L_SalesInvoiceLine.SetFilter(Quantity, '>%1', 0);
+                L_SalesInvoiceLine.SetRange(Type, L_SalesInvoiceLine.Type::Item);
+                if L_SalesInvoiceLine.FindFirst() then begin
+                    L_Customer.Reset();
+                    L_Customer.SetRange("No.", L_SalesInvoiceHeader."Sell-to Customer No.");
+                    if L_Customer.FindFirst() then begin
+                        if (L_Customer."ePOD ID" <> 0) AND (L_Customer."Customer Site ID" <> 0) AND (L_Customer."Podfather Customer" = true) then begin
+                            L_ShippingAgent.Reset();
+                            if L_SalesInvoiceHeader."Weekend Shipping Agent Code" <> '' then
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Weekend Shipping Agent Code")
+                            else
+                                L_ShippingAgent.SetRange(Code, L_SalesInvoiceHeader."Shipping Agent Code");
+                            if L_ShippingAgent.FindFirst() then begin
+                                if (L_ShippingAgent."Podfather Depot" = true) AND (L_ShippingAgent."ePOD ID" <> 0) then begin
+                                    //Create Run details and Loding job HeaderIf not Available + + +
+                                    if PostRunToePODNew(L_SalesInvoiceHeader, ChannelCode) = true then begin
+                                        //Create Job and Loading job line+++
+                                        PostJobToePODNew(L_SalesInvoiceHeader, ChannelCode);
                                     end;
                                 end else begin
                                     //Manage Error++
                                     if GuiAllowed = true then begin
-                                        Error('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code);
+                                        Error('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code);
                                     end else begin
-                                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code))
+                                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not linked with ePOD System', L_ShippingAgent.Code));
                                     end;
                                 end;
                             end else begin
                                 //Manage Error++
                                 if GuiAllowed = true then begin
-                                    Error('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No.");
+                                    Error('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code);
                                 end else begin
-                                    InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No."))
+                                    InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Depot %1 is not found in Shipping Agent table', L_ShippingAgent.Code))
                                 end;
                             end;
                         end else begin
                             //Manage Error++
                             if GuiAllowed = true then begin
-                                Error('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No.");
+                                Error('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No.");
                             end else begin
-                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No."))
+                                InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not linked with ePOD System', L_Customer."No."))
                             end;
                         end;
                     end else begin
                         //Manage Error++
                         if GuiAllowed = true then begin
-                            Error('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No.");
+                            Error('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No.");
                         end else begin
-                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No."))
+                            InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Customer %1 is not found in customer table', L_Customer."No."))
                         end;
+                    end;
+                end else begin
+                    //Manage Error++
+                    if GuiAllowed = true then begin
+                        Error('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No.");
+                    end else begin
+                        InsertErrorLog(Database::"Sales Invoice Header", L_SalesInvoiceHeader."No.", StrSubstNo('Job sync failed. Error: Lines not exist for the Document No.: %1.', L_SalesInvoiceHeader."No."))
                     end;
                 end;
             until L_SalesInvoiceHeader.Next() = 0;

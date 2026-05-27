@@ -10,19 +10,21 @@ codeunit 90005 "Process Web Order"
                 begin
                     CreateInternalPick(Rec);
                 end;
-
             CalllType::"Single Order":
                 begin
-                    CreateSingleOrder(Rec);
-                    GenSetupChannels.Get();
-                    if GenSetupChannels."Despatch Scan Enabled" = false then
-                        MovedToHandled(Rec, true);
+                    #Region Default Code of Ochannel++
+                    // CreateSingleOrder(Rec);
+                    // GenSetupChannels.Get();
+                    // if GenSetupChannels."Despatch Scan Enabled" = false then
+                    //     MovedToHandled(Rec, true);
+                    #EndRegion Default Code of Ochannel++
+                    CreateConsolidateSO.SingleOrder_ProcessTemporaryWebOrdertoSalesOrder(Rec); //Only For Sigma++
                 end;
 
             CalllType::"Consolidate Order":
                 begin
-                    CreateConsolidateSO.ProcessTemporaryWebOrdertoSalesOrder(Rec);
-                    //CreateConsolidateSO.SendRequesttoCreateOrders(Rec);
+                    CreateConsolidateSO.ProcessTemporaryWebOrdertoSalesOrder(Rec); //Only For Sigma++
+                    //CreateConsolidateSO.SendRequesttoCreateOrders(Rec); //Default Code of Ochannel++
                 end;
         end;
 
@@ -454,15 +456,21 @@ codeunit 90005 "Process Web Order"
         L_GeneralSetup: Record "General Setup - Channels";
         LineCount: Integer;
     begin
+        //Clear Variables++
         CLEAR(line);
         CLEAR(totalWeight);
         CLEAR(Qty);
         CLEAR(Amt);
         CLEAR(ItemLineNo);
-        Qty := L_IntrimSalesLine.Quantity;
+
+        //++
+        Qty := L_IntrimSalesLine."Qty. to Deliver";
         Amt := L_IntrimSalesLine.Amount;
 
+
+        //++
         CLEAR(L_SalesL);
+        L_SalesL.Reset();
         L_SalesL.INIT;
         L_SalesL.VALIDATE("Document Type", L_SalesL."Document Type"::Order);
         L_SalesL.VALIDATE("Document No.", HeaderNo);
@@ -666,7 +674,7 @@ codeunit 90005 "Process Web Order"
         ChanCode: Code[20];
         ItemNo: Code[20];
         CustomerNo: Code[20];
-        ISL: Record "Interim Sales Line";
+        L_InterimSalesLine: Record "Interim Sales Line";
         InterimSalesHeader: Record "Interim Sales Header";
         InterimSalesHeader1: Record "Interim Sales Header";
         Customer: Record "Customer";
@@ -674,44 +682,61 @@ codeunit 90005 "Process Web Order"
         GeneralSetup: Record "General Setup - Channels";
         L_SalesLine: Record "Sales Line";
     begin
+        //Get Setup Table++
         GeneralSetup.Get();
+
+        //Clear Variable++
         CLEAR(HeaderNo);
-        ISL.RESET;
-        ISL.SETRANGE("Document Type", Rec."Document Type"::Order);
-        ISL.SETRANGE("Document No", Rec."No.");
-        ApplyDiscount := true;
-        IF ISL.FINDSET THEN BEGIN
-            HeaderNo := NewCreateSalesHeader(ISL);
-            Clear(InvDiscountAmount);
+
+        //Run Process to create Sales order++
+        L_InterimSalesLine.RESET;
+        L_InterimSalesLine.SETRANGE("Document Type", Rec."Document Type"::Order);
+        L_InterimSalesLine.SETRANGE("Document No", Rec."No.");
+        L_InterimSalesLine.SetFilter("Reason Code", '%1|%2', 'Order line created', 'Partial Quantity Delivered');
+        L_InterimSalesLine.SetFilter("Qty. to Deliver", '>%1', 0);
+        IF L_InterimSalesLine.FINDSET THEN BEGIN
+            HeaderNo := NewCreateSalesHeader(L_InterimSalesLine);
             REPEAT
                 CLEAR(LineNo);
-                LineNo := NewCreateSalesLine(HeaderNo, ISL);
-                UpdateSONo(ISL, Rec);
+                LineNo := NewCreateSalesLine(HeaderNo, L_InterimSalesLine);
+            UNTIL L_InterimSalesLine.NEXT = 0;
 
-            UNTIL ISL.NEXT = 0;
-
-            //Bug 12386
-            if ApplyDiscount = false then begin
-                L_SalesLine.Reset();
-                L_SalesLine.SetRange("Document No.", HeaderNo);
-                L_SalesLine.SetRange("Document Type", L_SalesLine."Document Type"::Order);
-                if L_SalesLine.FindSet() then begin
-                    repeat
-                        if L_SalesLine.Type = L_SalesLine.Type::Item then begin
-                            L_SalesLine.Validate("Inv. Discount Amount", 0);
-                            L_SalesLine.Modify();
-                        end;
-                    until L_SalesLine.Next() = 0;
-                end;
-            end;
-            //Bug 12386
-
+            //Sofyan++
             if GeneralSetup."Auto Release Sales Orders" = true then
-                UpdateStatusOnSalesOrder(HeaderNo);//Sofyan
-            //Message('Web Order Processed Successfully'); //Sofyan//NIKHIL_18/05/2022 (Bug 6090: Warning message needed "Web Order Process successfully")
+                UpdateStatusOnSalesOrder(HeaderNo);
+
+            //Insert Web Buffer++
+            InsertIntoTempHeaderFromTemporary(Rec."No.", HeaderNo);
             FirstOrder := FALSE;
         END;
     end;
+
+    local procedure InsertIntoTempHeaderFromTemporary(_WebOrderNo: Code[20]; SalesNo: Code[20])
+    var
+        TempSalesHeader: Record "Web Buffer";
+        L_InterimSalesHeader: Record "Interim Sales Header";
+    begin
+        L_InterimSalesHeader.Reset();
+        L_InterimSalesHeader.SetFilter("No.", _WebOrderNo);
+        L_InterimSalesHeader.SetRange("Document Type", L_InterimSalesHeader."Document Type"::Order);
+        if L_InterimSalesHeader.FindSet() then begin
+            repeat
+                TempSalesHeader.RESET;
+                TempSalesHeader.SETRANGE("Web Document No.", L_InterimSalesHeader."No.");
+                TempSalesHeader.SETRANGE("Sales Document No.", SalesNo);
+                IF NOT TempSalesHeader.FINDFIRST THEN BEGIN
+                    TempSalesHeader.INIT;
+                    TempSalesHeader."Trade Partner Code" := L_InterimSalesHeader."Trade Partner Code";
+                    TempSalesHeader."Web Document No." := L_InterimSalesHeader."No.";
+                    TempSalesHeader."Sales Document No." := SalesNo;
+                    TempSalesHeader."Created At" := WorkDate();
+                    TempSalesHeader.INSERT;
+                END;
+            until L_InterimSalesHeader.Next() = 0;
+        end;
+    end;
+
+
 
     local procedure CreateConsolidateOrder(var Rec: Record "Interim Sales Header")
     var

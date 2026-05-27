@@ -21,21 +21,40 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
         // Add changes to page actions here
         addlast(processing)
         {
-            action("Add to Channel Customer List")
+            group("Integration")
             {
-                ApplicationArea = All;
-                Promoted = true;
-                PromotedCategory = Process;
-                Image = Process;
-                trigger OnAction()
-                var
-                    G_Customer: Record Customer;
-                    ManageCustomerListing: Codeunit "Manage Channel Customer List";
-                begin
-                    G_Customer := Rec;
-                    CurrPage.SETSELECTIONFILTER(G_Customer);
-                    ManageCustomerListing.CreateChannelCustomerlistingForMultipleSelection(G_Customer);
-                end;
+                action("Add to Channel Customer List")
+                {
+                    ApplicationArea = All;
+                    Image = Process;
+                    trigger OnAction()
+                    var
+                        G_Customer: Record Customer;
+                        ManageCustomerListing: Codeunit "Manage Channel Customer List";
+                    begin
+                        G_Customer := Rec;
+                        CurrPage.SETSELECTIONFILTER(G_Customer);
+                        ManageCustomerListing.CreateChannelCustomerlistingForMultipleSelection(G_Customer);
+                    end;
+                }
+
+                action("Open Channel Customer")
+                {
+                    ApplicationArea = All;
+                    Image = Navigate;
+                    trigger OnAction()
+                    var
+                        Page_ChannelCustomer: Page "Web Customer";
+                        Table_ChannelCustomer: Record "Interim Customer";
+                    begin
+                        Clear(Page_ChannelCustomer);
+                        Table_ChannelCustomer.Reset();
+                        Table_ChannelCustomer.SetRange("Customer No.", Rec."No.");
+                        Page_ChannelCustomer.SetTableView(Table_ChannelCustomer);
+                        Page_ChannelCustomer.RunModal();
+                    end;
+                }
+
             }
             group("EPOD")
             {

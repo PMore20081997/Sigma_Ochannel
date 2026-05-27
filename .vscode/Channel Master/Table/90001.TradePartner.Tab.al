@@ -321,7 +321,34 @@ table 90001 "Trade Partner"
         {
 
         }
+        field(76; "ePOD Collection Template ID"; Integer)
+        {
 
+        }
+        field(78; "Last Price Sync"; DateTime)
+        {
+        }
+        field(79; "Batch Size"; Integer)
+        {
+
+        }
+        field(80; "Sync Customer"; Boolean)
+        {
+
+        }
+        field(81; "Sync Product"; Boolean)
+        {
+
+        }
+        field(82; "New QuotaByQuantity Response"; Boolean)
+        {
+
+        }
+        field(83; "Auth Date"; DateTime)
+        {
+            Caption = 'Auth Date';
+            DataClassification = CustomerContent;
+        }
     }
     keys
     {

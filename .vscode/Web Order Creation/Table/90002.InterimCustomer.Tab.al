@@ -9,7 +9,7 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'No', ENG = 'No';
         }
-        field(2; Name; Text[50])
+        field(2; Name; Text[100])
         {
             DataClassification = ToBeClassified;
             CaptionML = ENU = 'Name', ENG = 'Name';
@@ -46,12 +46,9 @@ table 90002 "Interim Customer"
             CaptionML = ENU = 'E-Mail', ENG = 'E-Mail';
             ExtendedDatatype = EMail;
         }
-        field(9; Blocked; Option)
+        field(9; Blocked; Enum "Customer Blocked")
         {
             DataClassification = ToBeClassified;
-            OptionMembers = " ",Ship,Invoice,All;
-            OptionCaptionML = ENU = ' ,Ship,Invoice,All', ENG = ',Ship,Invoice,All';
-            CaptionML = ENU = 'Blocked', ENG = 'Blocked';
         }
         field(10; Status; Option)
         {
@@ -161,7 +158,7 @@ table 90002 "Interim Customer"
             DataClassification = ToBeClassified;
             Caption = 'Shipping Contact';
         }
-        field(28; "Shipping Address"; Text[50])
+        field(28; "Shipping Address"; Text[100])
         {
             DataClassification = ToBeClassified;
             Caption = 'Shipping Address';
@@ -314,11 +311,71 @@ table 90002 "Interim Customer"
             Caption = 'Customer Price Group 10';
             TableRelation = "Customer Price Group";
         }
+        field(58; "Billing Address"; Text[100])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Address';
+        }
+        field(59; "Billing Address 2"; Text[50])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Address 2';
+        }
+        field(60; "Billing Address 3"; Text[50])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Address 3';
+        }
+        field(61; "Billing City"; Text[30])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing City';
+        }
+        field(62; "Billing Phone No."; Text[30])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Phone No.';
+        }
+        field(63; "Billing Post Code"; Code[20])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Post Code';
+        }
+        field(64; "Billing County"; Text[30])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing County';
+        }
+        field(65; "Billing Country"; Text[50])
+        {
+            DataClassification = ToBeClassified;
+            Caption = 'Billing Country';
+        }
+        field(66; "Customer Type"; Text[50])
+        {
+
+        }
+        field(67; "Shipping Agent Code"; Code[20])
+        {
+
+        }
+        field(68; "Shipping Agent Service Code"; Code[20])
+        {
+
+        }
+        field(69; "Credit Limit Warning"; Boolean)
+        {
+
+        }
+        field(70; "Block Reason"; Code[20])
+        {
+            TableRelation = "Cust. Block Reason Code".Code;
+        }
     }
 
     keys
     {
-        key(PK; "No.")
+        key(PK; "No.", "Channel Code")
         {
             Clustered = true;
         }

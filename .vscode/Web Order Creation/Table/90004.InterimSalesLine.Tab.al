@@ -447,6 +447,19 @@ table 90004 "Interim Sales Line"
             Editable = false;
             //Customer Trend+++
         }
+        field(87; "Consolidated Order"; Boolean)
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Interim Sales Header"."Consolidated Order" WHERE("Document Type" = FIELD("Document Type"), "No." = FIELD("Document No")));
+        }
+        field(88; "Unit Volume"; Decimal)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(89; "Special"; Boolean)
+        {
+
+        }
     }
 
     keys

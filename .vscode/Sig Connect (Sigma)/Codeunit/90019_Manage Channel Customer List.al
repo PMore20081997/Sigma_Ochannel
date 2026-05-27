@@ -28,7 +28,8 @@ codeunit 90019 "Manage Channel Customer List"
         VarDefaultVeiw: Text;
         TradePartner2: Record "Trade Partner";
         InterimCustomer: Record "Interim Customer";
-        L_Customer: Record Customer;
+        Billto_Customer: Record Customer;
+        L_Dimension: Record "Default Dimension";
     begin
         TradePartner.RESET;
         TradePartner.SETRANGE("Partner Type", TradePartner."Partner Type"::Channel);
@@ -63,7 +64,12 @@ codeunit 90019 "Manage Channel Customer List"
                                 InterimCustomer.Validate("Post Code", _Customer."Post Code");
                                 InterimCustomer.Validate("Phone No", _Customer."Phone No.");
                                 InterimCustomer.Validate("E-Mail", _Customer."E-Mail");
+                                InterimCustomer.Validate(Country, _Customer."Country/Region Code");
                                 InterimCustomer.Validate(Blocked, _Customer.Blocked);
+                                InterimCustomer.Validate("Block Reason", _Customer."Block Reason");
+                                InterimCustomer.Validate("Credit Limit Warning", _Customer."Credit Limit Warning");
+                                InterimCustomer.Validate("Shipping Agent Code", _Customer."Shipping Agent Code");
+                                InterimCustomer.Validate("Shipping Agent Service Code", _Customer."Shipping Agent Service Code");
                                 InterimCustomer.Validate("Customer Price Group 1", _Customer."Customer Price Group");
                                 InterimCustomer.Validate("Customer Price Group 2", _Customer."Customer Price Group 2");
                                 InterimCustomer.Validate("Customer Price Group 3", _Customer."Customer Price Group 3");
@@ -74,13 +80,32 @@ codeunit 90019 "Manage Channel Customer List"
                                 InterimCustomer.Validate("Customer Price Group 8", _Customer."Customer Price Group 8");
                                 InterimCustomer.Validate("Customer Price Group 9", _Customer."Customer Price Group 9");
                                 InterimCustomer.Validate("Customer Price Group 10", _Customer."Customer Price Group 10");
+                                InterimCustomer."Credit Limit (LCY)" := _Customer."Credit Limit (LCY)";
                                 if _Customer."Bill-to Customer No." <> '' then begin
                                     InterimCustomer.Validate("Bill to Customer No.", _Customer."Bill-to Customer No.");
-                                    if L_Customer.Get(_Customer."Bill-to Customer No.") then
-                                        InterimCustomer.Validate("Bill to Customer Name", L_Customer.Name);
+                                    if Billto_Customer.Get(_Customer."Bill-to Customer No.") then begin
+                                        InterimCustomer.Validate("Bill to Customer Name", Billto_Customer.Name);
+                                        InterimCustomer.Validate("Billing Address", Billto_Customer.Address);
+                                        InterimCustomer.Validate("Billing Address 2", Billto_Customer."Address 2");
+                                        InterimCustomer.Validate("Billing City", Billto_Customer.City);
+                                        InterimCustomer.Validate("Billing Post Code", Billto_Customer."Post Code");
+                                        InterimCustomer.Validate("Billing Phone No.", Billto_Customer."Phone No.");
+                                        InterimCustomer.Validate("Billing Country", Billto_Customer."Country/Region Code");
+                                    end;
                                 end else begin
-                                    InterimCustomer.Validate("Bill to Customer No.", _Customer."No.");
-                                    InterimCustomer.Validate("Bill to Customer Name", _Customer.Name);
+                                    //InterimCustomer.Validate("Bill to Customer No.", _Customer."No.");
+                                    //InterimCustomer.Validate("Bill to Customer Name", _Customer.Name);
+                                    InterimCustomer.Validate("Bill to Customer No.", '');
+                                    InterimCustomer.Validate("Bill to Customer Name", '');
+                                end;
+
+                                L_Dimension.Reset();
+                                L_Dimension.SetRange("Table ID", DATABASE::Customer);
+                                L_Dimension.SetRange("No.", _Customer."No.");
+                                L_Dimension.SetRange("Dimension Code", 'CUSTOMER TYPE');
+                                if L_Dimension.FindFirst() then begin
+                                    L_Dimension.CalcFields("Dimension Value Name");
+                                    InterimCustomer."Customer Type" := L_Dimension."Dimension Value Name";
                                 end;
                                 InterimCustomer.Validate("Listing Status", InterimCustomer."Listing Status"::"Not Listed");
                                 InterimCustomer."Listing Status Setting" := InterimCustomer."Listing Status Setting"::Active;

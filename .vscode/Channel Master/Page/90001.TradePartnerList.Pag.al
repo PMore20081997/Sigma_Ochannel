@@ -70,7 +70,7 @@ page 90001 "Trade Partner List"
                 }
                 field("Last Inventory Sync"; rec."Last Inventory Sync")
                 {
-                    Visible = false;
+                    Editable = false;
                     ApplicationArea = All;
                 }
                 field("<Sync Price>"; rec.SyncPrice)
@@ -541,33 +541,6 @@ page 90001 "Trade Partner List"
                             Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
                             JobQueueEntry.Delete();
 
-                        until TradePartnerList.Next() = 0;
-                    end;
-                end;
-            }
-            action("PS Upload to Container")
-            {
-                ApplicationArea = All;
-                Image = Intercompany;
-                Promoted = true;
-                PromotedCategory = Process;
-                PromotedIsBig = true;
-                PromotedOnly = true;
-                Caption = 'PS Manifest Upload to Container';
-
-                trigger OnAction()
-                var
-                begin
-                    Clear(TradePartnerList);
-                    CurrPage.SETSELECTIONFILTER(TradePartnerList);
-                    if TradePartnerList.FindSet() then begin
-                        repeat
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartnerList.Code + ';PolarSpeed';
-                            JobQueueEntry.Insert;
-                            Codeunit.Run(TradePartnerList."Order Import Codeunit", JobQueueEntry);
-                            JobQueueEntry.Delete();
                         until TradePartnerList.Next() = 0;
                     end;
                 end;

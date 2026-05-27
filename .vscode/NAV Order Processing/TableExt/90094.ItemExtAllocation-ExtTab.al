@@ -17,7 +17,7 @@ tableextension 90094 "Item Ext Allocation" extends Item
         field(90002; "Qty. on Web Order"; Decimal)
         {
             FieldClass = FlowField;
-            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false)));
+            CalcFormula = sum("Interim Sales Line"."Qty. to Deliver" where("Document Type" = const(Order), Type = const(Item), "No." = field("No."), "Reason Code" = filter('Order line created|Partial Quantity Delivered'), "Sales Order Created" = const(false), "Consolidated Order" = const(false)));
             DecimalPlaces = 0 : 5;
             Editable = false;
         }
@@ -51,15 +51,55 @@ tableextension 90094 "Item Ext Allocation" extends Item
             OptionMembers = ,CONTINUED,DISCONTINUED;
             DataClassification = ToBeClassified;
         }
+        modify("Min Sell Price")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Min Sell Price" <> Rec."Min Sell Price" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Min Sell Price", Rec."Min Sell Price");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
         modify("Unit Price")
         {
             trigger OnAfterValidate()
             var
                 L_ChannelItemListing: Record "Channel Item Listing";
             begin
+                #Region LifeRay Integration+++
                 if xRec."Unit Price" <> Rec."Unit Price" then begin
                     L_ChannelItemListing.Reset();
                     L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Unit Price", Rec."Unit Price");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+
+
+                #Region SigConnect Integration+++
+                if xRec."Unit Price" <> Rec."Unit Price" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'SIGCONNECT');
                     if L_ChannelItemListing.FindSet() then begin
                         repeat
                             L_ChannelItemListing."Unit Price" := Rec."Unit Price";
@@ -68,6 +108,7 @@ tableextension 90094 "Item Ext Allocation" extends Item
                         until L_ChannelItemListing.Next() = 0;
                     end;
                 end;
+                #EndRegion SigConnect Integration+++
             end;
         }
         modify(RRP)
@@ -76,9 +117,26 @@ tableextension 90094 "Item Ext Allocation" extends Item
             var
                 L_ChannelItemListing: Record "Channel Item Listing";
             begin
+                #Region LifeRay Integration+++
                 if xRec.RRP <> Rec.RRP then begin
                     L_ChannelItemListing.Reset();
                     L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate(RRP, Rec.RRP);
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+
+                #Region SigConnect Integration+++
+                if xRec.RRP <> Rec.RRP then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'SIGCONNECT');
                     if L_ChannelItemListing.FindSet() then begin
                         repeat
                             L_ChannelItemListing.RRP := Rec.RRP;
@@ -87,6 +145,7 @@ tableextension 90094 "Item Ext Allocation" extends Item
                         until L_ChannelItemListing.Next() = 0;
                     end;
                 end;
+                #EndRegion SigConnect Integration+++
             end;
         }
         modify(Description)
@@ -95,9 +154,26 @@ tableextension 90094 "Item Ext Allocation" extends Item
             var
                 L_ChannelItemListing: Record "Channel Item Listing";
             begin
+                #Region LifeRay Integration+++
                 if xRec.Description <> Rec.Description then begin
                     L_ChannelItemListing.Reset();
                     L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate(Description, Rec.Description);
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+
+                #Region SigConnect Integration+++
+                if xRec.Description <> Rec.Description then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'SIGCONNECT');
                     if L_ChannelItemListing.FindSet() then begin
                         repeat
                             L_ChannelItemListing.Description := Rec.Description;
@@ -106,18 +182,36 @@ tableextension 90094 "Item Ext Allocation" extends Item
                         until L_ChannelItemListing.Next() = 0;
                     end;
                 end;
+                #EndRegion SigConnect Integration+++
             end;
         }
-
         modify("Item Category Code")
         {
             trigger OnAfterValidate()
             var
                 L_ChannelItemListing: Record "Channel Item Listing";
             begin
+                #Region LifeRay Integration+++
                 if xRec."Item Category Code" <> Rec."Item Category Code" then begin
                     L_ChannelItemListing.Reset();
                     L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Item Category Code", Rec."Item Category Code");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+
+
+                #Region SigConnect Integration+++
+                if xRec."Item Category Code" <> Rec."Item Category Code" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'SIGCONNECT');
                     if L_ChannelItemListing.FindSet() then begin
                         repeat
                             L_ChannelItemListing."Item Category Code" := Rec."Item Category Code";
@@ -126,7 +220,116 @@ tableextension 90094 "Item Ext Allocation" extends Item
                         until L_ChannelItemListing.Next() = 0;
                     end;
                 end;
+                #EndRegion SigConnect Integration+++
+            end;
+        }
+        modify("Sales Blocked")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Sales Blocked" <> Rec."Sales Blocked" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Sales Blocked", Rec."Sales Blocked");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+        modify("Ops Sales Blocked")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Ops Sales Blocked" <> Rec."Ops Sales Blocked" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Ops Sales Blocked", Rec."Ops Sales Blocked");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+        modify("Minimum Order Quantity")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Minimum Order Quantity" <> Rec."Minimum Order Quantity" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Lowstock Threshold", Rec."Minimum Order Quantity");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+        modify("Pack Size")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Pack Size" <> Rec."Pack Size" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Pack Size", Rec."Pack Size");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
             end;
         }
     }
+
+    trigger OnDelete()
+    var
+        L_ChannelItemListing: Record "Channel Item Listing";
+    begin
+        L_ChannelItemListing.Reset();
+        L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+        //L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+        if L_ChannelItemListing.FindSet() then begin
+            if not Confirm(StrSubstNo('Item No. “%1” is linked to the PMR channel item listing. If you delete this item, it will be marked as inactive in the PMR channel item listing. Do you want to continue?', Rec."No."), true) then
+                exit;
+
+            //++Update++
+            repeat
+                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Inactive;
+                L_ChannelItemListing."Item Sync" := false;
+                L_ChannelItemListing.Modify();
+            until L_ChannelItemListing.Next() = 0;
+        end;
+    end;
 }

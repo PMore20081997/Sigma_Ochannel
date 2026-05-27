@@ -47,6 +47,11 @@ page 90006 "Handled Web Order Subpage"
                 {
                     ApplicationArea = All;
                 }
+                field("Unit Volume"; Rec."Unit Volume")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Reason Code"; Rec."Reason Code")
                 {
                     ApplicationArea = All;

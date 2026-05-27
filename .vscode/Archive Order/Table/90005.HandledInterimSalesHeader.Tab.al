@@ -521,6 +521,18 @@ table 90005 "Handled Interim Sales Header"
             FieldClass = FlowField;
             CalcFormula = lookup("Shipping Agent Services"."Departure Time" where("Shipping Agent Code" = field("Shipping Agent Code"), Code = field("Shipping Agent Service Code")));
         }
+        field(127; "Consolidated Order"; Boolean)
+        {
+
+        }
+        field(128; "Total Order"; Decimal)
+        {
+            DecimalPlaces = 0 : 5;
+        }
+        field(129; "Special"; Boolean)
+        {
+
+        }
     }
 
     keys

@@ -16,78 +16,62 @@ pageextension 90000 "ItemListExt" extends "Item List"
 
     actions
     {
-
         addlast(processing)
         {
-            action("Add to Channel Item List")
-            {
-                ApplicationArea = All;
-                Promoted = true;
-                PromotedCategory = Process;
-                Image = Process;
-                trigger OnAction()
-                var
-                    G_Item: Record Item;
-                begin
-                    G_Item := Rec;
-                    CurrPage.SETSELECTIONFILTER(G_Item);
-                    //ManageItemListing.CreateChannelItemListingForMultipleSelection(G_Item);
-                    ManageItemListing.SigmaCreateChannelItemListingForMultipleSelection(G_Item);
-                end;
-            }
 
-            action("Channel Listing")
+            group("Channel Item Listing Details")
             {
-                ApplicationArea = All;
-                Promoted = true;
-                PromotedCategory = Process;
-                Image = EntriesList;
-                RunObject = Page "Channel Item Listing";
-                RunPageLink = "Item No." = FIELD("No.");
-                RunPageOnRec = false;
-                trigger OnAction()
-                begin
-                end;
-            }
+                action("Add to Channel Item List")
+                {
+                    ApplicationArea = All;
+                    Image = Create;
+                    trigger OnAction()
+                    var
+                        G_Item: Record Item;
+                        ManageItemListing: Codeunit "Manage Channel Item Listing";
+                    begin
+                        G_Item := Rec;
+                        CurrPage.SETSELECTIONFILTER(G_Item);
+                        ManageItemListing.SigmaCreateChannelItemListingForMultipleSelection(G_Item);
+                    end;
+                }
 
-            action("Add To Item Catelog")
-            {
-                ApplicationArea = All;
-                Visible = false;
-                trigger OnAction()
-                begin
-                    // CurrPage.SETSELECTIONFILTER(Rec);
-                    // IF FINDFIRST THEN
-                    //     REPEAT
-                    //         "Release to Item Catelog" := TRUE;
-                    //         MODIFY;
-                    //     UNTIL NEXT = 0;
-                    // RESET;
-                end;
-            }
+                action("Open Channel Listing")
+                {
+                    ApplicationArea = All;
+                    Image = Navigate;
+                    trigger OnAction()
+                    var
+                        Page_ChannelItemListing: Page "Channel Item Listing";
+                        Table_ChannelItemListing: Record "Channel Item Listing";
+                    begin
+                        Clear(Page_ChannelItemListing);
+                        Table_ChannelItemListing.Reset();
+                        Table_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                        Page_ChannelItemListing.SetTableView(Table_ChannelItemListing);
+                        Page_ChannelItemListing.RunModal();
+                    end;
+                }
 
+            }
         }
-        addafter(Orders)
+
+        addbefore(Category_Category7)
         {
-            action("PO Stock-Level")
+            group(Category_Category77)
             {
-                ApplicationArea = All;
-                Image = Sales;
-                Promoted = true;
-                PromotedIsBig = true;
+                Caption = 'Channel Item Listing Details';
+                actionref(AddtoChannelItemist; "Add to Channel Item List")
+                {
+                }
+                actionref(OpenChannelListing; "Open Channel Listing")
+                {
+                }
 
-                trigger OnAction()
-                var
-                begin
-                    Report.RunModal(90095, true, false, Rec);
-                end;
             }
         }
-
-
     }
 
     var
         myInt: Integer;
-        ManageItemListing: Codeunit "Manage Channel Item Listing";
 }

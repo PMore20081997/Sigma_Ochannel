@@ -32,15 +32,13 @@ codeunit 90017 "Update Channel Item Inventory"
         L_ChannelItemListing.SetFilter("Item No.", '<>%1', '');
         L_ChannelItemListing.SetRange("Listing Status", L_ChannelItemListing."Listing Status"::Listed);
         L_ChannelItemListing.SetRange(Status, L_ChannelItemListing.Status::Active);
+        L_ChannelItemListing.SetRange("Channel Code", 'SIGCONNECT');
         //L_ChannelItemListing.SetFilter("Date Filter", '>=%1', WorkDate());
         if L_ChannelItemListing.FindSet() then begin
             repeat
                 Clear(L_Item);
                 if L_Item.Get(L_ChannelItemListing."Item No.") then begin
                     L_ChannelItemListing.CalcFields("Web Orders Qty", "Variant Code Mandatory");
-                    if L_ChannelItemListing."Item Category Code" <> L_Item."Item Category Code" then
-                        L_ChannelItemListing."Item Category Code" := L_Item."Item Category Code";
-
 
                     //Calculate Physical+++
                     Clear(PhysicalInventory);

@@ -4,7 +4,7 @@ query 90065 "Daywise Web order quantity"
     {
         dataitem(QueryElement1000000000; "Interim Sales Header")
         {
-            DataItemTableFilter = status = const(Accepted);
+            DataItemTableFilter = status = const(Accepted), "Consolidated Order" = const(false);
             column(Sales_Order_Created; "Sales Order Created")
             {
             }

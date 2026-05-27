@@ -7,16 +7,11 @@ report 90000 "Process Web Orders"
     {
         dataitem("Trade Partner"; "Trade Partner")
         {
-            RequestFilterFields = "Code";
             dataitem(InterimSH; "Interim Sales Header")
             {
                 CalcFields = "No of Error", "Tracking No.", "Sales Order Created";
                 DataItemLink = "Trade Partner Code" = FIELD(Code);
-                DataItemTableView = SORTING("Document Type", "No.")
-                                    WHERE("Document Type" = FILTER(Order),
-                                           Status = FILTER(Accepted),
-                                           "Sales Order Created" = const(false));
-
+                DataItemTableView = SORTING("Document Type", "No.") WHERE("Document Type" = FILTER(Order), Status = FILTER(Accepted), "Sales Order Created" = const(false));
                 RequestFilterFields = "No.", "Document Date", "Shipping Agent Code", "Shipping Agent Service Code";
                 trigger OnAfterGetRecord()
                 var
@@ -52,32 +47,44 @@ report 90000 "Process Web Orders"
                             END;
                         "Trade Partner"."Process Order Type"::"Single Order":
                             BEGIN
-                                GenSetup.Get();
-                                if GenSetup."Allocate Web Orders" = true then begin
-                                    WebOrderMgt.OrderValidations(InterimSH);
-                                    Commit();
-                                end;
+                                #Region Default Ochannel code Not required in sigma++
+                                // GenSetup.Get();
+                                // if GenSetup."Allocate Web Orders" = true then begin
+                                //     WebOrderMgt.OrderValidations(InterimSH);
+                                //     Commit();
+                                // end;
 
-                                if InterimSH.status = InterimSH.status::Accepted then begin
-                                    CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
-                                    IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
-                                        CreateOrderErrror := GETLASTERRORTEXT();
-                                        InsertErrorlog(STRSUBSTNO(CreateOrderErrror, InterimSH."Channel Order ID"), InterimSH);
-                                        InterimSH.MODIFY();
-                                    END ELSE BEGIN
-                                        Commit();
-                                        LastOrderNo := InterimSH."No.";
-                                        PickCreated := true;
-                                    END;
-                                end;
+                                // if InterimSH.status = InterimSH.status::Accepted then begin
+                                //     CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
+                                //     IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
+                                //         CreateOrderErrror := GETLASTERRORTEXT();
+                                //         InsertErrorlog(STRSUBSTNO(CreateOrderErrror, InterimSH."Channel Order ID"), InterimSH);
+                                //         InterimSH.MODIFY();
+                                //     END ELSE BEGIN
+                                //         Commit();
+                                //         LastOrderNo := InterimSH."No.";
+                                //         PickCreated := true;
+                                //     END;
+                                // end;
+                                #EndRegion Default Ochannel code Not required in sigma++
+
+                                CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Single Order");
+                                IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
+                                    CreateOrderErrror := GETLASTERRORTEXT();
+                                    InsertErrorlog(STRSUBSTNO(CreateOrderErrror, InterimSH."Channel Order ID"), InterimSH);
+                                    InterimSH.MODIFY();
+                                END ELSE BEGIN
+                                    Commit();
+                                    LastOrderNo := InterimSH."No.";
+                                    PickCreated := true;
+                                END;
                             END;
                         "Trade Partner"."Process Order Type"::"Consolidate Order":
                             BEGIN
                                 IF FirstOrder THEN BEGIN
                                     CreateConsollidatedOrder.SetParamters(FirstOrder, "Trade Partner"."Process Order Type"::"Consolidate Order");
                                     FirstOrder := FALSE;
-                                END
-                                ELSE
+                                END ELSE
                                     CreateConsollidatedOrder.SetParamters(FALSE, "Trade Partner"."Process Order Type"::"Consolidate Order");
 
                                 IF NOT CreateConsollidatedOrder.RUN(InterimSH) THEN BEGIN
@@ -91,6 +98,7 @@ report 90000 "Process Web Orders"
                             END;
                     END;
 
+                    //++
                     CurrRec += 1;
                     IF NoOfRecs <= 100 THEN
                         Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1)
@@ -98,6 +106,7 @@ report 90000 "Process Web Orders"
                         IF CurrRec MOD (NoOfRecs DIV 100) = 0 THEN
                             Window.UPDATE(1, (CurrRec / NoOfRecs * 10000) DIV 1);
 
+                    //++
                     IF NoOfOrders > 0 THEN BEGIN
                         IF i >= NoOfOrders THEN BEGIN
                             COMMIT;
@@ -112,29 +121,36 @@ report 90000 "Process Web Orders"
                     TradePartner: Record "Trade Partner";
                     JobQueueEntry: Record "Job Queue Entry" temporary;
                 begin
-                    TradePartner.Reset();
-                    TradePartner.SetRange(Code, "Trade Partner".Code);
-                    if TradePartner.FindFirst() then begin
-                        if TradePartner."Order Acknowledgement Required" then begin
-                            JobQueueEntry.Init;
-                            JobQueueEntry.ID := CreateGuid();
-                            JobQueueEntry."Parameter String" := TradePartner.Code + ';OrderAcknowledgement';
-                            JobQueueEntry.Insert;
+                    #Region Not Required for Sigma++
+                    // TradePartner.Reset();
+                    // TradePartner.SetRange(Code, "Trade Partner".Code);
+                    // if TradePartner.FindFirst() then begin
+                    //     if TradePartner."Order Acknowledgement Required" then begin
+                    //         JobQueueEntry.Init;
+                    //         JobQueueEntry.ID := CreateGuid();
+                    //         JobQueueEntry."Parameter String" := TradePartner.Code + ';OrderAcknowledgement';
+                    //         JobQueueEntry.Insert;
 
-                            Codeunit.Run(TradePartner."Order Acknowledgement Codeunit", JobQueueEntry);
-                            JobQueueEntry.Delete();
-                        end;
-                    end;
+                    //         Codeunit.Run(TradePartner."Order Acknowledgement Codeunit", JobQueueEntry);
+                    //         JobQueueEntry.Delete();
+                    //     end;
+                    // end;
+                    #EndRegion Not Required for Sigma++
                 end;
 
                 trigger OnPreDataItem()
                 var
                     L_OchannelGenSetup: Record "General Setup - Channels";
                 begin
+                    //++
+                    IF "Trade Partner".Code = 'LIFERAY' then
+                        InterimSH.SetRange("Consolidated Order", true);
+
+
+
                     L_OchannelGenSetup.Get();
                     if "Trade Partner"."Tracking No Valid. Required" then
                         InterimSH.SetFilter("Tracking No.", '<>%1', '');
-
                     Window.OPEN('Processing... @1@@@@@@@@@@');
                     if "Trade Partner"."Process Order Type" = "Trade Partner"."Process Order Type"::"Internal Pick" then begin
                         case NoOfItems of
@@ -163,15 +179,24 @@ report 90000 "Process Web Orders"
 
             trigger OnAfterGetRecord()
             begin
+                //++
+                "Trade Partner".TestField(SyncOrder, true);
+
+                //++
                 Reseti;
                 ResetFirstOrder;
+
+                //++
+                Clear(G_ProcessOrderType);
+                G_ProcessOrderType := "Trade Partner"."Process Order Type";
             end;
 
             trigger OnPreDataItem()
             begin
                 PickCreated := false;
                 IF G_ChannelCode <> '' THEN
-                    "Trade Partner".SETRANGE("Trade Partner".Code, G_ChannelCode);
+                    "Trade Partner".SetFilter("Trade Partner".Code, G_ChannelCode);
+                "Trade Partner".SetRange(SyncOrder, true);
             end;
 
             trigger OnPostDataItem()
@@ -188,22 +213,16 @@ report 90000 "Process Web Orders"
         {
             area(content)
             {
-                field("Item No"; Itemno)
+                field(G_ChannelCode; G_ChannelCode)
                 {
-                    Visible = false;
                     ApplicationArea = all;
-                    trigger OnLookup(var Text: Text): Boolean
-                    begin
-                        CLEAR(ItemList);
-                        RecItem.RESET;
-                        RecItem.SETRANGE(Blocked, FALSE);
-                        ItemList.SETTABLEVIEW(RecItem);
-                        ItemList.LOOKUPMODE(TRUE);
-                    end;
+                    Caption = 'Channel Code';
+                    TableRelation = "Trade Partner".Code;
                 }
                 field("No Of Orders"; NoOfOrders)
                 {
                     ApplicationArea = all;
+                    Visible = false;
                 }
                 field("Total No of Orders"; "TotalNoOfOrders")
                 {
@@ -232,12 +251,16 @@ report 90000 "Process Web Orders"
         trigger OnOpenPage()
         begin
             NoOfItems := NoOfItems::Everything;
-            if InterimSH.GetFilter("Trade Partner Code") <> '' then
-                if G_BnQChannelCode <> '' then
-                    "Trade Partner".SetRange(Code, 'B&Q')
-                else
-                    "Trade Partner".SetRange(Code, InterimSH.GetFilter("Trade Partner Code"));
         end;
+
+        trigger OnQueryClosePage(CloseAction: Action): Boolean
+        begin
+            if CloseAction = CloseAction::OK then begin
+                if G_ChannelCode = '' then
+                    Error('Channel Code should not be blank');
+            end;
+        end;
+
     }
 
     trigger OnPreReport()
@@ -252,8 +275,62 @@ report 90000 "Process Web Orders"
     var
         L_CreateConsolidateSO: Codeunit "Create Consolidate SO";
     begin
-        //Only For Sigma process++
-        L_CreateConsolidateSO.ProcessTemporarySalesLinetoSalesOrder();
+        #Region Only For Sigma process++
+        if G_ProcessOrderType = G_ProcessOrderType::"Consolidate Order" then
+            L_CreateConsolidateSO.ProcessTemporarySalesLinetoSalesOrder();
+
+        if G_ProcessOrderType = G_ProcessOrderType::"Single Order" then
+            L_CreateConsolidateSO.SingleOrder_ProcessTemporarySalesLinetoSalesOrder();
+        #EndRegion Only For Sigma process++
+    end;
+
+    var
+        InterimSHTemp: Record "Interim Sales Header" temporary;
+        FirstOrder: Boolean;
+        NoOfRecs: Integer;
+        Window: Dialog;
+        ItemList: Page "Item List";
+        NoOfOrders: Integer;
+        TotalNoOfOrders: Integer;
+        i: Integer;
+        CurrRec: Integer;
+        NoOfItems: Option Single,Multiple,Everything;
+        RecItem: Record Item;
+        CreateWHInvPick: Codeunit "Process Web Order";
+        LastOrderNo: Code[250];
+        UseLastProcessedOrder: Boolean;
+        UseAllocationboolean: Boolean;
+        CreateConsollidatedOrder: Codeunit "Process Web Order";
+        G_ChannelCode: Code[20];
+        //G_BnQChannelCode: Code[20];
+        G_TotalQty: Decimal;
+        PickCreated: Boolean;
+        G_ProcessOrderType: Option "Internal Pick","Single Order","Consolidate Order";
+
+
+    procedure SetNoOfOrders(tempnooforderno: Integer)
+    begin
+        NoOfOrders := tempnooforderno;
+    end;
+
+    procedure SetTotalNoOfOrders(temptotal: Integer)
+    begin
+        TotalNoOfOrders := temptotal;
+    end;
+
+    local procedure Reseti()
+    begin
+        CLEAR(i);
+    end;
+
+    local procedure ResetFirstOrder()
+    begin
+        FirstOrder := TRUE;
+    end;
+
+    procedure SetChannelPartner(P_ChannelCode: Code[20])
+    begin
+        G_ChannelCode := P_ChannelCode;
     end;
 
     local procedure GetTotalQtyInWebOrder(var P_ISH: Record "Interim Sales Header"): Decimal
@@ -281,33 +358,8 @@ report 90000 "Process Web Orders"
 
     procedure SetBnQChannel(P_ChannelCode: Code[20])
     begin
-        G_BnQChannelCode := P_ChannelCode;
+        //G_BnQChannelCode := P_ChannelCode;
     end;
-
-
-    var
-        InterimSHTemp: Record "Interim Sales Header" temporary;
-        Itemno: Text;
-        FirstOrder: Boolean;
-        NoOfRecs: Integer;
-        Window: Dialog;
-        ItemList: Page "Item List";
-        NoOfOrders: Integer;
-        TotalNoOfOrders: Integer;
-        i: Integer;
-        CurrRec: Integer;
-        NoOfItems: Option Single,Multiple,Everything;
-        RecItem: Record Item;
-        CreateWHInvPick: Codeunit "Process Web Order";
-        LastOrderNo: Code[250];
-        UseLastProcessedOrder: Boolean;
-        UseAllocationboolean: Boolean;
-        CreateConsollidatedOrder: Codeunit "Process Web Order";
-        G_ChannelCode: Code[20];
-        G_BnQChannelCode: Code[20];
-        G_TotalQty: Decimal;
-        PickCreated: Boolean;
-
 
     procedure InsertErrorlog(P_Text: Text[250]; var InterimSalesHeader: Record "Interim Sales Header")
     var
@@ -326,35 +378,9 @@ report 90000 "Process Web Orders"
         PartnerErrorLog."Document No." := InterimSalesHeader."No.";
         PartnerErrorLog.Date := WORKDATE;
         PartnerErrorLog."Line No." := L_LineNo;
-
         PartnerErrorLog."Error Text" := P_Text;
         PartnerErrorLog.INSERT;
         InterimSalesHeader.MODIFY;
-    end;
-
-    procedure SetNoOfOrders(tempnooforderno: Integer)
-    begin
-        NoOfOrders := tempnooforderno;
-    end;
-
-    procedure SetTotalNoOfOrders(temptotal: Integer)
-    begin
-        TotalNoOfOrders := temptotal;
-    end;
-
-    local procedure Reseti()
-    begin
-        CLEAR(i);
-    end;
-
-    local procedure ResetFirstOrder()
-    begin
-        FirstOrder := TRUE;
-    end;
-
-    procedure SetChannelPartner(P_ChannelCode: Code[20])
-    begin
-        G_ChannelCode := P_ChannelCode;
     end;
 }
 
