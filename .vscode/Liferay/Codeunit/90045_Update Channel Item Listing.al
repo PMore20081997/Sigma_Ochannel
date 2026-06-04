@@ -67,6 +67,28 @@ codeunit 90045 "Update Channel Item Listing"
                             L_Modified := true;
                         end;
 
+                        //Blocked++
+                        if L_ChannelItemListing.Blocked <> L_Item.Blocked then begin
+                            L_ChannelItemListing.Blocked := L_Item.Blocked;
+                            if L_Item.Blocked = true then begin
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Inactive
+                            end else begin
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Active;
+                            end;
+                            L_Modified := true;
+                        end;
+
+                        //Inventory Posting Group++
+                        if L_ChannelItemListing."Inventory Posting Group" <> L_Item."Inventory Posting Group" then begin
+                            L_ChannelItemListing."Inventory Posting Group" := L_Item."Inventory Posting Group";
+
+                            if L_Item."Inventory Posting Group" <> 'FINISHED' then
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Inactive
+                            else
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Active;
+                            L_Modified := true;
+                        end;
+
                         //RRP Price++
                         if L_ChannelItemListing.RRP <> L_Item.RRP then begin
                             L_ChannelItemListing.RRP := L_Item.RRP;

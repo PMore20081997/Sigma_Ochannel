@@ -43,6 +43,11 @@ page 90011 "Channel Item Listing"
                     Editable = false;
                     Caption = 'Item Description';
                 }
+                field("Inventory Posting Group"; Rec."Inventory Posting Group")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Item Category Code"; Rec."Item Category Code")
                 {
                     ApplicationArea = All;
@@ -101,6 +106,11 @@ page 90011 "Channel Item Listing"
                     Editable = false;
                 }
                 field("Min Sell Price"; Rec."Min Sell Price")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Blocked; Rec.Blocked)
                 {
                     ApplicationArea = All;
                     Editable = false;

@@ -261,6 +261,8 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                 if L_HasVariantSetup = true then begin
                     L_ItemVariant.Reset();
                     L_ItemVariant.SetRange("Item No.", L_ChannelItemListing."Item No.");
+                    L_ItemVariant.SetRange("Blocked", false);
+                    L_ItemVariant.SetRange("Sales Blocked", false);
                     if L_ItemVariant.FindSet() then begin
                         repeat
                             VariantCodesArray.Add(L_ItemVariant.Code);
@@ -1363,6 +1365,8 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     Clear(VariantCode);
                     L_ItemVariant.Reset();
                     L_ItemVariant.SetRange("Item No.", L_ChannelItemListing."Item No.");
+                    L_ItemVariant.SetRange("Blocked", false);
+                    L_ItemVariant.SetRange("Sales Blocked", false);
                     if L_ItemVariant.FindSet() then begin
                         repeat
                             if VariantCode <> '' then begin

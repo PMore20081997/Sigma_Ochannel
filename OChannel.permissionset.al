@@ -305,5 +305,6 @@ permissionset 90000 OChannel
         codeunit "Inventory Change Subscriber" = X,
         codeunit "Process Inventory Push Queue" = X,
         codeunit "TraxQM License Sync" = X,
-        page "Inventory Queue" = X;
+        page "Inventory Queues" = X,
+        report "Delete Inventory Push Queue" = X;
 }

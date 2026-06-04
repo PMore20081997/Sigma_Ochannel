@@ -223,6 +223,32 @@ tableextension 90094 "Item Ext Allocation" extends Item
                 #EndRegion SigConnect Integration+++
             end;
         }
+        modify(Blocked)
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec.Blocked <> Rec.Blocked then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate(Blocked, Rec.Blocked);
+                            if Rec.Blocked = true then
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Inactive
+                            else
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Active;
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
         modify("Sales Blocked")
         {
             trigger OnAfterValidate()
@@ -303,6 +329,33 @@ tableextension 90094 "Item Ext Allocation" extends Item
                     if L_ChannelItemListing.FindSet() then begin
                         repeat
                             L_ChannelItemListing.Validate("Pack Size", Rec."Pack Size");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+        modify("Inventory Posting Group")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Inventory Posting Group" <> Rec."Inventory Posting Group" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Inventory Posting Group", Rec."Inventory Posting Group");
+                            if Rec."Inventory Posting Group" <> 'FINISHED' then
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Inactive
+                            else
+                                L_ChannelItemListing.Status := L_ChannelItemListing.Status::Active;
+
                             L_ChannelItemListing."Item Sync" := false;
                             L_ChannelItemListing.Modify();
                         until L_ChannelItemListing.Next() = 0;

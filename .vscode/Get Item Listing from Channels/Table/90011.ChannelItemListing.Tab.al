@@ -35,6 +35,8 @@ table 90011 "Channel Item Listing"
                     Rec."Sales Blocked" := Item1."Sales Blocked";
                     Rec."Ops Sales Blocked" := Item1."Ops Sales Blocked";
                     Rec."Min Sell Price" := Item1."Min Sell Price";
+                    Rec.Blocked := Item1.Blocked;
+                    Rec."Inventory Posting Group" := Item1."Inventory Posting Group";
                 END;
 
                 IF Item1.GET("Item No.") THEN
@@ -326,6 +328,15 @@ table 90011 "Channel Item Listing"
         {
             FieldClass = FlowField;
             CalcFormula = exist("LifeRay Stock" where("Item No." = field("Item No."), "Sync Type" = const(Full), "Created On" = field("Work Date Filter")));
+        }
+        field(59; Blocked; Boolean)
+        {
+
+        }
+        field(60; "Inventory Posting Group"; Code[20])
+        {
+            Caption = 'Inventory Posting Group';
+            TableRelation = "Inventory Posting Group";
         }
     }
 

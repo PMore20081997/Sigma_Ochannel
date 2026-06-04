@@ -37,6 +37,44 @@ tableextension 90096 "Item Variant Ext" extends "Item Variant"
                 #EndRegion LifeRay Integration+++
             end;
         }
+        modify(Blocked)
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if Rec.Blocked <> xRec.Blocked then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."Item No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindFirst() then begin
+                        L_ChannelItemListing."Item Sync" := false;
+                        L_ChannelItemListing.Modify();
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+        modify("Sales Blocked")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if Rec."Sales Blocked" <> xRec."Sales Blocked" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."Item No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindFirst() then begin
+                        L_ChannelItemListing."Item Sync" := false;
+                        L_ChannelItemListing.Modify();
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
     }
 
     trigger OnDelete()
