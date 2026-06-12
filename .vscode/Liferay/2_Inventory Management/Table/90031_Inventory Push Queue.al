@@ -39,6 +39,10 @@ table 90031 "Inventory Push Queue"
         {
             Caption = 'Error Message';
         }
+        field(8; "Created On"; Date)
+        {
+            Caption = 'Created On';
+        }
     }
 
     keys

@@ -102,37 +102,37 @@ page 90070 "LifeRay Stock List"
                         ProgressCount: Integer;
                         NoOfRecs: Integer;
                         Count: Integer;
-                    // Test: Codeunit "Process Inventory Push Queue";
-                    // test1: Record "Job Queue Entry";
+                        Test: Codeunit "Process Inventory Push Queue";
+                        JobQueueEntry: Record "Job Queue Entry";
                     begin
-                        L_LiferayStock.Reset();
-                        CurrPage.SetSelectionFilter(L_LiferayStock);
-                        L_LiferayStock.SetRange(Sync, false);
-                        L_LiferayStock.SetRange("Channel Code", 'LIFERAY');
-                        if L_LiferayStock.FindSet() then begin
-                            Windows.OPEN('Synchronization in progress with Liferay' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
-                            NoOfRecs := L_LiferayStock.Count;
-                            repeat
-                                ProgressCount += 1;
-                                if NoOfRecs > 0 then begin
-                                    if NoOfRecs <= 100 then begin
-                                        Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                    end else begin
-                                        IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
-                                            Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
-                                        END;
-                                    end;
-                                end;
+                        // L_LiferayStock.Reset();
+                        // CurrPage.SetSelectionFilter(L_LiferayStock);
+                        // L_LiferayStock.SetRange(Sync, false);
+                        // L_LiferayStock.SetRange("Channel Code", 'LIFERAY');
+                        // if L_LiferayStock.FindSet() then begin
+                        //     Windows.OPEN('Synchronization in progress with Liferay' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
+                        //     NoOfRecs := L_LiferayStock.Count;
+                        //     repeat
+                        //         ProgressCount += 1;
+                        //         if NoOfRecs > 0 then begin
+                        //             if NoOfRecs <= 100 then begin
+                        //                 Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                        //             end else begin
+                        //                 IF Count MOD (NoOfRecs DIV 100) = 0 THEN BEGIN
+                        //                     Windows.UPDATE(1, (ProgressCount / NoOfRecs * 10000) DIV 1)
+                        //                 END;
+                        //             end;
+                        //         end;
 
-                                //Start syncing process+++
-                                if L_LiferayStock."Sync Type" = L_LiferayStock."Sync Type"::Full then
-                                    SyncProduct_Inventory.SyncFullInventoryToLiferay(L_LiferayStock."Entry No.", L_LiferayStock."Channel Code");
+                        //         //Start syncing process+++
+                        //         if L_LiferayStock."Sync Type" = L_LiferayStock."Sync Type"::Full then
+                        //             SyncProduct_Inventory.SyncFullInventoryToLiferay(L_LiferayStock."Entry No.", L_LiferayStock."Channel Code");
 
-                                if L_LiferayStock."Sync Type" = L_LiferayStock."Sync Type"::Delta then
-                                    SyncProduct_Inventory.SyncDeltaInventoryToLiferay(L_LiferayStock."Entry No.", L_LiferayStock."Channel Code");
-                            until L_LiferayStock.Next() = 0;
-                        end;
-                        //Test.Run(test1);
+                        //         if L_LiferayStock."Sync Type" = L_LiferayStock."Sync Type"::Delta then
+                        //             SyncProduct_Inventory.SyncDeltaInventoryToLiferay(L_LiferayStock."Entry No.", L_LiferayStock."Channel Code");
+                        //     until L_LiferayStock.Next() = 0;
+                        //end;
+                        Test.Run(JobQueueEntry);
                     end;
                 }
 

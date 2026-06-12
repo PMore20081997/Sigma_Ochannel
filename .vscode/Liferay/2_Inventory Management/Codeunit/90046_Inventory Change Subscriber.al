@@ -116,6 +116,7 @@ codeunit 90046 "Inventory Change Subscriber"
                         PushQueue."Created At" := CurrentDateTime;
                         PushQueue.Status := PushQueue.Status::Pending;
                         PushQueue."Trigger Source" := _Source;
+                        PushQueue."Created On" := WorkDate();
                         PushQueue.Insert();
                     end;
                 end;

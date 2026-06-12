@@ -305,6 +305,12 @@ permissionset 90000 OChannel
         codeunit "Inventory Change Subscriber" = X,
         codeunit "Process Inventory Push Queue" = X,
         codeunit "TraxQM License Sync" = X,
-        page "Inventory Queues" = X,
-        report "Delete Inventory Push Queue" = X;
+        report "Delete Inventory Push Queue" = X,
+        page "LifeRay Inventory Queues" = X,
+        tabledata "Price Push Queue" = RIMD,
+        table "Price Push Queue" = X,
+        report "Delete Price Push Queue" = X,
+        codeunit "Price Change Subscriber" = X,
+        codeunit "Process Price Push Queue" = X,
+        page "LifeRay Price Queues" = X;
 }

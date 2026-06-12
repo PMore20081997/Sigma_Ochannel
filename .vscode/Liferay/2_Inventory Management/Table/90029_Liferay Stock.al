@@ -62,6 +62,7 @@ table 90029 "LifeRay Stock"
         field(15; "Allocated On SO"; Decimal)
         {
             DataClassification = ToBeClassified;
+            Caption = 'Allocated on SO + Allocate on KNAPP';
 
         }
         field(16; "Allocated On Pick"; Decimal)

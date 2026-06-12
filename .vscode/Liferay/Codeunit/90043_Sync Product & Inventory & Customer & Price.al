@@ -490,7 +490,10 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                 //++
                 Clear(LineObj);
                 LineObj.Add('bc_item_no', L_LifeRayStock."Item No.");
-                LineObj.Add('variant_code', L_LifeRayStock."Variant Code");
+                if GetVariantSetup(L_LiferayStock."Item No.") = true then
+                    LineObj.Add('variant_code', 'default')
+                else
+                    LineObj.Add('variant_code', L_LiferayStock."Variant Code");
                 LineObj.Add('warehouse_id', L_LifeRayStock."Location Code");
                 LineObj.Add('priority', L_LifeRayStock."Variant Priority");
                 LineObj.Add('stock_qty', L_LifeRayStock.Inventory);
@@ -702,7 +705,10 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                 //++
                 Clear(LineObj);
                 LineObj.Add('bc_item_no', L_LiferayStock."Item No.");
-                LineObj.Add('variant_code', L_LiferayStock."Variant Code");
+                if GetVariantSetup(L_LiferayStock."Item No.") = true then
+                    LineObj.Add('variant_code', 'default')
+                else
+                    LineObj.Add('variant_code', L_LiferayStock."Variant Code");
                 LineObj.Add('warehouse_id', L_LiferayStock."Location Code");
                 LineObj.Add('priority', L_LiferayStock."Variant Priority");
                 LineObj.Add('delta_stock', L_LiferayStock.Inventory);
@@ -1256,6 +1262,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
         L_Data: Text;
         OutStream: OutStream;
         L_ChannelPrice: Record "Channel Price";
+        VariantValue: Text;
     begin
         Clear(L_Data);
         case _DocumentType of
@@ -1414,10 +1421,15 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Document No." := Format(L_LifeRayStock."Entry No.");
                     L_CorrelationIDLifeRay."Sync Date" := WorkDate();
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
+                    Clear(VariantValue);
+                    if GetVariantSetup(L_ChannelItemListing."Item No.") then
+                        VariantValue := 'default'
+                    else
+                        VariantValue := L_LifeRayStock."Variant Code";
 
                     Clear(L_Data);
                     L_Data := 'ItemNo:' + L_LifeRayStock."Item No." +
-                    ' |Variantcode:' + L_LifeRayStock."Variant Code" +
+                    ' |Variantcode:' + VariantValue +
                     ' |WarehouseID:' + L_LifeRayStock."Location Code" +
                     ' |Priority:' + Format(L_LifeRayStock."Variant Priority") +
                     ' |StockQty:' + Format(L_LifeRayStock.Inventory);
@@ -1445,10 +1457,15 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Document No." := Format(L_LifeRayStock."Entry No.");
                     L_CorrelationIDLifeRay."Sync Date" := WorkDate();
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
+                    Clear(VariantValue);
+                    if GetVariantSetup(L_ChannelItemListing."Item No.") then
+                        VariantValue := 'default'
+                    else
+                        VariantValue := L_LifeRayStock."Variant Code";
 
                     Clear(L_Data);
                     L_Data := 'ItemNo:' + L_LifeRayStock."Item No." +
-                    ' |Variantcode:' + L_LifeRayStock."Variant Code" +
+                    ' |Variantcode:' + VariantValue +
                     ' |WarehouseID:' + L_LifeRayStock."Location Code" +
                     ' |Priority:' + Format(L_LifeRayStock."Variant Priority") +
                     ' |DeltaStock:' + Format(L_LifeRayStock.Inventory);

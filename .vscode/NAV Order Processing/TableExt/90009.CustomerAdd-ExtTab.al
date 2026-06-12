@@ -60,19 +60,6 @@ tableextension 90009 "CustomerAdd" extends Customer
                     end;
                 end;
                 #EndRegion only for SIGCONNECT++
-
-                #Region only for LIFERAY++
-                if Rec."Customer Price Group" <> xRec."Customer Price Group" then begin
-                    G_InterimCustomer.Reset();
-                    G_InterimCustomer.SetRange("Channel Code", 'LIFERAY');
-                    G_InterimCustomer.SetRange("Customer No.", Rec."No.");
-                    if G_InterimCustomer.FindFirst() then begin
-                        G_InterimCustomer."Customer Price Group 1" := Rec."Customer Price Group";
-                        G_InterimCustomer."Customer Sync" := false;
-                        G_InterimCustomer.Modify();
-                    end;
-                end;
-                #EndRegion only for LIFERAY++
             end;
         }
         modify("Customer Price Group 2")

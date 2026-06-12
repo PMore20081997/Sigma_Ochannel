@@ -54,6 +54,14 @@ page 90066 "Channel Price List"
                 {
                     ApplicationArea = All;
                 }
+                field("PIP Code"; Rec."PIP Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Child Category"; Rec."Child Category")
+                {
+                    ApplicationArea = All;
+                }
                 field("Variant Code Lookup"; Rec."Variant Code Lookup")
                 {
                     ApplicationArea = All;

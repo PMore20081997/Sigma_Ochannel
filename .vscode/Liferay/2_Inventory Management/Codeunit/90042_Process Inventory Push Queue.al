@@ -21,6 +21,7 @@ codeunit 90042 "Process Inventory Push Queue"
         ProcessedChannels: List of [Code[20]];
         ChannelCode: Code[20];
         LastSyncTime: DateTime;
+        L_PushQueue: Record "Inventory Push Queue";
     begin
         // ── Step 0: Capture & advance LastSyncTime per channel ───────────────
         // Done before staging so any transaction arriving during this run is
@@ -35,41 +36,48 @@ codeunit 90042 "Process Inventory Push Queue"
                         TradePartner.Modify();
                     end;
             until PushQueue.Next() = 0;
-        Commit();
 
         // ── Step 1: Stage delta inventory for each pending item ──────────────
         PushQueue.Reset();
         PushQueue.SetRange(Status, PushQueue.Status::Pending);
         PushQueue.SetCurrentKey(Status, "Created At");
-        if not PushQueue.FindSet(true) then
+        if not PushQueue.FindSet(true) then begin
+            //This is in the case where there are no pending entries, but we still want to push any existing records with Sync = false to LifeRay.
+            if TryPushDelta(SyncAPI, 'LIFERAY') then
+                Commit();
             exit;
+        end;
+
 
         repeat
-            PushQueue.Status := PushQueue.Status::Processing;
-            PushQueue.Modify();
-            Commit();
+            L_PushQueue.Reset();
+            L_PushQueue.SetRange("Entry No.", PushQueue."Entry No.");
+            if L_PushQueue.FindFirst() then begin
+                L_PushQueue.Status := L_PushQueue.Status::Processing;
+                L_PushQueue.Modify();
 
-            if not ChannelLastSyncTime.Get(PushQueue."Channel Code", LastSyncTime) then
-                Clear(LastSyncTime);
+                if not ChannelLastSyncTime.Get(L_PushQueue."Channel Code", LastSyncTime) then
+                    Clear(LastSyncTime);
 
-            if TryStageItemInventory(PushQueue."Item No.", PushQueue."Channel Code", LastSyncTime) then begin
-                PushQueue.Status := PushQueue.Status::Done;
-                PushQueue."Error Message" := '';
-                if not ProcessedChannels.Contains(PushQueue."Channel Code") then
-                    ProcessedChannels.Add(PushQueue."Channel Code");
-            end else begin
-                PushQueue.Status := PushQueue.Status::Failed;
-                PushQueue."Error Message" := CopyStr(GetLastErrorText(), 1, 250);
+                if TryStageItemInventory(L_PushQueue."Item No.", L_PushQueue."Channel Code", LastSyncTime) then begin
+                    L_PushQueue.Status := L_PushQueue.Status::Done;
+                    L_PushQueue."Error Message" := '';
+                    if not ProcessedChannels.Contains(L_PushQueue."Channel Code") then
+                        ProcessedChannels.Add(L_PushQueue."Channel Code");
+                end else begin
+                    L_PushQueue.Status := L_PushQueue.Status::Failed;
+                    L_PushQueue."Error Message" := CopyStr(GetLastErrorText(), 1, 250);
+                end;
+                L_PushQueue.Modify();
             end;
-            PushQueue.Modify();
-            Commit();
         until PushQueue.Next() = 0;
 
-        // // ── Step 2: Push all staged Delta records to LifeRay per channel ─────
-        // foreach ChannelCode in ProcessedChannels do begin
-        //     if not TryPushDelta(SyncAPI, ChannelCode) then;
-        //     Commit();
-        // end;
+        // ── Step 2: Push all staged Delta records to LifeRay per channel ─────
+        foreach ChannelCode in ProcessedChannels do begin
+            if ChannelCode = 'LIFERAY' then
+                if not TryPushDelta(SyncAPI, ChannelCode) then
+                    Commit();
+        end;
     end;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -88,27 +96,40 @@ codeunit 90042 "Process Inventory Push Queue"
         LastEntry: Record "LifeRay Stock";
         NextEntryNo: Integer;
         WebOrderQty: Decimal;
-        RemainingWebOrderQty: Decimal;
         TotalInventory: Decimal;
         AllocOnSO: Decimal;
         AllocOnPick: Decimal;
         KNAPPQty: Decimal;
         TotalFree: Decimal;
         AssignToWebOrder: Decimal;
+        L_LifeRayStock: Record "LifeRay Stock";
+        L_IsSaleable: Boolean;
     begin
+        // Verify item is marked for sync on this channel — if not, skip processing (but still mark queue entry as Done so it doesn't block the queue)
         ChannelItemListing.SetRange("Item No.", _ItemNo);
         ChannelItemListing.SetRange("Channel Code", _ChannelCode);
         ChannelItemListing.SetRange("Item Sync", true);
         if not ChannelItemListing.FindFirst() then
             exit;
-        ChannelItemListing.CalcFields("Variant Mandatory if Exists");
 
+        //If any full sync record exists for this item/channel and is not yet synced, skip delta processing (wait for full sync to run)
+        L_LifeRayStock.Reset();
+        L_LifeRayStock.SetRange("Created On", WorkDate());
+        L_LifeRayStock.SetRange("Channel Code", _ChannelCode);
+        L_LifeRayStock.SetRange("Item No.", _ItemNo);
+        L_LifeRayStock.SetRange("Sync Type", L_LifeRayStock."Sync Type"::Full);
+        L_LifeRayStock.SetRange(Sync, false);
+        if L_LifeRayStock.FindFirst() then
+            exit;
+
+        //Get Last Entry No.++
         LastEntry.Reset();
         if LastEntry.FindLast() then
             NextEntryNo := LastEntry."Entry No." + 1
         else
             NextEntryNo := 1;
 
+        // ── For each location (with positive ranking) ─────────────────────────────
         Location.SetFilter("Liferay Location Ranking", '>%1', 0);
         Location.SetCurrentKey("Liferay Location Ranking");
         Location.Ascending(true);
@@ -116,9 +137,13 @@ codeunit 90042 "Process Inventory Push Queue"
             exit;
 
         repeat
+            //Check if the location is saleable+++
+            Clear(L_IsSaleable);
+            L_IsSaleable := Location."Saleable Location";
+
+
             // ── Web Order qty for DEPOT1 — time-filtered (same as COD 90041 Delta) ──
             Clear(WebOrderQty);
-            Clear(RemainingWebOrderQty);
             if Location.Code = 'DEPOT1' then begin
                 InterimSalesLine.Reset();
                 InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
@@ -131,86 +156,24 @@ codeunit 90042 "Process Inventory Push Queue"
                 InterimSalesLine.SetFilter(SystemCreatedAt, '>%1', _LastSyncTime);
                 InterimSalesLine.CalcSums("Qty. to Deliver");
                 WebOrderQty := InterimSalesLine."Qty. to Deliver";
-                RemainingWebOrderQty := WebOrderQty;
             end;
 
-            if ChannelItemListing."Variant Mandatory if Exists" = ChannelItemListing."Variant Mandatory if Exists"::Yes then begin
-                // ── Variants with priority ────────────────────────────────────
-                ItemVariant.SetRange("Item No.", _ItemNo);
-                ItemVariant.SetFilter(Priority, '>%1', 0);
-                ItemVariant.SetCurrentKey(Priority);
-                ItemVariant.Ascending(true);
-                if ItemVariant.FindSet() then
-                    repeat
-                        //++
-                        CalcDeltaInventory(_ItemNo, ItemVariant.Code, Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick);
+            //Check the new Transaction & new entry after last synctime and get the TotalInventory, AllocOnSO, AllocOnPick++
+            CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick);
 
-                        //KNAPP SO Qty++ 
-                        KNAPPQty := 0;
-                        if Location.Code = 'DEPOT1' then
-                            KNAPPQty := GetKNAPPDelta(_ItemNo, ItemVariant.Code, _LastSyncTime);
+            //Check KNAPP allocated qty if location is DEPOT1 after last synctime++
+            KNAPPQty := 0;
+            if Location.Code = 'DEPOT1' then
+                KNAPPQty := GetKNAPPDelta(_ItemNo, ItemVariant.Code, _LastSyncTime);
 
-                        //++
-                        TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty;
-                        // Cap web order assignment using CURRENT available free inventory per
-                        // variant (not the delta) so priority 1 with 200 stock absorbs 200
-                        // of 500 WebOrderQty and passes the remaining 300 to priority 2, etc.
-                        AllocateWebOrder(Location.Code,
-                            GetCurrentFreeQty(_ItemNo, ItemVariant.Code, Location.Code, _LastSyncTime),
-                            TotalFree, RemainingWebOrderQty, AssignToWebOrder);
+            // Calculate free inventory delta since last sync (can be negative if net transactions reduce free inventory)
+            TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty - WebOrderQty;
 
-                        //Insert Delta Record In the table++
-                        InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing,
-                            ItemVariant.Code, ItemVariant.Description, ItemVariant.Priority,
-                            Location.Code, TotalInventory, AllocOnSO, AllocOnPick,
-                            KNAPPQty, WebOrderQty, AssignToWebOrder, TotalFree);
-                    until ItemVariant.Next() = 0;
-
-                // ── Variants without priority ─────────────────────────────────
-                ItemVariant.Reset();
-                ItemVariant.SetRange("Item No.", _ItemNo);
-                ItemVariant.SetRange(Priority, 0);
-                if ItemVariant.FindSet() then
-                    repeat
-                        //++
-                        CalcDeltaInventory(_ItemNo, ItemVariant.Code, Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick);
-
-                        //KNAPP SO Qty++ 
-                        KNAPPQty := 0;
-                        if Location.Code = 'DEPOT1' then
-                            KNAPPQty := GetKNAPPDelta(_ItemNo, ItemVariant.Code, _LastSyncTime);
-                        TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty;
-                        // Cap web order assignment using CURRENT available free inventory per
-                        // variant (not the delta) so priority 1 with 200 stock absorbs 200
-                        // of 500 WebOrderQty and passes the remaining 300 to priority 2, etc.
-                        AllocateWebOrder(Location.Code,
-                            GetCurrentFreeQty(_ItemNo, ItemVariant.Code, Location.Code, _LastSyncTime),
-                            TotalFree, RemainingWebOrderQty, AssignToWebOrder);
-
-                        //Insert Delta Record In the table++
-                        InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing,
-                            ItemVariant.Code, ItemVariant.Description, ItemVariant.Priority,
-                            Location.Code, TotalInventory, AllocOnSO, AllocOnPick,
-                            KNAPPQty, WebOrderQty, AssignToWebOrder, TotalFree);
-                    until ItemVariant.Next() = 0;
-            end else begin
-                // ── Non-variant item ──────────────────────────────────────────
-                //++
-                CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick);
-
-                //KNAPP SO Qty++ 
-                KNAPPQty := 0;
-                if Location.Code = 'DEPOT1' then
-                    KNAPPQty := GetKNAPPDelta(_ItemNo, '', _LastSyncTime);
-                TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty - RemainingWebOrderQty;
-
-                //Insert Delta Record In the table++
-                InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing,
-                    '', '', 0, Location.Code, TotalInventory, AllocOnSO, AllocOnPick,
-                    KNAPPQty, WebOrderQty, RemainingWebOrderQty, TotalFree);
-            end;
+            //Insert Delta Record In the table++
+            InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing, '', '', 0, Location.Code, TotalInventory, AllocOnSO, AllocOnPick, KNAPPQty, WebOrderQty, WebOrderQty, TotalFree);
         until Location.Next() = 0;
 
+        //++
         Commit();
     end;
 
@@ -219,10 +182,7 @@ codeunit 90042 "Process Inventory Push Queue"
     // considering only records created AFTER _LastSyncTime.
     // Values can be negative (net issue > net receipt since last sync).
     // ─────────────────────────────────────────────────────────────────────────
-    local procedure CalcDeltaInventory(
-        _ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20];
-        _LastSyncTime: DateTime;
-        var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal)
+    local procedure CalcDeltaInventory(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _LastSyncTime: DateTime; var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal)
     var
         ILE: Record "Item Ledger Entry";
         SalesLine: Record "Sales Line";
@@ -247,7 +207,8 @@ codeunit 90042 "Process Inventory Push Queue"
         SalesLine.SetFilter("SystemCreatedAt", '>%1', _LastSyncTime);
         SalesLine.CalcSums("Outstanding Qty. (Base)");
         AllocOnSO := SalesLine."Outstanding Qty. (Base)";
-        if AllocOnSO < 0 then AllocOnSO := 0;
+        if AllocOnSO < 0 then
+            AllocOnSO := 0;
 
         // ── New Pick allocations since last sync ──────────────────────────────
         WHActivityLine.SetRange("Item No.", _ItemNo);
@@ -259,7 +220,8 @@ codeunit 90042 "Process Inventory Push Queue"
         WHActivityLine.SetFilter("SystemCreatedAt", '>%1', _LastSyncTime);
         WHActivityLine.CalcSums("Qty. Outstanding (Base)");
         AllocOnPick := WHActivityLine."Qty. Outstanding (Base)";
-        if AllocOnPick < 0 then AllocOnPick := 0;
+        if AllocOnPick < 0 then
+            AllocOnPick := 0;
     end;
 
     // ─────────────────────────────────────────────────────────────────────────

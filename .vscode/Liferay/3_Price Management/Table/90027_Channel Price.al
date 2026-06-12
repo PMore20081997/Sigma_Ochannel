@@ -304,6 +304,26 @@ table 90027 "Channel Price"
             DecimalPlaces = 0 : 5;
             MinValue = 0;
         }
+        field(48; "PIP Code"; code[7])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(5702; "Item Category Code"; Code[20])
+        {
+            Caption = 'Sub-Child Category';
+            TableRelation = "Item Category";
+            ValidateTableRelation = false;
+        }
+        field(85103; "Child Category"; Code[20])
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Item Category"."Parent Category" where(Code = field("Item Category Code")));
+        }
+        field(85104; "Parent Category"; Code[20])
+        {
+            FieldClass = FlowField;
+            CalcFormula = lookup("Item Category"."Parent Category" where(Code = field("Child Category")));
+        }
     }
 
     keys

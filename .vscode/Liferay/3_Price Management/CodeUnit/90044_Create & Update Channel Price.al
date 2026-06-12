@@ -22,6 +22,7 @@ codeunit 90044 "Create & Update Channel Price"
         L_PriceListLine: Record "Price List Line";
         L_ChannelPrice: Record "Channel Price";
         L_PriceListHeader: Record "Price List Header";
+        L_Item: Record Item;
     begin
         #Region Check Mandatory fields++
         if _ChannelCode = '' then
@@ -46,6 +47,7 @@ codeunit 90044 "Create & Update Channel Price"
                     L_PriceListLine.SetRange("Master LifeRay", true);
                 if L_TradePartner.Code = 'DC' then
                     L_PriceListLine.SetRange("Master DC", true);
+                L_PriceListLine.SetRange(Status, L_PriceListLine.Status::Active);
                 if L_PriceListLine.FindSet() then begin
                     repeat
                         L_ChannelPrice.Reset();
@@ -61,20 +63,28 @@ codeunit 90044 "Create & Update Channel Price"
                             L_ChannelPrice."Listing Status Setting" := L_PriceListLine."Listing Status Setting";
                             L_ChannelPrice."Base Volume" := L_PriceListLine."Base Volume";
                             L_ChannelPrice."Cost Unit Thereafter" := L_PriceListLine."Cost Unit Thereafter";
+                            //L_ChannelPrice."PIP Code" := L_PriceListLine."PIP Code";
+                            L_Item.Reset();
+                            L_Item.SetRange("No.", L_PriceListLine."Product No.");
+                            if L_Item.FindFirst() then
+                                L_ChannelPrice."Item Category Code" := L_Item."Item Category Code";
                             L_ChannelPrice."Sync Price" := false;
                             L_ChannelPrice.Insert();
                         end else begin
-                            if L_ChannelPrice."Listing Status Setting" = L_ChannelPrice."Listing Status Setting"::Inactive then begin
-                                if L_ChannelPrice.SystemModifiedAt < L_PriceListLine.SystemModifiedAt then begin
-                                    L_ChannelPrice.TransferFields(L_PriceListLine);
-                                    L_ChannelPrice."Channel Code" := L_TradePartner.Code;
-                                    L_ChannelPrice."Listing Status" := L_PriceListLine."Listing Status";
-                                    L_ChannelPrice."Listing Status Setting" := L_PriceListLine."Listing Status Setting";
-                                    L_ChannelPrice."Base Volume" := L_PriceListLine."Base Volume";
-                                    L_ChannelPrice."Cost Unit Thereafter" := L_PriceListLine."Cost Unit Thereafter";
-                                    L_ChannelPrice."Sync Price" := false;
-                                    L_ChannelPrice.Modify();
-                                end;
+                            if L_ChannelPrice.SystemModifiedAt < L_PriceListLine.SystemModifiedAt then begin
+                                L_ChannelPrice.TransferFields(L_PriceListLine);
+                                L_ChannelPrice."Channel Code" := L_TradePartner.Code;
+                                L_ChannelPrice."Listing Status" := L_PriceListLine."Listing Status";
+                                L_ChannelPrice."Listing Status Setting" := L_PriceListLine."Listing Status Setting";
+                                L_ChannelPrice."Base Volume" := L_PriceListLine."Base Volume";
+                                L_ChannelPrice."Cost Unit Thereafter" := L_PriceListLine."Cost Unit Thereafter";
+                                //L_ChannelPrice."PIP Code" := L_PriceListLine."PIP Code";
+                                L_Item.Reset();
+                                L_Item.SetRange("No.", L_PriceListLine."Product No.");
+                                if L_Item.FindFirst() then
+                                    L_ChannelPrice."Item Category Code" := L_Item."Item Category Code";
+                                L_ChannelPrice."Sync Price" := false;
+                                L_ChannelPrice.Modify();
                             end;
                         end;
                     until L_PriceListLine.Next() = 0;
@@ -103,6 +113,7 @@ codeunit 90044 "Create & Update Channel Price"
     var
         L_PriceListLine: Record "Price List Line";
         L_ChannelPrice: Record "Channel Price";
+        L_Item: Record Item;
     begin
         L_PriceListLine.Reset();
         L_PriceListLine.SetRange("Source Group", L_PriceListLine."Source Group"::Customer);
@@ -115,7 +126,6 @@ codeunit 90044 "Create & Update Channel Price"
                 L_ChannelPrice.SetFilter("Channel Code", _ChannelPrice."Channel Code");
                 L_ChannelPrice.SetRange("Price List Code", L_PriceListLine."Price List Code");
                 L_ChannelPrice.SetRange("Line No.", L_PriceListLine."Line No.");
-                L_ChannelPrice.SetRange("Listing Status Setting", L_ChannelPrice."Listing Status Setting"::Inactive);
                 if L_ChannelPrice.FindFirst() then begin
                     if L_ChannelPrice.SystemModifiedAt < L_PriceListLine.SystemModifiedAt then begin
                         L_ChannelPrice.TransferFields(L_PriceListLine);
@@ -124,6 +134,11 @@ codeunit 90044 "Create & Update Channel Price"
                         L_ChannelPrice."Listing Status Setting" := L_PriceListLine."Listing Status Setting";
                         L_ChannelPrice."Base Volume" := L_PriceListLine."Base Volume";
                         L_ChannelPrice."Cost Unit Thereafter" := L_PriceListLine."Cost Unit Thereafter";
+                        //L_ChannelPrice."PIP Code" := L_PriceListLine."PIP Code";
+                        L_Item.Reset();
+                        L_Item.SetRange("No.", L_PriceListLine."Product No.");
+                        if L_Item.FindFirst() then
+                            L_ChannelPrice."Item Category Code" := L_Item."Item Category Code";
                         L_ChannelPrice."Sync Price" := false;
                         L_ChannelPrice.Modify();
                     end;

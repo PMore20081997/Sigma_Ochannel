@@ -26,6 +26,16 @@ page 90073 "Channel Item Variant List"
                     ApplicationArea = Basic, Suite;
                     Editable = false;
                 }
+                field(Blocked; Rec.Blocked)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Sales Blocked"; Rec."Sales Blocked")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
             }
         }
     }
