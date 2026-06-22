@@ -234,6 +234,8 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                 LineObj.Add('min_sell_price', L_ChannelItemListing."Min Sell Price");
                 LineObj.Add('item_category_code', L_ChannelItemListing."Item Category Code");
                 LineObj.Add('pack_size', L_ChannelItemListing."Pack Size");
+                LineObj.Add('strength', L_ChannelItemListing.Strength);
+                LineObj.Add('item_configuration', L_ChannelItemListing."Item Configuration");
                 LineObj.Add('sales_blocked', L_ChannelItemListing."Sales Blocked");
                 LineObj.Add('ops_sales_blocked', L_ChannelItemListing."Ops Sales Blocked");
                 #Region Get Variant & PIP Code++
@@ -1284,8 +1286,11 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
 
                     Clear(L_Data);
-                    L_Data := 'CustomerNo:' + L_WebCustomer."Customer No." + ' |CustomerName:' + L_WebCustomer.Name +
-                    ' |BilltoCustomerNo:' + L_WebCustomer."Bill to Customer No." + ' |BilltoCustomerName:' + L_WebCustomer."Bill to Customer Name" +
+                    L_Data := 'ChannelCode:' + L_WebCustomer."Channel Code" +
+                    ' |SelltoCustomerNo:' + L_WebCustomer."Customer No." +
+                    ' |SelltoCustomerName:' + L_WebCustomer.Name +
+                    ' |BilltoCustomerNo:' + L_WebCustomer."Bill to Customer No." +
+                    ' |BilltoCustomerName:' + L_WebCustomer."Bill to Customer Name" +
                     ' |CustomerGroup:' + L_WebCustomer."Customer Price Group 1" +
                     ' |CustomerGroup2:' + L_WebCustomer."Customer Price Group 2" +
                     ' |CustomerGroup3:' + L_WebCustomer."Customer Price Group 3" +
@@ -1299,6 +1304,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     ' |BlockReason:' + Format(L_WebCustomer."Block Reason") +
                     ' |ShiptoAddress:' + L_WebCustomer.Address + ' ;' + L_WebCustomer."Address 2" + ' ;' + L_WebCustomer."City" + ' ;' + L_WebCustomer.Country + ' ;' + L_WebCustomer."Post Code" +
                     ' |BilltoAddress:' + L_WebCustomer."Billing Address" + ' ;' + L_WebCustomer."Billing Address 2" + ' ;' + L_WebCustomer."Billing City" + ' ;' + L_WebCustomer."Billing Country" + ' ;' + L_WebCustomer."Billing Post Code";
+
                     //Convert text in blob datatype++
                     Clear(L_CorrelationIDLifeRay.Data);
                     L_CorrelationIDLifeRay.Data.CreateOutStream(OutStream, TEXTENCODING::UTF8);
@@ -1324,14 +1330,18 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
 
                     Clear(L_Data);
-                    L_Data := 'PriceCode:' + L_ChannelPrice."Price List Code" +
+                    L_Data := 'ChannelCode:' + L_ChannelPrice."Channel Code" +
+                    ' |CustomerGroup:' + L_ChannelPrice."Price List Code" +
                     ' |LineNo:' + Format(L_ChannelPrice."Line No.") +
                     ' |SourceType:' + Format(L_ChannelPrice."Source Type") +
                     ' |ItemNo:' + L_ChannelPrice."Product No." +
                     ' |VariantCode:' + L_ChannelPrice."Variant Code" +
                     ' |UnitPrice:' + Format(L_ChannelPrice."Unit Price") +
                     ' |ListingStatusSetting:' + Format(L_ChannelPrice."Listing Status Setting") +
-                    ' |ListingStatus:' + Format(L_ChannelPrice."Listing Status");
+                    ' |ListingStatus:' + Format(L_ChannelPrice."Listing Status") +
+                    ' |BaseVolum:' + Format(L_ChannelPrice."Base Volume") +
+                    ' |CostUnitThereafter:' + Format(L_ChannelPrice."Cost Unit Thereafter");
+
                     //Convert text in blob datatype++
                     Clear(L_CorrelationIDLifeRay.Data);
                     L_CorrelationIDLifeRay.Data.CreateOutStream(OutStream, TEXTENCODING::UTF8);
@@ -1384,14 +1394,19 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     end;
 
                     Clear(L_Data);
-                    L_Data := 'ItemNo:' + L_ChannelItemListing."Item No." + ' |ASIN_No:' + L_ChannelItemListing."ASIN No" +
+                    L_Data := 'ChannelCode:' + L_ChannelItemListing."Channel Code" +
+                    ' |ItemNo:' + L_ChannelItemListing."Item No." +
+                    ' |ASIN_No:' + L_ChannelItemListing."ASIN No" +
                     ' |ListingStting:' + Format(L_ChannelItemListing.Status) +
                     ' |ListingStatus:' + Format(L_ChannelItemListing."Listing Status") +
                     ' |Descrion:' + L_ChannelItemListing.Description +
                     ' |RRP:' + Format(L_ChannelItemListing.RRP) +
                     ' |UnitPrice:' + Format(L_ChannelItemListing."Unit Price") +
-                    ' |CategoryCode:' + L_ChannelItemListing."Item Category Code" +
+                    ' |MinSellPrice:' + Format(L_ChannelItemListing."Min Sell Price") +
+                    ' |ItemCategoryCode:' + L_ChannelItemListing."Item Category Code" +
                     ' |PackSize:' + L_ChannelItemListing."Pack Size" +
+                    ' |Strength:' + L_ChannelItemListing.Strength +
+                    ' |ItemConfiguration:' + L_ChannelItemListing."Item Configuration" +
                     ' |SalesBlocked:' + Format(L_ChannelItemListing."Sales Blocked") +
                     ' |OOPSSalesBlocked:' + Format(L_ChannelItemListing."Ops Sales Blocked") +
                     ' |LowStkthresholdQty:' + Format(L_ChannelItemListing."Lowstock Threshold") +
@@ -1421,14 +1436,15 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Document No." := Format(L_LifeRayStock."Entry No.");
                     L_CorrelationIDLifeRay."Sync Date" := WorkDate();
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
+
                     Clear(VariantValue);
                     if GetVariantSetup(L_ChannelItemListing."Item No.") then
                         VariantValue := 'default'
                     else
                         VariantValue := L_LifeRayStock."Variant Code";
-
                     Clear(L_Data);
-                    L_Data := 'ItemNo:' + L_LifeRayStock."Item No." +
+                    L_Data := 'ChannelCode:' + L_LifeRayStock."Channel Code" +
+                    ' |ItemNo:' + L_LifeRayStock."Item No." +
                     ' |Variantcode:' + VariantValue +
                     ' |WarehouseID:' + L_LifeRayStock."Location Code" +
                     ' |Priority:' + Format(L_LifeRayStock."Variant Priority") +
@@ -1464,7 +1480,8 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                         VariantValue := L_LifeRayStock."Variant Code";
 
                     Clear(L_Data);
-                    L_Data := 'ItemNo:' + L_LifeRayStock."Item No." +
+                    L_Data := 'ChannelCode:' + L_LifeRayStock."Channel Code" +
+                    ' |ItemNo:' + L_LifeRayStock."Item No." +
                     ' |Variantcode:' + VariantValue +
                     ' |WarehouseID:' + L_LifeRayStock."Location Code" +
                     ' |Priority:' + Format(L_LifeRayStock."Variant Priority") +

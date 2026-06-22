@@ -107,6 +107,18 @@ codeunit 90045 "Update Channel Item Listing"
                             L_Modified := true;
                         end;
 
+                        //Strength++
+                        if L_ChannelItemListing.Strength <> L_Item.Strength then begin
+                            L_ChannelItemListing.Strength := L_Item.Strength;
+                            L_Modified := true;
+                        end;
+
+                        //Item Configuration++
+                        if L_ChannelItemListing."Item Configuration" <> L_Item."Item Configuration" then begin
+                            L_ChannelItemListing."Item Configuration" := L_Item."Item Configuration";
+                            L_Modified := true;
+                        end;
+
                         #Region Liferay only+++
                         if L_ChannelItemListing."Channel Code" = 'LIFERAY' then begin
                             //For PIP code & Variant Code - Code written on "Item Referenec" table++ 

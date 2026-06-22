@@ -37,6 +37,8 @@ table 90011 "Channel Item Listing"
                     Rec."Min Sell Price" := Item1."Min Sell Price";
                     Rec.Blocked := Item1.Blocked;
                     Rec."Inventory Posting Group" := Item1."Inventory Posting Group";
+                    Rec.Strength := Item1.Strength;
+                    Rec."Item Configuration" := Item1."Item Configuration";
                 END;
 
                 IF Item1.GET("Item No.") THEN
@@ -337,6 +339,14 @@ table 90011 "Channel Item Listing"
         {
             Caption = 'Inventory Posting Group';
             TableRelation = "Inventory Posting Group";
+        }
+        field(61; Strength; Code[35])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(62; "Item Configuration"; Code[20])
+        {
+            TableRelation = "Item Configuration";
         }
     }
 

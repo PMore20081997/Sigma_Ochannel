@@ -337,6 +337,51 @@ tableextension 90094 "Item Ext Allocation" extends Item
                 #EndRegion LifeRay Integration+++
             end;
         }
+        modify(Strength)
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec.Strength <> Rec.Strength then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate(Strength, Rec.Strength);
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
+
+        modify("Item Configuration")
+        {
+            trigger OnAfterValidate()
+            var
+                L_ChannelItemListing: Record "Channel Item Listing";
+            begin
+                #Region LifeRay Integration+++
+                if xRec."Item Configuration" <> Rec."Item Configuration" then begin
+                    L_ChannelItemListing.Reset();
+                    L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+                    L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+                    if L_ChannelItemListing.FindSet() then begin
+                        repeat
+                            L_ChannelItemListing.Validate("Item Configuration", Rec."Item Configuration");
+                            L_ChannelItemListing."Item Sync" := false;
+                            L_ChannelItemListing.Modify();
+                        until L_ChannelItemListing.Next() = 0;
+                    end;
+                end;
+                #EndRegion LifeRay Integration+++
+            end;
+        }
         modify("Inventory Posting Group")
         {
             trigger OnAfterValidate()

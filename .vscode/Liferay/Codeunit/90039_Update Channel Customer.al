@@ -2,8 +2,6 @@ codeunit 90039 "Update Channel Customer"
 {
     TableNo = "Job Queue Entry";
     trigger OnRun()
-    var
-        Dummy_Customer: Record Customer;
     begin
         StartParameter := Rec."Parameter String";
         if StartParameter <> '' then

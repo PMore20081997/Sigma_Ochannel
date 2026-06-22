@@ -60,6 +60,16 @@ page 90011 "Channel Item Listing"
                     Editable = false;
                     Caption = 'Pack Size';
                 }
+                field(Strength; Rec.Strength)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Item Configuration"; Rec."Item Configuration")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Lowstock Threshold"; Rec."Lowstock Threshold")
                 {
                     Editable = false;
