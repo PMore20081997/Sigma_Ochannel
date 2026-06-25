@@ -1,5 +1,6 @@
 page 90002 "Web Customer"
 {
+    Caption = 'Channel Customer';
     PageType = List;
     ApplicationArea = All;
     UsageCategory = Lists;

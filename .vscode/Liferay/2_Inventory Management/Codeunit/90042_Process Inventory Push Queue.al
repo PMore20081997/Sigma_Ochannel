@@ -159,12 +159,12 @@ codeunit 90042 "Process Inventory Push Queue"
             end;
 
             //Check the new Transaction & new entry after last synctime and get the TotalInventory, AllocOnSO, AllocOnPick++
-            CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick);
+            CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick, L_IsSaleable);
 
             //Check KNAPP allocated qty if location is DEPOT1 after last synctime++
-            KNAPPQty := 0;
-            if Location.Code = 'DEPOT1' then
-                KNAPPQty := GetKNAPPDelta(_ItemNo, ItemVariant.Code, _LastSyncTime);
+            // KNAPPQty := 0;
+            // if Location.Code = 'DEPOT1' then
+            //     KNAPPQty := GetKNAPPDelta(_ItemNo, ItemVariant.Code, _LastSyncTime);
 
             // Calculate free inventory delta since last sync (can be negative if net transactions reduce free inventory)
             TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty - WebOrderQty;
@@ -182,29 +182,46 @@ codeunit 90042 "Process Inventory Push Queue"
     // considering only records created AFTER _LastSyncTime.
     // Values can be negative (net issue > net receipt since last sync).
     // ─────────────────────────────────────────────────────────────────────────
-    local procedure CalcDeltaInventory(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _LastSyncTime: DateTime; var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal)
+    local procedure CalcDeltaInventory(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _LastSyncTime: DateTime; var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal; _IsSaleable: Boolean)
     var
         ILE: Record "Item Ledger Entry";
         SalesLine: Record "Sales Line";
         WHActivityLine: Record "Warehouse Activity Line";
+        L_HasVariantSetup: Boolean;
     begin
+        //Check variant setup result
+        Clear(L_HasVariantSetup);
+        L_HasVariantSetup := GetVariantSetup(_ItemNo);
+
+
+
         // ── Net ILE movement since last sync ──────────────────────────────────
         ILE.SetRange("Item No.", _ItemNo);
-        ILE.SetRange("Location Code", _LocationCode);
+        IF _IsSaleable = false then
+            ILE.SetRange("Location Code", _LocationCode)
+        else begin
+            ILE.SetRange("Daily Priority Exist", L_HasVariantSetup);
+            ILE.SetRange("Saleable Location", true);
+        end;
         if _VariantCode <> '' then
             ILE.SetRange("Variant Code", _VariantCode);
         ILE.SetFilter(SystemCreatedAt, '>%1', _LastSyncTime);
+        ILE.SetFilter("WebOrder No.", '%1', '');
         ILE.CalcSums(Quantity);
         TotalInventory := ILE.Quantity;
 
         // ── New Sales Order allocations since last sync ───────────────────────
         SalesLine.SetRange(Type, SalesLine.Type::Item);
         SalesLine.SetRange("No.", _ItemNo);
-        SalesLine.SetRange("Location Code", _LocationCode);
+        if _IsSaleable = false then
+            SalesLine.SetRange("Location Code", _LocationCode)
+        else
+            SalesLine.SetRange("Saleable Location", true);
         if _VariantCode <> '' then
             SalesLine.SetRange("Variant Code", _VariantCode);
         SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         SalesLine.SetFilter("SystemCreatedAt", '>%1', _LastSyncTime);
+        SalesLine.SetFilter("WebOrder No.", '%1', '');
         SalesLine.CalcSums("Outstanding Qty. (Base)");
         AllocOnSO := SalesLine."Outstanding Qty. (Base)";
         if AllocOnSO < 0 then
@@ -212,12 +229,16 @@ codeunit 90042 "Process Inventory Push Queue"
 
         // ── New Pick allocations since last sync ──────────────────────────────
         WHActivityLine.SetRange("Item No.", _ItemNo);
-        WHActivityLine.SetRange("Location Code", _LocationCode);
+        if _IsSaleable = false then
+            WHActivityLine.SetRange("Location Code", _LocationCode)
+        else
+            WHActivityLine.SetRange("Saleable Location", true);
         if _VariantCode <> '' then
             WHActivityLine.SetRange("Variant Code", _VariantCode);
         WHActivityLine.SetRange("Source Document", WHActivityLine."Source Document"::"Sales Order");
         WHActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
         WHActivityLine.SetFilter("SystemCreatedAt", '>%1', _LastSyncTime);
+        WHActivityLine.SetFilter("WebOrder No.", '%1', '');
         WHActivityLine.CalcSums("Qty. Outstanding (Base)");
         AllocOnPick := WHActivityLine."Qty. Outstanding (Base)";
         if AllocOnPick < 0 then
@@ -254,6 +275,7 @@ codeunit 90042 "Process Inventory Push Queue"
             ILE.SetRange("Variant Code", _VariantCode);
         ILE.SetFilter("Location Code", KNAPPFilter);
         ILE.SetFilter(SystemCreatedAt, '>%1', _LastSyncTime);
+        ILE.SetFilter("WebOrder No.", '%1', '');
         ILE.CalcSums(Quantity);
         TotalInventory := ILE.Quantity;
         if TotalInventory < 0 then TotalInventory := 0;
@@ -265,6 +287,7 @@ codeunit 90042 "Process Inventory Push Queue"
         SalesLine.SetFilter("Location Code", KNAPPFilter);
         SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
         SalesLine.SetFilter("SystemCreatedAt", '>%1', _LastSyncTime);
+        SalesLine.SetFilter("WebOrder No.", '%1', '');
         SalesLine.CalcSums("Outstanding Qty. (Base)");
         AllocOnSO := SalesLine."Outstanding Qty. (Base)";
         if AllocOnSO < 0 then AllocOnSO := 0;
@@ -450,5 +473,29 @@ codeunit 90042 "Process Inventory Push Queue"
     local procedure TryPushDelta(var SyncAPI: Codeunit "Sync Product/Inv./Cust./Price"; _ChannelCode: Code[20])
     begin
         SyncAPI.SyncDeltaInventoryToLiferay(0, _ChannelCode);
+    end;
+
+    procedure GetVariantSetup(_ItemNo: Code[20]): Boolean
+    var
+        L_ItemVariant: Record "Item Variant";
+        L_Item: Record Item;
+    begin
+        L_Item.Reset();
+        L_Item.SetRange("No.", _ItemNo);
+        if L_Item.FindFirst() then begin
+            if L_Item."Variant Mandatory if Exists" <> L_Item."Variant Mandatory if Exists"::No then begin
+                if L_Item."Variant Mandatory if Exists" = L_Item."Variant Mandatory if Exists"::Yes then
+                    exit(true)
+                else begin
+                    L_ItemVariant.Reset();
+                    L_ItemVariant.SetRange("Item No.", _ItemNo);
+                    if L_ItemVariant.FindFirst() then
+                        exit(true)
+                    else
+                        exit(false);
+                end;
+            end else
+                exit(false);
+        end;
     end;
 }

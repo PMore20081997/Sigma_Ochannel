@@ -1,5 +1,6 @@
 page 90066 "Channel Price List"
 {
+    Caption = 'Channel Price';
     PageType = List;
     ApplicationArea = All;
     UsageCategory = Lists;

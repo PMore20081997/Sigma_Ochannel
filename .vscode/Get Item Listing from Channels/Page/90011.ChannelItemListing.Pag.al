@@ -1,6 +1,6 @@
 page 90011 "Channel Item Listing"
 {
-    Caption = 'Channel Item Listing';
+    Caption = 'Channel Item';
     UsageCategory = Lists;
     PageType = List;
     SourceTable = "Channel Item Listing";
@@ -370,11 +370,11 @@ page 90011 "Channel Item Listing"
                         Page_LiferayStock.Run();
                     end;
                 }
-                action("Sync Product to LifeRay")
+                action("Sync Item to LifeRay")
                 {
                     ApplicationArea = All;
                     Image = Create;
-                    ToolTip = 'Sync Product to LifeRay';
+                    ToolTip = 'Sync Item to LifeRay';
                     trigger OnAction()
                     var
                         SyncProduct_Inventory: Codeunit "Sync Product/Inv./Cust./Price";

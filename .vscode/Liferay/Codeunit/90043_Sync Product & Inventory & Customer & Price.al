@@ -1438,7 +1438,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
 
                     Clear(VariantValue);
-                    if GetVariantSetup(L_ChannelItemListing."Item No.") then
+                    if GetVariantSetup(L_LifeRayStock."Item No.") = true then
                         VariantValue := 'default'
                     else
                         VariantValue := L_LifeRayStock."Variant Code";
@@ -1474,7 +1474,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     L_CorrelationIDLifeRay."Sync Date" := WorkDate();
                     L_CorrelationIDLifeRay."Data Sync Timestamp" := CurrentDateTime;
                     Clear(VariantValue);
-                    if GetVariantSetup(L_ChannelItemListing."Item No.") then
+                    if GetVariantSetup(L_LifeRayStock."Item No.") = true then
                         VariantValue := 'default'
                     else
                         VariantValue := L_LifeRayStock."Variant Code";

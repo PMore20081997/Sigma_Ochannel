@@ -24,18 +24,19 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                     }
                     action("Channel Item Listing")
                     {
-                        Caption = 'Channel Items';
+                        Caption = 'Channel Item';
                         RunObject = page "Channel Item Listing";
                         ApplicationArea = All;
                     }
                     action("Web Customer")
                     {
-                        Caption = 'Channel Customers';
+                        Caption = 'Channel Customer';
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
                     }
                     action("Channel Price List")
                     {
+                        Caption = 'Channel Price';
                         ApplicationArea = All;
                         RunObject = page "Channel Price List";
                     }
@@ -43,13 +44,13 @@ pageextension 90078 "Ext Business Manager" extends "Business Manager Role Center
                     {
                         RunObject = page "Sales Price Lists";
                         ApplicationArea = All;
-                        Caption = 'Channel Prices (Sigconnect)';
+                        Caption = 'Channel Price (Sigconnect)';
                     }
                     action("Channel Item References")
                     {
                         RunObject = page "Channel Item Reference";
                         ApplicationArea = All;
-                        Caption = 'Channel Item References (Sigconnect)';
+                        Caption = 'Channel Item Reference (Sigconnect)';
                     }
                     action("Shipping Agents")
                     {
