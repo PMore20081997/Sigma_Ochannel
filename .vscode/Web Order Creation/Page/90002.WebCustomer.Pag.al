@@ -22,7 +22,7 @@ page 90002 "Web Customer"
                 field("Customer No."; Rec."Customer No.")
                 {
                     ApplicationArea = All;
-                    Caption = 'Customer No.';
+                    Caption = 'Sell- Customer No.';
                     Editable = false;
                 }
                 field("Concerto Customer No."; Rec."Concerto Customer No.")
@@ -34,41 +34,49 @@ page 90002 "Web Customer"
                 field(Name; Rec.Name)
                 {
                     ApplicationArea = All;
-                    Caption = 'Name';
+                    Caption = 'Sell-to Customer Name';
                     Editable = false;
                 }
                 field(Address; Rec.Address)
                 {
                     ApplicationArea = All;
-                    Caption = 'Address';
+                    Caption = 'Sell-to Address';
                     Editable = false;
                 }
                 field("Address 2"; Rec."Address 2")
                 {
                     ApplicationArea = All;
-                    Caption = 'Address 2';
+                    Caption = 'Sell-to Address2';
                     Editable = false;
                 }
                 field(City; Rec.City)
                 {
                     ApplicationArea = All;
-                    Caption = 'City';
+                    Caption = 'Sell-to City';
                     Editable = false;
                 }
-                field("Phone No"; Rec."Phone No")
+                field(Country; Rec.Country)
                 {
+                    Caption = 'Sell-to Country/Region Code';
                     ApplicationArea = All;
-                    Caption = 'Phone No';
                     Editable = false;
                 }
                 field("Post Code"; Rec."Post Code")
                 {
                     ApplicationArea = All;
-                    Caption = 'Post Code';
+                    Caption = 'Sell-to PostCode';
                     Editable = false;
+                }
+                field("Phone No"; Rec."Phone No")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Sell-to Phone No.';
+                    Editable = false;
+                    Visible = false;
                 }
                 field("Bill to Customer No."; Rec."Bill to Customer No.")
                 {
+                    Caption = 'Bill-to Customer No.';
                     ApplicationArea = All;
                     Editable = false;
                 }
@@ -76,7 +84,39 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Caption = 'Bill-to Customer Name';
                 }
+                field("Billing Address"; Rec."Billing Address")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Bill-to Address';
+                }
+                field("Billing Address 2"; Rec."Billing Address 2")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Bill-to Address2';
+                }
+                field("Billing City"; Rec."Billing City")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Bill-to City';
+                }
+                field("Billing Post Code"; Rec."Billing Post Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Bill-to PostCode';
+                }
+                field("Billing Country"; Rec."Billing Country")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Bill-to Country/Region Code';
+                }
+
                 field("Credit Limit (LCY)"; Rec."Credit Limit (LCY)")
                 {
                     ApplicationArea = All;
@@ -106,33 +146,56 @@ page 90002 "Web Customer"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 5"; Rec."Customer Price Group 5")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 6"; Rec."Customer Price Group 6")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 7"; Rec."Customer Price Group 7")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 8"; Rec."Customer Price Group 8")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 9"; Rec."Customer Price Group 9")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Price Group 10"; Rec."Customer Price Group 10")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("Customer Type"; Rec."Customer Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Shop Group';
+                }
+                field("Shipping Agent Code"; Rec."Shipping Agent Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Shipping Agent Service Code"; Rec."Shipping Agent Service Code")
                 {
                     ApplicationArea = All;
                     Editable = false;
@@ -145,6 +208,7 @@ page 90002 "Web Customer"
                 }
                 field("Block Reason"; Rec."Block Reason")
                 {
+                    Caption = 'Block Reason Code';
                     ApplicationArea = All;
                     Editable = false;
                 }
@@ -158,6 +222,7 @@ page 90002 "Web Customer"
                     ApplicationArea = All;
                     ToolTip = 'Status to show if the Customer is Listed in the Portal or not';
                     Editable = false;
+                    Visible = false;
                 }
                 field("Customer Sync"; Rec."Customer Sync")
                 {
@@ -201,8 +266,8 @@ page 90002 "Web Customer"
             action("Update Web Customer")
             {
                 ApplicationArea = All;
-                Caption = 'Update Web Customer for selected line';
-                ToolTip = 'Update Web Customer for selected line';
+                Caption = 'Update Channel Customer in BC for selected line';
+                ToolTip = 'Update Channel Customer in BC for selected line';
                 Image = UpdateDescription;
                 PromotedCategory = Process;
                 Promoted = true;

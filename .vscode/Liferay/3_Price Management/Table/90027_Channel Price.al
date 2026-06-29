@@ -270,6 +270,12 @@ table 90027 "Channel Price"
             DataClassification = ToBeClassified;
             OptionMembers = Inactive,Active;
             OptionCaptionML = ENU = 'Inactive,Active', ENG = 'Inactive,Active';
+
+            trigger OnValidate()
+            begin
+                if Rec.Status = Rec.Status::Inactive then
+                    Rec."Sync Price" := false;
+            end;
         }
         field(42; "Listing Status"; Option)
         {

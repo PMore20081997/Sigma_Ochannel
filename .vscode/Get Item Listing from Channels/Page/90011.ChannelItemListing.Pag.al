@@ -25,34 +25,25 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     CaptionML = ENU = 'ASIN/Unique ID', ENG = 'ASIN/Unique ID';
                     Editable = false;
+                    Visible = false;
                 }
                 field("Channel SKU"; Rec."Channel SKU")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field("Item No."; Rec."Item No.")
                 {
                     ApplicationArea = All;
-                    CaptionML = ENU = 'BC Item No', ENG = 'BC Item No';
+                    Caption = 'Item No.';
                     Editable = false;
                 }
                 field(Description; Rec.Description)
                 {
                     ApplicationArea = All;
                     Editable = false;
-                    Caption = 'Item Description';
-                }
-                field("Inventory Posting Group"; Rec."Inventory Posting Group")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                }
-                field("Item Category Code"; Rec."Item Category Code")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-                    Caption = 'Item Category Code';
+                    Caption = 'Description';
                 }
                 field("Pack Size"; Rec."Pack Size")
                 {
@@ -64,11 +55,25 @@ page 90011 "Channel Item Listing"
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Caption = 'Strength';
                 }
                 field("Item Configuration"; Rec."Item Configuration")
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Caption = ' Item Configuration';
+                }
+                field("Item Category Code"; Rec."Item Category Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Caption = 'Item Category Code';
+                }
+                field("Inventory Posting Group"; Rec."Inventory Posting Group")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
                 }
                 field("Lowstock Threshold"; Rec."Lowstock Threshold")
                 {
@@ -81,6 +86,7 @@ page 90011 "Channel Item Listing"
                     Editable = false;
                     ToolTip = 'Physical - Allocated on SO - Web Orders Qty';
                     DecimalPlaces = 0 : 5;
+                    Visible = false;
                 }
                 field("Physical Inventory"; Rec."Physical Inventory")
                 {
@@ -89,6 +95,7 @@ page 90011 "Channel Item Listing"
                     Caption = 'Physical';
                     DecimalPlaces = 0 : 5;
                     ToolTip = 'Quantity in saleable locations where the priority exists.';
+                    Visible = false;
                 }
                 field("Allcoated on SO"; Rec."Allcoated on SO")
                 {
@@ -96,6 +103,7 @@ page 90011 "Channel Item Listing"
                     Editable = false;
                     Caption = 'Allocated on SO.';
                     ToolTip = 'Sum of outstanding SO quantity of saleable locations.';
+                    Visible = false;
                     DecimalPlaces = 0 : 5;
                 }
                 field("Web Orders Qty"; Rec."Web Orders Qty")
@@ -103,6 +111,7 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     Editable = false;
                     ToolTip = 'Sucessfull Electronic Orders.';
+                    Visible = false;
                     DecimalPlaces = 0 : 5;
                 }
                 field(RRP; Rec.RRP)
@@ -146,6 +155,7 @@ page 90011 "Channel Item Listing"
                     ApplicationArea = All;
                     ToolTip = 'Status to show if the Item is Listed in the Portal or not';
                     Editable = false;
+                    Visible = false;
                 }
                 field("Item Sync"; Rec."Item Sync")
                 {
@@ -156,41 +166,48 @@ page 90011 "Channel Item Listing"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Acknowledgment from Portal that Inventory has synced on their side';
+                    Visible = false;
                 }
                 field(Remarks; Rec.Remarks)
                 {
                     ApplicationArea = All;
                     Editable = false;
+                    Visible = false;
                 }
                 field(SystemCreatedAt; Rec.SystemCreatedAt)
                 {
                     ApplicationArea = All;
                     Editable = false;
                     Caption = 'Created Date Time';
+                    Visible = false;
                 }
                 field(SystemCreatedBy; GetUserName(Rec.SystemCreatedBy))
                 {
                     ApplicationArea = All;
                     Editable = false;
                     Caption = 'Created By';
+                    Visible = false;
                 }
                 field(SystemModifiedAt; Rec.SystemModifiedAt)
                 {
                     ApplicationArea = All;
                     Editable = false;
                     Caption = 'Modified Date Time';
+                    Visible = false;
                 }
                 field(SystemModifiedBy; GetUserName(Rec.SystemModifiedBy))
                 {
                     ApplicationArea = All;
                     Editable = false;
                     Caption = 'Modified By';
+                    Visible = false;
                 }
                 field("Item SystemModifiedAt"; Rec."Item SystemModifiedAt")
                 {
                     ApplicationArea = All;
                     Editable = false;
                     Caption = 'Item(Master) Modified Date Time';
+                    Visible = false;
                 }
             }
         }
@@ -228,8 +245,8 @@ page 90011 "Channel Item Listing"
             action("Update Channel Item Listing")
             {
                 ApplicationArea = All;
-                Caption = 'Update Channel Item Listing for selected line';
-                ToolTip = 'Update Channel Item Listing for selected line';
+                Caption = 'Update Channel Item in BC for selected line';
+                ToolTip = 'Update Channel Item in BC for selected line';
                 Image = UpdateDescription;
                 PromotedCategory = Process;
                 Promoted = true;

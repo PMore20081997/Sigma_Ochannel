@@ -34,18 +34,22 @@ page 90066 "Channel Price List"
                 field("Line No."; Rec."Line No.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Source Type"; Rec."Source Type")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Source Group"; Rec."Source Group")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Asset Type"; Rec."Asset Type")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Product No."; Rec."Product No.")
                 {
@@ -62,18 +66,22 @@ page 90066 "Channel Price List"
                 field("Child Category"; Rec."Child Category")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Variant Code Lookup"; Rec."Variant Code Lookup")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Unit of Measure Code Lookup"; Rec."Unit of Measure Code Lookup")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Minimum Quantity"; Rec."Minimum Quantity")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Unit Price"; Rec."Unit Price")
                 {
@@ -90,6 +98,7 @@ page 90066 "Channel Price List"
                 field("Allow Line Disc."; Rec."Allow Line Disc.")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Line Discount %"; Rec."Line Discount %")
                 {
@@ -102,6 +111,7 @@ page 90066 "Channel Price List"
                 field("Listing Status"; Rec."Listing Status")
                 {
                     ApplicationArea = All;
+                    Visible = false;
                 }
                 field("Sync Price"; Rec."Sync Price")
                 {
@@ -226,7 +236,7 @@ page 90066 "Channel Price List"
                 end;
             }
 
-            group(Integration)
+            group("LifeRay Integration")
             {
                 action("Sync selected price to LifeRay")
                 {
