@@ -184,6 +184,11 @@ page 90002 "Web Customer"
                     Editable = false;
                     Visible = false;
                 }
+                field("Min Order Value"; Rec."Min Order Value")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
                 field("Customer Type"; Rec."Customer Type")
                 {
                     ApplicationArea = All;

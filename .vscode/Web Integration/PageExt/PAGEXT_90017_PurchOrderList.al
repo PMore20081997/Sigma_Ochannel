@@ -31,6 +31,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                         Clear(purchHeader);
                         purchHeader := Rec;
                         CurrPage.SetSelectionFilter(purchHeader);
+                        purchHeader.SetRange(Status, purchHeader.Status::Released);
                         if purchHeader.FindSet() then begin
                             Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
                             NoOfRecs := purchHeader.Count;
@@ -59,7 +60,8 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
 
                                 end;
                             until purchHeader.Next() = 0;
-                        end;
+                        end else
+                            Error('No record found');
                     end;
                 }
 
@@ -81,6 +83,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
                         Clear(purchHeader);
                         purchHeader := Rec;
                         CurrPage.SetSelectionFilter(purchHeader);
+                        purchHeader.SetRange(Status, purchHeader.Status::Released);
                         //purchHeader.SetRange("EDI Synced", false);
                         if purchHeader.FindSet() then begin
                             Windows.OPEN('Exporting files..' + ' @1@@@@@@@@@@@@@\' + 'Please Wait..');
@@ -110,7 +113,8 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
 
                                 end;
                             until purchHeader.Next() = 0;
-                        end;
+                        end else
+                            Error('No record found');
                     end;
                 }
             }

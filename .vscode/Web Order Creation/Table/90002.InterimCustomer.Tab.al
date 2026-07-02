@@ -371,6 +371,10 @@ table 90002 "Interim Customer"
         {
             TableRelation = "Cust. Block Reason Code".Code;
         }
+        field(71; "Min Order Value"; Decimal)
+        {
+
+        }
     }
 
     keys

@@ -222,11 +222,17 @@ codeunit 90082 "EDI File Integration"
         Time1 := DT2Time(Salesinvoicehead.SystemCreatedAt);
         TimeText := Format(Time1, 0, '<Hours24,2><Minutes,2><Seconds,2>');
         InvNo := Salesinvoicehead."No.";
-        Customer1.Reset();
-        Customer1.SetFilter("No.", P_customer."Bill-to Customer No.");
-        if Customer1.FindFirst() THEN begin
-            PartnerGLN := Customer1.GLN;
+
+        if P_customer."Bill-to Customer No." <> '' then begin
+            Customer1.Reset();
+            Customer1.SetFilter("No.", P_customer."Bill-to Customer No.");
+            if Customer1.FindFirst() THEN begin
+                PartnerGLN := Customer1.GLN;
+            end;
+        end else begin
+            PartnerGLN := P_customer.GLN;
         end;
+
         CompGLN := P_customer.GLN;
         Curr := Salesinvoicehead."Currency Code";
         RefCurr := P_customer."Currency Code";
@@ -354,6 +360,7 @@ codeunit 90082 "EDI File Integration"
                 purchHeader.SetRange("Document Type", purchHeader."Document Type"::Order);
                 purchHeader.SetRange("EDI Synced", false);
                 purchHeader.SetFilter("Posting Date", '>%1', 20250901D);
+                purchHeader.SetRange(Status, purchHeader.Status::Released);
                 if purchHeader.FindSet() then begin
                     repeat
                         Clear(EDIMessage);
@@ -421,7 +428,7 @@ codeunit 90082 "EDI File Integration"
         //TotalAmt := SalesHeader."Amount Including VAT";
         purchHeader.CalcFields("Amount Including VAT", Amount);
         TaxAmount := PurchHeader."Amount Including VAT" - PurchHeader.Amount;
-        BuyerRef := PurchHeader."Your Reference";
+        BuyerRef := DelStr(PurchHeader."Your Reference", 30, 5);
         Clear(LineInfoAll);
         Clear(count);
         Clear(TotalAmtIncVat);
@@ -457,7 +464,7 @@ codeunit 90082 "EDI File Integration"
                 totalqty += Purchline.Quantity;
                 Evaluate(quantityInt, DelChr(Format(Purchline.Quantity), '<=>', ','));
                 Evaluate(totalqty1, DelChr(Format(totalqty), '<=>', ','));
-                LineInfo1 := '*OL,' + PurchHeader."Your Reference" + ',' + format(count) + ',' + format(Purchline."Line No.") + ',' + Format(quantityInt) + ',,,,' + Format(Purchline.Amount) + ',,,,,,,,,,,,,,,,,' + CRLF[1];
+                LineInfo1 := '*OL,' + BuyerRef + ',' + format(count) + ',' + format(Purchline."Line No.") + ',' + Format(quantityInt) + ',,,,' + Format(Purchline.Amount) + ',,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo2 := '**P,O,,' + gtin + ',,,,' + Purchline."No." + ',,' + Desc + ',,' + Format(PackSize) + ',,,,,,,,,,,,,,,,,,,,,,,,,,,,' + CRLF[1];
                 LineInfo3 := '**V,O,,,,,,,,,,' + CRLF[1];
                 LineInfoAll += LineInfo1 + LineInfo2 + LineInfo3;
@@ -466,12 +473,12 @@ codeunit 90082 "EDI File Integration"
 
             HeaderInfoAll := '';
             HeaderInfo1 := '**!1.02.30GORD' + InvNo + DMYPostingFormat + TimeText + 'C ' + CRLF[1];
-            HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + PurchHeader."Purchaser Code" + ',' + P_vendor."No." + ',ORD,FINAL,N,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
-            HeaderInfo3 := '*OH,' + PurchHeader."Your Reference" + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
+            HeaderInfo2 := '**D,' + CompanyInfo."Registration No." + ',' + PurchHeader."Purchaser Code" + ',' + P_vendor."No." + ',ORD,FINAL,N,' + BuyerRef + ',' + DMYPostingFormat + ',1,,,,,,,,' + CRLF[1];
+            HeaderInfo3 := '*OH,' + BuyerRef + ',' + DMYPostingFormat + ',,,,,,,,' + DMYPostingFormat + ',,,,,,,,,,,,' + CRLF[1];
             HeaderInfo4 := '**A,0,0,COMPANY,' + CompanyInfo.GLN + ',,,,' + PurchHeader."Purchaser Code" + ',,' + CompanyInfo.Name + ',' + CompanyInfo.Address + ',' + CompanyInfo."Address 2" + ',' + CompanyInfo.City + ',' + CompanyInfo.County + ',' + CompanyInfo."Post Code" + ',' + CompanyInfo."Country/Region Code" + ',' + CRLF[1];
             HeaderInfo5 := '**A,0,0,SHIP TO,' + CompanyInfo.GLN + ',,,,' + purchHeader."Purchaser Code" + ',,' + PurchHeader."Ship-to Name" + ',' + PurchHeader."Ship-to Address" + ',' + PurchHeader."Ship-to Address 2" + ',' + PurchHeader."Ship-to City" + ',' + PurchHeader."Ship-to County" + ',' + PurchHeader."Ship-to Post Code" + ',' + PurchHeader."Ship-to Country/Region Code" + ',' + CRLF[1];
             HeaderInfo6 := '**A,0,0,PARTNER,' + P_vendor.GLN + ',,,,,' + PurchHeader."Buy-from Vendor No." + ',' + purchHeader."Buy-from Vendor Name" + ',' + P_vendor.Address + ',' + P_vendor."Address 2" + ',' + P_vendor.City + ',' + P_vendor.County + ',' + P_vendor."Post Code" + ',' + P_vendor."Country/Region Code" + ',' + CRLF[1];
-            HeaderInfo10 := '*OT,' + PurchHeader."Your Reference" + ',' + Format(count) + ',' + DelChr(Format(totalqty), '<=>', ',') + CRLF[1];
+            HeaderInfo10 := '*OT,' + BuyerRef + ',' + Format(count) + ',' + DelChr(Format(totalqty), '<=>', ',') + CRLF[1];
             HeaderInfo11 := '**@' + InvNo + '1     1     ' + Format(count);
             HeaderInfoAll := HeaderInfo1 + HeaderInfo2 + HeaderInfo3 + HeaderInfo4 + HeaderInfo5 + HeaderInfo6 + HeaderInfo7 + HeaderInfo8 + LineInfoAll + HeaderInfo9 + HeaderInfo10 + HeaderInfo11;
 
