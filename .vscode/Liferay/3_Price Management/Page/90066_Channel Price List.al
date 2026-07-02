@@ -113,6 +113,11 @@ page 90066 "Channel Price List"
                     ApplicationArea = All;
                     Visible = false;
                 }
+                field("Channel Item Exist"; Rec."Channel Item Exist")
+                {
+                    ApplicationArea = All;
+                    editable = false;
+                }
                 field("Sync Price"; Rec."Sync Price")
                 {
                     ApplicationArea = All;

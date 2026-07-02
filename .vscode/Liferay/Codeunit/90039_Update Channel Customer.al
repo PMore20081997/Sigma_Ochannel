@@ -208,6 +208,12 @@ codeunit 90039 "Update Channel Customer"
                             L_Modified := true;
                         end;
 
+                        //MOV 
+                        if L_WebCustomer."Min Order Value" <> L_Customer."Min Order Value" then begin
+                            L_WebCustomer."Min Order Value" := L_Customer."Min Order Value";
+                            L_Modified := true;
+                        end;
+
                     end;
                     #EndRegion Only For LIFERAY & Other Channels+++
 

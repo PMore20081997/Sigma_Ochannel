@@ -13,7 +13,7 @@
             "startupObjectType": "Page",
             "startupObjectId": 22,
             //"environmentName": "Sigma_UAT",
-            "environmentName": "Sigma_2506",
+            "environmentName": "Sigma_0107",
             "tenant": "55614040-8b3d-41a1-bae8-2140b06bd0c3",
             "schemaUpdateMode":"ForceSync"
         }

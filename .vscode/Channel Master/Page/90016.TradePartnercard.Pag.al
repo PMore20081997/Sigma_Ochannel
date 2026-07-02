@@ -212,7 +212,6 @@ page 90016 "Trade Partner card"
                 field("ePOD Collection Template ID"; Rec."ePOD Collection Template ID")
                 {
                     ApplicationArea = All;
-                    Visible = false;
                 }
             }
 
