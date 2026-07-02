@@ -409,6 +409,26 @@ tableextension 90094 "Item Ext Allocation" extends Item
                 #EndRegion LifeRay Integration+++
             end;
         }
+        // #Region SBB-716+++
+        // modify(Status)
+        // {
+        //     trigger OnAfterValidate()
+        //     var
+        //         L_ChannelItemListing: Record "Channel Item Listing";
+        //     begin
+        //         #Region LifeRay Integration+++
+        //         if Rec.Status = Rec.Status::Released then begin
+        //             L_ChannelItemListing.Reset();
+        //             L_ChannelItemListing.SetRange("Item No.", Rec."No.");
+        //             L_ChannelItemListing.SetRange("Channel Code", 'LIFERAY');
+        //             if not L_ChannelItemListing.FindFirst() then begin
+        //                 Error('You cannot Release item %1. The channel item must be created before Release', Rec."No.");
+        //             end;
+        //         end;
+        //         #EndRegion LifeRay Integration+++
+        //     end;
+        // }
+        // #EndRegion SBB-716+++
     }
 
     trigger OnDelete()

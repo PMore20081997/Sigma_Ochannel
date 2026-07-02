@@ -80,6 +80,7 @@ codeunit 90019 "Manage Channel Customer List"
                                 InterimCustomer.Validate("Customer Price Group 8", _Customer."Customer Price Group 8");
                                 InterimCustomer.Validate("Customer Price Group 9", _Customer."Customer Price Group 9");
                                 InterimCustomer.Validate("Customer Price Group 10", _Customer."Customer Price Group 10");
+                                InterimCustomer."Min Order Value" := _Customer."Min Order Value";
                                 InterimCustomer."Credit Limit (LCY)" := _Customer."Credit Limit (LCY)";
                                 if _Customer."Bill-to Customer No." <> '' then begin
                                     InterimCustomer.Validate("Bill to Customer No.", _Customer."Bill-to Customer No.");

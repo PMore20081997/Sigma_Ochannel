@@ -908,6 +908,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
             L_ChannelPrice.SetRange("Line No.", _LineNo);
         end;
         L_ChannelPrice.SetRange("Sync Price", false);
+        L_ChannelPrice.SetRange("Channel Item Exist", true);
         if L_ChannelPrice.FindSet() then begin
             Clear(i);
             i := 1;
@@ -1197,6 +1198,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                         LineObj.Add('billing_address', BillingAddressObj);
                     end;
                     #EndRegion Billing Address++
+                    LineObj.Add('mov', L_InterimCustomer."Min Order Value");
                     CustomerArray.Add(LineObj);
 
                     //Insert Temp record++
@@ -1304,6 +1306,7 @@ codeunit 90043 "Sync Product/Inv./Cust./Price"
                     ' |CreditLimitWarning:' + Format(L_WebCustomer."Credit Limit Warning") +
                     ' |Blocked:' + Format(L_WebCustomer.Blocked) +
                     ' |BlockReason:' + Format(L_WebCustomer."Block Reason") +
+                    ' |MOV:' + Format(L_WebCustomer."Min Order Value") +
                     ' |ShiptoAddress:' + L_WebCustomer.Address + ' ;' + L_WebCustomer."Address 2" + ' ;' + L_WebCustomer."City" + ' ;' + L_WebCustomer.Country + ' ;' + L_WebCustomer."Post Code" +
                     ' |BilltoAddress:' + L_WebCustomer."Billing Address" + ' ;' + L_WebCustomer."Billing Address 2" + ' ;' + L_WebCustomer."Billing City" + ' ;' + L_WebCustomer."Billing Country" + ' ;' + L_WebCustomer."Billing Post Code";
 

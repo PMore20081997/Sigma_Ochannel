@@ -12,22 +12,21 @@ report 90004 "Sync POD Job"
 
 
             trigger OnAfterGetRecord()
-            var
-                L_PODfatherIntegration: Codeunit "POD Father Integration";
             begin
                 //Run Process ++
-                L_PODfatherIntegration.Job_OnPODFatherPortalNew("Sales Invoice Header"."No.", G_ChannelSetupCode)
+                L_PODfatherIntegration.DeliveryJob_SynctoPOD("Sales Invoice Header"."No.", G_ChannelSetupCode)
             end;
 
             trigger OnPreDataItem()
-            var
-                L_PodFatherIntegration: Codeunit "POD Father Integration";
             begin
+                if G_DeliveryJob = false then
+                    CurrReport.Break();
+
                 if (G_DocumentType = G_DocumentType::" ") AND (G_DocumentType = G_DocumentType::"Sales Shipment") then
-                    CurrReport.Skip();
+                    CurrReport.Break();
 
                 //Check Credential & Setup++
-                L_PodFatherIntegration.CheckMandatoryfieldForJob(G_ChannelSetupCode);
+                L_PodFatherIntegration.CheckMandatoryfieldForJob(G_ChannelSetupCode, G_JobType::Delivery);
 
 
                 //Apply required filters++
@@ -41,20 +40,33 @@ report 90004 "Sync POD Job"
 
             end;
         }
-        // dataitem("Sales Shipment Header"; "Sales Shipment Header")
-        // {
+        dataitem("Sales Header"; "Sales Header")
+        {
+            trigger OnAfterGetRecord()
+            begin
+                //Run Process ++
+                L_PODfatherIntegration.CollectionJob_SynctoPOD("Sales Header"."No.", G_ExpectedReceiptDate, G_ChannelSetupCode)
+            end;
 
-        //     trigger OnAfterGetRecord()
-        //     begin
-        //         //not required in sigma process+++
-        //     end;
+            trigger OnPreDataItem()
+            begin
+                if G_CollectionJob = false then
+                    CurrReport.Break();
 
-        //     trigger OnPreDataItem()
-        //     begin
-        //         if (G_DocumentType = G_DocumentType::" ") AND (G_DocumentType = G_DocumentType::"Sales Invoice") then
-        //             CurrReport.Skip();
-        //     end;
-        // }
+                //Update Expected Receipt Date ++
+                if G_ExpectedReceiptDate = 0D then
+                    G_ExpectedReceiptDate := WorkDate();
+
+                //Apply Filters++
+                "Sales Header".SetRange("Sigma Driver Collection", true);
+                "Sales Header".SetRange("Document Type", "Sales Header"."Document Type"::"Return Order");
+                "Sales Header".SetRange(Status, "Sales Header".Status::Released);
+                "Sales Header".SetRange("ePOD Sync", false);
+
+                //Check Credential & Setup++
+                L_PodFatherIntegration.CheckMandatoryfieldForJob(G_ChannelSetupCode, G_JobType::Collection);
+            end;
+        }
     }
 
     requestpage
@@ -63,15 +75,19 @@ report 90004 "Sync POD Job"
         {
             area(Content)
             {
-                group("Filters: ")
+                field(G_ChannelSetupCode; G_ChannelSetupCode)
                 {
-                    field(G_ChannelSetupCode; G_ChannelSetupCode)
+                    Caption = 'Channel Setup Code: ';
+                    ApplicationArea = All;
+                    TableRelation = "Trade Partner".Code where(PodFather = const(true));
+                }
+                group("DeliveryJob Filters: ")
+                {
+                    field(G_DeliveryJob; G_DeliveryJob)
                     {
-                        Caption = 'Channel Setup Code: ';
                         ApplicationArea = All;
-                        TableRelation = "Trade Partner".Code where(PodFather = const(true));
+                        Caption = 'Enable Delivery Job: ';
                     }
-
                     field(G_DocumentType; G_DocumentType)
                     {
                         Caption = 'Document Type: ';
@@ -86,14 +102,29 @@ report 90004 "Sync POD Job"
                         ToolTip = 'Specifies the shipment date to process';
                     }
                 }
+                group("CollectionJob Filters: ")
+                {
+                    field(G_CollectionJob; G_CollectionJob)
+                    {
+                        ApplicationArea = All;
+                        Caption = 'Enable Collection Job: ';
+                    }
+                    field(G_ExpectedReceiptDate; G_ExpectedReceiptDate)
+                    {
+                        Caption = 'Expected Receipt Date ';
+                        ApplicationArea = All;
+                        ToolTip = 'This Expected Receipt Date specifies when the Tote/Box need to be collected. If it is left blank, the system will always create the collection job for the same day when the job queue run.';
+                    }
+                }
             }
         }
     }
 
     trigger OnPreReport()
     begin
-        if G_DocumentType = G_DocumentType::" " then
-            Error('Document type should not be blank');
+        if G_DeliveryJob = true then
+            if G_DocumentType = G_DocumentType::" " then
+                Error('Document type should not be blank');
 
         if G_ChannelSetupCode = '' then
             Error('Channel Setup Code should not be blank');
@@ -104,5 +135,10 @@ report 90004 "Sync POD Job"
         G_DocumentType: Option " ","Sales Invoice","Sales Shipment";
         G_ShipmentDate: Date;
         G_ChannelSetupCode: Code[20];
+        G_CollectionJob: Boolean;
+        G_ExpectedReceiptDate: Date;
+        G_DeliveryJob: Boolean;
+        G_JobType: Option Delivery,Collection;
+        L_PODfatherIntegration: Codeunit "POD Father Integration";
 
 }

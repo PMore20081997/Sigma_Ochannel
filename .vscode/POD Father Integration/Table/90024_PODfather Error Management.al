@@ -15,7 +15,7 @@ table 90024 "PODFather Error Management"
         }
         field(3; "Document Type"; Option)
         {
-            OptionMembers = " ","Sales Invoice","Sales Shipment";
+            OptionMembers = " ","Sales Invoice","Sales Shipment","Sales Return";
         }
         field(4; "Document No."; Code[20])
         {
