@@ -333,7 +333,7 @@ table 90027 "Channel Price"
         field(85105; "Channel Item Exist"; Boolean)
         {
             FieldClass = FlowField;
-            CalcFormula = exist("Channel Item Listing" where("Item No." = field("Product No."), "Channel Code" = const('LIFERAY')));
+            CalcFormula = exist("Channel Item Listing" where("Item No." = field("Product No."), "Item Sync" = const(true), "Channel Code" = const('LIFERAY')));
         }
     }
 

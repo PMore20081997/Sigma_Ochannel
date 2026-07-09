@@ -144,9 +144,11 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                                 L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
                                 L_ItemLedgerEntry.SetRange("Saleable Location", true);
                             end;
-                            L_ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', 0);
-                            L_ItemLedgerEntry.CalcSums("Remaining Quantity");
-                            L_TotalInventory := L_ItemLedgerEntry."Remaining Quantity";
+                            // L_ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', 0);
+                            // L_ItemLedgerEntry.CalcSums("Remaining Quantity");
+                            // L_TotalInventory := L_ItemLedgerEntry."Remaining Quantity";
+                            L_ItemLedgerEntry.CalcSums(Quantity);
+                            L_TotalInventory := L_ItemLedgerEntry.Quantity;
                             if L_TotalInventory < 0 then
                                 L_TotalInventory := 0;
 

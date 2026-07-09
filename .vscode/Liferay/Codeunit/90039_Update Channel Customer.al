@@ -50,19 +50,16 @@ codeunit 90039 "Update Channel Customer"
                     //Bill to customer No++
                     if L_WebCustomer."Bill to Customer No." <> L_Customer."Bill-to Customer No." then begin
                         L_WebCustomer."Bill to Customer No." := L_Customer."Bill-to Customer No.";
-                        L_Modified := true;
-                    end;
-
-                    //Bill to Customer Name++
-                    L_BilltoCustomer.Reset();
-                    L_BilltoCustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
-                    if L_BilltoCustomer.FindFirst() then begin
-                        if L_WebCustomer."Bill to Customer Name" <> L_BilltoCustomer.Name then begin
-                            L_WebCustomer."Bill to Customer Name" := L_BilltoCustomer.Name;
-                            L_Modified := true;
+                        //Bill to Customer Name++
+                        L_BilltoCustomer.Reset();
+                        L_BilltoCustomer.SetRange("No.", L_Customer."Bill-to Customer No.");
+                        if L_BilltoCustomer.FindFirst() then begin
+                            if L_WebCustomer."Bill to Customer Name" <> L_BilltoCustomer.Name then begin
+                                L_WebCustomer."Bill to Customer Name" := L_BilltoCustomer.Name;
+                            end;
+                        end else begin
+                            L_WebCustomer."Bill to Customer Name" := '';
                         end;
-                    end else begin
-                        L_WebCustomer."Bill to Customer Name" := '';
                         L_Modified := true;
                     end;
 
