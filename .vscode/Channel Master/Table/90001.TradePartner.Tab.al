@@ -349,6 +349,11 @@ table 90001 "Trade Partner"
             Caption = 'Auth Date';
             DataClassification = CustomerContent;
         }
+        field(84; "Last ILE Entry No."; Integer)
+        {
+            Caption = 'Last ILE Entry No.';
+            DataClassification = CustomerContent;
+        }
     }
     keys
     {

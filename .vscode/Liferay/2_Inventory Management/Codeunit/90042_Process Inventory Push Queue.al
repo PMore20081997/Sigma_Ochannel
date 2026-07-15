@@ -22,6 +22,9 @@ codeunit 90042 "Process Inventory Push Queue"
         ChannelCode: Code[20];
         LastSyncTime: DateTime;
         L_PushQueue: Record "Inventory Push Queue";
+        ChannelLast_ILE_EntryNo: Dictionary of [Code[20], Integer];
+        LastILEEntryNo: Integer;
+        ItemLedgerEntry: record "Item Ledger Entry";
     begin
         // ── Step 0: Capture & advance LastSyncTime per channel ───────────────
         // Done before staging so any transaction arriving during this run is
@@ -29,9 +32,16 @@ codeunit 90042 "Process Inventory Push Queue"
         PushQueue.SetRange(Status, PushQueue.Status::Pending);
         if PushQueue.FindSet() then
             repeat
-                if not ChannelLastSyncTime.ContainsKey(PushQueue."Channel Code") then
+                if (not ChannelLastSyncTime.ContainsKey(PushQueue."Channel Code")) AND (not ChannelLast_ILE_EntryNo.ContainsKey(PushQueue."Channel Code")) then
                     if TradePartner.Get(PushQueue."Channel Code") then begin
                         ChannelLastSyncTime.Add(PushQueue."Channel Code", TradePartner."Last Inventory Sync");
+                        ChannelLast_ILE_EntryNo.Add(PushQueue."Channel Code", TradePartner."Last ILE Entry No.");
+
+                        // Update the last ILE entry no. for the channel
+                        ItemLedgerEntry.Reset();
+                        if ItemLedgerEntry.FindLast() then
+                            TradePartner."Last ILE Entry No." := ItemLedgerEntry."Entry No.";
+                        // Advance LastSyncTime to now so any new transactions are captured in the next run
                         TradePartner."Last Inventory Sync" := CurrentDateTime;
                         TradePartner.Modify();
                     end;
@@ -44,7 +54,7 @@ codeunit 90042 "Process Inventory Push Queue"
         if not PushQueue.FindSet(true) then begin
             //This is in the case where there are no pending entries, but we still want to push any existing records with Sync = false to LifeRay.
             if TryPushDelta(SyncAPI, 'LIFERAY') then
-                Commit();
+                //Commit();
             exit;
         end;
 
@@ -59,7 +69,10 @@ codeunit 90042 "Process Inventory Push Queue"
                 if not ChannelLastSyncTime.Get(L_PushQueue."Channel Code", LastSyncTime) then
                     Clear(LastSyncTime);
 
-                if TryStageItemInventory(L_PushQueue."Item No.", L_PushQueue."Channel Code", LastSyncTime) then begin
+                if not ChannelLast_ILE_EntryNo.Get(L_PushQueue."Channel Code", LastILEEntryNo) then
+                    Clear(LastILEEntryNo);
+
+                if TryStageItemInventory(L_PushQueue."Item No.", L_PushQueue."Channel Code", LastSyncTime, LastILEEntryNo) then begin
                     L_PushQueue.Status := L_PushQueue.Status::Done;
                     L_PushQueue."Error Message" := '';
                     if not ProcessedChannels.Contains(L_PushQueue."Channel Code") then
@@ -75,8 +88,8 @@ codeunit 90042 "Process Inventory Push Queue"
         // ── Step 2: Push all staged Delta records to LifeRay per channel ─────
         foreach ChannelCode in ProcessedChannels do begin
             if ChannelCode = 'LIFERAY' then
-                if not TryPushDelta(SyncAPI, ChannelCode) then
-                    Commit();
+                if not TryPushDelta(SyncAPI, ChannelCode) then;
+            //Commit();
         end;
     end;
 
@@ -87,7 +100,7 @@ codeunit 90042 "Process Inventory Push Queue"
     // Only records where the net change <> 0 are inserted.
     // ─────────────────────────────────────────────────────────────────────────
     [TryFunction]
-    local procedure TryStageItemInventory(_ItemNo: Code[20]; _ChannelCode: Code[20]; _LastSyncTime: DateTime)
+    local procedure TryStageItemInventory(_ItemNo: Code[20]; _ChannelCode: Code[20]; _LastSyncTime: DateTime; _LastILEEntryNo: Integer)
     var
         ChannelItemListing: Record "Channel Item Listing";
         Location: Record Location;
@@ -159,7 +172,7 @@ codeunit 90042 "Process Inventory Push Queue"
             end;
 
             //Check the new Transaction & new entry after last synctime and get the TotalInventory, AllocOnSO, AllocOnPick++
-            CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick, L_IsSaleable);
+            CalcDeltaInventory(_ItemNo, '', Location.Code, _LastSyncTime, TotalInventory, AllocOnSO, AllocOnPick, L_IsSaleable, _LastILEEntryNo);
 
             //Check KNAPP allocated qty if location is DEPOT1 after last synctime++
             // KNAPPQty := 0;
@@ -173,8 +186,8 @@ codeunit 90042 "Process Inventory Push Queue"
             InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing, '', '', 0, Location.Code, TotalInventory, AllocOnSO, AllocOnPick, KNAPPQty, WebOrderQty, WebOrderQty, TotalFree);
         until Location.Next() = 0;
 
-        //++
-        Commit();
+        // //++
+        // Commit();
     end;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -182,7 +195,7 @@ codeunit 90042 "Process Inventory Push Queue"
     // considering only records created AFTER _LastSyncTime.
     // Values can be negative (net issue > net receipt since last sync).
     // ─────────────────────────────────────────────────────────────────────────
-    local procedure CalcDeltaInventory(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _LastSyncTime: DateTime; var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal; _IsSaleable: Boolean)
+    local procedure CalcDeltaInventory(_ItemNo: Code[20]; _VariantCode: Code[20]; _LocationCode: Code[20]; _LastSyncTime: DateTime; var TotalInventory: Decimal; var AllocOnSO: Decimal; var AllocOnPick: Decimal; _IsSaleable: Boolean; _LastILEEntryNo: Integer)
     var
         ILE: Record "Item Ledger Entry";
         SalesLine: Record "Sales Line";
@@ -205,7 +218,8 @@ codeunit 90042 "Process Inventory Push Queue"
         end;
         if _VariantCode <> '' then
             ILE.SetRange("Variant Code", _VariantCode);
-        ILE.SetFilter(SystemCreatedAt, '>%1', _LastSyncTime);
+        //ILE.SetFilter(SystemCreatedAt, '>%1', _LastSyncTime);
+        ILE.setfilter("Entry No.", '>%1', _LastILEEntryNo);
         ILE.SetFilter("WebOrder No.", '%1', '');
         ILE.CalcSums(Quantity);
         TotalInventory := ILE.Quantity;

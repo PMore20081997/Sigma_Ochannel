@@ -56,12 +56,18 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
         L_ItemLedgerEntry: Record "Item Ledger Entry";
         L_SalesLine: Record "Sales Line";
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
+        ItemLedgerEntry: record "Item Ledger Entry";
+
     begin
         //Update Sync Date Time to trade partner++
         if GuiAllowed = false then begin
             L_TradePartner.Reset();
             if L_TradePartner.Get(_ChannelCode) then begin
                 L_TradePartner."Last Inventory Sync" := CurrentDateTime;
+                ItemLedgerEntry.Reset();
+                if ItemLedgerEntry.FindLast() then
+                    L_TradePartner."Last ILE Entry No." := ItemLedgerEntry."Entry No.";
+
                 L_TradePartner.Modify();
             end;
         end;

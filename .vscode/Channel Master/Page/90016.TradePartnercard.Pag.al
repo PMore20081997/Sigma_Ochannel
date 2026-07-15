@@ -340,6 +340,12 @@ page 90016 "Trade Partner card"
                     Visible = true;
                     ApplicationArea = all;
                 }
+                field("Last ILE Entry No."; Rec."Last ILE Entry No.")
+                {
+                    Editable = true;
+                    Visible = true;
+                    ApplicationArea = all;
+                }
                 field("Last Customer Sync"; rec."Last Customer Sync")
                 {
                     ApplicationArea = all;

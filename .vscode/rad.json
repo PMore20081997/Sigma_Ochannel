@@ -1,1 +1,1 @@
-﻿{"Added":[],"Modified":[{"Id":90039,"Kind":11,"Name":"Update Channel Customer","Namespace":""}],"Removed":[]}
+﻿{"Added":[],"Modified":[{"Id":90039,"Kind":11,"Name":"Update Channel Customer","Namespace":""},{"Id":90001,"Kind":10,"Name":"Trade Partner","Namespace":""},{"Id":90042,"Kind":11,"Name":"Process Inventory Push Queue","Namespace":""},{"Id":90041,"Kind":11,"Name":"Create/Update Inv. for LifeRay","Namespace":""},{"Id":90016,"Kind":12,"Name":"Trade Partner card","Namespace":""}],"Removed":[]}
