@@ -183,7 +183,7 @@ codeunit 90042 "Process Inventory Push Queue"
             TotalFree := TotalInventory - AllocOnSO - AllocOnPick - KNAPPQty - WebOrderQty;
 
             //Insert Delta Record In the table++
-            InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing, '', '', 0, Location.Code, TotalInventory, AllocOnSO, AllocOnPick, KNAPPQty, WebOrderQty, WebOrderQty, TotalFree);
+            InsertDeltaRecord(NextEntryNo, _ChannelCode, ChannelItemListing, '', '', 0, Location.Code, TotalInventory, AllocOnSO, AllocOnPick, KNAPPQty, WebOrderQty, WebOrderQty, TotalFree, _LastILEEntryNo);
         until Location.Next() = 0;
 
         // //++
@@ -452,7 +452,7 @@ codeunit 90042 "Process Inventory Push Queue"
         _VariantCode: Code[20]; _VariantDesc: Text[100]; _VariantPriority: Integer;
         _LocationCode: Code[20]; _TotalQty: Decimal; _AllocSO: Decimal;
         _AllocPick: Decimal; _KNAPP: Decimal;
-        _WebOrderQty: Decimal; _AllocWebOrder: Decimal; _FreeQty: Decimal)
+        _WebOrderQty: Decimal; _AllocWebOrder: Decimal; _FreeQty: Decimal; _LastILEEntryNo: Integer)
     var
         LifeRayStock: Record "LifeRay Stock";
     begin
@@ -477,6 +477,7 @@ codeunit 90042 "Process Inventory Push Queue"
         LifeRayStock."Allocated On WebOrder" := _AllocWebOrder;
         LifeRayStock.Inventory := _FreeQty;
         LifeRayStock."Created On" := WorkDate();
+        LifeRayStock."Last ILE Entry No" := _LastILEEntryNo;
         LifeRayStock."Sync Type" := LifeRayStock."Sync Type"::Delta;
         LifeRayStock.Sync := false;
         LifeRayStock.Insert();

@@ -93,6 +93,10 @@ table 90029 "LifeRay Stock"
         {
             DataClassification = ToBeClassified;
         }
+        field(22; "Last ILE Entry No"; Integer)
+        {
+
+        }
 
     }
 

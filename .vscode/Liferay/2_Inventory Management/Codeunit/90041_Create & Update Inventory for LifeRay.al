@@ -57,20 +57,23 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
         L_SalesLine: Record "Sales Line";
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         ItemLedgerEntry: record "Item Ledger Entry";
-
+        L_LastILEEntryNo: integer;
     begin
         //Update Sync Date Time to trade partner++
+        Clear(L_LastILEEntryNo);
         if GuiAllowed = false then begin
             L_TradePartner.Reset();
             if L_TradePartner.Get(_ChannelCode) then begin
                 L_TradePartner."Last Inventory Sync" := CurrentDateTime;
                 ItemLedgerEntry.Reset();
-                if ItemLedgerEntry.FindLast() then
+                if ItemLedgerEntry.FindLast() then begin
                     L_TradePartner."Last ILE Entry No." := ItemLedgerEntry."Entry No.";
-
+                    L_LastILEEntryNo := ItemLedgerEntry."Entry No.";
+                end;
                 L_TradePartner.Modify();
             end;
         end;
+
 
         //Get the Last Entry No. for Liferay Stock++
         Last_LiferayStock.Reset();
@@ -217,6 +220,7 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                             L_LiferayStock.Inventory := L_TotalFree;
                             #Endregion Inventory Calculation++
 
+                            L_LiferayStock."Last ILE Entry No" := L_LastILEEntryNo;
                             L_LiferayStock."Total Quantity" := L_TotalInventory;
                             L_LiferayStock."Allocated On SO" := L_AllocatedOnSo; //This allocated SO include KNAPP orders Qty as well+++
                             L_LiferayStock."Allocated On Pick" := L_AllocatedOnPick;
