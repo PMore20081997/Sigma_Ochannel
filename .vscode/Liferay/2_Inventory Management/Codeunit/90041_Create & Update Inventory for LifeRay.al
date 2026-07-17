@@ -58,19 +58,29 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
         L_WarehouseActivityLine: Record "Warehouse Activity Line";
         ItemLedgerEntry: record "Item Ledger Entry";
         L_LastILEEntryNo: integer;
+        L_LastDateTime: DateTime;
+        InterimSalesLine: Record "Interim Sales Line";
     begin
         //Update Sync Date Time to trade partner++
         Clear(L_LastILEEntryNo);
+        Clear(L_LastDateTime);
         if GuiAllowed = false then begin
             L_TradePartner.Reset();
             if L_TradePartner.Get(_ChannelCode) then begin
                 L_TradePartner."Last Inventory Sync" := CurrentDateTime;
+                L_LastDateTime := L_TradePartner."Last Inventory Sync";
                 ItemLedgerEntry.Reset();
                 if ItemLedgerEntry.FindLast() then begin
                     L_TradePartner."Last ILE Entry No." := ItemLedgerEntry."Entry No.";
                     L_LastILEEntryNo := ItemLedgerEntry."Entry No.";
                 end;
                 L_TradePartner.Modify();
+            end;
+        end else begin
+            L_TradePartner.Reset();
+            if L_TradePartner.Get(_ChannelCode) then begin
+                L_LastDateTime := L_TradePartner."Last Inventory Sync";
+                L_LastILEEntryNo := L_TradePartner."Last ILE Entry No.";
             end;
         end;
 
@@ -131,16 +141,32 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                             L_LiferayStock."Location Code" := L_Location.Code;
 
                             //Web Order Qty (DEPOT1 only — other channels + LifeRay(Consider Liferay WebOrder at the full-Inventory))++
-                            L_TotalWebOrderQty := 0;
+                            // L_TotalWebOrderQty := 0;
+                            // if L_Location.Code = 'DEPOT1' then begin
+                            //     L_Item.Reset();
+                            //     L_Item.SetRange("No.", L_ChannelItemListing."Item No.");
+                            //     if L_Item.FindFirst() then begin
+                            //         L_Item.CalcFields("Qty. on Web Order");
+                            //         L_TotalWebOrderQty := L_Item."Qty. on Web Order";
+                            //     end;
+                            // end;
+                            // L_LiferayStock."Total Web Order Qty" := L_TotalWebOrderQty;
+                            Clear(L_TotalWebOrderQty);
                             if L_Location.Code = 'DEPOT1' then begin
-                                L_Item.Reset();
-                                L_Item.SetRange("No.", L_ChannelItemListing."Item No.");
-                                if L_Item.FindFirst() then begin
-                                    L_Item.CalcFields("Qty. on Web Order");
-                                    L_TotalWebOrderQty := L_Item."Qty. on Web Order";
-                                end;
+                                InterimSalesLine.Reset();
+                                InterimSalesLine.SetRange("Document Type", InterimSalesLine."Document Type"::Order);
+                                InterimSalesLine.SetRange(Type, InterimSalesLine.Type::Item);
+                                InterimSalesLine.SetRange("No.", L_LiferayStock."Item No.");
+                                InterimSalesLine.SetRange("Sales Order Created", false);
+                                InterimSalesLine.SetRange("Consolidated Order", false);
+                                InterimSalesLine.SetFilter("Reason Code", '%1|%2', UpperCase('Order line created'), UpperCase('Partial Quantity Delivered'));
+                                InterimSalesLine.SetFilter(SystemCreatedAt, '<=%1', L_LastDateTime);
+                                InterimSalesLine.CalcSums("Qty. to Deliver");
+                                L_TotalWebOrderQty := InterimSalesLine."Qty. to Deliver";
                             end;
                             L_LiferayStock."Total Web Order Qty" := L_TotalWebOrderQty;
+
+
 
                             #Region Inventory Calculation++
                             //Total Inventory from ILE (all variants summed only for priority > 0)++
@@ -153,9 +179,7 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                                 L_ItemLedgerEntry.SetRange("Daily Priority Exist", L_HasVariantSetup);
                                 L_ItemLedgerEntry.SetRange("Saleable Location", true);
                             end;
-                            // L_ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', 0);
-                            // L_ItemLedgerEntry.CalcSums("Remaining Quantity");
-                            // L_TotalInventory := L_ItemLedgerEntry."Remaining Quantity";
+                            L_ItemLedgerEntry.SetFilter("Entry No.", '<=%1', L_LastILEEntryNo);
                             L_ItemLedgerEntry.CalcSums(Quantity);
                             L_TotalInventory := L_ItemLedgerEntry.Quantity;
                             if L_TotalInventory < 0 then
@@ -171,6 +195,7 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                                 L_SalesLine.SetRange("Location Code", L_Location.Code)
                             else
                                 L_SalesLine.SetRange("Saleable Location", true);
+                            L_SalesLine.SetFilter("SystemCreatedAt", '<=%1', L_LastDateTime);
                             L_SalesLine.SetFilter("Shipment Date", '>=%1', WorkDate());
                             L_SalesLine.CalcSums("Outstanding Qty. (Base)");
                             L_AllocatedOnSo := L_SalesLine."Outstanding Qty. (Base)";
@@ -188,6 +213,7 @@ codeunit 90041 "Create/Update Inv. for LifeRay"
                             else
                                 L_WarehouseActivityLine.SetRange("Saleable Location", true);
                             L_WarehouseActivityLine.SetFilter("Shipment Date", '<%1', WorkDate());
+                            L_WarehouseActivityLine.SetFilter("SystemCreatedAt", '<=%1', L_LastDateTime);
                             L_WarehouseActivityLine.CalcSums("Qty. Outstanding (Base)");
                             L_AllocatedOnPick := L_WarehouseActivityLine."Qty. Outstanding (Base)";
                             if L_AllocatedOnPick < 0 then
