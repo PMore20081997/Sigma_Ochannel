@@ -247,6 +247,19 @@ codeunit 90203 "Manage Time duration"
                         end;
                     end;
                 end;
+                #Region SBB-SBB-711
+                L_SalesLine.Reset();
+                L_SalesLine.SetRange("Document Type", L_SalesHeader."Document Type");
+                L_SalesLine.SetRange("Document No.", L_SalesHeader."No.");
+                L_SalesLine.SetRange(Type, L_SalesLine.Type::"Charge (Item)");
+                L_SalesLine.SetRange("Qty. to Assign", 0);
+                if L_SalesLine.FindFirst() then begin
+                    if GuiAllowed = true then
+                        Error('Item charge should be assigned before manual release')
+                    else
+                        IsHandled := true;
+                end;
+                #Endregion SBB-711
             end;
         end;
         #EndRegion Check All Approval Conditions+++++
