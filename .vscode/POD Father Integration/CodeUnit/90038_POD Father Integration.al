@@ -371,6 +371,7 @@ codeunit 90038 "POD Father Integration"
         L_Customer.SetFilter("ePOD ID", '%1', 0);
         L_Customer.SetRange("Customer Synced", false);
         L_Customer.SetFilter("Customer Site ID", '%1', 0);
+        L_Customer.SetFilter(Status, '%1', L_Customer.Status::Released);
         if L_Customer.FindSet() then begin
             repeat
                 //Customer+++
@@ -592,6 +593,7 @@ codeunit 90038 "POD Father Integration"
         L_Customer.SetFilter("ePOD ID", '<>%1', 0);
         L_Customer.SetRange("Customer Synced", false);
         L_Customer.SetFilter("Customer Site ID", '<>%1', 0);
+        L_Customer.SetFilter(Status, '%1', L_Customer.Status::Released);
         if _CustomerNumber <> '' then
             L_Customer.SetRange("No.", _CustomerNumber);
         if L_Customer.FindSet() then begin

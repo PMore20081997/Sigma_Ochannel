@@ -71,6 +71,7 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
                         L_customer.Reset();
                         CurrPage.SetSelectionFilter(L_customer);
                         L_customer.SetRange("Podfather Customer", true);
+                        L_customer.SetFilter(Status, '%1', L_customer.Status::Released);
                         if L_customer.FindSet() then begin
                             repeat
                                 ePODIntegration.CustomerAndSite_OnPODFatherPortal(L_customer."No.", 'EPOD')
@@ -92,6 +93,7 @@ pageextension 90009 "CustomerListExt" extends "Customer List"
                         L_customer.Reset();
                         CurrPage.SetSelectionFilter(L_customer);
                         L_customer.SetRange("Podfather Customer", true);
+                        L_customer.SetFilter(Status, '%1', L_customer.Status::Released);
                         if L_customer.FindSet() then begin
                             repeat
                                 ePODIntegration.UpdateCustomerAndSites_OnPODFatherPortal(L_customer."No.", 'EPOD')

@@ -8,8 +8,10 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
             {
                 Enabled = true;
 
-                group(Setup)
+                group(CustomSetup)
                 {
+                    Caption = 'Setup';
+
                     action("Channel Partner")
                     {
                         RunObject = page "Trade Partner List";
@@ -22,25 +24,33 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                     }
                     action("Channel Item Listing")
                     {
-                        Caption = 'Channel Items';
+                        Caption = 'Channel Item';
                         RunObject = page "Channel Item Listing";
                         ApplicationArea = All;
                     }
                     action("Web Customer")
                     {
-                        Caption = 'Channel Customers';
+                        Caption = 'Channel Customer';
                         RunObject = page "Web Customer";
                         ApplicationArea = all;
+                    }
+                    action("Channel Price List")
+                    {
+                        Caption = 'Channel Price';
+                        ApplicationArea = All;
+                        RunObject = page "Channel Price List";
                     }
                     action("Channel Prices")
                     {
                         RunObject = page "Sales Price Lists";
                         ApplicationArea = All;
+                        Caption = 'Channel Price (Sigconnect)';
                     }
                     action("Channel Item References")
                     {
                         RunObject = page "Channel Item Reference";
                         ApplicationArea = All;
+                        Caption = 'Channel Item Reference (Sigconnect)';
                     }
                     action("Shipping Agents")
                     {
@@ -105,6 +115,7 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                         ApplicationArea = All;
                     }
                 }
+
                 Group(Warehouse)
                 {
                     Visible = false;
@@ -123,13 +134,21 @@ pageextension 90048 "ExtendNavigationArea" extends "Order Processor Role Center"
                     {
                         RunObject = page "Scanned Header Entries";
                         ApplicationArea = all;
+                        Caption = 'Scanned Header Entries';
+                    }
+                    action("Scanned Lines Entries")
+                    {
+                        RunObject = page "Scanned Header Entries";
+                        ApplicationArea = all;
                         Caption = 'Scanned Entries';
+                        Visible = false;
                     }
                     action("Handled Scanned Entries")
                     {
                         RunObject = page "Archived Scanned Entries";
                         ApplicationArea = all;
                         Caption = 'Handled Scanned Entries';
+                        Visible = false;
                     }
                     action("Ochannel Return Order")
                     {
