@@ -281,12 +281,12 @@ xmlport 90034 "PS Manifest File"
                     L_Customer.Reset();
                     L_Customer.SetRange("No.", Polar_Speed_Barcode_Details."Customer No.");
                     if L_Customer.FindFirst() then begin
-                        _FTAO := Format(L_Customer.Name);
+                        _FTAO := '';
                         _SERVICE := GetServiceCode(L_Customer."Post Code");
-                        _ADDRESS1 := Format(L_Customer.Address);
-                        _ADDRESS2 := Format(L_Customer."Address 2");
-                        _ADDRESS3 := '';
-                        _ADDRESS4 := '';
+                        _ADDRESS1 := Format(L_Customer.Name);
+                        _ADDRESS2 := Format(L_Customer.Address);
+                        _ADDRESS3 := Format(L_Customer."Address 2");
+                        _ADDRESS4 := Format(L_Customer.city);
                         _ADDRESS5 := '';
                         _POSTALCODE := Format(L_Customer."Post Code");
                         _COUNTRY := Format(L_Customer."Country/Region Code");
