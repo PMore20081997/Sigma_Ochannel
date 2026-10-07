@@ -1,0 +1,23 @@
+trigger:
+  branches:
+    include:
+      - Sigma
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+  persistCredentials: true
+  fetchDepth: 0
+
+- script: |
+    git config user.email "prathamesh.m@robosol.com"
+    git config user.name "PMore20081997"
+
+    git remote remove github 2>/dev/null || true
+    git remote add github https://x-access-token:$(GitHub_PAT)@github.com/PMore20081997/Sigma_Ochannel.git
+
+    # Push the Sigma branch to GitHub as main
+    git push github +HEAD:refs/heads/main
+  displayName: 'Sync Sigma to GitHub'
