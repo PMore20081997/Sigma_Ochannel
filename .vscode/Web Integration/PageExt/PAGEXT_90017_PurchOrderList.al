@@ -331,7 +331,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             }
             action(Test16)
             {
-                Caption = 'Test16';
+                Caption = 'mio03';
                 Promoted = true;
                 Visible = false;
                 PromotedCategory = Process;
@@ -475,7 +475,7 @@ pageextension 90017 PurchOrderExt extends "Purchase Order List"
             }
             action(Test30)
             {
-                Caption = 'Test30';
+                Caption = 'mio Product_variant';
                 Promoted = true;
                 Visible = false;
                 PromotedCategory = Process;

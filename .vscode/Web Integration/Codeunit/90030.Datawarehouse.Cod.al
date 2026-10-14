@@ -58,19 +58,6 @@ codeunit 90030 "Datawarehouse-WebDezign"
         xmlmio06wb: XmlPort mio06wb;
     begin
 
-        #region "mio03" 02
-        Clear(TempBlob);
-        Clear(XMLInStream);
-        Clear(XMLOutStream);
-        FileName := 'mio03.csv';
-        TempBlob.CreateOutStream(XMLOutStream);
-        xmlmio03.SetDestination(XMLOutStream);
-        xmlmio03.Export();
-        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
-        // DownloadFromStream(XMLInStream, '', '', '', FileName);
-        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
-        #endregion
-
         #region "mio06su" 03
         Clear(TempBlob);
         Clear(XMLInStream);
@@ -450,19 +437,6 @@ codeunit 90030 "Datawarehouse-WebDezign"
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
-        #region "productvariant" 27
-        Clear(TempBlob);
-        Clear(XMLInStream);
-        Clear(XMLOutStream);
-        FileName := 'productvariant.csv';
-        TempBlob.CreateOutStream(XMLOutStream);
-        xmlproductvariant.SetDestination(XMLOutStream);
-        xmlproductvariant.Export();
-        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
-        // DownloadFromStream(XMLInStream, '', '', '', FileName);
-        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
-        #endregion
-
         #region "mio47" 28
         // Clear(TempBlob);
         // Clear(XMLInStream);
@@ -542,6 +516,32 @@ codeunit 90030 "Datawarehouse-WebDezign"
         // DownloadFromStream(XMLInStream, '', '', '', FileName);
         UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         //TempILE.DeleteAll();
+        #endregion
+
+        #region "productvariant" 27
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'productvariant.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlproductvariant.SetDestination(XMLOutStream);
+        xmlproductvariant.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
+        #endregion
+
+        #region "mio03" 02
+        Clear(TempBlob);
+        Clear(XMLInStream);
+        Clear(XMLOutStream);
+        FileName := 'mio03.csv';
+        TempBlob.CreateOutStream(XMLOutStream);
+        xmlmio03.SetDestination(XMLOutStream);
+        xmlmio03.Export();
+        TempBlob.CreateInStream(XMLInStream, TextEncoding::UTF8);
+        // DownloadFromStream(XMLInStream, '', '', '', FileName);
+        UploadFileToEDIAzureContainer(XMLInStream, FileName, StartParameter);
         #endregion
 
     end;
