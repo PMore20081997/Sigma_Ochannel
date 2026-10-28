@@ -9,6 +9,10 @@ pageextension 90026 "OC Sales & Receivables Setup" extends "Sales & Receivables 
             {
                 ApplicationArea = All;
             }
+            field("Check Release on Consolidation"; Rec."Check Release on Consolidation")
+            {
+                ApplicationArea = All;
+            }
             field("Send Collection File"; rec."Send Collection File")
             {
                 ApplicationArea = all;

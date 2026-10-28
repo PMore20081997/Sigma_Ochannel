@@ -29,7 +29,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         RecUserSetup: Record "User Setup";
         L_CheckConditipon: Codeunit "Manage Time duration";
 
-    local procedure UpdateKnappOrders()
+    procedure UpdateKnappOrders()
     var
         L_SalesHeader: Record "Sales Header";
         Rec_SalesHeader: Record "Sales Header";
@@ -305,7 +305,7 @@ codeunit 90025 "Manual/KNAAP SO Process"
         end;
     end;
 
-    local procedure UpdateNonKnappOrders()
+    procedure UpdateNonKnappOrders()
     var
         L_SalesHeader: Record "Sales Header";
         Rec_SalesHeader: Record "Sales Header";

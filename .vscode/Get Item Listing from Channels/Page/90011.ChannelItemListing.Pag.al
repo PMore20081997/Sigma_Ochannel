@@ -362,7 +362,7 @@ page 90011 "Channel Item Listing"
                                 end;
 
                                 //Process to create Full-Inventory (SameDay)
-                                CreateFull_DetlaInventoryForLifeRay.Full_CreateUpdateInventoryforLifeRay(Rec."Item No.", L_ChannelItemListing."Channel Code");
+                                CreateFull_DetlaInventoryForLifeRay.Full_CreateUpdateInventoryforLifeRay(L_ChannelItemListing."Item No.", L_ChannelItemListing."Channel Code");
                             until L_ChannelItemListing.Next() = 0;
                         end;
                     end;

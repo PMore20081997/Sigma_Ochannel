@@ -313,5 +313,6 @@ permissionset 90000 OChannel
         codeunit "Price Change Subscriber" = X,
         codeunit "Process Price Push Queue" = X,
         page "LifeRay Price Queues" = X,
-        report "Delete Liferay Error Logs" = X;
+        report "Delete Liferay Error Logs" = X,
+        codeunit "Job Queue Chain Mgt." = X;
 }

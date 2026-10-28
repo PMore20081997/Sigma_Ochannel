@@ -274,6 +274,8 @@ report 90000 "Process Web Orders"
     trigger OnPostReport()
     var
         L_CreateConsolidateSO: Codeunit "Create Consolidate SO";
+        L_SalesReceivablesSetup: Record "Sales & Receivables Setup";
+        "Manual/KNAAP SO Process": Codeunit "Manual/KNAAP SO Process";
     begin
         #Region Only For Sigma process++
         if G_ProcessOrderType = G_ProcessOrderType::"Consolidate Order" then
@@ -282,6 +284,14 @@ report 90000 "Process Web Orders"
         if G_ProcessOrderType = G_ProcessOrderType::"Single Order" then
             L_CreateConsolidateSO.SingleOrder_ProcessTemporarySalesLinetoSalesOrder();
         #EndRegion Only For Sigma process++
+
+        #Region Release sales Orders+++
+        L_SalesReceivablesSetup.Get();
+        if L_SalesReceivablesSetup."Check Release on Consolidation" = true then begin
+            "Manual/KNAAP SO Process".UpdateKnappOrders();
+            "Manual/KNAAP SO Process".UpdateNonKnappOrders();
+        end;
+        #EndRegion Release sales Orders+++
     end;
 
     var

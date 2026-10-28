@@ -11,6 +11,10 @@ tableextension 90021 "OC Sales & Receivables Setup" extends "Sales & Receivables
         {
             DataClassification = ToBeClassified;
         }
+        field(90023; "Check Release on Consolidation"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys
